@@ -1,0 +1,30 @@
+# Cloned upstream repos — not ours to track
+openstates-scrapers/
+openstates-core/
+api-v3/
+people/
+jurisdictions/
+scraper-audit/
+bobsled/
+docs-proxy/
+documentation/
+enhancement-proposals/
+issues/
+maintenance-scripts/
+openstates-geo/
+openstates-realtime/
+openstates.org/
+pyopenstates/
+task-definitions/
+
+# Scrape output and cache
+_data/
+_cache/
+
+# Logs (generated at runtime)
+logs/*.log
+
+# Python
+__pycache__/
+*.pyc
+.env
