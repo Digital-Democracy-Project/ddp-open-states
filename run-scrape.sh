@@ -30,8 +30,18 @@ bash /Users/agentsmith/Developer/repos/ddp-open-states/apply-local-patches.sh \
 
 echo "[$(date)] Starting scrape: $STATE $SESSION_ARG" | tee -a "$LOG_DIR/scraper.log"
 
+# First attempt: normal scrape.
+# On failure, retry with --fastmode which reads previously fetched pages from
+# _cache/ instead of re-hitting the legislature website. The cache persists
+# across runs even when _data/{state}/ is wiped, so a mid-run interruption
+# still benefits from whatever was fetched before the failure.
 $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG \
-    >> "$LOG_DIR/scraper.log" 2>&1
+    >> "$LOG_DIR/scraper.log" 2>&1 || {
+    echo "[$(date)] Scrape failed, retrying with --fastmode (using local cache)..." \
+        | tee -a "$LOG_DIR/scraper.log"
+    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG --fastmode \
+        >> "$LOG_DIR/scraper.log" 2>&1
+}
 
 echo "[$(date)] Scrape done: $STATE. Starting import..." | tee -a "$LOG_DIR/scraper.log"
 
