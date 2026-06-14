@@ -19,7 +19,7 @@ done
 
 # Secondary states + people refresh — Sundays only
 if [ "$DAY" = "7" ]; then
-    for state in va mi ma ut az al; do
+    for state in va mi ma ut az; do
         log "--- $state ---"
         bash "$SCRIPT_DIR/run-scrape.sh" "$state" || log "ERROR: $state failed (continuing)"
     done
