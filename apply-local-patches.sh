@@ -2,7 +2,7 @@
 # Rebuild the local-patches branch with our open PRs cherry-picked onto current upstream main.
 # Run after every upstream git pull.
 set -euo pipefail
-cd /Users/agentsmith/Developer/repos/open-states/openstates-scrapers
+cd /Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers
 
 git checkout main
 git pull origin main

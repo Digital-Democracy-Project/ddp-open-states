@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_DIR="/Users/agentsmith/Developer/repos/open-states/api-v3"
+API_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/api-v3"
 UVICORN="/Users/agentsmith/Library/Python/3.9/bin/uvicorn"
 LOG_PREFIX="[start-os-api]"
 

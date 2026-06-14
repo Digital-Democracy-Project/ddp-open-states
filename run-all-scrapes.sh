@@ -3,7 +3,7 @@
 # Primary states (FL, WA, US) run daily; secondary states + people refresh run Sunday.
 set -e
 
-SCRIPT_DIR="/Users/agentsmith/Developer/repos/open-states"
+SCRIPT_DIR="/Users/agentsmith/Developer/repos/ddp-open-states"
 LOG_DIR="$SCRIPT_DIR/logs"
 DAY=$(date +%u)  # 1=Mon … 7=Sun
 
@@ -25,7 +25,7 @@ if [ "$DAY" = "7" ]; then
     done
 
     log "--- people refresh ---"
-    cd /Users/agentsmith/Developer/repos/open-states/people && git pull --ff-only >> "$LOG_DIR/scraper.log" 2>&1
+    cd /Users/agentsmith/Developer/repos/ddp-open-states/people && git pull --ff-only >> "$LOG_DIR/scraper.log" 2>&1
     source "$SCRIPT_DIR/activate.sh"
     for state in fl wa us va mi ma ut az al; do
         $OS_PEOPLE to-database "$state" >> "$LOG_DIR/scraper.log" 2>&1

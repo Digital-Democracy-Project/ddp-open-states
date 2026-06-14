@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Source this to set up the openstates environment
 export DATABASE_URL="postgresql://openstates:openstates_dev@localhost:5432/openstates"
-export OS_PEOPLE_DIRECTORY="$HOME/Developer/repos/open-states/people"
-export PYTHONPATH="/Users/agentsmith/Developer/repos/open-states/openstates-scrapers/scrapers"
+export OS_PEOPLE_DIRECTORY="$HOME/Developer/repos/ddp-open-states/people"
+export PYTHONPATH="/Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers/scrapers"
 export SCRAPELIB_RPM=60
-export SCRAPED_DATA_DIR="$HOME/Developer/repos/open-states/openstates-scrapers/_data"
-export CACHE_DIR="$HOME/Developer/repos/open-states/openstates-scrapers/_cache"
+export SCRAPED_DATA_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_data"
+export CACHE_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_cache"
 export OS_INITDB="$HOME/Library/Python/3.9/bin/os-initdb"
 export OS_UPDATE="$HOME/Library/Python/3.9/bin/os-update"
 export OS_PEOPLE="$HOME/Library/Python/3.9/bin/os-people"
