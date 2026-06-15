@@ -12,10 +12,16 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"
 log "=== Starting nightly scrape run (day=$DAY) ==="
 
 # Primary states — run every day
-for state in fl wa us; do
+for state in fl wa; do
     log "--- $state ---"
     bash "$SCRIPT_DIR/run-scrape.sh" "$state" || log "ERROR: $state failed (continuing)"
 done
+
+# US Congress: House + Senate are separate scrapes (module name is "usa", not "us")
+log "--- usa-lower ---"
+bash "$SCRIPT_DIR/run-scrape.sh" usa "session=119 chamber=lower" || log "ERROR: usa-lower failed (continuing)"
+log "--- usa-upper ---"
+bash "$SCRIPT_DIR/run-scrape.sh" usa "session=119 chamber=upper" || log "ERROR: usa-upper failed (continuing)"
 
 # Secondary states + people refresh — Sundays only
 if [ "$DAY" = "7" ]; then
