@@ -25,7 +25,7 @@ bash "$SCRIPT_DIR/run-scrape.sh" usa "session=119 chamber=upper" || log "ERROR: 
 
 # Secondary states + people refresh — Sundays only
 if [ "$DAY" = "7" ]; then
-    for state in va mi ma ut az; do
+    for state in va mi ma ut az; do  # va requires VA_API_KEY in .env
         log "--- $state ---"
         bash "$SCRIPT_DIR/run-scrape.sh" "$state" || log "ERROR: $state failed (continuing)"
     done

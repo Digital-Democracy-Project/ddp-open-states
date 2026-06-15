@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Source this to set up the openstates environment
+
+# Load secrets (gitignored)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f "$SCRIPT_DIR/.env" ] && set -a && source "$SCRIPT_DIR/.env" && set +a
 export DATABASE_URL="postgresql://openstates:openstates_dev@localhost:5432/openstates"
 export OS_PEOPLE_DIRECTORY="$HOME/Developer/repos/ddp-open-states/people"
 export PYTHONPATH="/Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers/scrapers"
