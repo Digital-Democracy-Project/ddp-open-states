@@ -38,6 +38,5 @@ git pull origin main
 git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 # ade373f (MI House votes, PR #5696) merged upstream 2026-06-15 — removed
-cherry_pick 38e0206  # UT: fix votes not scraped for 2025+ sessions (PR #5695)
-cherry_pick 8003157  # UT: fix duplicate vote identifier for concurrent chamber votes
+# 38e0206 + 8003157 (UT votes, PR #5695) merged upstream 2026-06-16 — removed
 echo "openstates-scrapers: patches applied — on local-patches branch"
