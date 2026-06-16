@@ -11,11 +11,15 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"
 
 log "=== Starting nightly scrape run (day=$DAY) ==="
 
-# Primary states — run every day
-for state in fl wa; do
-    log "--- $state ---"
-    bash "$SCRIPT_DIR/run-scrape.sh" "$state" || log "ERROR: $state failed (continuing)"
+# Florida — regular + special sessions scraped explicitly (auto-detect only returns active)
+for fl_session in "session=2026" "session=2026D" "session=2026E" "session=2026F"; do
+    log "--- fl $fl_session ---"
+    bash "$SCRIPT_DIR/run-scrape.sh" fl "$fl_session" || log "ERROR: fl $fl_session failed (continuing)"
 done
+
+# Washington
+log "--- wa ---"
+bash "$SCRIPT_DIR/run-scrape.sh" wa || log "ERROR: wa failed (continuing)"
 
 # US Congress: House + Senate are separate scrapes (module name is "usa", not "us")
 log "--- usa-lower ---"
