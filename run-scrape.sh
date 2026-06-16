@@ -30,16 +30,20 @@ bash /Users/agentsmith/Developer/repos/ddp-open-states/apply-local-patches.sh \
 
 echo "[$(date)] Starting scrape: $STATE $SESSION_ARG" | tee -a "$LOG_DIR/scraper.log"
 
+# Pass cache/data dirs explicitly so os-update doesn't fall back to
+# os.getcwd()/_cache — which resolves to /_cache (read-only) under launchd.
+DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
+
 # First attempt: normal scrape.
 # On failure, retry with --fastmode which reads previously fetched pages from
 # _cache/ instead of re-hitting the legislature website. The cache persists
 # across runs even when _data/{state}/ is wiped, so a mid-run interruption
 # still benefits from whatever was fetched before the failure.
-$OS_UPDATE "$STATE" --scrape bills $SESSION_ARG \
+$OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $DIR_FLAGS \
     >> "$LOG_DIR/scraper.log" 2>&1 || {
     echo "[$(date)] Scrape failed, retrying with --fastmode (using local cache)..." \
         | tee -a "$LOG_DIR/scraper.log"
-    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG --fastmode \
+    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG --fastmode $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 }
 
@@ -49,10 +53,10 @@ echo "[$(date)] Scrape done: $STATE. Starting import..." | tee -a "$LOG_DIR/scra
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
 if [ "$STATE" = "mi" ]; then
-    $OS_UPDATE "$STATE" --import --allow_duplicates \
+    $OS_UPDATE "$STATE" --import --allow_duplicates $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 else
-    $OS_UPDATE "$STATE" --import \
+    $OS_UPDATE "$STATE" --import $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 
