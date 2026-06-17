@@ -39,4 +39,5 @@ git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 # ade373f (MI House votes, PR #5696) merged upstream 2026-06-15 — removed
 # 38e0206 + 8003157 (UT votes, PR #5695) merged upstream 2026-06-16 — removed
+cherry_pick 357a9a6  # FL: don't let flhouse.gov bot detection crash the scrape
 echo "openstates-scrapers: patches applied — on local-patches branch"
