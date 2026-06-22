@@ -24,9 +24,11 @@ on_failure() {
 }
 trap 'on_failure' ERR
 
-# Apply local patches (UT + MI fixes until PRs merge)
-bash /Users/agentsmith/Developer/repos/ddp-open-states/apply-local-patches.sh \
-    >> "$LOG_DIR/scraper.log" 2>&1
+# Apply local patches — skipped when SKIP_PATCHES=1 (managed by ddp-sync scheduler)
+if [ "${SKIP_PATCHES:-}" != "1" ]; then
+    bash /Users/agentsmith/Developer/repos/ddp-open-states/apply-local-patches.sh \
+        >> "$LOG_DIR/scraper.log" 2>&1
+fi
 
 echo "[$(date)] Starting scrape: $STATE $SESSION_ARG" | tee -a "$LOG_DIR/scraper.log"
 
