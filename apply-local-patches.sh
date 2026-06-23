@@ -48,4 +48,5 @@ cherry_pick 4cb3f8d  # feat(ut): add start= incremental filtering
 cherry_pick e9e4c28  # feat(ma): add start= incremental filtering
 cherry_pick 939b4b7  # feat(az): add start= incremental filtering
 cherry_pick bdd256b  # feat(va): add start= incremental filtering
+cherry_pick ef4cdaa  # feat(ma): re-enable house and senate vote scraping
 echo "openstates-scrapers: patches applied — on local-patches branch"
