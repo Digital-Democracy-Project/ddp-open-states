@@ -10,6 +10,9 @@ OS_UPDATE=/Users/agentsmith/Library/Python/3.9/bin/os-update
 LAST_RUN_DIR="$LOG_DIR/last-run"
 SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')
 TS_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.ts"
+COUNT_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.count"
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"; }
 
 INCREMENTAL_FLAG=""
 if [ -f "$TS_FILE" ]; then
@@ -34,7 +37,7 @@ SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-
     2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
 
 on_failure() {
-    echo "[$(date)] ERROR: scrape/import failed for $STATE" | tee -a "$LOG_DIR/scraper.log"
+    log "ERROR: scrape/import failed for $STATE"
     [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
         -X POST https://slack.com/api/chat.postMessage \
         -H "Authorization: Bearer $SLACK_TOKEN" \
@@ -50,28 +53,50 @@ if [ "${SKIP_PATCHES:-}" != "1" ]; then
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 
-echo "[$(date)] Starting scrape: $STATE $SESSION_ARG" | tee -a "$LOG_DIR/scraper.log"
+MODE="full"
+[ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
+log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${INCREMENTAL_FLAG#start=}})"
 
 # Pass cache/data dirs explicitly so os-update doesn't fall back to
 # os.getcwd()/_cache — which resolves to /_cache (read-only) under launchd.
 DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
+
+# Marker file so we can count only files written by this scrape, not leftovers.
+SCRAPE_MARKER=$(mktemp)
 
 # First attempt: normal scrape.
 # On failure, retry with --fastmode which reads previously fetched pages from
 # _cache/ instead of re-hitting the legislature website. The cache persists
 # across runs even when _data/{state}/ is wiped, so a mid-run interruption
 # still benefits from whatever was fetched before the failure.
-[ -n "$INCREMENTAL_FLAG" ] && log "Incremental run: $INCREMENTAL_FLAG"
-
 $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG $DIR_FLAGS \
     >> "$LOG_DIR/scraper.log" 2>&1 || {
-    echo "[$(date)] Scrape failed, retrying with --fastmode (using local cache)..." \
-        | tee -a "$LOG_DIR/scraper.log"
+    log "Scrape failed, retrying with --fastmode (using local cache)..."
     $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG --fastmode $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 }
 
-echo "[$(date)] Scrape done: $STATE. Starting import..." | tee -a "$LOG_DIR/scraper.log"
+# Count bill JSON files written during this scrape (excludes leftovers from prior runs).
+SCRAPED_BILLS=$(find "$SCRAPED_DATA_DIR/$STATE" -name "bill_*.json" -newer "$SCRAPE_MARKER" 2>/dev/null | wc -l | tr -d ' ')
+rm -f "$SCRAPE_MARKER"
+
+# Emit a clearly-visible summary line and warn on suspicious drops.
+if [ -f "$COUNT_FILE" ]; then
+    PREV_BILLS=$(cut -d: -f1 "$COUNT_FILE")
+    PREV_MODE=$(cut -d: -f2 "$COUNT_FILE")
+    log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_scraped=$SCRAPED_BILLS | prev_run=${PREV_BILLS} (${PREV_MODE}) ==="
+    # Warn if two consecutive incremental runs diverge by more than 80%.
+    if [ "$MODE" = "incremental" ] && [ "$PREV_MODE" = "incremental" ] && [ "${PREV_BILLS:-0}" -gt 10 ]; then
+        THRESHOLD=$(python3 -c "print(max(1, int($PREV_BILLS * 0.2)))")
+        if [ "$SCRAPED_BILLS" -lt "$THRESHOLD" ]; then
+            log "WARNING: bills_scraped ($SCRAPED_BILLS) is <20% of previous incremental run ($PREV_BILLS) — possible over-filtering for $STATE ${SESSION_ARG}"
+        fi
+    fi
+else
+    log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_scraped=$SCRAPED_BILLS | prev_run=none (first run) ==="
+fi
+
+log "Scrape done: $STATE. Starting import..."
 
 # MI has a pagination overlap that produces duplicate bill JSON files.
 # --allow_duplicates keeps the first instance and silently skips the rest.
@@ -84,6 +109,7 @@ else
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 
-echo "[$(date)] Import done: $STATE." | tee -a "$LOG_DIR/scraper.log"
+log "Import done: $STATE."
 mkdir -p "$LAST_RUN_DIR"
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
+echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
