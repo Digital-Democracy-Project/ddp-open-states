@@ -40,4 +40,12 @@ git checkout -b local-patches
 # ade373f (MI House votes, PR #5696) merged upstream 2026-06-15 — removed
 # 38e0206 + 8003157 (UT votes, PR #5695) merged upstream 2026-06-16 — removed
 cherry_pick 357a9a6  # FL: don't let flhouse.gov bot detection crash the scrape
+cherry_pick 371e7e6  # fix(usa): correct start= datetime format string
+cherry_pick 5ccf523  # feat(fl): add start= incremental filtering
+cherry_pick 8bc4525  # feat(wa): add start= incremental filtering
+cherry_pick b9e2d6f  # feat(mi): add start= incremental filtering
+cherry_pick 4cb3f8d  # feat(ut): add start= incremental filtering
+cherry_pick e9e4c28  # feat(ma): add start= incremental filtering
+cherry_pick 939b4b7  # feat(az): add start= incremental filtering
+cherry_pick bdd256b  # feat(va): add start= incremental filtering
 echo "openstates-scrapers: patches applied — on local-patches branch"
