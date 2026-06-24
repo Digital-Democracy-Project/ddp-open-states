@@ -69,12 +69,44 @@ SCRAPE_MARKER=$(mktemp)
 # _cache/ instead of re-hitting the legislature website. The cache persists
 # across runs even when _data/{state}/ is wiped, so a mid-run interruption
 # still benefits from whatever was fetched before the failure.
-$OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG $DIR_FLAGS \
-    >> "$LOG_DIR/scraper.log" 2>&1 || {
-    log "Scrape failed, retrying with --fastmode (using local cache)..."
-    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG --fastmode $DIR_FLAGS \
-        >> "$LOG_DIR/scraper.log" 2>&1
+SCRAPE_OUT=$(mktemp)
+scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log AND captures
+                    # to SCRAPE_OUT; returns os-update's real exit code (not tee's).
+    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG $1 $DIR_FLAGS 2>&1 \
+        | tee "$SCRAPE_OUT" >> "$LOG_DIR/scraper.log"
+    return "${PIPESTATUS[0]}"
 }
+
+# An incremental run that legitimately finds nothing changed since the cutoff makes
+# os-update raise "no objects returned" and exit non-zero. That is a clean no-op, not a
+# failure — record it and skip the import instead of firing the failure alert.
+finish_no_op() {
+    log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=incremental | bills_scraped=0 | no changes since cutoff (no-op) ==="
+    log "No new bills for $STATE ${SESSION_ARG} since cutoff; skipping import."
+    mkdir -p "$LAST_RUN_DIR"
+    date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
+    echo "0:incremental" > "$COUNT_FILE"
+    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+    exit 0
+}
+
+rc=0; scrape_attempt "" || rc=$?
+if [ "$rc" -ne 0 ]; then
+    log "Scrape failed, retrying with --fastmode (using local cache)..."
+    rc=0; scrape_attempt "--fastmode" || rc=$?
+    if [ "$rc" -ne 0 ]; then
+        # Benign: incremental run with nothing new since the cutoff.
+        if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
+            finish_no_op
+        fi
+        # Genuine failure — alert once (disable the ERR trap so it can't double-fire) and stop.
+        rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+        trap - ERR
+        on_failure
+        exit 1
+    fi
+fi
+rm -f "$SCRAPE_OUT"
 
 # Count bill JSON files written during this scrape (excludes leftovers from prior runs).
 SCRAPED_BILLS=$(find "$SCRAPED_DATA_DIR/$STATE" -name "bill_*.json" -newer "$SCRAPE_MARKER" 2>/dev/null | wc -l | tr -d ' ')
