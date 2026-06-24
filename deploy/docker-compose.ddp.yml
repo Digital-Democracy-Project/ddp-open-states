@@ -1,0 +1,69 @@
+# DDP production compose for the OpenStates replica: api-v3 + its own dedicated Postgres.
+# Lives in the DDP-owned ddp-open-states repo (not in the public api-v3/ checkout, which stays
+# pristine). Build context points back at the api-v3 source; Dockerfile + its .dockerignore
+# live here in deploy/ (BuildKit honors <dockerfile>.dockerignore).
+name: ddp-openstates
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ddp-openstates-postgres-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: openstates
+      POSTGRES_PASSWORD: openstates_dev
+      POSTGRES_DB: openstates
+    ports:
+      - "0.0.0.0:5433:5432"   # 5432 is CAMS; native scrapers reach this DB on host :5433
+    volumes:
+      - os_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openstates"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  api:
+    build:
+      context: ../api-v3            # public api-v3 checkout (build context / source)
+      dockerfile: ../deploy/Dockerfile.ddp
+    image: ddp-openstates-api:local
+    container_name: ddp-openstates-api-1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://openstates:openstates_dev@postgres:5432/openstates"
+      RRL_REDIS_HOST: "ddp-agents-redis-1"
+      RRL_REDIS_PORT: "6379"
+      RRL_REDIS_DB: "1"
+      WEB_CONCURRENCY: "4"
+      FORWARDED_ALLOW_IPS: "*"
+    ports:
+      - "0.0.0.0:8002:80"
+    networks:
+      - default
+      - ddp-agents_default
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:80/healthz', timeout=3).status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  os_pg_data:
+
+networks:
+  default: {}
+  ddp-agents_default:
+    external: true

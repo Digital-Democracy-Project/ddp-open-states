@@ -4,7 +4,7 @@
 # restart:unless-stopped policy owns the lifecycle thereafter. Idempotent — safe to re-run.
 set -euo pipefail
 
-COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/api-v3"
+COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/deploy"
 COMPOSE_FILE="docker-compose.ddp.yml"
 LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
 
