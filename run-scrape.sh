@@ -53,6 +53,16 @@ if [ "${SKIP_PATCHES:-}" != "1" ]; then
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 
+# Worktree lock (READER) — drop a PID marker so apply-local-patches.sh won't rebuild the scraper
+# tree while this scrape reads it. Per-PID file → concurrent secondary-state scrapes coexist
+# (each its own marker). Created AFTER the patch step above (so this run's own patch step isn't
+# blocked by it) and removed on any exit.
+SCRAPE_MARKER_DIR=/tmp/ddp-openstates-scrapes
+mkdir -p "$SCRAPE_MARKER_DIR"
+READER_MARKER="$SCRAPE_MARKER_DIR/$$"
+touch "$READER_MARKER"
+trap 'rm -f "$READER_MARKER"' EXIT
+
 MODE="full"
 [ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
 log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${INCREMENTAL_FLAG#start=}})"

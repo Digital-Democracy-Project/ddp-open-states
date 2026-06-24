@@ -5,6 +5,23 @@
 # Run after every upstream git pull in either subdir.
 set -euo pipefail
 
+# Worktree lock (WRITER) — macOS has no flock, so we use PID-marker files. Rebuilding
+# local-patches mutates the shared openstates-scrapers / openstates-core trees that running
+# scrapes read via PYTHONPATH. If any LIVE scrape (see run-scrape.sh) is reading the tree, skip
+# this refresh rather than rebuild the branch out from under it — it'll refresh next cycle.
+# Stale markers from dead scrapes are cleaned (kill -0) so they can't block forever.
+SCRAPE_MARKER_DIR=/tmp/ddp-openstates-scrapes
+if [ -d "$SCRAPE_MARKER_DIR" ]; then
+    for _m in "$SCRAPE_MARKER_DIR"/*; do
+        [ -e "$_m" ] || continue
+        if kill -0 "$(basename "$_m")" 2>/dev/null; then
+            echo "apply-local-patches: scrape (pid $(basename "$_m")) is reading the worktree — skipping patch refresh"
+            exit 0
+        fi
+        rm -f "$_m"   # stale marker from a dead scrape
+    done
+fi
+
 # Apply a cherry-pick, silently skipping commits that upstream already merged.
 # Upstream merges change the commit SHA, so content-match via patch-id isn't
 # reliable; we catch the "empty cherry-pick" exit state instead.
