@@ -34,7 +34,7 @@ LOCAL_KEY  = "00000000-0000-0000-0000-000000000001"
 LIVE_KEY   = os.environ.get("OPENSTATES_API_KEY", "")
 DB_URL     = os.environ.get(
     "DATABASE_URL",
-    "postgresql://openstates:openstates_dev@localhost:5432/openstates",
+    "postgresql://openstates:openstates_dev@localhost:5433/openstates",
 )
 
 # Jurisdictions with data in our local DB (va blocked, us handled separately)

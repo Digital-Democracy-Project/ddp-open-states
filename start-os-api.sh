@@ -1,27 +1,30 @@
 #!/usr/bin/env bash
+# Bring up the containerized api-v3 stack (api + dedicated Postgres) via docker-compose.
+# Used by launchd (com.ddp.openstates-api) as a one-shot at boot; the container's
+# restart:unless-stopped policy owns the lifecycle thereafter. Idempotent — safe to re-run.
 set -euo pipefail
 
-API_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/api-v3"
-UVICORN="/Users/agentsmith/Library/Python/3.9/bin/uvicorn"
-LOG_PREFIX="[start-os-api]"
+COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/api-v3"
+COMPOSE_FILE="docker-compose.ddp.yml"
+LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
 
-log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $LOG_PREFIX $*"; }
+log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [start-os-api] $*" | tee -a "$LOG"; }
 
-# Wait for Postgres (same container as CAMS)
-wait_for_postgres() {
-    local attempts=0
-    while ! docker exec ddp-agents-postgres-1 pg_isready -U openstates >/dev/null 2>&1; do
-        attempts=$((attempts + 1))
-        [ $attempts -ge 30 ] && { log "ERROR: PostgreSQL not ready after 30s"; exit 1; }
-        sleep 1
-    done
-    log "PostgreSQL is healthy"
-}
+# Wait for the Docker daemon (Colima may still be booting after a reboot).
+attempts=0
+until docker info >/dev/null 2>&1; do
+    attempts=$((attempts + 1))
+    [ "$attempts" -ge 60 ] && { log "ERROR: Docker not ready after 180s"; exit 1; }
+    log "waiting for Docker daemon..."; sleep 3
+done
 
-wait_for_postgres
+# The shared network is owned by the ddp-agents stack — fail loud if it isn't up (we need it for Redis).
+if ! docker network inspect ddp-agents_default >/dev/null 2>&1; then
+    log "ERROR: network ddp-agents_default missing — is the ddp-agents stack up?"; exit 1
+fi
 
-log "Launching api-v3 on :8002"
-cd "$API_DIR"
-exec "$UVICORN" api.main:app \
-    --host 0.0.0.0 \
-    --port 8002
+cd "$COMPOSE_DIR"
+log "Bringing up api-v3 stack (docker-compose up -d)"
+# Image is built ahead of time on deploy; do not --build here (slow at boot).
+docker-compose -f "$COMPOSE_FILE" up -d
+log "api-v3 stack up; container restart policy now owns the lifecycle"
