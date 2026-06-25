@@ -14,6 +14,20 @@ COUNT_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.count"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"; }
 
+# App-managed log rotation (mirrors the CAMS/broker convention — no newsyslog/logrotate, no sudo).
+# scraper.log is written by concurrent run-scrape.sh processes, so we copy-then-truncate IN PLACE
+# (same inode) at 50 MB so in-flight tee/>> appenders keep writing safely; keep 7 gzipped archives.
+# No lock needed: copy-then-truncate + keep-N is race-tolerant (worst case a duplicate archive).
+rotate_scraper_log() {
+    local f="$LOG_DIR/scraper.log" max=$((50 * 1024 * 1024))
+    [ -f "$f" ] || return 0
+    local size; size=$(stat -f%z "$f" 2>/dev/null || echo 0)
+    [ "$size" -gt "$max" ] || return 0
+    gzip -c "$f" > "$f.$(date -u +%Y%m%dT%H%M%SZ).gz" 2>/dev/null && : > "$f"
+    ls -1t "$f".*.gz 2>/dev/null | tail -n +8 | xargs rm -f 2>/dev/null || true
+}
+rotate_scraper_log
+
 INCREMENTAL_FLAG=""
 if [ -f "$TS_FILE" ]; then
     LAST_RUN=$(cat "$TS_FILE")
