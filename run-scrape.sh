@@ -155,9 +155,10 @@ fi
 log "Scrape done: $STATE. Starting import..."
 
 # MI has a pagination overlap that produces duplicate bill JSON files.
+# VA has the same issue (confirmed 2026-06-29 via DuplicateItemError on HB 1054).
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
-if [ "$STATE" = "mi" ] || [ "$STATE" = "fl" ]; then
+if [ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ]; then
     $OS_UPDATE "$STATE" --import --allow_duplicates $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 else
