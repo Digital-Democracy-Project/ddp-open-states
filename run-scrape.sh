@@ -5,7 +5,7 @@ set -e
 STATE=$1
 SESSION_ARG=${2:-""}
 LOG_DIR=/Users/agentsmith/Developer/repos/ddp-open-states/logs
-OS_UPDATE=/Users/agentsmith/Library/Python/3.9/bin/os-update
+OS_UPDATE=/Users/agentsmith/Developer/repos/ddp-open-states/.venv/bin/os-update
 
 LAST_RUN_DIR="$LOG_DIR/last-run"
 SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')
