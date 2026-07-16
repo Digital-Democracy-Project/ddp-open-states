@@ -28,6 +28,7 @@ logs/*.log
 __pycache__/
 *.pyc
 .env
+.venv/
 
 # Internal ops docs — not for public repo
 RUNBOOK.md

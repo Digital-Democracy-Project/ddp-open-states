@@ -3,7 +3,13 @@
 Findings from a status check of the OpenStates scraping toolchain on the Mac Studio
 (the machine that runs the scrapers and hosts the local replica). Two parts: (1) overall
 scraper health, and (2) a deep-dive on why the nightly **people/roster refresh** has been
-silently failing. **The people break is PARKED — not yet fixed** (see "Fix" below).
+silently failing.
+
+> **UPDATE 2026-07-15 — RESOLVED.** Both the surgical fix and the durable fix are applied:
+> pydantic downgraded to v1, people backfill run (7/9 states; MA/AL need `--purge`), and the
+> OpenStates toolchain moved into its own venv (`.venv/`) so another service's install can no
+> longer change its pydantic. Details in "Fix" below; operational docs in `RUNBOOK.md` →
+> "OpenStates toolchain venv".
 
 ---
 
@@ -85,21 +91,35 @@ It's an **import-time crash** (fails building `ScrapeCommittee` the moment `os-p
     refreshed by `git pull` — which still works (the failing step is `to-database`, not the pull).
   - So the stale replica roster is **not read by the broker**; scorecards are unaffected.
 
-### Fix (PARKED — chosen but not applied)
-Surgical: downgrade pydantic to the version the toolchain requires:
-```
-python3 -m pip install 'pydantic>=1.8.2,<2'   # last v1 is 1.10.x
-```
-- Safe: nothing declares a pydantic-≥2 dependency except FastAPI (which is for the gateway/api,
-  a different concern); the whole openstates stack pins `<2`; bill scrapes run natively on v1.
-- Then: verify `os-people` imports cleanly (`python3 -c "import openstates.models"`), and run a
-  manual people backfill (`os-people to-database <state>` for tracked states) to catch up ~4 weeks
-  rather than waiting for Sunday.
+### Fix (APPLIED 2026-07-15)
 
-Durable follow-up (the actual root-cause fix): **isolate the OpenStates toolchain in its own
-virtualenv** so installing FastAPI (or anything) for another service can't change pydantic for
-the scrapers. Also note Python 3.9 is EOL (google-auth FutureWarning) — a broader upgrade is
-looming, but separate.
+**Step 1 — surgical unblock (done).** Downgraded pydantic to the version the toolchain requires:
+```
+python3 -m pip install 'pydantic>=1.8.2,<2'   # installed 1.10.26
+```
+- Confirmed safe: nothing declares a pydantic-≥2 dependency except FastAPI (Docker/api concern);
+  the whole openstates stack pins `<2`; bill scrapes run natively on v1. Blast-radius verified —
+  the only thing that *runs* from the shared 3.9 env is the `os-*` toolchain; every HTTP service
+  (api-v3, broker, ddp-agents :8000, ddp-sync :8001) is isolated in Docker or its own venv.
+- `import openstates.models` then imported cleanly, and the manual people backfill
+  (`run-people-refresh.sh`) caught up ~4 weeks: **7/9 states imported** (fl wa us va mi ut az;
+  35 person rows changed). MA and AL exit non-zero on the `--purge` safety guard (one orphaned
+  executive record each — Andrea Joy Campbell / Steve Marshall), not a crash; run
+  `os-people to-database ma --purge` (and `al`) to clear.
+
+**Step 2 — durable root-cause fix (done).** Isolated the toolchain in its own virtualenv so
+installing FastAPI (or anything) for another service can no longer change the scrapers' pydantic:
+- Venv at `.venv/` (Python 3.9.6), built from `requirements-openstates.txt` (frozen known-good set
+  minus the pydantic-v2 forcers). `activate.sh` + `run-scrape.sh` repointed to `.venv/bin`; ddp-sync
+  drives both scrapes and people refresh through those scripts, so all scheduled jobs now use the venv.
+- Rebuild recipe + the `pip<24.1`/textract gotcha are documented in `RUNBOOK.md` →
+  "OpenStates toolchain venv". Verified: all 9 active state scrapers import + `os-people to-database az`
+  runs clean under the venv.
+- The shared 3.9 user-site was left at pydantic v1 (harmless; keeps the old `~/Library/Python/3.9/bin`
+  path working as a fallback).
+
+Still separate/looming: Python 3.9 is EOL (google-auth FutureWarning) — a broader interpreter upgrade
+is a future task, independent of this fix.
 
 ### Evidence pointers
 - `logs/scraper.log` Jul 12 06:00 — all `os-people to-database <state> failed` + full traceback.
