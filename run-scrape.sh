@@ -167,6 +167,17 @@ else
 fi
 
 log "Import done: $STATE."
+
+# Permanently archive every not-yet-captured bill version + document (PLAN-bill-document-
+# provenance.md, Phase 1). Runs across the whole jurisdiction, not scoped to $SESSION_ARG —
+# the natural-key skip check makes already-archived versions a cheap DB check, not a re-fetch,
+# so there's no meaningful cost to not session-filtering here. A failure here (e.g. a natural-key
+# conflict) is treated the same as a scrape/import failure by the existing `trap ERR` above —
+# it'll alert to Slack via on_failure, not just get silently swallowed.
+log "Archiving bill documents: $STATE..."
+$OS_TEXT_EXTRACT archive "$STATE" >> "$LOG_DIR/scraper.log" 2>&1
+log "Archiving done: $STATE."
+
 mkdir -p "$LAST_RUN_DIR"
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
