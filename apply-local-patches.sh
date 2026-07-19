@@ -44,5 +44,10 @@ git pull origin main
 git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 cherry_pick d6653a5  # fix: read CACHE_DIR/SCRAPED_DATA_DIR from env vars; upstream PR pending
-cherry_pick 8768442  # feat: permanent per-version bill document archive (PLAN-bill-document-provenance.md, Phase 1)
+# cherry_pick 8768442  # feat: permanent per-version bill document archive (Phase 1) — HELD BACK
+#   2026-07-19: intentionally not applied yet. Ramon wants this off the live/running code until
+#   the dedicated storage drive (arriving in a few days) and S3 Glacier access are both in place,
+#   so the first-ever run doesn't turn into an unplanned, un-scheduled backfill across every
+#   state on the normal nightly cadence. Re-enable this line (uncomment) once both are ready —
+#   the commit is preserved on the phase1-bill-provenance branch either way.
 echo "openstates-core: patches applied — on local-patches branch"
