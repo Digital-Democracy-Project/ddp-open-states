@@ -44,4 +44,5 @@ git pull origin main
 git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 cherry_pick d6653a5  # fix: read CACHE_DIR/SCRAPED_DATA_DIR from env vars; upstream PR pending
+cherry_pick 8768442  # feat: permanent per-version bill document archive (PLAN-bill-document-provenance.md, Phase 1)
 echo "openstates-core: patches applied — on local-patches branch"
