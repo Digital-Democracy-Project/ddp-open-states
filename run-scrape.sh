@@ -107,6 +107,16 @@ scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log
 finish_no_op() {
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=incremental | bills_scraped=0 | no changes since cutoff (no-op) ==="
     log "No new bills for $STATE ${SESSION_ARG} since cutoff; skipping import."
+
+    # Still archive, even on a no-op scrape — found via testing 2026-07-19: this function
+    # used to `exit 0` right here, before ever reaching the archive step further down, so any
+    # night with zero new activity for a jurisdiction silently skipped archiving too, even
+    # though the whole point of the natural-key skip check is that it's cheap to run every
+    # time regardless of whether anything new was scraped.
+    log "Archiving bill documents: $STATE..."
+    $OS_TEXT_EXTRACT archive "$STATE" >> "$LOG_DIR/scraper.log" 2>&1
+    log "Archiving done: $STATE."
+
     mkdir -p "$LAST_RUN_DIR"
     date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
     echo "0:incremental" > "$COUNT_FILE"
