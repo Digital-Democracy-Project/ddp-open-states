@@ -10,6 +10,15 @@ silently failing.
 > OpenStates toolchain moved into its own venv (`.venv/`) so another service's install can no
 > longer change its pydantic. Details in "Fix" below; operational docs in `RUNBOOK.md` →
 > "OpenStates toolchain venv".
+>
+> **UPDATE 2026-07-16 — FL historical backfill.** Goal set: replica must hold **all FL
+> sessions from 2023 onward** (was current-2026 only). Added `backfill-fl-historical.sh`
+> (sequential, smallest-first, marker-skipping → resumable). DB audit confirmed the Jul-8 FL
+> 2023–2025 attempts had **never landed** (only US 118 did). Ran the 5 special sessions:
+> 2023B/2023C/2025A/2025B/2025C now in the replica (14/21/22/2/7 bills). The **3 regular
+> sessions (2023/2024/2025) are still pending** — deferred as ~4-day heavy runs to an
+> off-hours window; nightly scheduler left untouched. Procedure + status in `RUNBOOK.md` →
+> "Backfilling historical (non-scheduled) sessions".
 
 ---
 
