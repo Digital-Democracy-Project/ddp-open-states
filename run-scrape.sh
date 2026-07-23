@@ -50,6 +50,15 @@ source /Users/agentsmith/Developer/repos/ddp-open-states/activate.sh
 SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
     2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
 
+# CAMS's CodeBot failure listener (PLAN-failure-to-codebot) — a real, repeated
+# scrape bug should reach Agent Smith triage, not just the Slack alert below.
+# Found 2026-07-23: the FL 2024 backfill failed 3 days running on the same
+# ValueError (fl/bills.py's vote-count check) and nothing ever told CAMS,
+# because nothing here called it.
+CAMS_TOKEN=$(grep -E '^CAMS_API_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
+    2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+CAMS_URL="${CAMS_URL:-http://localhost:8000}"
+
 on_failure() {
     log "ERROR: scrape/import failed for $STATE"
     [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
@@ -58,6 +67,35 @@ on_failure() {
         -H "Content-Type: application/json" \
         -d "{\"channel\": \"#automation-errors\", \"text\": \"⚠️ *OpenStates scrape failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log\"}" \
         >/dev/null || true
+    report_failure_to_cams
+}
+
+# Best-effort POST to CAMS's `/api/v1/failures` (service="ddp-open-states",
+# matching config/codebot_allowlist.yaml's OPEN-project services list) so a
+# genuine scrape/import bug can get triaged into a Jira ticket. FAILURE_ERROR_TYPE
+# / FAILURE_MESSAGE are set by the caller when a real exception was parsed out of
+# the scrape output; otherwise this reports a generic failure (still useful —
+# CAMS/Agent Smith decides whether it's code-bug-shaped or not). curl -sf + || true
+# throughout: a reporting failure (CAMS down, bad token, network) must never fail
+# the scrape script itself or mask the real error above.
+report_failure_to_cams() {
+    [ -n "$CAMS_TOKEN" ] || return 0
+    local error_type="${FAILURE_ERROR_TYPE:-ScrapeOrImportFailure}"
+    local message="${FAILURE_MESSAGE:-scrape/import failed for $STATE ${SESSION_ARG} (see logs/scraper.log)}"
+    python3 -c '
+import json, sys
+print(json.dumps({
+    "v": 1,
+    "service": "ddp-open-states",
+    "error_type": sys.argv[1],
+    "message": sys.argv[2],
+    "metadata": {"state": sys.argv[3], "session": sys.argv[4]},
+}))
+' "$error_type" "$message" "$STATE" "$SESSION_ARG" 2>/dev/null | \
+        curl -sf --max-time 10 -X POST "$CAMS_URL/api/v1/failures" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $CAMS_TOKEN" \
+            -d @- >/dev/null || true
 }
 trap 'on_failure' ERR
 
@@ -114,21 +152,35 @@ finish_no_op() {
     exit 0
 }
 
-rc=0; scrape_attempt "" || rc=$?
-if [ "$rc" -ne 0 ]; then
+# FASTMODE_ONLY=1 skips the network attempt entirely and scrapes from the local
+# cache only — for re-running a session that already has most pages cached from
+# a prior run (e.g. one that died partway through on an unrelated bug).
+FIRST_ATTEMPT_FLAGS=""
+if [ "${FASTMODE_ONLY:-}" = "1" ]; then
+    FIRST_ATTEMPT_FLAGS="--fastmode"
+    log "FASTMODE_ONLY=1: starting with --fastmode (cache-only, no network)"
+fi
+
+rc=0; scrape_attempt "$FIRST_ATTEMPT_FLAGS" || rc=$?
+if [ "$rc" -ne 0 ] && [ "$FIRST_ATTEMPT_FLAGS" != "--fastmode" ]; then
     log "Scrape failed, retrying with --fastmode (using local cache)..."
     rc=0; scrape_attempt "--fastmode" || rc=$?
-    if [ "$rc" -ne 0 ]; then
-        # Benign: incremental run with nothing new since the cutoff.
-        if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
-            finish_no_op
-        fi
-        # Genuine failure — alert once (disable the ERR trap so it can't double-fire) and stop.
-        rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
-        trap - ERR
-        on_failure
-        exit 1
+fi
+if [ "$rc" -ne 0 ]; then
+    # Benign: incremental run with nothing new since the cutoff.
+    if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
+        finish_no_op
     fi
+    # Genuine failure — pull the actual Python exception line out of the scrape
+    # output (before it's removed below) so the CAMS report carries a real
+    # error_type/message instead of the generic fallback in report_failure_to_cams.
+    FAILURE_MESSAGE=$(grep -E '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception): ' "$SCRAPE_OUT" 2>/dev/null | tail -1)
+    FAILURE_ERROR_TYPE=$(echo "$FAILURE_MESSAGE" | grep -oE '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception)')
+    # Alert once (disable the ERR trap so it can't double-fire) and stop.
+    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+    trap - ERR
+    on_failure
+    exit 1
 fi
 rm -f "$SCRAPE_OUT"
 
