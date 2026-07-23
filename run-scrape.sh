@@ -114,21 +114,30 @@ finish_no_op() {
     exit 0
 }
 
-rc=0; scrape_attempt "" || rc=$?
-if [ "$rc" -ne 0 ]; then
+# FASTMODE_ONLY=1 skips the network attempt entirely and scrapes from the local
+# cache only — for re-running a session that already has most pages cached from
+# a prior run (e.g. one that died partway through on an unrelated bug).
+FIRST_ATTEMPT_FLAGS=""
+if [ "${FASTMODE_ONLY:-}" = "1" ]; then
+    FIRST_ATTEMPT_FLAGS="--fastmode"
+    log "FASTMODE_ONLY=1: starting with --fastmode (cache-only, no network)"
+fi
+
+rc=0; scrape_attempt "$FIRST_ATTEMPT_FLAGS" || rc=$?
+if [ "$rc" -ne 0 ] && [ "$FIRST_ATTEMPT_FLAGS" != "--fastmode" ]; then
     log "Scrape failed, retrying with --fastmode (using local cache)..."
     rc=0; scrape_attempt "--fastmode" || rc=$?
-    if [ "$rc" -ne 0 ]; then
-        # Benign: incremental run with nothing new since the cutoff.
-        if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
-            finish_no_op
-        fi
-        # Genuine failure — alert once (disable the ERR trap so it can't double-fire) and stop.
-        rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
-        trap - ERR
-        on_failure
-        exit 1
+fi
+if [ "$rc" -ne 0 ]; then
+    # Benign: incremental run with nothing new since the cutoff.
+    if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
+        finish_no_op
     fi
+    # Genuine failure — alert once (disable the ERR trap so it can't double-fire) and stop.
+    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+    trap - ERR
+    on_failure
+    exit 1
 fi
 rm -f "$SCRAPE_OUT"
 
