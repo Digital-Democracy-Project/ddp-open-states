@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Rebuild local-patches branch for openstates-core.
-# openstates-scrapers is now a formal fork (Digital-Democracy-Project/openstates-scrapers) —
-# no rebuild needed there; it runs off fork main directly.
+# Rebuild local-patches branch for openstates-core; keep openstates-scrapers
+# checked out on its fork's main and up to date.
+# openstates-scrapers is a formal fork (Digital-Democracy-Project/openstates-scrapers) —
+# fixes merge via a normal branch+PR, not a cherry-pick, so it only needs a
+# checkout+pull (see the openstates-scrapers section below), not a rebuild.
 # Run after every upstream git pull in openstates-core.
 set -euo pipefail
 
@@ -45,3 +47,16 @@ git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 cherry_pick d6653a5  # fix: read CACHE_DIR/SCRAPED_DATA_DIR from env vars; upstream PR pending
 echo "openstates-core: patches applied — on local-patches branch"
+
+# ── openstates-scrapers ──────────────────────────────────────────────────────
+# Formal fork — fixes are merged to fork main via a normal branch+PR, so this
+# is a plain checkout+pull, not a rebuild. Added 2026-07-23: a fix branch
+# (fix/fl-floor-vote-source-url) sat checked out here for 2 days after its
+# commits were pushed, because nothing ever re-synced this checkout back to
+# main -- the running scraper kept reading that branch's content indefinitely
+# instead of whatever landed on main. This closes that gap the same way the
+# openstates-core section above already self-heals on every run.
+cd /Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers
+git checkout main
+git pull origin main
+echo "openstates-scrapers: on main ($(git rev-parse --short HEAD))"
