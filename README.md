@@ -24,6 +24,23 @@ source activate.sh                  # env vars + the dedicated OpenStates toolch
 ./run-scrape.sh fl "session=2026"   # scrape + import one jurisdiction/session
 ```
 
+> **This is the production checkout** — every scheduled scrape reads code directly from here,
+> with no per-jurisdiction isolation. **Never edit files or switch branches here while a scrape
+> is running** (`ps aux | grep run-scrape` first). For any code change or manual test, use the
+> separate dev environment below instead.
+
+## Development / testing
+
+A fully isolated second checkout lives at `~/Developer/repos/ddp-open-states-dev` — its own
+venv, its own Postgres database, safe to edit or run scrapes in regardless of what's running
+here. See `RUNBOOK.md` → "Development / testing environment" for setup and usage; quick start:
+
+```bash
+cd ~/Developer/repos/ddp-open-states-dev
+source activate-dev.sh              # NOT activate.sh — isolated paths, see RUNBOOK.md
+os-update fl --scrape bills session=2026 --cachedir "$CACHE_DIR" --datadir "$SCRAPED_DATA_DIR"
+```
+
 ## More detail
 
 - [`PRIMITIVES.md`](PRIMITIVES.md) — catalog of this repo's scripts and conventions
