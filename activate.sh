@@ -11,6 +11,14 @@ export PYTHONPATH="/Users/agentsmith/Developer/repos/ddp-open-states/openstates-
 export SCRAPELIB_RPM=60
 export SCRAPED_DATA_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_data"
 export CACHE_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_cache"
+# Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1).
+# text_extract.py appends raw/{jurisdiction}/{session}/{bill_id}/ under this root itself.
+export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
+# Rollout gate, added 2026-07-24: archiving only runs for jurisdictions listed here (comma-
+# separated abbrs). Start with just FL — the plan's own rollout criteria call for validating
+# one jurisdiction's first full historical backfill before enabling the rest. Widen this list
+# once FL has been checked against Phase 1's pass/fail criteria (PLAN-bill-document-provenance.md).
+export ARCHIVE_ENABLED_STATES="fl"
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
 # Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
@@ -20,3 +28,4 @@ export PATH="$OS_VENV/bin:$PATH"
 export OS_INITDB="$OS_VENV/bin/os-initdb"
 export OS_UPDATE="$OS_VENV/bin/os-update"
 export OS_PEOPLE="$OS_VENV/bin/os-people"
+export OS_TEXT_EXTRACT="$OS_VENV/bin/os-text-extract"
