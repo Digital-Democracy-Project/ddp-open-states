@@ -123,6 +123,22 @@ log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${IN
 # os.getcwd()/_cache — which resolves to /_cache (read-only) under launchd.
 DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 
+# Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1). Gated per-
+# jurisdiction via ARCHIVE_ENABLED_STATES (activate.sh) so a new jurisdiction's first-ever run
+# (a full historical backfill, not an incremental update) only happens once explicitly enabled.
+archive_if_enabled() {
+    case ",${ARCHIVE_ENABLED_STATES:-}," in
+        *",$STATE,"*)
+            log "Archiving bill documents: $STATE..."
+            $OS_TEXT_EXTRACT archive "$STATE" >> "$LOG_DIR/scraper.log" 2>&1
+            log "Archiving done: $STATE."
+            ;;
+        *)
+            : # not yet enabled for this jurisdiction
+            ;;
+    esac
+}
+
 # Marker file so we can count only files written by this scrape, not leftovers.
 SCRAPE_MARKER=$(mktemp)
 
@@ -145,6 +161,13 @@ scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log
 finish_no_op() {
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=incremental | bills_scraped=0 | no changes since cutoff (no-op) ==="
     log "No new bills for $STATE ${SESSION_ARG} since cutoff; skipping import."
+
+    # Still archive, even on a no-op scrape — the natural-key skip check is cheap to run
+    # every time regardless of whether anything new was scraped, and this function used to
+    # `exit 0` before ever reaching an archive step, which would otherwise skip archiving on
+    # any night with zero new activity for a jurisdiction.
+    archive_if_enabled
+
     mkdir -p "$LAST_RUN_DIR"
     date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
     echo "0:incremental" > "$COUNT_FILE"
@@ -219,6 +242,13 @@ else
 fi
 
 log "Import done: $STATE."
+
+# Permanently archive every not-yet-captured bill version + document (PLAN-bill-document-
+# provenance.md, Phase 1). Runs across the whole jurisdiction, not scoped to $SESSION_ARG — the
+# natural-key skip check makes already-archived versions a cheap DB check, not a re-fetch. A
+# failure here is treated the same as a scrape/import failure by the `trap ERR` above.
+archive_if_enabled
+
 mkdir -p "$LAST_RUN_DIR"
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
