@@ -934,9 +934,32 @@ Steps (done unless marked otherwise):
 
 **Backup spec:**
 - **Bucket:** `ddp-openstates-backups`, **region:** `us-east-1`. Both confirmed live.
-- **Retention:** S3 lifecycle rule expiring objects after **30 days** (bucket-level, not
-  enforced by the app) — **not yet confirmed set on the actual bucket; verify with Ramon,
-  since the wrapper's proxy setup doesn't expose lifecycle config from this side.**
+- **Retention: confirmed live on the bucket 2026-07-25**, via
+  `aws s3api get-bucket-lifecycle-configuration --bucket ddp-openstates-backups`:
+  ```json
+  {
+      "Expiration": { "Days": 30 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 1 },
+      "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 7 },
+      "Status": "Enabled", "Filter": { "Prefix": "" }
+  }
+  ```
+  Net effect: an object is the current version for 30 days, then gets a delete marker and
+  becomes noncurrent; 1 day after that it's permanently deleted — full deletion lands around
+  **day 31**, not day 30. (Lifecycle rules run roughly once/day, not instantly at the exact
+  boundary, so don't be surprised by a few hours' slop either way.)
+  **Versioning gotcha found and resolved:** this bucket has versioning enabled (every `info`
+  call returns a real `VersionId`), which means a bare `Expiration` rule alone would only add a
+  delete marker — the actual bytes would persist forever as an unreachable noncurrent version.
+  The `NoncurrentVersionExpiration` action above is what actually frees the storage. Its
+  optional `NewerNoncurrentVersions` sub-field (a "retain N newest versions" floor) is
+  **deliberately absent, not set to 0** — the AWS Console enforces a 1-100 range if you set it
+  at all, which briefly looked like a hard "can't fully delete" blocker, but the S3 API happily
+  accepts the field being omitted entirely, which means no retention floor. Applying the config
+  via `aws s3api put-bucket-lifecycle-configuration` (not the console wizard) is what got past
+  that restriction. Bucket recreation (considered, then not needed) would also have worked but
+  wasn't necessary — versioning has no real value on this bucket anyway, since every backup key
+  is a unique timestamp and nothing is ever overwritten.
 - **IAM (least privilege):** confirmed at the wrapper-behavior level — `put`/`get`/`ls`/`info`
   only, no delete command exposed at all. The wrapper calls a separate root-owned proxy script
   (`s3-openstates-backups.sh`) from the one backing the bill-archive bucket (`s3-bill-archive.sh`
