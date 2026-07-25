@@ -91,8 +91,10 @@ Two long-lived branches on the fork sit entirely outside the nightly automation:
 - **`ddp-patches`** — 1 commit ahead of / 3 behind current `main` (stale; predates 3 commits
   that have already landed on `main` from upstream since it branched)
 - **`phase1-bill-provenance`** — the intentional WIP hold from `project-bill-provenance-phase1-hold`
-  memory; 3 commits ahead of `main`, 0 behind (hasn't needed a rebase yet only because
-  upstream's been quiet)
+  memory; now 6 commits ahead of `main` (Phase 1's archive work plus Phase 2's S3 upload+verify,
+  added 2026-07-25), 0 behind. **Slated for deletion once the FL 2023 backfill's quiet window
+  arrives** — see recommendation H below: its commits move to a new permanent branch
+  (`cherry-pick-line`) rather than this branch being rebased and kept alive indefinitely
 
 Neither branch is touched by `apply-local-patches.sh`. Both will eventually need a manual
 rebase onto a moving `main`, and nothing currently reminds anyone to do it.
@@ -195,16 +197,62 @@ during an unrelated cross-check — it still said the script "does not touch
 checkout+pull safety net (§2 above) was added. Corrected in `PRIMITIVES.md` directly. The
 script's own header comment (the original scope of this item) is still open.
 
+### H. Stop hand-maintaining individual cherry-pick lines for DDP's own long-lived `openstates-core` work
+
+**Added 2026-07-25, prompted by the bill-provenance work.** Every new commit added to a held
+branch like `phase1-bill-provenance` currently needs its own new `cherry_pick <sha>` line added
+to `apply-local-patches.sh` by hand, or it's silently never applied — exactly the risk §4 point 2
+already names. This isn't hypothetical: it happened for real during Phase 2's S3 upload+verify
+work (commit `b1a87966`), caught only because someone happened to check the script's cherry-pick
+list before deploying, not because anything would have flagged the gap on its own.
+
+**Fix: a permanent, obviously-named branch, and one range-based cherry-pick instead of a growing
+list of individual SHAs.** Introduce `cherry-pick-line` as the standing home for all of DDP's own
+`openstates-core` commits that aren't (yet, or ever going to be) merged upstream — named
+deliberately so its purpose is unambiguous, unlike a feature-scoped branch name. `apply-local-patches.sh`
+replaces its per-commit `cherry_pick <sha>` calls for this category with a single range pick:
+
+```bash
+git cherry-pick $(git merge-base main cherry-pick-line)..cherry-pick-line
+```
+
+Any commit added to `cherry-pick-line` going forward is picked up automatically the next time the
+script runs — no further edits to `apply-local-patches.sh` needed, ever, for this category of
+change. A standalone one-off patch expected to be genuinely temporary (like `d6653a5`, pending an
+upstream PR) can still get its own individual `cherry_pick` line if keeping it separately trackable
+is useful, or get folded into `cherry-pick-line` too — either works, since the existing
+empty-cherry-pick handling (or `git cherry-pick --empty=drop`, available in modern git) already
+tolerates a commit that turns out to already be upstream.
+
+**Why not just keep using `phase1-bill-provenance` as the range target:** that branch was
+deliberately scoped as a temporary hold — Ramon's call (2026-07-25) is to merge it once the FL
+2023 backfill's quiet window arrives, at which point the branch gets deleted. Pointing the
+range-pick at a branch that's about to disappear would just move the tedium (and the failure
+mode) from "did I add a cherry-pick line" to "did I remember the range-source branch got deleted."
+`cherry-pick-line` is meant to *outlive* any individual feature's branch — it's where a feature's
+commits land once they're ready to go live and stay live, not a place work happens.
+
+**Migration, once the quiet window this plan already tracks arrives:** create `cherry-pick-line`
+from `phase1-bill-provenance`'s current tip (e.g. `git branch cherry-pick-line
+phase1-bill-provenance`), update `apply-local-patches.sh` to the range-pick form above, confirm a
+dry run applies cleanly, then delete `phase1-bill-provenance`. This doesn't remove the need for
+C's periodic rebase — `cherry-pick-line` itself still needs rebasing onto a moving `main` on the
+same monthly-or-opportunistic cadence — it only removes the per-commit script-editing step.
+
 ---
 
 ## 6. Implementation Order
 
-1. **D** — one-line addition to `apply-local-patches.sh` (push `ddp main`), ships independently, no risk
-2. **E** — delete the already-stale `fix/fl-floor-vote-source-url` branch (local + `origin`) now, as cleanup
-3. **G** — clarify the script's header comment while D is already touching the file
-4. **B** — first upstream-merge attempt for `openstates-scrapers`, scoped to DDP's tracked jurisdictions; treat as a trial run to learn actual conflict cost before committing to "monthly" as the right cadence
-5. **C** — rebase `ddp-patches` and `phase1-bill-provenance` onto fresh `main` once B has established the merge is safe
-6. **A** — write up the branch-model note in each repo's README once the process in B/C has actually been run once and proven out
+1. **H** — create `cherry-pick-line`, switch the script to the range-based pick, delete
+   `phase1-bill-provenance` — tied to the bill-provenance plan's own quiet-window trigger (the FL
+   2023 backfill finishing), not to the B/C cadence below; do this first since it's the most
+   time-sensitive item and unblocks the bill-provenance deploy cleanly
+2. **D** — one-line addition to `apply-local-patches.sh` (push `ddp main`), ships independently, no risk
+3. **E** — delete the already-stale `fix/fl-floor-vote-source-url` branch (local + `origin`) now, as cleanup
+4. **G** — clarify the script's header comment while D/H are already touching the file
+5. **B** — first upstream-merge attempt for `openstates-scrapers`, scoped to DDP's tracked jurisdictions; treat as a trial run to learn actual conflict cost before committing to "monthly" as the right cadence
+6. **C** — rebase `ddp-patches` (and `cherry-pick-line`, once H exists) onto fresh `main` once B has established the merge is safe
+7. **A** — write up the branch-model note in each repo's README once the process in B/C has actually been run once and proven out
 
 ---
 
