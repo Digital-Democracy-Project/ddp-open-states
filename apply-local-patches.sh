@@ -46,6 +46,11 @@ git pull origin main
 git branch -D local-patches 2>/dev/null || true
 git checkout -b local-patches
 cherry_pick d6653a5  # fix: read CACHE_DIR/SCRAPED_DATA_DIR from env vars; upstream PR pending
+cherry_pick 8768442  # feat: permanent per-version bill document archive (PLAN-bill-document-provenance.md, Phase 1)
+cherry_pick af9ad95  # feat: compute diff_from_previous_version in bill document archive (Phase 1)
+cherry_pick 66087fc5  # docs: correct ARCHIVE_ROOT_DIR comment to the real DDP-HOT volume name
+cherry_pick 51232151  # feat: more intuitive archive path -- top-level "bills" segment + identifier prefix
+cherry_pick 023b8bd5  # fix: add chamber-level segment to the archive path
 echo "openstates-core: patches applied — on local-patches branch"
 
 # ── openstates-scrapers ──────────────────────────────────────────────────────
