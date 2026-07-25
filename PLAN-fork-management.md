@@ -90,11 +90,12 @@ fork's `main` on GitHub will start silently drifting behind with nothing to corr
 Two long-lived branches on the fork sit entirely outside the nightly automation:
 - **`ddp-patches`** — 1 commit ahead of / 3 behind current `main` (stale; predates 3 commits
   that have already landed on `main` from upstream since it branched)
-- **`phase1-bill-provenance`** — the intentional WIP hold from `project-bill-provenance-phase1-hold`
-  memory; now 6 commits ahead of `main` (Phase 1's archive work plus Phase 2's S3 upload+verify,
-  added 2026-07-25), 0 behind. **Slated for deletion once the FL 2023 backfill's quiet window
-  arrives** — see recommendation H below: its commits move to a new permanent branch
-  (`cherry-pick-line`) rather than this branch being rebased and kept alive indefinitely
+- ~~`phase1-bill-provenance`~~ — **superseded and deleted 2026-07-25.** The FL 2023 backfill's quiet
+  window arrived the same day; recommendation H below was executed for real, not just designed:
+  `cherry-pick-line` was cut from this branch's tip (`b1a87966`), `apply-local-patches.sh` switched
+  to the range-pick form, the rebuild verified live (all 7 commits applied cleanly), and this
+  branch deleted from both the local checkout and the `ddp` fork. `cherry-pick-line` is now the
+  standing home for DDP's own not-yet-upstream `openstates-core` commits
 
 Neither branch is touched by `apply-local-patches.sh`. Both will eventually need a manual
 rebase onto a moving `main`, and nothing currently reminds anyone to do it.
@@ -232,21 +233,27 @@ mode) from "did I add a cherry-pick line" to "did I remember the range-source br
 `cherry-pick-line` is meant to *outlive* any individual feature's branch — it's where a feature's
 commits land once they're ready to go live and stay live, not a place work happens.
 
-**Migration, once the quiet window this plan already tracks arrives:** create `cherry-pick-line`
-from `phase1-bill-provenance`'s current tip (e.g. `git branch cherry-pick-line
-phase1-bill-provenance`), update `apply-local-patches.sh` to the range-pick form above, confirm a
-dry run applies cleanly, then delete `phase1-bill-provenance`. This doesn't remove the need for
-C's periodic rebase — `cherry-pick-line` itself still needs rebasing onto a moving `main` on the
-same monthly-or-opportunistic cadence — it only removes the per-commit script-editing step.
+**Done for real, 2026-07-25 — not just designed above.** Quiet window confirmed twice (a clean
+`ps aux`, then independently corroborated by the FL 2023 backfill's own completion note); created
+`cherry-pick-line` from `ddp/phase1-bill-provenance`'s real tip (`b1a87966` — the production
+checkout's own local ref for that branch had drifted 3 commits stale, so the branch was cut from
+the fork's remote ref instead, not the local one); updated `apply-local-patches.sh` to the
+range-pick form and **actually ran it** — all 7 commits applied cleanly onto a freshly rebuilt
+`local-patches`, including the S3 Glacier commit; deleted `phase1-bill-provenance` everywhere
+(local + `ddp` fork). **One correction to the snippet above, found only by running it for real:**
+`git 2.50.1` has no `--skip-empty` flag — the working equivalent is `--empty=drop`
+(`git cherry-pick --empty=drop $(git merge-base main cherry-pick-line)..cherry-pick-line`). This
+doesn't remove the need for C's periodic rebase — `cherry-pick-line` itself still needs rebasing
+onto a moving `main` on the same monthly-or-opportunistic cadence — it only removed the per-commit
+script-editing step, which is now gone for good (the old `cherry_pick()` helper function was
+deleted from the script too, since nothing calls it anymore).
 
 ---
 
 ## 6. Implementation Order
 
-1. **H** — create `cherry-pick-line`, switch the script to the range-based pick, delete
-   `phase1-bill-provenance` — tied to the bill-provenance plan's own quiet-window trigger (the FL
-   2023 backfill finishing), not to the B/C cadence below; do this first since it's the most
-   time-sensitive item and unblocks the bill-provenance deploy cleanly
+1. ~~**H**~~ — **Done 2026-07-25.** `cherry-pick-line` created, script switched to the range-based
+   pick (using `--empty=drop`, not `--skip-empty` as originally written — see §5.H), `phase1-bill-provenance` deleted. The bill-provenance deploy this was blocking is itself now live in production.
 2. **D** — one-line addition to `apply-local-patches.sh` (push `ddp main`), ships independently, no risk
 3. **E** — delete the already-stale `fix/fl-floor-vote-source-url` branch (local + `origin`) now, as cleanup
 4. **G** — clarify the script's header comment while D/H are already touching the file
@@ -260,8 +267,12 @@ same monthly-or-opportunistic cadence — it only removes the per-commit script-
 
 - Is monthly the right cadence for B, or should it be tied to backfill/session-start events
   instead (FL's session opens ~November — natural checkpoint)?
-- Should the upstream merge in B be a required gate before *any* historical backfill (2023
-  regular is still unstarted — worth doing the first sync before that, not after)?
+- Should the upstream merge in B be a required gate before *any* historical backfill? **Moot for
+  2023 regular specifically — it already ran and finished 2026-07-25 05:24 EDT (1,828 bills, 2,601
+  vote events, 0 errors) without B ever having been done.** Worth deciding for the *next* backfill,
+  not this one — and worth noting the 2023 data now sitting in the replica was scraped by code that
+  may still be missing whatever upstream fixes have landed in the 22,098-commit gap, same risk
+  class as the FL floor-vote bug this plan already documents.
 - Does anyone besides this Mac need `ddp/main` (core) to be current — e.g., would a second
   engineer cloning the fork expect it to be usable standalone? If not, D may be lower priority
   than it looks.
