@@ -574,6 +574,12 @@ Document here so the work is scoped when the time comes. Do not execute until th
       auto-chained into `2023` which finished 2026-07-25 05:24 EDT (1,828 bills, 2,601 vote
       events). Combined with specials + 2025 (already done), the replica now holds all FL
       sessions 2023+. See [[project-fl-historical-backfill]].
+- [x] **FL's automated scrape schedule re-enabled, 2026-07-25.** `ddp-sync`'s `openstates_fl_scrape`
+      job had been paused (`config/sync_schedule.yaml`, `enabled: false`) since 2026-07-24 to keep
+      the historical backfill above from colliding with a scheduled run against the same shared
+      `_data/fl` folder. With both sessions confirmed finished, re-enabled and `ddp-sync` restarted
+      — confirmed live via `GET /ddp-sync/v1/schedule`, `openstates_fl_scrape` now shows next run
+      2026-07-26 02:00 UTC (weekly, Sunday, per the existing out-of-session cadence).
 - [ ] **Org/person-resolution gaps at import time — NOT FL-specific, confirmed across most
       jurisdictions (found 2026-07-25, extended 2026-07-25).** Every completed FL historical
       import (2024, 2025, 2023 regular) logs import-time errors from pupa: `cannot resolve pseudo
@@ -639,9 +645,12 @@ Document here so the work is scoped when the time comes. Do not execute until th
       - Severity is low for bill-text/status use cases (nothing here affects bill data itself) but
         should be sized — especially for MA — before this data is used for committee-level,
         agency-attribution, or per-legislator vote analysis.
-- [ ] **Off-host backup (WS9, `PLAN-production-hardening.md`)** — still blocked on AWS creds.
-      The replica DB's only backup today lives on the same Mac's disk as the live data — a
-      real single point of failure now that prod partially depends on this replica.
+- [x] **Off-host backup (WS9, `PLAN-production-hardening.md`)** — **DONE, found already resolved
+      while updating this checklist 2026-07-25.** No longer blocked on AWS creds: `backup-openstates-db.sh`
+      now pushes nightly `pg_dump`s off-host via the `ddp-prod-s3-openstates-backups` proxy wrapper
+      (commit `0276b3a`, merged via PR #7 `fix/ws9-s3-proxy-wrapper`), and `com.ddp.openstates-db-backup`
+      already runs this nightly at 07:00 local as a system LaunchDaemon (`ddp-infra/README.md`). This
+      item was stale on this branch — the fix landed on `main` while this branch sat unmerged.
 - [x] Confirm the `DDP_OPENSTATES_JURISDICTIONS` value in the *actual* EC2 deployment matches
       the local checkout's `.env` (`US,FL,MI,AZ,VA,WA,UT`) — **CONFIRMED 2026-07-23: it does
       NOT match.** Prod runs the code default (`UT,MI` only); the local `.env`'s wider list has
