@@ -29,6 +29,18 @@ upstream `v3.openstates.org` API to this local `openstates-api` container (`10.0
 Whenever that cutover happens, whatever's "fixed" in the local fork needs to actually be
 running in the container it points to — right now it wouldn't be.
 
+**Re-checked 2026-07-24/25, and this is less urgent than "Net effect" above makes it sound.**
+`api-v3` only imports two things from the `openstates` package: `openstates.metadata.lookup`
+(`api-v3/api/utils.py:3`) and `openstates.utils.transformers.fix_bill_id`
+(`api-v3/api/bills.py:8`) — nothing else. None of DDP's current cherry-picked patches (motion
+classification, the FL/VA/AZ scraper fixes, the `CACHE_DIR` env fix) touch either of those two
+functions. So today, nothing is actually being silently missed — the drift is real but inert
+against `api-v3`'s current, narrow usage surface. It becomes a live problem only if/when either
+(a) a future patch actually touches `metadata.lookup` or `fix_bill_id` themselves, or (b)
+`api-v3` starts importing more of the package (e.g. as part of the VoteBot/DDP-API cutover this
+note already flags). Don't read "Net effect" above as "something is broken right now" — it
+isn't; treat this as a drift risk to close before that cutover, not an active incident.
+
 ## Suggested fix (not yet applied)
 
 Point `api-v3`'s dependency at the local fork instead of PyPI — e.g. a path or git dependency
@@ -37,6 +49,21 @@ in `api-v3/pyproject.toml`/`poetry.lock` targeting `openstates-core`, or have
 checkout — then rebuild `ddp-openstates-api-1` and confirm the patched commits are present
 inside the running container (e.g. `docker exec ddp-openstates-api-1 pip show openstates`
 should show the fork's version/patches, not `6.17.3` from PyPI).
+
+**Open gap in this fix, not addressed above: how does `api-v3` stay current afterward?**
+Pointing at the fork only fixes the version installed *at image-build time* — the host
+toolchain venv had this exact same problem and it took an editable install (`pip install -e`)
+plus a manually-maintained cherry-pick list to actually stay current, not just a one-time
+version bump (see `notes/scraper-status-and-pydantic-break-20260713.md`). If `api-v3`'s image
+does a one-shot `pip install` from a git ref, it drifts stale again the moment the fork moves,
+with nothing forcing a rebuild — same failure mode as this note describes, one layer up. Needs
+either a rebuild trigger tied to whatever refreshes the fork (see
+`PLAN-fork-management.md`'s `apply-local-patches.sh` cadence), or an explicit decision that
+`api-v3` gets manually rebuilt on its own schedule and that's an accepted tradeoff. Also worth
+deciding, if this fix goes forward: point `api-v3` at `cherry-pick-line` (see
+`PLAN-fork-management.md` recommendation H, added 2026-07-25) rather than a fixed commit/tag, for
+the same "don't hand-list versions to track" reasoning that motivated that branch in the first
+place.
 
 ## Evidence pointers
 
