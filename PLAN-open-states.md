@@ -566,20 +566,51 @@ Document here so the work is scoped when the time comes. Do not execute until th
       was routed there before the fix, some House votes served to prod during that window may
       be missing. Run a targeted vote-count check (or a full `quality_check.py` diff) for FL's
       current session(s) before fully trusting this data.
-- [ ] **FL historical backfill (2023/2024 regular)** — not yet landed as of last confirmed run.
-      **Update (2026-07-24):** the root-cause fix (`db7ab1cc0`, "use `self.source.url` instead
-      of nonexistent `self.url` in FloorVote") **has now merged** — `openstates-scrapers` PR #6
-      (`fix/fl-floor-vote-source-url`) landed on that fork's `main`, along with a related
+- [x] **FL historical backfill (2023/2024 regular)** — **DONE 2026-07-25.** The root-cause fix
+      (`db7ab1cc0`, "use `self.source.url` instead of nonexistent `self.url` in FloorVote")
+      merged via `openstates-scrapers` PR #6 (`fix/fl-floor-vote-source-url`), along with a
       follow-up fix (`2f1754d2f`, skip a vote whose reconciled tally doesn't add up instead of
-      crashing). Separately, `ddp-open-states` PR #3 (`fix/report-scrape-failures-to-cams`) also
-      merged, wiring scrape/import failures into CAMS's failure listener, and
-      `apply-local-patches.sh` now auto-syncs the `openstates-scrapers` checkout back to `main`
-      on every run (closing the "stuck on a stale branch for 2 days" gap that let this failure
-      recur unnoticed 07-21/22/23). **Not yet confirmed:** no successful FL 2024 backfill run has
-      landed in `logs/backfill/fl_2024.log` since the fix merged — last entry is still the
-      07-23 14:29:26 failure, predating the fix. Watch the next scheduled run to confirm it
-      actually clears; if it does, 2023 regular (queued behind 2024) and the old-DB decommission
-      in `PLAN-production-hardening.md` can both proceed.
+      crashing). `2024` retried clean 2026-07-24 15:20 EDT (1,902 bills, 0 errors), then
+      auto-chained into `2023` which finished 2026-07-25 05:24 EDT (1,828 bills, 2,601 vote
+      events). Combined with specials + 2025 (already done), the replica now holds all FL
+      sessions 2023+. See [[project-fl-historical-backfill]].
+- [ ] **FL committee/org-resolution gaps across historical sessions (found 2026-07-25).** Every
+      completed FL historical import (2024, 2025, 2023 regular — not just 2023) logs import-time
+      errors from pupa: `cannot resolve pseudo id to Organization: ~{"name": "<committee>"}` and
+      `no people returned for spec`. Counts, isolated from the shared/interleaved
+      `logs/scraper.log` by bounding each session's own `Scrape done: fl. Starting import...` →
+      `Import done: fl.` block:
+      | session | bills | vote_events | unresolved orgs (unique) | no-people-returned |
+      |---|---|---|---|---|
+      | 2024 | 1,902 | 2,607 | 57 | 33 |
+      | 2025 | 1,959 | 2,148 | 56 | 13 |
+      | 2023 | 1,828 | 2,601 | 56 | 8 |
+
+      **Root cause (from `openstates-scrapers/scrapers/fl/bills.py`):** committee-attributed bill
+      actions and committee votes are recorded with a raw committee-name string (e.g.
+      `self.input.add_action(action, date, organization=actor, ...)` at `bills.py:444-450`, and
+      the equivalent for committee vote events) rather than a pre-resolved Organization reference.
+      Pupa's importer resolves that string by name-matching against Organizations already scraped
+      for the jurisdiction. FL's committee structure is rebuilt each 2-year term (committees get
+      renamed/merged/split between terms — e.g. `"Higher Education Appropriations Subcommittee"`,
+      `"Agriculture & Natural Resources Appropriations Subcommittee"`), and the FL org/people
+      scrape only ever captures the *currently active* committee roster (whatever's live on
+      flsenate.gov/flhouse.gov at scrape time). Historical-session committees that no longer exist
+      under the same name fail to resolve — the bill/vote record still imports (no data loss at
+      the bill/vote-event level; `bill`/`vote_event` counts above are all "new", none dropped),
+      but the committee (Organization) attribution on that action/vote is silently left unset.
+      Same shape for `no people returned for spec`: specific individual voters on some historical
+      roll calls can't be matched to a current Person record, so those particular vote choices
+      (not the whole VoteEvent) are dropped from the roll call.
+      **Not yet assessed / next steps:**
+      - Whether this is FL-specific (other jurisdictions likely rename committees on a similar
+        cadence and could have the same failure mode — not checked yet for AZ/MI/UT/VA/WA/MA).
+      - Whether a per-session historical committee/people scrape, or a small lookup table mapping
+        renamed committees across terms, is worth building — vs. just documenting the gap as a
+        known limitation of committee-level FL analysis pre-2026.
+      - Severity is low for bill-text/status use cases (nothing here affects bill data itself)
+        but should be sized before FL backfill data is used for committee-level or per-legislator
+        vote analysis, where the missing attribution/votes would matter.
 - [ ] **Off-host backup (WS9, `PLAN-production-hardening.md`)** — still blocked on AWS creds.
       The replica DB's only backup today lives on the same Mac's disk as the live data — a
       real single point of failure now that prod partially depends on this replica.
