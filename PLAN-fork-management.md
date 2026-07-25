@@ -66,17 +66,40 @@ handling ever need to diverge.
 
 ### `openstates-scrapers` — the real, active gap
 
-Checked 2026-07-24: `Digital-Democracy-Project/openstates-scrapers`'s `main` is **22,098
-commits behind** `openstates/openstates-scrapers`'s `main` (upstream's most recent commit:
-`be55e4fc2`, merged 2026-07-23 — this project is very actively maintained upstream). Every
-per-state bug fix landing upstream for FL, WA, VA, MI, MA, UT, AZ, or USA is invisible to us
-unless we independently rediscover and fix it ourselves (as just happened with the FL
-floor-vote bug — see `project-fl-historical-backfill` memory).
+Checked 2026-07-24, and the raw number **re-verified and corrected 2026-07-25** after Ramon
+questioned it (rightly): `git log main..upstream/main | wc -l` really does return **22,102**
+(re-run 2026-07-25; was 22,098 the day before — the gap grows by a handful of commits daily,
+consistent with the "11 since fork" figure below) — but that figure is **not** 22,000 commits of
+recent upstream activity, and the plan's original framing here was misleading. Breaking the same
+commit set down by year:
 
-The good news: DDP's own changes are a small, well-scoped diff (24 commits, `git merge-base
-main upstream/main` → `c999752`), almost entirely confined to individual `scrapers/<state>/`
-files. That means a merge from upstream is very unlikely to be an unmanageable conflict storm —
-but it has never been attempted, so the actual conflict surface is unverified.
+```
+2009: 333    2015: 1331   2021: 1593
+2010: 1781   2016: 606    2022: 1022
+2011: 2706   2017: 1779   2023: 1333
+2012: 2909   2018: 1105   2024: 906
+2013: 1396   2019: 545    2025: 724
+2014: 672    2020: 1033   2026: 328
+```
+
+This is essentially the public project's **entire commit history back to 2009**, not a burst of
+recent activity. `git merge-base` does find a shared ancestor (`c999752`, 2026-06-30), but a large
+share of upstream's deep history — old merge commits joining long-since-dead branches into `main`
+over 17 years — isn't reachable from that ancestor along whatever line DDP's fork's `main`
+actually follows. That's a quirk of how the fork's history was constructed, not evidence of a
+firehose of new commits. **The actual, actionable numbers:** only **11** commits have landed on
+public upstream `main` since DDP's fork was created (2026-07-17); counting only along the
+mainline (`--first-parent`, ignoring those old side-branch merges) the gap is **28** commits —
+much closer to DDP's own 30-commit diff than to 22,000. Every one of those real 11-28 commits is
+still invisible to us unless independently rediscovered (as happened with the FL floor-vote bug —
+see `project-fl-historical-backfill` memory) — the underlying risk this section exists to flag is
+real, just not at the scale the raw `wc -l` number implied.
+
+The good news, unchanged: DDP's own changes are a small, well-scoped diff (30 commits as of
+2026-07-25, was 24 on 2026-07-24 — see `git merge-base main upstream/main` → `c999752`), almost
+entirely confined to individual `scrapers/<state>/` files. That means a merge from upstream is
+very unlikely to be an unmanageable conflict storm — but it has never been attempted, so the
+actual conflict surface is unverified.
 
 ### `openstates-core` — a quieter version of the same gap
 
@@ -118,9 +141,11 @@ rebase onto a moving `main`, and nothing currently reminds anyone to do it.
    documented anywhere obvious outside the script's own comments.
 
 3. **No alerting on drift.** Nothing currently measures or reports how far either fork is
-   behind upstream. The 22,098-commit gap on `openstates-scrapers` was discovered only because
-   this conversation happened to ask about it — it could just as easily have gone unnoticed
-   indefinitely.
+   behind upstream. The `openstates-scrapers` gap (a real but modest ~11-28 commits since the fork
+   was created, see §3 — not the misleadingly large raw `git log main..upstream/main` count, which
+   includes 17 years of unrelated history) was discovered only because this conversation happened
+   to ask about it — it could just as easily have gone unnoticed indefinitely, and would only get
+   harder to eyeball correctly over time without a tool that already knows to filter it this way.
 
 ---
 
@@ -173,9 +198,11 @@ in a form the nightly script doesn't already guard against.
 Add a short manual check (or a small script, low priority) to run alongside the monthly sync:
 
 ```bash
-# scrapers: how far behind is our main?
+# scrapers: how far behind is our main? --first-parent, not a plain main..upstream/main count —
+# the latter includes 17 years of unrelated upstream history not reachable from the shared
+# merge-base along main's own line (found 2026-07-25: raw count reads ~22,000, real gap is ~28)
 cd openstates-scrapers && git fetch upstream --quiet && \
-  echo "scrapers behind upstream: $(git log --oneline main..upstream/main | wc -l)"
+  echo "scrapers behind upstream: $(git log --oneline --first-parent main..upstream/main | wc -l)"
 
 # core: does the fork's main match what we think it does?
 cd openstates-core && git fetch origin ddp --quiet && \
@@ -271,8 +298,9 @@ deleted from the script too, since nothing calls it anymore).
   2023 regular specifically — it already ran and finished 2026-07-25 05:24 EDT (1,828 bills, 2,601
   vote events, 0 errors) without B ever having been done.** Worth deciding for the *next* backfill,
   not this one — and worth noting the 2023 data now sitting in the replica was scraped by code that
-  may still be missing whatever upstream fixes have landed in the 22,098-commit gap, same risk
-  class as the FL floor-vote bug this plan already documents.
+  may still be missing whatever upstream fixes have landed in the real (much smaller than
+  originally stated — see §3) commit gap, same risk class as the FL floor-vote bug this plan
+  already documents.
 - Does anyone besides this Mac need `ddp/main` (core) to be current — e.g., would a second
   engineer cloning the fork expect it to be usable standalone? If not, D may be lower priority
   than it looks.
