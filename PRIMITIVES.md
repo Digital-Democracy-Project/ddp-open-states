@@ -87,8 +87,14 @@ should reuse rather than reimplement:
 **Scrapers and core are on different conventions — know which one you're touching:**
 - `openstates-scrapers` is a **formal DDP org fork** (`Digital-Democracy-Project/openstates-scrapers`,
   since 2026-07-03). Fork `main` IS the patched state — no cherry-picking, no local branch
-  rebuild. Day-to-day: `git checkout -b feat/x` → PR to fork `main`. This script does **not**
-  touch it anymore (that block was retired in `8cca7a2`, Phase 2 of the fork plan).
+  rebuild. Day-to-day: `git checkout -b feat/x` → PR to fork `main`. The cherry-pick/rebuild
+  block was retired here in `8cca7a2` (Phase 2 of the fork plan) — **but a different, much
+  smaller block was added back on 2026-07-23**: a plain `git checkout main && git pull origin
+  main`, after a merged fix branch (`fix/fl-floor-vote-source-url`) sat checked out for 2 days,
+  silently feeding stale code to a running scrape. This is a freshness/safety guard, not a
+  patch-application step — it just keeps the checkout from drifting off of `main` — but it does
+  mean this script touches `openstates-scrapers` again, contrary to the previous version of this
+  note. See `PLAN-fork-management.md` §2 for the full reasoning.
 - `openstates-core` still uses the **older cherry-pick convention**: this script does
   `git checkout main && git pull && git branch -D local-patches && git checkout -b local-patches`,
   then cherry-picks a short list of DDP-only fixes not yet merged upstream (currently just
