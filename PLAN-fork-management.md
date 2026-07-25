@@ -189,6 +189,12 @@ Low priority: update the script's header comment to name the two halves' actual 
 purposes (core = patch rebuild, still load-bearing; scrapers = checkout freshness/safety guard,
 no patching left) so the naming doesn't mislead a future reader. No behavior change.
 
+**Done 2026-07-24:** `PRIMITIVES.md`'s own `apply-local-patches.sh` entry was found to be stale
+during an unrelated cross-check — it still said the script "does not touch
+[openstates-scrapers] anymore," which stopped being true the moment the 2026-07-23
+checkout+pull safety net (§2 above) was added. Corrected in `PRIMITIVES.md` directly. The
+script's own header comment (the original scope of this item) is still open.
+
 ---
 
 ## 6. Implementation Order
