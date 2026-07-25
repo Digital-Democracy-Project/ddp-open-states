@@ -574,43 +574,71 @@ Document here so the work is scoped when the time comes. Do not execute until th
       auto-chained into `2023` which finished 2026-07-25 05:24 EDT (1,828 bills, 2,601 vote
       events). Combined with specials + 2025 (already done), the replica now holds all FL
       sessions 2023+. See [[project-fl-historical-backfill]].
-- [ ] **FL committee/org-resolution gaps across historical sessions (found 2026-07-25).** Every
-      completed FL historical import (2024, 2025, 2023 regular — not just 2023) logs import-time
-      errors from pupa: `cannot resolve pseudo id to Organization: ~{"name": "<committee>"}` and
-      `no people returned for spec`. Counts, isolated from the shared/interleaved
-      `logs/scraper.log` by bounding each session's own `Scrape done: fl. Starting import...` →
-      `Import done: fl.` block:
-      | session | bills | vote_events | unresolved orgs (unique) | no-people-returned |
-      |---|---|---|---|---|
-      | 2024 | 1,902 | 2,607 | 57 | 33 |
-      | 2025 | 1,959 | 2,148 | 56 | 13 |
-      | 2023 | 1,828 | 2,601 | 56 | 8 |
+- [ ] **Org/person-resolution gaps at import time — NOT FL-specific, confirmed across most
+      jurisdictions (found 2026-07-25, extended 2026-07-25).** Every completed FL historical
+      import (2024, 2025, 2023 regular) logs import-time errors from pupa: `cannot resolve pseudo
+      id to Organization: ~{"name": "<name>"}` and `no people returned for spec`. Checked the
+      other 6 tracked jurisdictions the same way (bounding each jurisdiction's own `Scrape done:
+      <j>. Starting import...` → `Import done: <j>.` block in `logs/scraper.log`/archived
+      `.gz` logs, to avoid the shared-log interleaving trap — a naive whole-file grep picks up
+      other jurisdictions' errors too):
 
-      **Root cause (from `openstates-scrapers/scrapers/fl/bills.py`):** committee-attributed bill
-      actions and committee votes are recorded with a raw committee-name string (e.g.
-      `self.input.add_action(action, date, organization=actor, ...)` at `bills.py:444-450`, and
-      the equivalent for committee vote events) rather than a pre-resolved Organization reference.
-      Pupa's importer resolves that string by name-matching against Organizations already scraped
-      for the jurisdiction. FL's committee structure is rebuilt each 2-year term (committees get
-      renamed/merged/split between terms — e.g. `"Higher Education Appropriations Subcommittee"`,
-      `"Agriculture & Natural Resources Appropriations Subcommittee"`), and the FL org/people
-      scrape only ever captures the *currently active* committee roster (whatever's live on
-      flsenate.gov/flhouse.gov at scrape time). Historical-session committees that no longer exist
-      under the same name fail to resolve — the bill/vote record still imports (no data loss at
-      the bill/vote-event level; `bill`/`vote_event` counts above are all "new", none dropped),
-      but the committee (Organization) attribution on that action/vote is silently left unset.
-      Same shape for `no people returned for spec`: specific individual voters on some historical
-      roll calls can't be matched to a current Person record, so those particular vote choices
-      (not the whole VoteEvent) are dropped from the roll call.
+      | jurisdiction | sample | bills | vote_events | unresolved orgs (unique) | no-people-returned |
+      |---|---|---|---|---|---|
+      | FL 2024 | full | 1,902 | 2,607 | 57 | 33 |
+      | FL 2025 | full | 1,959 | 2,148 | 56 | 13 |
+      | FL 2023 | full | 1,828 | 2,601 | 56 | 8 |
+      | **MA** | full (2026-06-16, pre-vote-fix) | 10,891 | — | **215** | **348** |
+      | VA | incremental (2026-07-18) | 27 new/213 upd | 12 new/8 upd | 0 | 28 |
+      | UT | incremental (2026-06-22) | 5 new/1016 upd | 10 new/1907 upd | 0 | 4 |
+      | UT | incremental (2026-07-11) | 0 new/1021 upd | — | 0 | 0 |
+      | WA | full (2026-06-23) | 0 new/3411 upd | 0 new/2302 upd | 0 | 1 |
+      | AZ | incremental (2026-07-18) | 896 noop only | — | 0 | 0 |
+      | MI | incremental (2026-07-18) | 36 new | — | 0 | 0 |
+
+      **MA is worse than FL, not better** — 215 unique unresolved orgs and 348 no-people errors on
+      a 10,891-bill full import. But note the sample predates the MA vote-scraping fixes (broken
+      yield chain + case-sensitivity, see [[project-ma-votes]] / `project-ma-votes.md`,
+      2026-06-22) and no full re-import has run since, so this number may not reflect current
+      behavior — needs a fresh full MA import to re-measure. **VA** shows a real but smaller
+      no-people gap (28 errors on just 12 new vote events — a high ratio for such a small run) with
+      zero org-resolution errors. **UT/WA** show only trace amounts. **AZ/MI** show zero, but both
+      samples were thin (AZ was pure no-op/noop-only, MI only 36 new bills) — not strong evidence
+      of absence, just no evidence yet either way.
+
+      **Root cause differs by jurisdiction, same failure shape:** in FL
+      (`openstates-scrapers/scrapers/fl/bills.py:444-450`,
+      `self.input.add_action(action, date, organization=actor, ...)`), bill actions/committee
+      votes are recorded with a raw committee-name string rather than a resolved Organization
+      reference, and pupa's importer resolves that string by name-matching against Organizations
+      already scraped for the jurisdiction. FL's failure mode is **temporal**: committees are
+      renamed/restructured every 2-year term (e.g. `"Higher Education Appropriations
+      Subcommittee"`), and the org/people scrape only ever captures the *currently active* roster,
+      so historical-session committees fail to resolve. MA's unresolved names
+      (`"Attorney General"`, `"Auditor of the Commonwealth"`, `"Bristol District Attorney"`,
+      `"Cannabis Control Commission"`, etc. — sampled from the 215) are **not** legislative
+      committees at all — they're external entities (agencies, boards, district attorneys) that
+      bill actions reference (e.g. "referred to the Attorney General") but that MA's org/people
+      scrape was never going to capture, since it only scrapes the legislature itself. So this is
+      a **categorical** mismatch for MA, not a renaming problem — a different root cause with the
+      same symptom. VA/UT's smaller people-resolution gaps haven't been root-caused yet.
+
+      In all cases the bill/vote-event record itself still imports (no data loss at that level —
+      the `bill`/`vote_event` counts above are all "new"/"updated", none dropped); only the
+      Organization attribution on the affected action/vote, or the affected individual voter's
+      choice within an otherwise-complete roll call, is silently left unset/missing.
+
       **Not yet assessed / next steps:**
-      - Whether this is FL-specific (other jurisdictions likely rename committees on a similar
-        cadence and could have the same failure mode — not checked yet for AZ/MI/UT/VA/WA/MA).
-      - Whether a per-session historical committee/people scrape, or a small lookup table mapping
-        renamed committees across terms, is worth building — vs. just documenting the gap as a
-        known limitation of committee-level FL analysis pre-2026.
-      - Severity is low for bill-text/status use cases (nothing here affects bill data itself)
-        but should be sized before FL backfill data is used for committee-level or per-legislator
-        vote analysis, where the missing attribution/votes would matter.
+      - Re-run a full MA import post-vote-fix to get a current, trustworthy MA number.
+      - Root-cause VA/UT's people-resolution gaps (legislator name-matching? term/session
+        boundary issue like FL's, or something else?).
+      - Decide per-jurisdiction whether this is worth fixing (e.g. a per-session historical
+        committee/people scrape for FL/MA-style term changes; MA may instead need its
+        org/people scraper extended to cover the external-entity types bill actions reference) or
+        just documenting as a known limitation.
+      - Severity is low for bill-text/status use cases (nothing here affects bill data itself) but
+        should be sized — especially for MA — before this data is used for committee-level,
+        agency-attribution, or per-legislator vote analysis.
 - [ ] **Off-host backup (WS9, `PLAN-production-hardening.md`)** — still blocked on AWS creds.
       The replica DB's only backup today lives on the same Mac's disk as the live data — a
       real single point of failure now that prod partially depends on this replica.
