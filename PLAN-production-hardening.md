@@ -7,10 +7,20 @@ rounds of PM review at `ship_with_caution`).
 (live cutover on :8002 + scrapers repointed + launchd/watchdog/restart-policy supervision),
 **WS4** (container log caps + in-script `scraper.log` rotation), **WS5** (health-probe readiness check, ddp-agents), **WS6** (health alerts
 → direct Slack, Zapier dropped, ddp-sync), **WS7** (incremental no-op fix + worktree lock;
-scheduler verified). **Functional tests passed** (API 15/15 incl. auth/Redis + pagination;
+scheduler verified), **WS9** (off-host S3 backups — see 2026-07-25 update below).
+**Functional tests passed** (API 15/15 incl. auth/Redis + pagination;
 API⇄:5433 consistency; restart-on-crash; scraper→:5433 write proof via sentinel).
-**Pending:** WS8a (optional proxy tweaks, ddp-api), WS9 (off-host S3 — **blocked on AWS creds**),
-old-DB decommission (after soak — see WS0b update below).
+**Pending:** WS8a (optional proxy tweaks, ddp-api), old-DB decommission (after soak — see WS0b update below).
+**Update 2026-07-25 — WS9 unblocked, but not via the AWS-creds-on-the-Mac path this workstream
+originally assumed.** Ramon built a `sudo`-gated proxy (`ddp-prod-s3-openstates-backups`,
+root-owned credentials under `/usr/local/ddp-db-proxy/` — see
+`ddp-infra/Production_S3_Wrappers.md`) instead of installing raw AWS CLI credentials on the Mac.
+`backup-openstates-db.sh` now calls that wrapper directly instead of `aws s3 cp`; verified live
+with a real 161MB dump landing in `s3://ddp-openstates-backups/db/`, including a re-run under
+the real nightly launchd job's minimal `PATH` (a bare-name call to the wrapper would have
+silently failed there — fixed by calling it via full path). The bucket-name/
+region/IAM-least-privilege spec below (bucket, retention, IAM policy) is otherwise unchanged —
+just accessed through the wrapper rather than a locally-configured `aws` profile.
 **Update 2026-07-17 — WS3 supervision superseded:** the GUI-LaunchAgent design described in
 §5 WS3 below (verified-by-construction via auto-login + `RunAtLoad`) was replaced by a real
 **system LaunchDaemon** for `com.ddp.openstates-api` and `com.ddp.openstates-db-backup`, as
@@ -887,52 +897,76 @@ is a *container* path. So today there is **no off-host backup of anything** on t
 Establishing this path benefits both the openstates DB dumps (WS0b) and, finally, the intended
 CAMS artifact backup.
 
-> **PREREQUISITE / OPEN DEPENDENCY:** an AWS account + IAM credentials with write to a bucket
-> (reuse `ddp-cams-artifacts` or a new `ddp-openstates-backups`). **This is the one thing that
-> blocks WS9 and needs you** — everything else is local. Until it exists, WS0b's *local* nightly
-> dump still runs; it just isn't copied off-host yet.
+> **PREREQUISITE — RESOLVED 2026-07-25, via a different path than originally planned.** This
+> workstream assumed a raw AWS account + IAM credentials installed on the Mac (`~/.aws/`).
+> Instead, Ramon built a tighter access model: a root-owned proxy under
+> `/usr/local/ddp-db-proxy/` holding the real AWS credentials, exposed only through a
+> `sudo`-gated wrapper command (`ddp-prod-s3-openstates-backups`) — see
+> `ddp-infra/Production_S3_Wrappers.md`. No `aws` CLI, no `~/.aws/`, no raw key anywhere in this
+> sandbox. Functionally equivalent for this workstream's purposes (put/get/list on the bucket,
+> no delete) but arrived at differently — steps below updated to match what's actually live.
 
-Steps once creds exist:
-1. `brew install awscli`; `aws configure` (or drop a scoped profile in `~/.aws/`). Store creds
-   outside the repo; keep them out of compose files and logs.
-2. Extend `backup-openstates-db.sh` (WS0b) to push after the local dump, with a bounded retry
-   and a Slack alert on failure (the dump + upload must be monitored, not just the API):
+Steps (done unless marked otherwise):
+1. ~~`brew install awscli`; `aws configure`~~ — **not applicable.** The wrapper needs no local
+   AWS config; `ddp-prod-s3-openstates-backups` is already on `PATH` (`~/bin`).
+2. **Done** — `backup-openstates-db.sh` (WS0b) now pushes after the local dump, with a bounded
+   retry and a Slack alert on failure, exactly as originally designed except calling the proxy
+   wrapper instead of `aws s3 cp` directly (the wrapper sets `STANDARD_IA` itself — don't pass a
+   storage-class flag):
    ```bash
-   # aws s3 cp already retries transient errors; add a small outer retry + alert-on-failure
+   ok=0
    for attempt in 1 2 3; do
-     aws s3 cp "$OUT/openstates_${STAMP}.dump" \
-       "s3://ddp-openstates-backups/db/openstates_${STAMP}.dump" \
-       --storage-class STANDARD_IA && ok=1 && break
-     sleep $((attempt * 10))
+       if ddp-prod-s3-openstates-backups put "$DUMP" "db/$(basename "$DUMP")"; then
+           ok=1; break
+       fi
+       sleep $((attempt * 10))
    done
-   if [ "${ok:-0}" != 1 ]; then
-     curl -sf --max-time 10 -X POST https://slack.com/api/chat.postMessage \
-       -H "Authorization: Bearer $SLACK_BOT_TOKEN" -H "Content-Type: application/json" \
-       -d '{"channel":"#automation-errors","text":":red_circle: openstates DB backup -> S3 FAILED"}' >/dev/null || true
+   if [ "$ok" != 1 ]; then
+       log "ERROR: S3 upload failed"; slack_fail
+   else
+       log "uploaded -> s3://ddp-openstates-backups/db/$(basename "$DUMP")"
    fi
    ```
-   Likewise alert if the *local* `pg_dump` exits non-zero (wrap the WS0b dump in the same
-   check) — a silent backup failure is the failure mode we most want to catch.
+   Verified live 2026-07-25 with a real 161MB dump — landed at
+   `s3://ddp-openstates-backups/db/openstates_20260725T042633Z.dump`, confirmed via
+   `ddp-prod-s3-openstates-backups ls db/`. Local `pg_dump` failure already alerts via the
+   existing `slack_fail` (unchanged from before this workstream).
 
-**Backup spec (nail down before building):**
-- **Bucket:** `ddp-openstates-backups` (or a prefix under the existing `ddp-cams-artifacts`) —
-  your call when creds are provisioned. **Region:** match the existing DDP S3 region.
-- **Retention:** S3 lifecycle rule expiring objects after **30 days**; local keep-7.
-- **IAM (least privilege):** a scoped policy allowing only `s3:PutObject`/`s3:GetObject`/
-  `s3:ListBucket` on `arn:aws:s3:::ddp-openstates-backups/*` — no broad `s3:*`.
-- **Schedule:** nightly at **11:00 UTC** — after the daily scrapes finish (USA ~09:00) and
-  clear of the FL/USA import windows (FL 02:00, WA 02:30, USA 03:00). Document the time + TZ.
-3. **Restore drill (do once, document the real time):** pull a dump from S3 and restore into a
-   throwaway container; confirm it round-trips and time it (validates the "~1–2 min" estimate).
-4. **Bonus — finish the CAMS artifact backup** the script intended: fix `LOCAL_DIR` to the real
-   host artifacts path and schedule `backup-artifacts.sh` via launchd. (Tracked in `ddp-agents`;
-   in scope per stakeholder since we're wiring S3 anyway.)
+**Backup spec:**
+- **Bucket:** `ddp-openstates-backups`, **region:** `us-east-1`. Both confirmed live.
+- **Retention:** S3 lifecycle rule expiring objects after **30 days** (bucket-level, not
+  enforced by the app) — **not yet confirmed set on the actual bucket; verify with Ramon,
+  since the wrapper's proxy setup doesn't expose lifecycle config from this side.**
+- **IAM (least privilege):** confirmed at the wrapper-behavior level — `put`/`get`/`ls`/`info`
+  only, no delete command exposed at all. The wrapper calls a separate root-owned proxy script
+  (`s3-openstates-backups.sh`) from the one backing the bill-archive bucket (`s3-bill-archive.sh`
+  — see `ddp-infra/PLAN-bill-document-provenance.md` Phase 2), so this is very likely a
+  separately-scoped credential per bucket rather than one shared policy — not independently
+  verified against the actual IAM policy JSON, just inferred from the two distinct proxy scripts.
+- **Schedule:** already wired — a system LaunchDaemon (`com.ddp.openstates-db-backup`, shipped as
+  part of the WS3 supervision update above) already runs this script nightly at **07:00 local
+  = 11:00 UTC**, exactly matching the original spec. **Real gap found and fixed 2026-07-25:**
+  that launchd job's `PATH` (`/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`)
+  does not include `~/bin`, so calling the proxy wrapper by bare name
+  (`ddp-prod-s3-openstates-backups`) would have silently failed under the real nightly job even
+  though it worked in an interactive shell — confirmed by running the script under
+  `env -i` with that exact `PATH` before the fix (failed) and after (succeeded). Fixed by calling
+  the wrapper via its full path (`/Users/agentsmith/bin/ddp-prod-s3-openstates-backups`) in
+  `backup-openstates-db.sh` instead of relying on `PATH` resolution — same class of gotcha as the
+  `CACHE_DIR`/`SCRAPED_DATA_DIR` launchd `cwd=/` issue already documented in `PRIMITIVES.md`.
+3. **Restore drill — still not done.** Pull a dump from S3 and restore into a throwaway
+   container; confirm it round-trips and time it.
+4. **Bonus — CAMS artifact backup — still not done,** tracked in `ddp-agents`, unrelated to
+   whether this Mac now has S3 access.
 
-**Encryption:** legislative data is public, so dump encryption isn't required; S3 default
-server-side encryption (SSE-S3) is free and fine. No PII handling needed.
+**Encryption:** legislative data is public, so dump encryption isn't required; confirmed
+`ServerSideEncryption: AES256` (SSE-S3) is applied automatically by the proxy — no extra work
+needed. No PII handling needed.
 
-**Acceptance:** a nightly dump lands in S3; the documented restore drill succeeds from an S3
-object; (bonus) CAMS artifacts appear in the bucket on schedule.
+**Acceptance:** ✅ a dump lands in S3 nightly, on the already-live `com.ddp.openstates-db-backup`
+schedule (verified both manually and under the launchd job's actual minimal environment,
+2026-07-25); ⬜ the documented restore drill; ⬜ (bonus) CAMS artifacts appear in the bucket on
+schedule.
 
 ---
 
