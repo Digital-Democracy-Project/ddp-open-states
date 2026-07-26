@@ -126,11 +126,39 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1). Gated per-
 # jurisdiction via ARCHIVE_ENABLED_STATES (activate.sh) so a new jurisdiction's first-ever run
 # (a full historical backfill, not an incremental update) only happens once explicitly enabled.
+#
+# Failure handling is explicit here, not left to the ambient `set -e` + `trap ... ERR` above.
+# Found 2026-07-26: when this function is called from finish_no_op() (the incremental-no-op
+# path), which is itself invoked from inside an `if [ "$rc" -ne 0 ]; then ... fi` block, a
+# failing command inside archive_if_enabled() still halts the script via set -e (confirmed:
+# nothing after the crash ever runs) but the ERR trap never fires -- a real bash quirk, verified
+# with an isolated repro, not assumed. That's exactly the class of failure this alerting exists
+# to catch, and it went completely unreported: no Slack message, no CAMS failure report, despite
+# both tokens being configured. Explicit handling here doesn't depend on which branch called this
+# function. Same single-fire discipline as the main scrape/import failure path below
+# ("Alert once (disable the ERR trap so it can't double-fire)") -- this only ever runs once per
+# invocation: os-text-extract archive dies on its first unhandled exception rather than looping
+# through remaining bills (confirmed from the 2026-07-25/26 incident's traceback), and this
+# function itself is only ever called once per script run (from finish_no_op() OR the main flow,
+# never both).
 archive_if_enabled() {
     case ",${ARCHIVE_ENABLED_STATES:-}," in
         *",$STATE,"*)
             log "Archiving bill documents: $STATE..."
-            $OS_TEXT_EXTRACT archive "$STATE" >> "$LOG_DIR/scraper.log" 2>&1
+            ARCHIVE_OUT=$(mktemp)
+            $OS_TEXT_EXTRACT archive "$STATE" 2>&1 | tee "$ARCHIVE_OUT" >> "$LOG_DIR/scraper.log"
+            archive_rc="${PIPESTATUS[0]}"  # tee's own exit code, not os-text-extract's, would mask a real failure
+            if [ "$archive_rc" -ne 0 ]; then
+                FAILURE_MESSAGE=$(grep -E '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception): ' "$ARCHIVE_OUT" 2>/dev/null | tail -1)
+                FAILURE_ERROR_TYPE=$(echo "$FAILURE_MESSAGE" | grep -oE '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception)')
+                FAILURE_ERROR_TYPE="${FAILURE_ERROR_TYPE:-ArchiveFailure}"
+                FAILURE_MESSAGE="${FAILURE_MESSAGE:-bill-document archive failed for $STATE (see logs/scraper.log)}"
+                rm -f "$ARCHIVE_OUT"
+                trap - ERR  # alert once, can't double-fire
+                on_failure
+                exit 1
+            fi
+            rm -f "$ARCHIVE_OUT"
             log "Archiving done: $STATE."
             ;;
         *)
