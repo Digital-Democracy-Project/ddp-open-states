@@ -17,6 +17,14 @@ voter_id, and it's a pure identifier lookup against PersonIdentifier -- no
 name matching, so it can't introduce a *new* wrong match, only fill in ones
 the fixed importer would now get right on the next scrape anyway.
 
+Scoped to US Congress and to the bioguide/lis schemes the fixed scraper
+actually emits: `note` isn't a stable identifier repo-wide (e.g. GA's
+scraper stores a district number in `note`), so matching it against every
+jurisdiction/scheme could coincidentally collide with an unrelated person's
+identifier and misattribute a vote. Restricting to US Congress + those two
+schemes keeps the "can only fill in, never introduce a wrong match"
+guarantee true.
+
 Safe to re-run: rows already resolved (by this script or a subsequent
 scrape) are excluded by the `voter_id IS NULL` filter.
 
@@ -39,29 +47,40 @@ DB_CONFIG = {
     "password": os.getenv("OPENSTATES_DB_PASSWORD", "openstates_dev"),
 }
 
+# Only the US Congress scraper passes a stable per-person identifier
+# (bioguide/lis_id) through `note`/`id`. Other scrapers reuse `note` for
+# unrelated data (e.g. GA stores a district number there), so this backfill
+# must not treat their `note` values as identifiers to look up.
+US_JURISDICTION_ID = "ocd-jurisdiction/country:us/government"
+IDENTIFIER_SCHEMES = ("bioguide", "lis")
+
 FETCH_NULL_VOTES_SQL = """
-    SELECT id, note
-    FROM opencivicdata_personvote
-    WHERE voter_id IS NULL AND note IS NOT NULL AND note != ''
+    SELECT pv.id, pv.note
+    FROM opencivicdata_personvote pv
+    JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
+    JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
+    WHERE pv.voter_id IS NULL
+      AND pv.note IS NOT NULL AND pv.note != ''
+      AND ls.jurisdiction_id = %s
 """
 
 FETCH_IDENTIFIERS_SQL = """
     SELECT pi.identifier, p.id AS person_id, p.current_role
     FROM opencivicdata_personidentifier pi
     JOIN opencivicdata_person p ON p.id = pi.person_id
+    WHERE pi.scheme IN %s
 """
 
 UPDATE_SQL = "UPDATE opencivicdata_personvote SET voter_id = %s WHERE id = %s"
 
 
 def build_identifier_map(cur):
-    """identifier value -> list of (person_id, has_current_role), scheme-agnostic
+    """identifier value -> list of (person_id, has_current_role)
 
-    Mirrors resolve_person()'s Q(identifiers__identifier=...) lookup: it
-    doesn't care which scheme (bioguide, lis, ...) supplied the value, only
-    that it uniquely names one person.
+    Mirrors resolve_person()'s Q(identifiers__identifier=...) lookup, scoped
+    to the bioguide/lis schemes the US Congress scraper actually emits.
     """
-    cur.execute(FETCH_IDENTIFIERS_SQL)
+    cur.execute(FETCH_IDENTIFIERS_SQL, (IDENTIFIER_SCHEMES,))
     id_map = defaultdict(list)
     for identifier, person_id, current_role in cur.fetchall():
         id_map[identifier].append((person_id, current_role is not None))
@@ -97,7 +116,7 @@ def main():
         id_map = build_identifier_map(cur)
         print(f"Loaded {len(id_map):,} distinct person identifiers.")
 
-        cur.execute(FETCH_NULL_VOTES_SQL)
+        cur.execute(FETCH_NULL_VOTES_SQL, (US_JURISDICTION_ID,))
         rows = cur.fetchall()
         print(f"Found {len(rows):,} unresolved vote records with a usable note/identifier.")
 
