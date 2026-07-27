@@ -655,6 +655,25 @@ Document here so the work is scoped when the time comes. Do not execute until th
       the local checkout's `.env` (`US,FL,MI,AZ,VA,WA,UT`) — **CONFIRMED 2026-07-23: it does
       NOT match.** Prod runs the code default (`UT,MI` only); the local `.env`'s wider list has
       not been deployed. See the correction note at the top of §8.
+- [ ] **People/roster data has no cutover path at all yet — found 2026-07-27, DDP now has its own
+      fork of `people` too.** Everything in §8.1-8.3 is about the *bills/votes* path
+      (`ddp-api` → api-v3 over WireGuard). Legislator roster data (`Role`/tenure dates) reaches
+      ddp-broker-py through a completely different mechanism: a directly-mounted git clone of
+      `openstates/people` (`OPENSTATES_PEOPLE_REPO_VOLUME_TARGET`), refreshed by a host-side
+      `git pull` — no HTTP layer, no `ddp-api` involvement, in dev *or* prod. `people` just
+      joined `openstates-core`/`openstates-scrapers` as a third DDP fork
+      (`Digital-Democracy-Project/people`, see `PLAN-fork-management.md` §1) — its first use was
+      openstates/people#3902, fixing Susan Valdés's missing FL House 2022-2024 term (found while
+      debugging why her votes from that period weren't attributable). That fix only helps
+      production once **upstream actually merges the PR** and prod's own clone re-pulls it —
+      there is currently no way for prod to read a DDP-fork-only fix (one not yet accepted
+      upstream, or never going to be) at all. Before relying on `people`-repo fixes for
+      production correctness: either (a) give prod's people-clone a path to read DDP's fork
+      directly (matching the bills/votes pattern — `ddp-api` would need a new proxied endpoint
+      or a repointed git remote, TBD which), or (b) accept that DDP-fork-only roster fixes are
+      dev-only until they land upstream, and budget for the upstream review-and-merge latency
+      when prioritizing this class of fix. Not scoped further yet — needs its own design pass,
+      probably as a new §8.1b once someone picks this up.
 
 **Not blockers** (clarifying since they're easy to conflate with the above): the WA/US-Congress
 session-alias-mapping problem (§8.3) is a **votebot**-only issue — ddp-broker-py looks up
