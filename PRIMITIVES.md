@@ -112,6 +112,13 @@ should reuse rather than reimplement:
   scraper bug, a patch-step side effect. See `RUNBOOK.md` for the current instance of this and
   the `SKIP_PATCHES=1` workaround. Don't "fix" this by adding a `git stash` here — that would
   silently blow away someone's in-progress work on `openstates-core`.
+- **`people` also has a formal DDP fork now** (`Digital-Democracy-Project/people`, since
+  2026-07-27 — first use: openstates/people#3902, Susan Valdés's missing 2022-2024 FL House
+  term). It follows `openstates-core`'s convention, not `openstates-scrapers`'s: `origin` stays
+  on public upstream so `run-people-refresh.sh`'s weekly `git pull --ff-only` — the thing a real
+  production WireGuard tunnel reads from — never silently drifts behind community data; `ddp` is
+  purely a staging remote for pushing a local fix branch and opening a PR back upstream, never a
+  pull source. See `PLAN-fork-management.md` §1 for the full reasoning.
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)
 
