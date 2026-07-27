@@ -2,29 +2,44 @@
 
 **Status:** DRAFT — analysis complete 2026-07-24, no implementation started yet.
 
-**Goal:** Both `openstates-core` and `openstates-scrapers` are now formal GitHub forks
+**Goal:** `openstates-core` and `openstates-scrapers` are formal GitHub forks
 (`Digital-Democracy-Project/openstates-core`, `Digital-Democracy-Project/openstates-scrapers`)
 rather than local-patch-only checkouts (scrapers went formal 2026-07-17, core went formal
-2026-07-19). Forking solved "how do we ship our own fixes," but nothing was ever set up to
-answer "how do we keep receiving *upstream's* fixes." This plan documents the current state,
-the gap, and a concrete process to close it.
+2026-07-19). **`people` joined them 2026-07-27** (`Digital-Democracy-Project/people`, created to
+open openstates/people#3902 — Susan Valdés's missing 2022-2024 FL House term). Forking solved
+"how do we ship our own fixes," but nothing was ever set up to answer "how do we keep receiving
+*upstream's* fixes." This plan documents the current state, the gap, and a concrete process to
+close it.
 
 ---
 
 ## 1. Current State — What Each Fork Actually Is
 
-Both repos live at `~/Developer/repos/ddp-open-states/<repo>` and are installed editable into
-the shared `.venv` (see `project-pydantic-people-fix` memory). Both have a nightly refresh step
-in `apply-local-patches.sh` (run via `ddp-sync`'s `openstates_patch_refresh` cron, 01:00 UTC).
-But the two repos use **different fork models**, and the nightly script treats them differently:
+All three repos live at `~/Developer/repos/ddp-open-states/<repo>` (`openstates-core` and
+`openstates-scrapers` are installed editable into the shared `.venv`, see
+`project-pydantic-people-fix` memory; `people` is data-only, read via `OS_PEOPLE_DIRECTORY`).
+`openstates-core`/`openstates-scrapers` have a nightly refresh step in `apply-local-patches.sh`
+(run via `ddp-sync`'s `openstates_patch_refresh` cron, 01:00 UTC); `people` has its own weekly
+step (`run-people-refresh.sh`, Sundays). All three use **different fork models**:
 
-| | `openstates-core` | `openstates-scrapers` |
-|---|---|---|
-| Local remotes | `origin` = public `openstates/openstates-core`; `ddp` = fork | `origin` = fork `Digital-Democracy-Project/openstates-scrapers`; `upstream` = public `openstates/openstates-scrapers` |
-| Fork model | Cherry-pick: nightly script rebuilds a throwaway `local-patches` branch from fresh public `main` + a short cherry-pick list | Formal: fixes land on the fork's own `main` via branch + PR, normal git history |
-| DDP's own diff surface | 1 commit (`d6653a5`, read `CACHE_DIR`/`SCRAPED_DATA_DIR` from env) | 24 commits (see §3), all scoped to specific state scraper files — WAF session fix, vote-count reconciliation, dedup, incremental `start=` filtering, motion classification, etc. |
-| What the nightly script does | `git checkout main && git pull origin main` (pulls **public** upstream directly into local `main`) → `git branch -D local-patches` → recreate from `main` → cherry-pick `d6653a5` | `git checkout main && git pull origin main` (pulls the **fork's own** `main` — never touches `upstream`) |
-| Net effect | Local working tree is fresh every night, straight from public upstream | Local working tree just re-syncs to whatever's already on the DDP fork — upstream is never consulted |
+| | `openstates-core` | `openstates-scrapers` | `people` |
+|---|---|---|---|
+| Local remotes | `origin` = public `openstates/openstates-core`; `ddp` = fork | `origin` = fork `Digital-Democracy-Project/openstates-scrapers`; `upstream` = public `openstates/openstates-scrapers` | `origin` = public `openstates/people`; `ddp` = fork |
+| Fork model | Cherry-pick: nightly script rebuilds a throwaway `local-patches` branch from fresh public `main` + a short cherry-pick list | Formal: fixes land on the fork's own `main` via branch + PR, normal git history | Cherry-pick-adjacent: `main` mirrors public upstream exactly (weekly `git pull --ff-only` in `run-people-refresh.sh`, no explicit remote → follows `origin`); the `ddp` fork only ever holds short-lived fix branches for open upstream PRs, never becomes the source `main` pulls from |
+| DDP's own diff surface | 1 commit (`d6653a5`, read `CACHE_DIR`/`SCRAPED_DATA_DIR` from env) | 24 commits (see §3), all scoped to specific state scraper files — WAF session fix, vote-count reconciliation, dedup, incremental `start=` filtering, motion classification, etc. | 1 commit so far (`8b864d85`, Valdés's missing term), on branch `fix/valdes-missing-2022-2024-term` — not on `main` |
+| What the sync step does | `git checkout main && git pull origin main` (pulls **public** upstream directly into local `main`) → `git branch -D local-patches` → recreate from `main` → cherry-pick `d6653a5` | `git checkout main && git pull origin main` (pulls the **fork's own** `main` — never touches `upstream`) | `git pull --ff-only` against `origin` (public) — the real production-critical step, since a weekly cron reads this checkout directly for role/tenure data |
+| Net effect | Local working tree is fresh every night, straight from public upstream | Local working tree just re-syncs to whatever's already on the DDP fork — upstream is never consulted | Local working tree is fresh every week, straight from public upstream; the fork is purely a staging area for contributing fixes back, never a data source |
+
+**Why `people` follows the `core` model, not the `scrapers` model:** `people` backs a live
+weekly cron (`run-people-refresh.sh` → `os-people to-database`) that real production reads from
+(this Mac's local `api-v3`, WireGuard-tunneled to `ddp-api` for FL/WA/MI/AZ/VA/UT/US — see
+`RUNBOOK.md` → "api.digitaldemocracyproject.org proxy"). Repointing `origin` at our fork would
+introduce exactly the fork-drift risk this plan already documents for `openstates-core`
+(§3 below) — the automated weekly pull would silently stop getting fresh community data the
+moment anyone forgets to sync the fork's `main`. Keeping `origin` on public upstream means the
+weekly refresh is always current by construction; `ddp` exists solely so a local fix (like
+`8b864d85`) has somewhere to be pushed from and a PR opened against upstream, exactly like
+`ddp`/`cherry-pick-line` already does for `openstates-core`.
 
 ---
 
