@@ -1619,6 +1619,109 @@ and call `on_failure` directly rather than trusting the trap to catch everything
 (`fix/archive-failure-reporting`, PR #11, 2026-07-26). Any new scrape-pipeline step going forward
 should follow this same explicit-report pattern rather than relying on the ambient trap.
 
+#### Scraper staleness watchdog (scoped 2026-07-28, not yet built)
+
+**Gap this fixes:** every failure-reporting path above fires from *inside* a `run-scrape.sh`
+invocation — an `ERR` trap or an explicit `on_failure` call. Both require the script to actually
+run and hit a recognizable failure. Neither fires when a job silently never finishes or never
+starts at all. That's exactly what happened with MA: from 2026-06-16 until the fix this session,
+the weekly MA scrape ran for ~12h against the wrong cache key every single Sunday, never crashed,
+never hit the `ERR` trap, and so never posted to Slack or CAMS — six weeks of silence despite a
+real, ongoing bug. `codebot_allowlist.yaml`/CAMS's listener is correctly wired and was verified
+working end-to-end this session; it simply had nothing to listen for, because nothing upstream of
+it can detect "this job should have produced a fresh timestamp by now and didn't."
+
+**Signal to reuse:** every `run-scrape.sh` invocation already writes `logs/last-run/<SCRAPE_KEY>.ts`
+on success (both the normal completion path and the incremental `finish_no_op()` no-op path
+touch it — see `run-scrape.sh`). A key's `.ts` mtime going stale beyond its own expected cadence
+is a direct, no-new-instrumentation signal that the job has stopped running to completion,
+whether from a hang, a silently-swallowed exception, or a scheduling problem — the exact class of
+bug that produced the MA gap.
+
+**Explicit key → cadence map** (deliberately a hardcoded allowlist, not "every file under
+`logs/last-run/`" — a growing directory of one-time historical-backfill keys must NOT be watched,
+since they are done and correctly will never produce a newer timestamp again):
+
+| Group | Keys | Expected cadence | Alert threshold |
+|---|---|---|---|
+| Daily | `fl_session_2026`, `fl_session_2026D`, `fl_session_2026E`, `fl_session_2026F`, `wa`, `usa_session_119_chamber_lower`, `usa_session_119_chamber_upper` | nightly (`run-all-scrapes.sh`, every day) | 48h (covers one missed night + buffer) |
+| Weekly | `va`, `mi`, `ut`, `az`, `ma_session_194th` | Sundays only (`run-all-scrapes.sh`'s `DAY = 7` block) | 9.5 days (covers one missed Sunday + buffer) |
+
+Explicitly **excluded** (one-time backfills, never expected to update again):
+`fl_session_2023`, `fl_session_2023B`, `fl_session_2023C`, `fl_session_2024`, `fl_session_2025`,
+`fl_session_2025A`, `fl_session_2025B`, `fl_session_2025C`, `usa_session_118_chamber_lower`,
+`usa_session_118_chamber_upper`.
+
+**Missing file counts as maximally stale, not "skip."** `ma_session_194th.ts` was deleted as part
+of this session's MA fix and won't exist again until the next successful Sunday run. If the
+watchdog treated an absent file as "nothing to check yet," it would have missed the exact MA bug
+it exists to catch — a key that's supposed to be running but silently produces no timestamp file
+at all is the failure mode, not an edge case to special-case away.
+
+**Design (bash, matching `run-scrape.sh`'s own idioms — no new language/runtime to maintain):**
+
+```bash
+# check-scrape-staleness.sh — run once daily, appended to the end of run-all-scrapes.sh
+# (already runs daily via the existing com.ddp.openstates-scraper launchd job — no new
+# launchd job needed).
+LAST_RUN_DIR="$SCRIPT_DIR/logs/last-run"
+NOW=$(date +%s)
+
+check_key() {
+    local key=$1 threshold_hours=$2
+    local ts_file="$LAST_RUN_DIR/${key}.ts"
+    local sentinel="$LAST_RUN_DIR/${key}.stale-alerted"
+    local age_hours=999999
+    if [ -f "$ts_file" ]; then
+        local mtime; mtime=$(stat -f%m "$ts_file")
+        age_hours=$(( (NOW - mtime) / 3600 ))
+    fi
+    if [ "$age_hours" -ge "$threshold_hours" ]; then
+        # Already alerted for this ongoing episode — don't re-fire every day it stays stuck.
+        [ -f "$sentinel" ] && return 0
+        touch "$sentinel"
+        FAILURE_ERROR_TYPE="ScrapeStalenessDetected" \
+        FAILURE_MESSAGE="$key has not completed in ${age_hours}h (threshold ${threshold_hours}h)" \
+            report_staleness_to_cams "$key"   # same payload shape/endpoint as report_failure_to_cams()
+    else
+        # Fresh again — clear the sentinel so a future recurrence re-alerts.
+        rm -f "$sentinel"
+    fi
+}
+
+check_key fl_session_2026 48
+check_key fl_session_2026D 48
+check_key fl_session_2026E 48
+check_key fl_session_2026F 48
+check_key wa 48
+check_key usa_session_119_chamber_lower 48
+check_key usa_session_119_chamber_upper 48
+check_key va 228        # 9.5 days
+check_key mi 228
+check_key ut 228
+check_key az 228
+check_key ma_session_194th 228
+```
+
+`report_staleness_to_cams()` reuses `report_failure_to_cams()`'s exact payload shape and POST
+mechanics from `run-scrape.sh` (`service: "ddp-open-states"`, POST to `$CAMS_URL/api/v1/failures`
+with `Authorization: Bearer $CAMS_TOKEN`, `curl -sf ... || true` so a reporting hiccup never
+breaks the nightly run) — factor the shared bits into a small sourced helper rather than
+duplicating the `python3 -c` JSON-building inline in both scripts.
+
+**Rejected alternative:** watching `/tmp/ddp-openstates-scrapes/<pid>` reader-lock markers
+instead of `.ts` files. Rejected because `apply-local-patches.sh` already sweeps that directory
+clean on its own nightly schedule — by the time a watchdog ran, the evidence a job was ever stuck
+would already be gone. `.ts` files are untouched by that cleanup and are already the source of
+truth incremental scraping itself relies on.
+
+**Not yet built or deployed** — this is the scope only. Next step when asked to build it:
+add `check-scrape-staleness.sh`, extract the shared CAMS-POST helper out of `run-scrape.sh` (or
+duplicate the ~15 lines — small enough that duplication may be simpler than a new shared-sourced
+file), append the call to the end of `run-all-scrapes.sh`, and verify against the current MA gap
+(the `ma_session_194th` key is absent right now, so a dry run should immediately alert once,
+which doubles as an integration test).
+
 ### 11.4 Scraper fixes and upstream contributions
 
 **Superseded 2026-07-17 onward — see §2.5.** The "maintain cherry-picks until upstream merges"
