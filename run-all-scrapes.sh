@@ -29,10 +29,22 @@ bash "$SCRIPT_DIR/run-scrape.sh" usa "session=119 chamber=upper" || log "ERROR: 
 
 # Secondary states + people refresh — Sundays only
 if [ "$DAY" = "7" ]; then
-    for state in va mi ma ut az; do  # va requires VA_API_KEY in .env
+    for state in va mi ut az; do  # va requires VA_API_KEY in .env
         log "--- $state ---"
         bash "$SCRIPT_DIR/run-scrape.sh" "$state" || log "ERROR: $state failed (continuing)"
     done
+
+    # MA needs an explicit session= arg, same as FL above — run-scrape.sh's incremental-cutoff
+    # cache key is derived from the session argument it's given (SCRAPE_KEY in run-scrape.sh),
+    # and calling it with no session at all produces the key "ma", which has never had a
+    # timestamp file and so silently falls back to a full scrape every single time. The real
+    # timestamp file (ma_session_194th.ts) sat unused since 2026-07-03 because of this. Fixed
+    # 2026-07-28 -- see PLAN-coverage-completeness-check.md SS10 for the full diagnosis (MA
+    # hadn't completed a full scrape since 2026-06-16 as a result). Update "194th" when MA's
+    # session changes -- scrapers/ma/__init__.py's legislative_sessions list is the source of
+    # truth for the current session identifier.
+    log "--- ma session=194th ---"
+    bash "$SCRIPT_DIR/run-scrape.sh" ma "session=194th" || log "ERROR: ma failed (continuing)"
 
     log "--- people refresh ---"
     cd /Users/agentsmith/Developer/repos/ddp-open-states/people && git pull --ff-only >> "$LOG_DIR/scraper.log" 2>&1
