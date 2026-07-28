@@ -338,28 +338,54 @@ This is a ~50-line script. Implement if full federal import becomes a performanc
 
 ### 2.5 Scraper known issues and fixes
 
-**Open PRs (not yet merged upstream):**
+**Superseded 2026-07-17/2026-07-25 — both repos are now formal DDP forks, not local-patch-only
+checkouts, and the fix-tracking model below is stale.** `openstates-scrapers` went formal
+2026-07-17 (`Digital-Democracy-Project/openstates-scrapers`) and `openstates-core` went formal
+2026-07-19; the two use *different* fork models (see `PLAN-fork-management.md` §1 for the full
+reasoning, and the `project-patch-convention` memory):
 
-- **UT votes** (PR #5695, branch `fix-ut-votes-api-path`): Three fixes discovered during first full scrape run (2026-06-14):
-  1. `yield from` fix — `scrape_bill_details_from_api` was discarding yielded objects
-  2. `parse_html_vote` XPath fix — lxml normalizes invalid HTML, breaking `//b` selector
-  3. Duplicate vote identifier fix — when a bill has concurrent House+Senate votes, both got `identifier="283"`. Fixed to `f"{voteID}-{voteHouse}"` (e.g. `"283-H"`, `"283-S"`). This fix was discovered during import, not scrape — `DuplicateItemError` on `os-update ut --import`.
+- **`openstates-scrapers`** — fixes merge via a normal branch → PR → the fork's own `main`, no
+  cherry-picking. `apply-local-patches.sh` just does `git checkout main && git pull origin main`
+  (`origin` here already **is** the DDP fork). The original UT (#5695) and MI (#5696) fixes
+  described below in earlier revisions of this plan now live as normal commits on that `main`.
+- **`openstates-core`** — fixes merge via branch → PR against the `cherry-pick-line` branch,
+  **never `main`** (a PR opened against `main` there is a silent no-op — `main` is never read by
+  anything; confirmed the hard way when `openstates-core` PR #2 was first opened against the
+  wrong base, see `notes/openstates-core-cherry-pick-line-targeting-20260726.md`).
+  `apply-local-patches.sh` rebuilds a throwaway `local-patches` branch every run: fresh public
+  `main` (via `origin`, the public `openstates/openstates-core`) + a range-pick of everything on
+  `cherry-pick-line` not yet upstream (`git cherry-pick --empty=drop
+  "$(git merge-base main cherry-pick-line)..cherry-pick-line"`) — no more hand-listed individual
+  commit SHAs. Add new DDP-only `openstates-core` fixes to `cherry-pick-line`; never hand-edit
+  the cherry-pick list in `apply-local-patches.sh` again.
+  **Bug found 2026-07-28 (PR #15, open, not yet merged):** this range-pick had been silently
+  inert since the branch's creation — the script refreshed `main` every run but never fetched the
+  *local* `cherry-pick-line` ref from its remote, so it sat frozen at its 2026-07-25 creation
+  commit no matter what merged on GitHub afterward. Two PRs (#1, #2) merged into `cherry-pick-line`
+  on GitHub during that window without ever actually reaching a real scrape — see §8.1a for the
+  concrete impact. PR #15 adds the missing `git fetch ddp cherry-pick-line && git branch -f
+  cherry-pick-line ddp/cherry-pick-line` step, plus `-m 1` on the cherry-pick so ordinary merge
+  commits on `cherry-pick-line` don't crash the rebuild. Until #15 merges and a real
+  `apply-local-patches.sh` run confirms it, don't assume a GitHub-merged `openstates-core` PR is
+  actually live.
+- Both refresh steps skip themselves (rather than mutate the tree) if a scrape is currently
+  running, tracked via PID markers in `/tmp/ddp-openstates-scrapes`.
 
-- **MI House votes** (PR #5696, branch `fix-mi-house-votes`): Regex + tab-separated name fix.
-
-- **MI pagination duplicates** (issue #5697, not yet fixed upstream): The MI scraper produces duplicate bill JSON files due to pagination overlap. Workaround: `--allow_duplicates` flag on import. The `run-scrape.sh` script handles this automatically for `mi`.
-
-**`apply-local-patches.sh`** cherry-picks all three UT commits plus the MI fix onto a `local-patches` branch:
-
-```bash
-git cherry-pick ade373f  # MI: fix House votes (PR #5696)
-git cherry-pick 38e0206  # UT: fix votes not scraped for 2025+ sessions (PR #5695)
-git cherry-pick abea3cd  # UT: fix duplicate vote identifier for concurrent chamber votes
-```
-
-Run after every upstream `git pull`.
+**MI pagination duplicates** (issue #5697, not yet fixed upstream as of last check): The MI
+scraper produces duplicate bill JSON files due to pagination overlap. Workaround:
+`--allow_duplicates` flag on import. `run-scrape.sh` handles this automatically for `mi`.
 
 **CLIs are at `~/Library/Python/3.9/bin/`** (pip-installed, not poetry). `PYTHONPATH` must include the `scrapers/` directory. Both are set in `activate.sh`.
+
+### 2.6 Incremental scraping's per-bill network floor (WA/UT/AZ/VA)
+
+**Moved to `PLAN-incremental-scraping.md`.** Why a routine WA scrape takes ~70 minutes even
+during an out-of-session week (a hard per-bill network floor that "incremental" scraping doesn't
+remove for WA/UT/AZ, and only partially removes for VA) is a property of the incremental-scraping
+implementation itself, not this plan — see **"Reopened 2026-07-27: the per-bill network floor
+(WA/UT/AZ), plus two unclosed follow-ups"** in `PLAN-incremental-scraping.md` for the full
+write-up, the per-jurisdiction table, and the still-open follow-ups (WA's unchecked WSDL upgrade
+path, MI's unverified date-signal semantics).
 
 ---
 
@@ -560,6 +586,72 @@ Document here so the work is scoped when the time comes. Do not execute until th
       the bulk of the archive feature was already safely saved in an earlier commit. Committed
       the add-on to `phase1-bill-provenance` (preserving the hold; `openstates-core`'s tracked
       files are clean again). The hold itself was not touched.
+
+      **Update 2026-07-26/27 — the hold was lifted; Phase 1 archiving is now live, gated
+      per-jurisdiction.** `run-scrape.sh` now calls `archive_if_enabled()` after every scrape
+      (scrape or no-op), gated by `ARCHIVE_ENABLED_STATES` in `activate.sh` — currently set to
+      `fl` only, so the "fire ~9,800+ PDF fetches at once with no sequencing" risk this hold
+      existed to prevent is scoped to one jurisdiction at a time by design, not solved generally.
+      A full FL archive run completed 2026-07-26 (`logs/fl-full-archive-20260726.log`): 7,685
+      bills checked, 19,521 documents fetched/archived, **499 fetch errors** (all unretried HTTP
+      429s — see the correction below), 1 extract error, 0 conflicts, all 19,521 successfully
+      fetched documents verified in S3. Since the original hold was written,
+      `apply-local-patches.sh` also stopped hand-listing individual cherry-picked commits for
+      `openstates-core` — it now range-picks everything on the `cherry-pick-line` branch not yet
+      upstream (`PLAN-fork-management.md` §1, recommendation H); see §2.5/§11.4 below, updated to
+      match. Extending `ARCHIVE_ENABLED_STATES` beyond `fl` is future work, not yet scheduled.
+
+      **Correction 2026-07-28 — the archive-downloader retry-settings fix (PR #1) and the OPEN-2
+      vote-person fix (PR #2) both merged on GitHub 2026-07-26 but neither was actually live in
+      production, because `apply-local-patches.sh` never synced the *local* `cherry-pick-line`
+      ref from its remote — it only ever refreshed `main`.** The local ref had been frozen at its
+      2026-07-25 creation commit the whole time, so every nightly `local-patches` rebuild silently
+      kept using the old, unpatched code regardless of what merged on GitHub. This is exactly why
+      the FL full-archive run above logged 499 unretried 429s: `scraper.retry_attempts` was still
+      scrapelib's bare default of `0`, not the `5` PR #1 was supposed to set. Found investigating
+      those 499 errors; a second bug surfaced while fixing the first — once `cherry-pick-line` is
+      actually synced, its history contains ordinary GitHub merge commits, which `git
+      cherry-pick`'s range-pick can't replay without `-m 1`, which would crash the whole nightly
+      rebuild the next time any PR merges into that branch normally. **Both fixes are in
+      `ddp-open-states` PR #15 (`fix/apply-local-patches-sync-cherry-pick-line`), open as of
+      2026-07-28, not yet merged** — verified so far only in a disposable local clone, explicitly
+      *not* against this production checkout, because a WA scrape was running at the time. Per the
+      PR's own test plan: merge only during a confirmed quiet window
+      (`ps aux | grep -i "run-scrape\|os-update\|os-text-extract"` returns nothing), then run
+      `apply-local-patches.sh` for real to confirm `local-patches` finally picks up PR #1 and #2,
+      and re-run `os-text-extract archive fl` afterward to sweep up the ~499 documents that failed
+      with unretried 429s (skipped by the natural-key check for everything already archived).
+      **Practical effect: until PR #15 merges and a fresh `apply-local-patches.sh` run confirms
+      it, neither the archive retry fix nor the OPEN-2 vote-person fix below should be treated as
+      actually live, regardless of their GitHub merge state.**
+- [ ] **US federal vote-person resolution gap (OPEN-2) — separate from the FL/MA org-resolution
+      gap above, fix merged on GitHub 2026-07-26 but NOT yet actually live in production (see the
+      2026-07-28 correction above), backfill not yet run for real.** Distinct issue: ~27.6% of US
+      Congress person-vote rows (147,473 of 534,522, across 1,535 roll calls) had a null
+      `voter_id` because same-surname legislators (three different Garcias, three different
+      Carters, etc.) couldn't be disambiguated by name-matching alone, even though the House
+      Clerk's own XML already provides a stable bioguide/LIS identifier for exactly this purpose
+      — our scraper extracted it but only ever passed it through as an inert `note=` string (see
+      `notes/votebot-unknown-vote-party-breakdown-20260726.md`). VoteBot itself has no bug; it
+      just faithfully displays whatever party OpenStates returns. Fixed across three repos:
+      `openstates-core` (`VoteEvent.vote()` now accepts `id=`, `resolve_person()` tries an
+      identifier match before falling back to name-matching — PR #2, merged to `cherry-pick-line`
+      on GitHub, **not** `main`, per the fork's convention, see
+      `notes/openstates-core-cherry-pick-line-targeting-20260726.md` — but per the correction
+      above, not yet actually applied to any real `local-patches` build), `openstates-scrapers`
+      (`scrapers/usa/votes.py` now passes `id=bioguide`/`id=lis_id` — PR #8, fork `main`, this one
+      *is* live since `openstates-scrapers`'s sync step was never affected by the bug above), and
+      `ddp-open-states` (`backfill-vote-person-resolution.py`, PR #12, `main` — re-resolves
+      already-scraped null-`voter_id` rows without re-scraping, and doesn't depend on
+      `local-patches` at all since it works directly off the `note` column already sitting in the
+      DB). `--dry-run` against the real local DB shows 144,340 of 147,473 (97.9%) would resolve;
+      the remaining ~3,100 have no matching identifier (e.g. former members not in `people/`) and
+      are left alone. **The backfill script has not been run for real yet** — it mutates the
+      production Postgres DB, so that's an explicit separate action. Ordering still matters, just
+      differently than first thought: the backfill itself is safe to run anytime (it's a one-time
+      pass over existing data, independent of `local-patches`), but core PR #2's `id=` resolution
+      won't apply to *newly scraped* US votes going forward until PR #15 merges and a real
+      `apply-local-patches.sh` run confirms `local-patches` actually contains it.
 - [ ] **FL vote-completeness audit across the WAF-outage window.** The flhouse.gov WAF-cookie
       bug (fixed fork PR #5, merged 2026-07-18) silently dropped House committee votes on
       scrapes running past ~1 hour. FL is *already* in `DDP_OPENSTATES_JURISDICTIONS`, so if it
@@ -951,35 +1043,49 @@ The existing script already handles Slack token lookup, boot grace period, and r
 
 #### Scraper failure alerts
 
-The scraper is a nightly job that exits rather than a persistent service, so health-monitor doesn't apply. Instead, post to Slack directly from `run-scrape.sh` on failure. Add a trap at the top of the script:
+**Implemented — and evolved past the original design below.** The scraper is a nightly job that
+exits rather than a persistent service, so health-monitor doesn't apply. The original design was
+a Slack-only `trap ... ERR` posting to `#automation-errors`; `run-scrape.sh` now does that *and*
+POSTs a structured failure report to CAMS's own failure listener
+(`$CAMS_URL/api/v1/failures`, service=`ddp-open-states`, with `error_type`/`message` parsed out
+of the scrape/import output where possible) so a real recurring scrape bug reaches Agent Smith
+triage, not just a Slack ping (`fix/report-scrape-failures-to-cams`, PR #3, 2026-07-23). Both the
+Slack post and the CAMS report are best-effort (`curl -sf ... || true`) — a reporting failure
+itself (CAMS down, bad token, network) never fails the scrape.
 
-```bash
-# In run-scrape.sh, add after the log() function definition:
-SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-    | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
-
-on_failure() {
-    local state=$1
-    [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
-        -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $SLACK_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "{\"channel\": \"#automation-errors\", \"text\": \"⚠️ *OpenStates scrape failed: $state* — check ~/Developer/repos/ddp-open-states/logs/scraper.log\"}" \
-        >/dev/null || true
-}
-trap 'on_failure "$STATE"' ERR
-```
-
-This reuses the same Slack token and channel as the CAMS health monitor. A failed FL scrape at 2 AM shows up in `#automation-errors` the same way a CAMS outage does.
+**Known gap this fixed, and the pattern it set:** a real crash inside `run-scrape.sh` (a bash
+quirk — a background-pipeline failure that halts the script via `set -e` but never fires the
+`ERR` trap) went completely unreported: no Slack message, no CAMS report. The bill-document
+archive step (§8.1a) hit the same class of gap — a failing `os-text-extract archive` invocation
+died on its first unhandled exception rather than looping, and relying solely on the generic
+`ERR` trap risked masking *which* step actually failed. Fixed the same way in both places:
+explicitly capture the step's own output, parse out a real `error_type`/`message` when present,
+and call `on_failure` directly rather than trusting the trap to catch everything
+(`fix/archive-failure-reporting`, PR #11, 2026-07-26). Any new scrape-pipeline step going forward
+should follow this same explicit-report pattern rather than relying on the ambient trap.
 
 ### 11.4 Scraper fixes and upstream contributions
 
-Maintain the patch-apply workflow (`apply-local-patches.sh`) until PRs #5695 and #5696 are merged. After merge:
-1. Remove the cherry-picks from `apply-local-patches.sh`
-2. Run `git pull --ff-only` in openstates-scrapers
-3. Verify the fixes are present: `git log --oneline -- scrapers/ut/bills.py`
+**Superseded 2026-07-17 onward — see §2.5.** The "maintain cherry-picks until upstream merges"
+model this section originally described no longer applies to either repo: both
+`openstates-scrapers` and `openstates-core` are now formal DDP forks with their own `main`
+(`openstates-scrapers`) or `cherry-pick-line` (`openstates-core`) branch as the real target for
+new fixes — public-upstream merge is no longer the gate for a fix reaching a live scrape.
+`PLAN-fork-management.md` is the authoritative doc for this model, including the still-open
+question of how DDP keeps receiving *upstream's* fixes going forward (not just shipping its own).
 
-For future scraper fixes, prefer opening upstream PRs immediately (as we did for MI and UT). Local patches are a maintenance burden.
+For a new scraper fix:
+1. `openstates-scrapers`: branch off the fork's `main`, open a PR against fork `main`, merge —
+   picked up automatically by `apply-local-patches.sh`'s plain `git pull origin main` on the
+   next run.
+2. `openstates-core`: branch off `cherry-pick-line`, open a PR against `cherry-pick-line`
+   (**not** `main` — see §2.5), merge — picked up automatically by the range-pick on the next
+   run. Double-check the PR's base ref before merging; a PR merged into the wrong base doesn't
+   error, it's just silently inert.
+
+Also monitor `openstates/openstates-scrapers` (public upstream) for whether the original UT
+(#5695) and MI (#5696) fixes referenced in earlier revisions of this section have since merged
+there — not re-checked as part of this update.
 
 ---
 
