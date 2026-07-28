@@ -18,7 +18,11 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 # separated abbrs). Start with just FL — the plan's own rollout criteria call for validating
 # one jurisdiction's first full historical backfill before enabling the rest. Widen this list
 # once FL has been checked against Phase 1's pass/fail criteria (PLAN-bill-document-provenance.md).
-export ARCHIVE_ENABLED_STATES="fl"
+# FL's first full run (2026-07-26) passed cleanly: 7,685 bills, 19,521 documents, 0 unresolved
+# errors after the retry-settings + apply-local-patches.sh sync fixes (2026-07-28). Adding UT
+# next — the smallest tracked jurisdiction by bill count (1,021 vs FL's 7,685) — as a second,
+# still-cautious validation of the archive mechanism before widening further.
+export ARCHIVE_ENABLED_STATES="fl,ut"
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
 # Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
