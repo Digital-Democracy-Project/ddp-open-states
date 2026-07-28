@@ -32,8 +32,17 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 # failure -- fixing scrape_bill_details_from_api() to add version/document links is a separate,
 # not-yet-scoped task (affects bill-text availability generally, not just archiving).
 # AZ added 2026-07-28 as the actual second cautious validation -- confirmed 8,904 version links
-# already present, next-smallest tracked jurisdiction with real data (2,190 bills).
-export ARCHIVE_ENABLED_STATES="fl,ut,az"
+# already present, next-smallest tracked jurisdiction with real data (2,190 bills). AZ's run
+# also completed clean: 2,190 bills checked, 3,584 documents archived, 0 errors.
+# WA/VA/MI added 2026-07-28 -- all three confirmed healthy (real version-link data present,
+# regular successful incremental scrapes, no known scraper gaps like UT's). MA intentionally
+# NOT added yet -- its local data is still the stale pre-fix snapshot from 2026-06-16 (see
+# PLAN-coverage-completeness-check.md SS10's starvation-bug fix) until it gets a fresh full
+# re-scrape; archiving now would just archive outdated documents. US federal intentionally NOT
+# added yet either -- ~37,206 bills is a different scale problem (likely a multi-day run against
+# govinfo.gov, not just a bigger version of what's already been validated) and deserves its own
+# sizing pass before enabling, not a default inclusion alongside the states.
+export ARCHIVE_ENABLED_STATES="fl,ut,az,wa,va,mi"
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
 # Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
