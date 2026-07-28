@@ -1,6 +1,8 @@
 # PLAN: Coverage & Completeness Checks Against Public OpenStates
 
-**Status:** DRAFT — analysis complete 2026-07-24, no implementation started yet.
+**Status:** IMPLEMENTED (Tier 1 + Tier 2) 2026-07-28 — `quality_check.py --coverage
+JURISDICTION SESSION`, per §8's implementation order. First real run against MA found a large,
+genuine coverage gap — see §10.
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -228,11 +230,160 @@ monthly-sweep cadence already catches drift before it compounds.
 
 ## 9. Open Questions
 
-- What's the real pagination response shape from `v3.openstates.org/bills` — confirm field
-  names (`pagination.max_page` is an assumption, not verified) before writing real code
+- ~~What's the real pagination response shape from `v3.openstates.org/bills`~~ — **confirmed
+  2026-07-28**: `pagination.page`/`max_page`/`total_items`/`per_page`, exactly as assumed.
+  `per_page` caps at 20 (`per_page=100` errors "invalid per_page, must be in [1, 20]") — matches
+  local `api-v3`'s own `max_per_page = 20`, so `fetch_all_public_identifiers()` uses 20.
 - Should Tier 1 coverage checks also run against jurisdictions not currently in
   `active_jurisdictions` (e.g. `al`, which `quality_check.py` already samples but `ddp-sync`
   doesn't track as active) — or scope strictly to the 7 tracked states + USA federal?
 - Does a coverage gap on a jurisdiction currently paused (e.g. FL's weekly scraper is paused
   during the 2023/2024 backfill — see `PLAN-fork-management.md`'s sibling context) need special
   handling, or does "run after every backfill" already cover that case naturally?
+
+---
+
+## 10. First Real Run — MA 194th, 2026-07-28: a real but much smaller coverage gap than first measured
+
+**Triggered by:** the api-v3 stale-database investigation (`PLAN-open-states.md` §8.1a) — once
+that bug was fixed and MA's votes/FL's 2023 session were confirmed actually being served
+correctly, a direct diff against live `v3.openstates.org` still showed a smaller vote-count
+mismatch on one MA bill (16 vs 18 votes), prompting "how widespread is this" — this coverage
+check is the answer.
+
+**Command:** `OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage ma 194th
+--tier2-limit 150`. Full output: `logs/quality-check/ma_194th.log`.
+
+**Tier 1 (coverage) raw result:**
+```
+live=18542  local=10959  missing=7583  extra=0  both=10959
+```
+
+**Correction, same day — the raw 7,583/41% headline number is real as a literal
+identifier-set diff, but materially overstates the actual gap.** MA's legislative process
+gives every bill two identifiers over its life: a **docket number** (`HD`/`SD` prefix,
+assigned when first filed) and a **bill number** (`H`/`S` prefix, assigned once formally read
+in). Confirmed directly against live `v3.openstates.org`: `HD 2050` and `H 3444` exist as **two
+separate, permanent bill records** with the identical title ("An Act relative to s-license
+compliance") — upstream's own scraper never merges or supersedes the docket-stage record once
+the bill-stage one exists. Our own scraper (`scrapers/ma/bills.py`: `bill_id = row["BillNumber"]
+or row["DocketNumber"]`) deliberately keeps only **one** canonical identifier per bill, so it
+never creates a duplicate docket-stage shadow record. Breaking the raw identifier sets down by
+prefix confirms this is where nearly all of the gap actually is:
+
+| Prefix | Live | Local | Gap |
+|---|---|---|---|
+| `H` (House bill) | 5,603 | 5,542 | 61 |
+| `S` (Senate bill) | 3,225 | 3,124 | 101 |
+| `HD` (House docket) | 5,849 | 1,084 | 4,765 |
+| `SD` (Senate docket) | 3,865 | 1,209 | 2,656 |
+
+**The real, meaningful gap is the `H`/`S` rows: ~162 actual bills (61+101) out of 8,828 live
+bill-numbered items (~1.8%) — not 41%.** The other ~7,421 "missing" identifiers are live's
+permanent docket-stage duplicates of bills we already have correctly under their bill number,
+not independent missing content. Zero `extra` locally still holds (nothing phantom on our
+side).
+
+**This is a real methodology gap in the coverage-check tool itself, not just a one-off MA
+quirk** — a naive identifier-set diff assumes one canonical identifier per bill per source,
+which doesn't hold for any jurisdiction with a multi-stage identifier lifecycle like MA's. Any
+jurisdiction with a similar docket→bill-number (or equivalent) pattern would produce the same
+kind of inflated headline number. **Not yet fixed in the tool** — the right fix is probably to
+normalize/exclude docket-stage identifiers from the Tier 1 diff when a jurisdiction's own data
+provides a `BillNumber`/docket-linkage the way MA's does, rather than treating every raw
+identifier as independently meaningful. Flag this before running Tier 1 against any other
+jurisdiction (§11 below) so the same misreading doesn't happen again.
+
+The ~162-bill real gap is still consistent with — and doesn't change — the starvation root
+cause below: MA hasn't completed a fresh full scrape since 2026-06-16, so new bills introduced
+since then (real ones, under real bill numbers) would show up exactly as this kind of small,
+genuine `H`/`S` gap.
+
+**Tier 2 (sub-record completeness) result, on 150 of the 10,959 bills we do have:**
+```
+599/601 passed | 1 warnings | 1 failures | 0 skipped
+```
+The single "failure" recorded is the Tier 1 headline number itself (folded into the same
+report); the actual Tier 2 sub-record checks were **599/600 clean** — only one bill had a
+stale `latest_action` text (a timing/staleness difference, not a structural problem). Titles,
+vote-event counts, and sponsorship counts all matched. **This reframes the finding: it is not
+a data-quality problem on bills we've scraped — it's specifically a coverage problem.**
+Something is causing MA's scraper to silently stop well short of the full bill list, upstream
+of any vote-serving or database-layer bug.
+
+**Root-caused 2026-07-28 — not network rejections. MA has not completed a single full scrape
+since 2026-06-16, over six weeks ago, and every weekly attempt since has silently failed to
+finish.** Grepped every available log (current `logs/scraper.log` plus both `.gz` archives)
+for MA's own completion markers:
+
+```
+[Tue Jun 16 18:30:21 EDT 2026] Scrape done: ma. Starting import...
+[Tue Jun 16 18:35:06 EDT 2026] Import done: ma.
+```
+
+**That is the only successful completion in the entire log history available.** Every
+subsequent weekly attempt (2026-06-22, 06-24, 06-27, 06-29, 07-11, 07-18, 07-25 — confirmed via
+their own `Starting scrape: ma` markers) has **zero** matching `Scrape done: ma.`/`Import done:
+ma.` anywhere in the logs. Our local replica's ~10,891-10,959 MA bills are frozen at whatever
+the June 16th run captured; every "weekly MA scrape" since has been silently running and never
+finishing, not silently dropping bills mid-flight.
+
+**Two compounding root causes, both confirmed directly in the code and logs:**
+
+1. **MA never actually gets incremental mode, despite having it implemented.**
+   `run-scrape.sh` computes its incremental-cutoff lookup key as
+   `SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')` — when
+   `run-all-scrapes.sh` invokes MA's weekly run with no explicit session argument (`bash
+   run-scrape.sh "$state"` inside the `for state in va mi ma ut az` loop), `SESSION_ARG` is
+   empty, so `SCRAPE_KEY="ma"` and the script looks for `logs/last-run/ma.ts` — **which does
+   not exist and never has.** The file that *does* exist,
+   `logs/last-run/ma_session_194th.ts` (last written 2026-07-03), is an orphan from some
+   earlier manual/explicit-session invocation and is never consulted by the automated weekly
+   run. Net effect: every weekly MA run silently falls back to a **full** scrape (confirmed —
+   every `Starting scrape: ma` log line says `(full)`, never `(incremental cutoff=...)`, unlike
+   every other jurisdiction in the same batch), restarting from bill #1 every single week.
+2. **A full MA scrape is far too slow to complete in the time it's actually given.** MA's own
+   government API (`malegislature.gov/api/GeneralCourts/194/Documents`) currently returns
+   **11,406** documents in one response (212 of them docket-only placeholders with no bill page
+   yet — a separate, minor, ~2% issue, not the main gap). The scraper then fetches each
+   individual bill's detail page one at a time; timestamps in the 2026-07-25 log show roughly
+   one bill every 4-10 seconds (each bill needs two sequential HTTP round-trips — a `scrapelib`
+   fetch of the bill page immediately followed by a `requests` fetch of the same URL). At that
+   rate, a full ~11,000+ bill pass is on the order of **12+ hours** — and because of bug #1
+   above, MA never gets to skip that cost on a second run; it pays the full multi-hour cost
+   every single week, and apparently never finishes before something (the next scheduled batch,
+   a restart, etc.) supersedes it.
+
+**Not network rejections** — the logs show a normal-looking, slowly-progressing scrape (only 2
+"Server Error" warnings found, both for the docket-only-placeholder bills in finding #2 above,
+not a mass rejection pattern). This is a **starvation** problem: a full scrape that's too slow,
+combined with a caching bug that guarantees it can never benefit from being faster on a repeat
+run.
+
+**Fix, scoped but not yet implemented:**
+1. Fix `run-all-scrapes.sh`'s MA invocation to pass an explicit `session=194th` argument (the
+   same pattern FL's own invocation already uses for its multiple sessions), so `SCRAPE_KEY`
+   correctly resolves to `ma_session_194th` and the existing (if stale) incremental
+   infrastructure actually engages.
+2. That alone doesn't fix the *first* full pass, which still needs to complete once to
+   establish a real cutoff — worth running as a one-off, monitored, long-running backfill
+   (matching the pattern already used for FL's historical backfill) rather than hoping a
+   routine weekly cron window is long enough.
+3. Once incremental mode is actually engaging, confirm subsequent weekly runs are fast (only
+   bills that changed) and finally complete — the `MI`'s "semantics unverified" caveat
+   (`PLAN-incremental-scraping.md`) is a reminder to actually verify the date-signal MA's
+   incremental mode uses (`PrimarySponsor.ResponseDate` — already flagged there as a "weak
+   proxy") once this is unblocked, not just assume it's correct.
+
+**Not yet done:** running this same Tier 1 check against the other 7 tracked jurisdictions to
+determine whether this specific bug (missing session arg in the weekly batch invocation) or
+this general shape of problem (a scrape too slow to complete before being superseded) affects
+anyone else. `run-all-scrapes.sh`'s invocations for `va`, `mi`, `ut`, `az` all have the same
+"no explicit session" shape as MA's — worth checking whether they simply have small enough
+sessions that it never mattered, or whether they have the same latent bug.
+
+**Before running Tier 1 against another jurisdiction, check for the same docket/bill-number
+duplication pattern first** (§10's correction above) — inspect the raw headline `missing` count
+by identifier prefix before reporting it as a real gap. Not every jurisdiction has a multi-stage
+identifier lifecycle like MA's, but assume nothing until checked; a raw diff can look far worse
+than reality for any jurisdiction that does.
