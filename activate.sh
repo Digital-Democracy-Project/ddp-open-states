@@ -22,15 +22,18 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 # errors after the retry-settings + apply-local-patches.sh sync fixes (2026-07-28).
 # UT added 2026-07-28 as the smallest tracked jurisdiction (1,021 bills) for a cautious second
 # validation -- but its run was a clean no-op (0 fetched/skipped/archived): UT has ZERO
-# BillVersionLink/BillDocumentLink rows in the DB. Root cause traced: scrapers/ut/bills.py only
-# calls add_version_link()/add_document_link() inside parse_bill_details_from_html(), the
-# legacy HTML-scraping path used for pre-2025 sessions. UT switched to an API/JSON-rendered
-# bill page starting 2025 (see scrape_bill()'s own comment), which routes through
-# scrape_bill_details_from_api() instead -- and that function never calls either. UT has
-# captured zero bill text/document links since that rendering switch; this is a real scraper
-# gap, not an archive-tool problem. Left enabled here anyway since it's a harmless no-op, not a
-# failure -- fixing scrape_bill_details_from_api() to add version/document links is a separate,
-# not-yet-scoped task (affects bill-text availability generally, not just archiving).
+# BillVersionLink/BillDocumentLink rows in the DB. **Correction, same day:** the root cause
+# first written here (scrape_bill_details_from_api() supposedly never calling
+# add_version_link()/add_document_link() since a 2025 site redesign) was wrong -- that code has
+# called both correctly for a long time, confirmed by running it live against a real bill. The
+# actual bug: an incremental-scraping optimization added 2026-06-30 skips re-processing a bill
+# once it decides nothing's changed, but used to still hand the (now-empty) bill to the importer
+# anyway -- which deletes a bill's existing versions/documents/actions/sponsorships when a new
+# scrape reports zero of them. Every incremental UT run since 2026-06-30 silently wiped each
+# unchanged bill's already-good data this way, which is why the DB shows zero across the board.
+# Fixed in scrapers/ut/bills.py (PR openstates-scrapers#10, 2026-07-28) -- the skip case no
+# longer yields the bill at all, so existing data is left alone. Left enabled here since a
+# fresh UT run (after the fix + a rescrape) is expected to produce real archived documents.
 # AZ added 2026-07-28 as the actual second cautious validation -- confirmed 8,904 version links
 # already present, next-smallest tracked jurisdiction with real data (2,190 bills). AZ's run
 # also completed clean: 2,190 bills checked, 3,584 documents archived, 0 errors.
