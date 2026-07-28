@@ -549,6 +549,26 @@ Document here so the work is scoped when the time comes. Do not execute until th
 > (§8.1a below) — which as of today is still actively failing, not close to done — so this is
 > unlikely to move soon. Correct "7 of 8 tracked jurisdictions already routed" above before
 > anyone reads it as prod state.
+>
+> **Confirmed critical bug in this Mac's api-v3 instance, prod impact unverified (2026-07-28) —
+> corrected 2026-07-28 PM review pass: the severity below originally overstated this as
+> "prod has likely been served stale data"; that part is still unconfirmed, not established.**
+> What IS confirmed: this Mac's `api-v3` container has been connected to the wrong, frozen
+> 2026-06-24 Postgres snapshot since it was created — see the first item in §8.1a for the full
+> diagnosis. Found while investigating what looked like two separate api-v3 bugs (MA votes
+> always empty, FL's whole 2023 session unreachable); both turned out to be this one root cause,
+> a Docker networking misconfiguration, not separate data-quality issues. **What is NOT yet
+> confirmed:** whether prod's `UT,MI` canary traffic (routed through `ddp-api`'s proxy to this
+> same Mac Studio `:8002`) has actually been affected — that depends on whether those two
+> jurisdictions are really live in prod (itself only "believed," not verified, per the
+> 2026-07-23 correction above) and needs its own explicit check, not assumed from this bug alone.
+> Confirmed, unconditional impact: **any confidence built on api-v3 responses on this Mac since
+> 2026-06-24 — local validation, the parallel diffs in §10.2, anything — was unknowingly checked
+> against stale data.** Note that most of this session's own validation work (org/person-
+> resolution counts, bill/session tallies, etc.) queried the Postgres DB directly, not through
+> api-v3, and is unaffected by this specific bug — only checks that went through `:8002` are in
+> question. Re-verify anything that specifically used the local api-v3 endpoint after the fix
+> below lands.
 
 ### 8.1 Prerequisites before cutover
 
@@ -564,6 +584,115 @@ Document here so the work is scoped when the time comes. Do not execute until th
 
 ### 8.1a ddp-broker-py remaining blockers (found 2026-07-21)
 
+- [ ] **CRITICAL — api-v3 has been serving a Postgres snapshot frozen 2026-06-24, not the live
+      replica, since the container was created. Root cause found and fix scoped 2026-07-28;
+      not yet applied.** Discovered while running the MA vote-data validation below: MA bills
+      resolved correctly via `api-v3` but `votes` always came back empty even for bills with
+      confirmed vote data in the DB (`H 4240`: 16 vote events; `H 58`: 2). A second, seemingly
+      unrelated symptom — FL's entire 2023 session (1,828 bills, the recently-completed
+      historical backfill) returning **zero** results from `/bills?jurisdiction=fl&session=2023`
+      with no identifier filter at all — turned out to be **the same bug**, not a second one.
+
+      **Root cause, traced precisely:** `deploy/docker-compose.ddp.yml`'s `api` service is
+      attached to two Docker networks — this project's own `default` network (where the
+      `postgres` service, container `ddp-openstates-postgres-1`, actually lives) and the
+      external `ddp-agents_default` network (needed only to reach `ddp-agents-redis-1` for the
+      rate limiter). `DATABASE_URL` uses the bare hostname `postgres` — but CAMS's own
+      docker-compose project *also* has a service aliased `postgres` (container
+      `ddp-agents-postgres-1`) reachable on `ddp-agents_default`. Since the `api` container sits
+      on both networks, Docker's embedded DNS resolves the ambiguous `postgres` hostname to
+      **whichever network's alias wins** — confirmed via `socket.gethostbyname('postgres')`
+      *from inside the running `ddp-openstates-api-1` container*: it resolves to CAMS's Postgres
+      (`172.18.0.4`), not the dedicated one (`172.20.0.2`). Confirmed directly: CAMS's own
+      `ddp-agents-postgres-1` has a database literally named `openstates` with exactly the same
+      row counts as what `api-v3` has been serving (41,829 bills, `max(updated_at) = 2026-06-24
+      03:01:42`) — this is the **old, pre-migration copy** `PLAN-production-hardening.md`'s WS0b
+      explicitly kept around for a soak period before decommissioning (never decommissioned).
+      `ddp-openstates-api-1` was created `2026-06-24T21:56:40Z` — matching the freeze almost to
+      the hour, meaning **this has been broken since the container's very first boot**, not a
+      recent regression. The dedicated `ddp-openstates-postgres-1` (correct, live, host port
+      5433) has 71,800 bills and does contain the MA votes and FL 2023 session data that were
+      "missing" — this was never a data or scraper problem.
+
+      **Why the fix is small, and where the correct pattern already exists in the same file:**
+      the same compose file's Redis config already avoids this exact ambiguity —
+      `RRL_REDIS_HOST: "ddp-agents-redis-1"` uses the specific, globally-unique container name
+      rather than a generic service alias, precisely because it also needs to reach across
+      networks. The `DATABASE_URL` line just never got the same treatment. Fix is one line:
+      ```yaml
+      # deploy/docker-compose.ddp.yml, api service:
+      # before:
+      DATABASE_URL: "postgresql://openstates:openstates_dev@postgres:5432/openstates"
+      # after:
+      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates"
+      ```
+      Then recreate the `api` container (`docker-compose -f deploy/docker-compose.ddp.yml up -d
+      --force-recreate api`) and confirm via the same `socket.gethostbyname`/row-count checks
+      used to diagnose this that it now resolves to `ddp-openstates-postgres-1`. No changes
+      needed to `openstates-network`, no service restructuring, no touching CAMS's compose
+      project at all — just qualifying one hostname to the one that's already unique.
+
+      **On the target hostname's stability (2026-07-28, PM review):** `ddp-openstates-postgres-1`
+      is an explicit `container_name:` set directly in `docker-compose.ddp.yml`, not a name
+      auto-generated from the Compose project directory or `COMPOSE_PROJECT_NAME` — so unlike a
+      derived name, it won't silently change if the repo is moved or Compose is invoked
+      differently. No extra network-alias config needed beyond what's already there.
+
+      **Acceptance checklist for this fix (added 2026-07-28, PM review):**
+      - [ ] `docker exec ddp-openstates-api-1 python3 -c "import socket;
+            print(socket.gethostbyname('ddp-openstates-postgres-1'))"` resolves to
+            `ddp-openstates-postgres-1`'s actual IP on the `default` network (currently
+            `172.20.0.2`), not the CAMS one.
+      - [ ] Bill count from inside the container now matches the dedicated DB (~71,800+, not
+            41,829) and `max(updated_at)` is recent, not frozen at `2026-06-24`.
+      - [ ] `GET /bills?jurisdiction=ma&session=194th&identifier=H4240&include=votes` returns 16
+            vote events (not 0).
+      - [ ] `GET /bills?jurisdiction=fl&session=2023&identifier=HB1285` returns the bill (not
+            zero results).
+      - [ ] **Separately, not blocking this fix:** verify whether prod's actual `UT,MI` canary
+            traffic (if truly live — still only "believed," see the correction above) was
+            affected, using the same kind of check as the other deploy-gap item's validation
+            step. This is a distinct, not-yet-done action — the local fix above doesn't by
+            itself confirm or resolve prod impact.
+
+      **Rollback:** revert the one `DATABASE_URL` line and re-run the same `--force-recreate`
+      command. Since the container has been pointed at the *wrong* DB this whole time, "rollback"
+      here only restores prior (broken) behavior — there's no data-correctness reason to revert,
+      only an availability one if the new connection somehow fails.
+- [ ] **Missing `bulk_dataexport` table causes a 500 on every `/jurisdictions/{state}?include=
+      legislative_sessions` call — found 2026-07-28 while investigating the item above, unrelated
+      to the stale-database bug.** `os-initdb` never creates this table (confirmed: `relation
+      "bulk_dataexport" does not exist`, from the container's own traceback), but api-v3's
+      jurisdiction-detail endpoint unconditionally queries it via a `selectinload` on
+      `LegislativeSession` → `BulkDataExport`. This affects every jurisdiction, not just FL —
+      it's a schema/migration gap, not a data problem. **Right-sized fix (guarding against
+      over-building an unused feature):** DDP has no use for bulk CSV data export — the
+      `os-initdb`/`os-update` pipeline this plan is built around never produces or needs
+      `BulkDataExport` rows. Rather than adding a migration to create and maintain an entirely
+      unused table (real ongoing surface: schema drift risk, more to keep in sync with upstream),
+      the smaller, right-sized fix is to stop eagerly loading it when it isn't needed: change the
+      jurisdiction-detail endpoint's `legislative_sessions` include to `noload` (or drop) the
+      `BulkDataExport` relationship rather than `selectinload` it, matching the pattern this same
+      codebase already uses elsewhere (`Pagination.select_or_noload()`) to skip relationships
+      that aren't requested. This is an `api-v3` code change, and `api-v3` is currently a plain,
+      unmodified upstream checkout with no fork/patch mechanism (see §8.3's session-alias
+      decision) — so landing this fix durably needs the same prerequisite noted there: `api-v3`
+      would need to become a fourth formal DDP fork (or gain some other local-patch mechanism)
+      before a fix like this survives a future `git pull`. Not yet scoped further — this is a
+      small, contained code fix once that prerequisite is decided.
+
+      **Confirmed 2026-07-28 (PM review) — this is the only touchpoint; no other endpoint can
+      hit the missing table.** Grepped `api-v3` for every reference to `BulkDataExport`/
+      `bulk_dataexport`: the model definition itself (`api/db/models/jurisdiction.py`), and
+      exactly one usage — `LegislativeSession.downloads` (the actual relationship attribute
+      name) in `JurisdictionPagination.include_map_overrides`'s
+      `["legislative_sessions", "legislative_sessions.downloads"]` entry
+      (`api/jurisdictions.py`). Nothing else in the codebase touches it. **Expected behavior
+      after the fix:** `GET /jurisdictions/{state}?include=legislative_sessions` should return
+      each session without a `downloads`/bulk-export field at all (same as today for any
+      `include=` that isn't requested) — this is a pure bug fix restoring the endpoint to
+      working, not a behavior change any current caller depends on, since the endpoint 500s for
+      every jurisdiction today and so has no working callers to preserve compatibility with.
 - [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from the *local
       checkout's target* `DDP_OPENSTATES_JURISDICTIONS` list (**clarified 2026-07-28, 2nd PM
       review pass, to avoid the same local-vs-prod ambiguity flagged elsewhere in this

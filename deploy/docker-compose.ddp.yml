@@ -37,7 +37,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgresql://openstates:openstates_dev@postgres:5432/openstates"
+      # Qualified to the specific container name (not the bare "postgres" service alias) --
+      # the "api" container also sits on ddp-agents_default (for Redis below), which has its
+      # OWN service aliased "postgres" (CAMS's ddp-agents-postgres-1). The ambiguous bare alias
+      # was silently resolving to CAMS's stale pre-WS0b-migration copy instead of this stack's
+      # own dedicated Postgres since this container's first boot (2026-06-24) -- see
+      # PLAN-open-states.md §8.1a for the full diagnosis. Fixed 2026-07-28.
+      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates"
       RRL_REDIS_HOST: "ddp-agents-redis-1"
       RRL_REDIS_PORT: "6379"
       RRL_REDIS_DB: "1"
