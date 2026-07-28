@@ -553,16 +553,23 @@ Document here so the work is scoped when the time comes. Do not execute until th
 ### 8.1 Prerequisites before cutover
 
 - Shadow scrapes have run nightly for ≥ 4 weeks with no silent gaps
-- Parallel validation (§10.2) has passed for all 8 tracked jurisdictions (FL/WA/US/VA/MI/MA/UT/AZ
-  — **corrected 2026-07-28, PM review caught the stale "9" here**; AL is explicitly untracked
-  per §2 and was never part of this count)
+- Parallel validation (§10.2) has passed, **per jurisdiction, before that jurisdiction is added**
+  — **corrected 2026-07-28 (2nd PM review pass): rewritten from a single "all 8 jurisdictions"
+  gate**, which no longer matches the staged rollout in the deploy-gap item below (jurisdictions
+  are added to `DDP_OPENSTATES_JURISDICTIONS` incrementally as each one's own validation/repair
+  closes, not all at once). The 8 tracked jurisdictions are FL/WA/US/VA/MI/MA/UT/AZ; AL is
+  explicitly untracked per §2 and was never part of this count.
 - Session alias mapping resolved (see below)
 - pg_dump backup confirmed working
 
 ### 8.1a ddp-broker-py remaining blockers (found 2026-07-21)
 
-- [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from
-      `DDP_OPENSTATES_JURISDICTIONS`. The replica has 45 vote events across 10,959 MA bills,
+- [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from the *local
+      checkout's target* `DDP_OPENSTATES_JURISDICTIONS` list (**clarified 2026-07-28, 2nd PM
+      review pass, to avoid the same local-vs-prod ambiguity flagged elsewhere in this
+      section** — prod itself is still `UT,MI` only, per the deploy-gap item below; this bullet
+      is about local validation readiness, not prod exposure). The replica has 45 vote events
+      across 10,959 MA bills,
       matching the motion-classifier's known total (RUNBOOK "Motion classification"), so the
       scraper itself works — but the formal §10.2 parallel diff against live
       `v3.openstates.org` hasn't been run/recorded for MA specifically. Run it, then add `MA`
@@ -677,13 +684,21 @@ Document here so the work is scoped when the time comes. Do not execute until th
       production Postgres DB, so that's an explicit separate action, now the only thing left open
       on this item since the code fix itself is confirmed live for new scrapes going forward.
 
-      **Before running it for real (added 2026-07-28, PM review):** take a `pg_dump` of the
-      `openstates` DB first — this is a one-time bulk write against `opencivicdata_personvote`,
-      and a plain pre-run dump is the simplest possible undo path if some rows resolve to the
-      wrong person:
+      **Before running it for real (added 2026-07-28, PM review; extended in the 2nd pass to
+      make the dump actually durable and verified):** take a `pg_dump` of the `openstates` DB
+      first — this is a one-time bulk write against `opencivicdata_personvote`, and a plain
+      pre-run dump is the simplest possible undo path if some rows resolve to the wrong person.
+      **Copy it out of the container immediately** (a dump left inside `/tmp` in the container
+      doesn't survive the container being recreated or cleaned up — see the same class of
+      concern already raised for the broker EC2 deploy above) and **verify it's a valid,
+      restorable dump** with `pg_restore --list` before proceeding:
       ```bash
-      docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc \
-        -f /tmp/openstates-pre-backfill-$(date +%Y%m%d).dump
+      DUMP_NAME="openstates-pre-backfill-$(date +%Y%m%d).dump"
+      docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc -f "/tmp/$DUMP_NAME"
+      docker cp "ddp-agents-postgres-1:/tmp/$DUMP_NAME" "$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME"
+      pg_restore --list "$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME" | head -5
+      # Restore procedure, if ever needed:
+      #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_NAME"
       ```
 - [ ] **FL vote-completeness gap from the WAF outage — corrected 2026-07-28: this was never a
       prod data-quality incident, but it IS a real, unrepaired gap in the local replica.** The
@@ -729,18 +744,35 @@ Document here so the work is scoped when the time comes. Do not execute until th
         | sort -un > /tmp/fl-2026-waf-affected-bills.txt
       wc -l /tmp/fl-2026-waf-affected-bills.txt   # expect 540
 
-      # 2. The actual fix — force a full re-scrape of session 2026 (the one confirmed-bad,
+      # 2. Targeted BEFORE count — run this same query now, before touching anything, so there's
+      #    an actual before/after comparison (2nd PM review pass: the original draft only ran
+      #    this after the re-scrape, which can't prove the repair changed anything). Caveat:
+      #    b.identifier is stored with a chamber prefix (e.g. "HB 170"), but the extracted
+      #    candidate list above is bare numbers -- matching on the numeric part alone with
+      #    regexp_replace is intentionally a superset match (it can't distinguish "HB 170" from
+      #    "SB 170"). That's fine for this purpose -- a superset only makes the "did the count go
+      #    up" signal more conservative, never less -- but don't treat this count as an exact
+      #    per-bill accounting:
+      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      SELECT count(DISTINCT v.id) AS house_vote_events
+      FROM opencivicdata_bill b
+      JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+      JOIN opencivicdata_voteevent v ON v.bill_id = b.id
+      JOIN opencivicdata_organization o ON v.organization_id = o.id
+      WHERE ls.jurisdiction_id = 'ocd-jurisdiction/country:us/state:fl/government'
+        AND ls.identifier = '2026' AND o.classification = 'lower'
+        AND regexp_replace(b.identifier, '[^0-9]', '', 'g') = ANY(string_to_array('$(paste -sd, /tmp/fl-2026-waf-affected-bills.txt)', ','));
+      "
+      # Record this number before proceeding.
+
+      # 3. The actual fix — force a full re-scrape of session 2026 (the one confirmed-bad,
       #    never-repaired session), now that the WAF fix and its retry-settings follow-up are
       #    both live:
       rm -f logs/last-run/fl_session_2026.ts   # clears the incremental cutoff so it runs full
       ./run-scrape.sh fl "session=2026"
 
-      # 3. Targeted re-check — House vote-event count specifically for the affected bills,
-      #    before vs. after (should go up, not stay flat, for bills that actually had missing
-      #    votes). Note: b.identifier is stored with a chamber prefix (e.g. "HB 170"), but the
-      #    extracted candidate list above is bare numbers -- match on the numeric part only
-      #    with regexp_replace, since the WAF-affected flhouse.gov lookups touch both House and
-      #    Senate bills routed through House committees, not just HB-prefixed ones:
+      # 4. Re-run the exact same query from step 2 — the count should go up, not stay flat,
+      #    for bills that actually had missing votes.
       docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
       SELECT count(DISTINCT v.id) AS house_vote_events
       FROM opencivicdata_bill b
@@ -752,7 +784,17 @@ Document here so the work is scoped when the time comes. Do not execute until th
         AND regexp_replace(b.identifier, '[^0-9]', '', 'g') = ANY(string_to_array('$(paste -sd, /tmp/fl-2026-waf-affected-bills.txt)', ','));
       "
 
-      # 4. Also run the generic quality_check.py pass as a broader sanity check
+      # 5. Stronger than the aggregate count alone (2nd PM review pass): pick 2-3 specific
+      #    affected bills from the candidate list and diff them against live v3.openstates.org,
+      #    the same pattern already used for the MA validation above -- this actually confirms
+      #    the repaired votes match live data, not just that *some* count went up:
+      head -3 /tmp/fl-2026-waf-affected-bills.txt   # pick a few real candidate bill numbers
+      # For each, e.g. HB170:
+      curl "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=HB170&include=votes,actions" | jq . > local_fl_hb170.json
+      curl "https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB170&include=votes,actions&apikey=$OPENSTATES_API_KEY" | jq . > live_fl_hb170.json
+      diff local_fl_hb170.json live_fl_hb170.json
+
+      # 6. Also run the generic quality_check.py pass as a broader sanity check
       OPENSTATES_API_KEY=<your v3.openstates.org key> python3 quality_check.py \
         --jurisdiction fl --bills 50 --no-people
       ```
@@ -906,14 +948,20 @@ Document here so the work is scoped when the time comes. Do not execute until th
       **Concrete steps, once SSH access to the broker host is established (the actual blocker):**
 
       **Gated 2026-07-28 (PM review caught this) — do not deploy the full 7-jurisdiction list as
-      a single step; FL and MA each have an open prerequisite above that must close first.**
+      a single step; FL, MA, and US each have an open prerequisite above that must close first.**
       FL should not be included until the WAF-outage re-scrape (item above) has actually been run
       and `quality_check.py` confirms the gap is closed — right now FL's local replica has a
       known, unrepaired vote-completeness hole. MA should not be included until its §10.2 diff
-      (item above) has actually been run and passed. Deploy in stages, not all at once:
+      (item above) has actually been run and passed. **US should not be included until the
+      OPEN-2 vote-person backfill (item above) has actually been run for real** (added in the
+      2nd PM review pass — the code fix is live for new scrapes, but every already-scraped US
+      Congress roll call still has its ~27.6% null-`voter_id` gap until the one-time backfill
+      runs; unlike FL/MA's org-resolution gaps, which the plan already decided to accept as
+      permanent documented limitations, this one has a ready, tested fix sitting unrun — no
+      reason to expose it before running a ~30-minute script). Deploy in stages, not all at once:
 
-      1. **Stage 1 (deployable now):** `DDP_OPENSTATES_JURISDICTIONS=US,MI,AZ,VA,WA,UT` — i.e.
-         the target list minus FL and MA, both of which are still gated on open items above.
+      1. **Stage 1 (deployable now):** `DDP_OPENSTATES_JURISDICTIONS=MI,AZ,VA,WA,UT` — i.e. the
+         target list minus FL, MA, and US, all three still gated on open items above.
       2. Edit the one line in `/opt/ddp-broker-py/.env` with the stage's value.
       3. Recreate — not just restart — the containers that read it, since env vars are baked in
          at container creation: `web`, `celery`, **and** `celery-beat` (the fetch/routing logic
@@ -932,14 +980,18 @@ Document here so the work is scoped when the time comes. Do not execute until th
          docker compose -p ddp-broker-py exec celery env | grep DDP_OPENSTATES_JURISDICTIONS
          docker compose -p ddp-broker-py exec celery-beat env | grep DDP_OPENSTATES_JURISDICTIONS
          ```
-      5. Validate: confirm a newly-added jurisdiction (AZ/VA/WA) is actually resolving through
-         the DDP replica rather than live OpenStates (check for `openstates_service.py`'s own
-         routing-decision log line, or diff a sample fetch against known replica-only data).
+      5. Validate: confirm a newly-added jurisdiction (MI/AZ/VA/WA/UT) is actually resolving
+         through the DDP replica rather than live OpenStates (check for `openstates_service.py`'s
+         own routing-decision log line, or diff a sample fetch against known replica-only data).
+         Also check the broker's logs after the next scheduled Celery fetch for that jurisdiction
+         completes (not a formal monitoring window — just confirm the first real scheduled run
+         after the flip doesn't error) before moving on to Stage 2.
       6. Rollback, if needed, is low-risk and symmetric: revert the one `.env` line (or remove it
          to fall back to the `UT,MI` code default) and re-run the same recreate command. No
          migrations, no schema changes — this flag doesn't change any served JSON shape.
-      7. **Stage 2, once each item's prerequisite closes:** add `FL` once the WAF re-scrape/
-         validation above is done; add `MA` once its §10.2 diff passes. Each addition repeats
+      7. **Stage 2, once each item's prerequisite closes:** add `US` once the OPEN-2 backfill has
+         actually been run; add `FL` once the WAF re-scrape/validation above is done; add `MA`
+         once its §10.2 diff passes. Each addition repeats
          steps 2-5 above with the updated value.
 
       There is no staging/blue-green environment for this service, so this change goes live for
