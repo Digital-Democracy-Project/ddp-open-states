@@ -75,6 +75,19 @@ categorically different jobs) so a future reader doesn't assume both halves work
 Not worth splitting into two separate scripts unless the two halves' schedules or failure
 handling ever need to diverge.
 
+**2026-07-28 — this recommendation's premise has changed since it was written.** It was written
+when DDP's own diff surface for `openstates-core` was one commit (`d6653a5`) — at that size, a
+cherry-pick rebuild genuinely is cheaper than maintaining a real diverging fork. That's no longer
+true: the bill-document-archive feature (Phase 1/2, `PLAN-bill-document-provenance.md`) alone is
+8+ commits, plus 3 more from the same-day bot-block fix, all DDP-only and none upstreamable. And
+the two-branch split (`main` = upstream mirror, `cherry-pick-line` = DDP's actual target) just
+produced a real incident, not a hypothetical one: a merged PR against the "obviously correct"
+branch (`main`) sat completely inert until the next deploy step happened to check for it (§4.4).
+A model with one branch and one rule — "this fork's `main` is DDP's, PRs land there, pull public
+upstream into it on a cadence" (exactly `openstates-scrapers`' already-working model) — has no
+equivalent wrong-branch trap, because there's only one branch to target. Whether that tradeoff
+is worth taking now is the open question added to §7, not resolved here.
+
 ---
 
 ## 3. The Gap: Nobody Merges Public Upstream Into Either Fork's `main`
@@ -161,6 +174,20 @@ rebase onto a moving `main`, and nothing currently reminds anyone to do it.
    includes 17 years of unrelated history) was discovered only because this conversation happened
    to ask about it — it could just as easily have gone unnoticed indefinitely, and would only get
    harder to eyeball correctly over time without a tool that already knows to filter it this way.
+
+4. **A PR merged to the wrong branch is silently inert — happened for real, 2026-07-28.** A
+   bill-document-archive fix (bot-block/CAPTCHA detection, prompted by a live MI incident that
+   day) was opened and merged as `openstates-core` PR #3 against the fork's `main` — the natural
+   choice by analogy with `openstates-scrapers`' model, where fork-`main` *is* where fixes land.
+   But `openstates-core`'s `main` is the public-upstream mirror (§1), not DDP's integration
+   branch; only `cherry-pick-line` is. The merge succeeded, GitHub showed it as merged, and
+   nothing errored — it just never reached production, because `apply-local-patches.sh` only ever
+   cherry-picks from `cherry-pick-line`. Caught only because the very next step (rebuilding
+   `local-patches` to deploy the fix) was checked against what actually landed, rather than
+   trusted on the strength of "the PR says merged." Re-landed correctly as PR #4 against
+   `cherry-pick-line`. **This is exactly the failure mode §2's "keep the script" recommendation
+   assumed would be rare** (see the note appended to §2 below) — worth weighing directly against
+   whichever option wins in the open question added to §7.
 
 ---
 
@@ -319,3 +346,17 @@ deleted from the script too, since nothing calls it anymore).
 - Does anyone besides this Mac need `ddp/main` (core) to be current — e.g., would a second
   engineer cloning the fork expect it to be usable standalone? If not, D may be lower priority
   than it looks.
+- **Added 2026-07-28, prompted by the wrong-branch incident in §4.4: should `openstates-core`
+  drop the cherry-pick-line model entirely and just become a clean fork like `openstates-scrapers`**
+  — DDP's fixes land directly on the fork's own `main`, public upstream gets pulled in on a
+  periodic (monthly, or whenever someone's already touching the repo) cadence, same as
+  Recommendation B/C already propose for the other two repos? This would retire `cherry-pick-line`
+  and the nightly `local-patches` rebuild outright, not just rename or document them (§2/§5.G).
+  Argument for: removes the exact wrong-branch trap §4.4 hit for real, and the "cheap because it's
+  one commit" premise that justified keeping cherry-picking (§2) no longer holds now that DDP's
+  own diff surface has grown into a real feature (Phase 1/2 archive + this fix, 11+ commits).
+  Argument against, not yet weighed: cherry-picking does force each DDP commit to individually
+  prove it still applies cleanly against fresh upstream every rebuild — a clean fork with a
+  monthly pull would instead risk a bigger, less frequent merge-conflict reckoning, batched up
+  once a month instead of surfaced nightly. Whichever way this goes, resolve it the same time as
+  H's original migration (§5.H, §6.1) — don't leave `openstates-core` on a third, in-between model.
