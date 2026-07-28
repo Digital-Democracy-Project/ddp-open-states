@@ -19,6 +19,7 @@ Environment:
 import os
 import sys
 import json
+import time
 import random
 import argparse
 import textwrap
@@ -59,6 +60,21 @@ PASS  = "✓"
 FAIL  = "✗"
 WARN  = "~"
 SKIP  = "-"
+
+
+class Tee:
+    """Write to multiple streams at once (console + log file)."""
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for s in self.streams:
+            s.write(data)
+
+    def flush(self):
+        for s in self.streams:
+            s.flush()
+
 
 class Report:
     def __init__(self):
@@ -115,6 +131,53 @@ def sample_bills_us(conn, n):
         LIMIT %s
     """, (n,))
     return cur.fetchall()
+
+
+def fetch_all_local_identifiers(conn, jurisdiction_code, session):
+    """Every bill identifier we have locally for a jurisdiction + session."""
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT b.identifier FROM opencivicdata_bill b
+        JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+        JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+        WHERE j.id LIKE %s AND ls.identifier = %s
+    """, (f"%/state:{jurisdiction_code}/%", session))
+    return {row[0] for row in cur.fetchall()}
+
+
+def fetch_all_public_identifiers(jurisdiction, session, api_key):
+    """Every bill identifier the live API has for a jurisdiction + session (paginated).
+    Sleeps between pages to stay under the licensed tier's 2 req/sec limit (§6 of the plan).
+    Retries a page a few times on transient network errors before giving up -- a single
+    flaky request out of ~900+ pages shouldn't kill the whole run."""
+    identifiers = set()
+    page = 1
+    while True:
+        for attempt in range(4):
+            try:
+                r = requests.get(f"{LIVE_API}/bills", params={
+                    "jurisdiction": jurisdiction, "session": session,
+                    "page": page, "per_page": 20, "apikey": api_key,
+                }, timeout=30)
+                r.raise_for_status()
+                data = r.json()
+                break
+            except (requests.exceptions.RequestException,) as e:
+                if attempt == 3:
+                    raise
+                wait = 2 ** attempt
+                print(f"    ...page {page} failed ({e.__class__.__name__}), "
+                      f"retry {attempt + 1}/3 in {wait}s")
+                time.sleep(wait)
+        identifiers.update(b["identifier"] for b in data["results"])
+        max_page = data["pagination"]["max_page"]
+        if page % 50 == 0:
+            print(f"    ...page {page}/{max_page}, {len(identifiers)} identifiers so far")
+        if page >= max_page:
+            break
+        page += 1
+        time.sleep(0.5)
+    return identifiers
 
 
 def sample_people(conn, jurisdiction_code, n):
@@ -289,6 +352,62 @@ def compare_people(report, local, live, label):
         report.record(WARN, f"{label}: district differs",
                       f"local={lr.get('district')} live={rr.get('district')}")
 
+# ── Coverage & completeness (PLAN-coverage-completeness-check.md) ─────────────
+
+def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit=None):
+    """
+    Tier 1: full identifier-set diff (public vs local) for a jurisdiction+session --
+    catches bills we never scraped at all, not just bills that differ once scraped.
+    Tier 2: compare_bills() over every identifier present in BOTH sets, reusing the
+    existing WARN/FAIL split (local>live votes = our unmerged fix; live>local = real gap).
+    """
+    print(f"\n{'═'*60}")
+    print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session}")
+    print(f"{'═'*60}")
+
+    print("  Fetching full identifier set from live API (paginated)...")
+    public_ids = fetch_all_public_identifiers(jurisdiction, session, api_key)
+    local_ids = fetch_all_local_identifiers(conn, jurisdiction, session)
+
+    missing = public_ids - local_ids   # THE headline number -- bills we don't have at all
+    extra = local_ids - public_ids     # informational only, not a failure -- see plan §4
+    both = public_ids & local_ids
+
+    print(f"  live={len(public_ids)}  local={len(local_ids)}  "
+          f"missing={len(missing)}  extra={len(extra)}  both={len(both)}")
+
+    if missing:
+        report.record(FAIL, f"{jurisdiction.upper()} {session}: Tier 1 coverage — "
+                             f"{len(missing)} bills exist live but not locally at all")
+    else:
+        report.record(PASS, f"{jurisdiction.upper()} {session}: Tier 1 coverage — "
+                             f"no missing bills ({len(local_ids)} local == {len(public_ids)} live)")
+    if extra:
+        report.record(WARN, f"{jurisdiction.upper()} {session}: {len(extra)} bills local-only "
+                             f"(not automatically a failure -- see plan §4)")
+
+    # Tier 2: sub-record completeness on every bill present in both sets.
+    # tier2_limit caps API usage for a first manual run; omit for a full sweep.
+    tier2_ids = sorted(both)
+    if tier2_limit:
+        tier2_ids = tier2_ids[:tier2_limit]
+    print(f"  Running Tier 2 sub-record checks on {len(tier2_ids)} of {len(both)} "
+          f"bills present in both...")
+    for i, identifier in enumerate(tier2_ids):
+        label = f"{jurisdiction.upper()} {identifier} ({session})"
+        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
+        live = fetch_bill(LIVE_API, api_key, jurisdiction, session, identifier)
+        compare_bills(report, local, live, label)
+        if i % 25 == 0:
+            print(f"    ...{i}/{len(tier2_ids)}")
+        time.sleep(0.5)  # stay under the live API's 2 req/sec limit
+
+    return {
+        "live": len(public_ids), "local": len(local_ids),
+        "missing": sorted(missing), "extra": sorted(extra),
+        "tier2_checked": len(tier2_ids),
+    }
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -302,11 +421,36 @@ def main():
                         help="Limit to one jurisdiction code (e.g. fl)")
     parser.add_argument("--no-people",    action="store_true",
                         help="Skip people checks")
+    parser.add_argument("--coverage", nargs=2, metavar=("JURISDICTION", "SESSION"),
+                        help="Run a Tier 1+2 coverage/completeness check instead of the "
+                             "default sample-based check (PLAN-coverage-completeness-check.md)")
+    parser.add_argument("--tier2-limit", type=int, default=None,
+                        help="Cap Tier 2 sub-record checks to the first N bills present in "
+                             "both APIs (only with --coverage; omit for a full sweep)")
     args = parser.parse_args()
 
     if not LIVE_KEY:
         print("ERROR: set OPENSTATES_API_KEY to your live v3.openstates.org API key")
         sys.exit(1)
+
+    if args.coverage:
+        jurisdiction, session = args.coverage
+        os.makedirs("logs/quality-check", exist_ok=True)
+        log_path = f"logs/quality-check/{jurisdiction}_{session}.log"
+        with open(log_path, "w") as logf:
+            tee = Tee(sys.stdout, logf)
+            old_stdout, sys.stdout = sys.stdout, tee
+            try:
+                report = Report()
+                conn = psycopg2.connect(DB_URL)
+                run_coverage_check(report, conn, jurisdiction, session, LIVE_KEY,
+                                   tier2_limit=args.tier2_limit)
+                conn.close()
+                ok = report.summary()
+            finally:
+                sys.stdout = old_stdout
+        print(f"\n  (full output also written to {log_path})")
+        sys.exit(0 if ok else 1)
 
     jurisdictions = [args.jurisdiction] if args.jurisdiction else JURISDICTIONS
     # Add US if not limiting to a specific jurisdiction
