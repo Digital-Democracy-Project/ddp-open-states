@@ -1,16 +1,18 @@
 # Plan: Incremental Bill Scraping — All Active Jurisdictions
 
-**Status: REOPENED 2026-07-27 — core implementation is live, but not complete.** All 8
-jurisdictions were patched 2026-06-22 and the shell timestamp layer (`logs/last-run/`) has run
-nightly since; see `RUNBOOK.md` for operational details. But three of this plan's own follow-ups
-were never closed out, and re-investigating why a routine WA scrape was taking ~70 minutes during
-an out-of-session week surfaced that this is systemic to three jurisdictions, not a fluke. See
-**"Reopened 2026-07-27: the per-bill network floor"** below for the full write-up. Short version:
-this plan shipped the *client-side* filtering it set out to build for every jurisdiction, but two
-of its own explicitly-flagged stretch goals (WA's WSDL date-range check, MI's signal-semantics
-verification) were never followed up on, and nothing before now had named the underlying pattern
-(no list-level date data forces a per-bill fetch regardless of `start=`) as a durable, cross-cutting
-property of WA/UT/AZ rather than a one-off WA quirk.
+**Status: REOPENED 2026-07-27, and again 2026-07-28 — core implementation is live, but not
+complete, and one part of it was actively deleting data.** All 8 jurisdictions were patched
+2026-06-22 and the shell timestamp layer (`logs/last-run/`) has run nightly since; see
+`RUNBOOK.md` for operational details. But three of this plan's own follow-ups were never closed
+out, and re-investigating why a routine WA scrape was taking ~70 minutes during an out-of-session
+week surfaced that this is systemic to three jurisdictions, not a fluke — see **"Reopened
+2026-07-27: the per-bill network floor"** below. Then, a day later, investigating why Utah had
+zero archived bill documents found something worse than a missed efficiency case: **UT's and VA's
+`start=` implementations were silently deleting each unchanged bill's already-scraped versions,
+sponsorships, actions, and votes on every incremental run** — see **"Reopened 2026-07-28: the
+UT/VA skip pattern was deleting data, not just saving time"** below. Both are now fixed
+(`openstates-scrapers` PRs #10 and #11), but the already-lost data for both jurisdictions still
+needs a fresh full scrape to come back.
 
 ## Context
 
@@ -33,6 +35,17 @@ Implementation is local patches only (no upstream PRs).
 2. **Scraper** (`scrapers/<state>/bills.py`): accept a `start=` kwarg in `scrape()`, parse
    it, and skip bills whose last-action/last-modified date is ≤ start. The correct skip
    mechanism in spatula is `raise SkipItem(...)` from `process_item()`.
+
+   **Skip before or instead of yielding, never yield a partially-populated `Bill` — found the
+   hard way 2026-07-28 (see "Reopened 2026-07-28" below).** When `Bill()` doesn't exist yet at
+   the point of the skip check, don't create it at all (`SkipItem`/`continue` in the list-
+   building step, or `return` before construction in a per-bill function). If a `Bill` already
+   exists and has been partially populated, skip it by not yielding it at all (plain `continue`,
+   or a captured `yield from` return value the caller checks) — never yield it anyway with some
+   fields populated and others not. `openstates-core`'s importer deletes a bill's existing
+   related items (versions, sponsorships, actions, etc.) whenever a new scrape reports zero of
+   them, so a partially-populated yield silently deletes real data on every subsequent
+   incremental run against an unchanged bill.
 
 3. **Format**: `%Y-%m-%dT%H:%M:%S` (ISO 8601 with T separator, no space) throughout —
    avoids bash word-splitting when `start=2026-06-19T01:00:00` is passed as a single
@@ -149,6 +162,80 @@ alert threshold should account for this rather than assuming session status pred
 - No action proposed for UT/AZ specifically — both already have single all-in-one per-bill
   responses with no cheaper alternative identified, so there's no equivalent upgrade path to
   chase the way there might be for WA.
+
+---
+
+## Reopened 2026-07-28: the UT/VA skip pattern was deleting data, not just saving time
+
+Triggered by investigating why UT had zero archived bill documents (`PLAN-open-states.md`'s UT
+finding). The original diagnosis blamed a 2025 site-redesign scraper gap — that was wrong,
+corrected the same day after actually running the scraper live. **The real bug lives in this
+plan's own `start=` implementation**, and the table above's "VA: Partial — skips 3 of 4 per-bill
+calls" and "UT: one full per-bill JSON fetch" rows were describing the *symptom* of something
+worse than an efficiency tradeoff.
+
+### The bug
+
+UT's and VA's per-bill `start=` check both follow the same shape: fetch the bill's detail data,
+check whether its last action predates the cutoff, and if so, **return/yield early** — but by
+that point in both functions, a `Bill` object already exists (UT: passed in by the caller; VA:
+constructed and already given its actions). The early exit skipped populating the *rest* of the
+bill (UT: versions, documents, sponsorships, actions; VA: versions, sponsorships, votes,
+abstracts) — but both still handed that now-partial `Bill` to the importer. `openstates-core`'s
+importer (`importers/base.py`) treats "the new scrape found zero of these related items" as
+"delete whatever's already in the database" for that bill. Net effect: **every incremental run
+against an unchanged bill silently deleted that bill's already-good data**, for as long as either
+jurisdiction's `start=` filtering has existed.
+
+**Confirmed real damage, both jurisdictions:**
+- **UT**: zero actions, zero sponsorships, zero versions across all 1,021 tracked bills. The
+  incremental filter was added 2026-06-30 (`2c1d7a0d`); a clean full scrape on 2026-06-14 had
+  populated everything correctly, and it's been getting wiped back out ever since.
+- **VA**: the regular 2026 session (3,637 bills) is intact, but the 2026S1 special session — 300
+  bills, gone quiet since early May — has zero versions and zero sponsorships across all 300.
+  Double-checked the bill count itself against the public OpenStates API: exactly 300 there too,
+  so the bill records are correct, only their content was deleted.
+
+**Every other jurisdiction was audited and is clean.** The distinguishing factor isn't whether a
+jurisdiction *has* `start=` filtering (all 8 do) — it's *where* the skip decision happens relative
+to `Bill` construction:
+
+| Jurisdiction | Skip mechanism | Safe? |
+|---|---|---|
+| FL, MA | Filters the bill *list* before any `Bill` object exists (`SkipItem` / `continue` in list-building) | Yes |
+| MI | Filters server-side (`dateFrom=` query param) — stale bills never appear in the list at all | Yes |
+| US federal | Only calls the per-bill parse function at all for bills newer than the cutoff | Yes |
+| WA, AZ | Early `return` happens *before* `Bill(...)` is constructed in the per-bill function | Yes |
+| **UT** | Early `return` inside a sub-function, *after* the caller already has a `Bill` to populate | **No — fixed, PR #10** |
+| **VA** | `Bill(...)` constructed and actions added *before* the cutoff check; used to `yield` anyway | **No — fixed, PR #11** |
+
+### The fix
+
+Both now skip the bill entirely rather than yielding a partially-populated one:
+- **UT** (`openstates-scrapers` PR #10): `scrape_bill_details_from_api()`'s early return now
+  returns `True`, captured via `skip = yield from self.scrape_bill_details_from_api(...)` in
+  `scrape_bill()`, which returns before ever reaching `yield bill` when `skip` is true.
+- **VA** (`openstates-scrapers` PR #11): the skip branch is now a plain `continue` instead of
+  `bill.add_source(...); yield bill; continue` — the bill is never yielded at all.
+
+Both verified live: instantiating the real scraper class against real bills, the skip path now
+yields nothing, and the normal (non-skip) path still populates versions/sponsorships exactly as
+before.
+
+### Still needed — not yet done
+
+**Fixing the code stops the bleeding; it doesn't restore what's already gone.** An incremental
+scrape only looks at bills with activity since the last cutoff — it can't backfill a bill whose
+last action is years (or, for VA's 2026S1, months) in the past. Both jurisdictions need a genuine
+**full scrape** (no `start=`) once the fixes are merged and synced to production:
+- `os-update ut bills` / equivalent full-scrape invocation for UT, then re-run
+  `os-text-extract archive ut` to confirm it now finds and archives real documents.
+- A full scrape of VA's `2026S1` session specifically (the regular 2026 session doesn't need it).
+
+**Broader lesson for any future jurisdiction-specific `start=` work:** the safe pattern is "skip
+before creating/populating a `Bill`, or skip by simply not yielding it" — never partially
+populate a `Bill` and yield it anyway on the skip path. Worth a one-line callout in this plan's
+"Standard pattern" section above for anyone implementing this for a 9th jurisdiction later.
 
 ---
 
