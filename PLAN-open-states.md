@@ -694,11 +694,15 @@ Document here so the work is scoped when the time comes. Do not execute until th
       restorable dump** with `pg_restore --list` before proceeding:
       ```bash
       DUMP_NAME="openstates-pre-backfill-$(date +%Y%m%d).dump"
+      DUMP_PATH="$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME"
       docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc -f "/tmp/$DUMP_NAME"
-      docker cp "ddp-agents-postgres-1:/tmp/$DUMP_NAME" "$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME"
-      pg_restore --list "$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME" | head -5
-      # Restore procedure, if ever needed:
-      #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_NAME"
+      docker cp "ddp-agents-postgres-1:/tmp/$DUMP_NAME" "$DUMP_PATH"
+      pg_restore --list "$DUMP_PATH" | head -5
+      # Restore procedure, if ever needed (fixed 2026-07-28, 3rd PM review pass -- the earlier
+      # draft redirected from the bare filename, not the durable path it was actually copied to):
+      # first stop anything that could write to the DB concurrently with the restore (the
+      # nightly scrape/import via launchd, and api-v3 if it's running), then:
+      #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_PATH"
       ```
 - [ ] **FL vote-completeness gap from the WAF outage — corrected 2026-07-28: this was never a
       prod data-quality incident, but it IS a real, unrepaired gap in the local replica.** The
@@ -787,12 +791,22 @@ Document here so the work is scoped when the time comes. Do not execute until th
       # 5. Stronger than the aggregate count alone (2nd PM review pass): pick 2-3 specific
       #    affected bills from the candidate list and diff them against live v3.openstates.org,
       #    the same pattern already used for the MA validation above -- this actually confirms
-      #    the repaired votes match live data, not just that *some* count went up:
-      head -3 /tmp/fl-2026-waf-affected-bills.txt   # pick a few real candidate bill numbers
-      # For each, e.g. HB170:
-      curl "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=HB170&include=votes,actions" | jq . > local_fl_hb170.json
-      curl "https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB170&include=votes,actions&apikey=$OPENSTATES_API_KEY" | jq . > live_fl_hb170.json
-      diff local_fl_hb170.json live_fl_hb170.json
+      #    the repaired votes match live data, not just that *some* count went up.
+      #    Corrected 2026-07-28 (3rd PM review pass): derive the actual bill numbers to check
+      #    FROM the candidate file rather than guessing an example -- an earlier draft hardcoded
+      #    "HB170" without confirming it was really one of the 540 affected bills. Check both
+      #    HB/SB prefixes since the affected-bill list is bare numbers spanning both chambers:
+      for num in $(head -3 /tmp/fl-2026-waf-affected-bills.txt); do
+        for prefix in HB SB; do
+          curl -s "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions" \
+            | jq -e '.results[0]' >/dev/null 2>&1 || continue   # skip if this prefix/number doesn't exist
+          curl -s "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions" \
+            | jq . > "local_fl_${prefix}${num}.json"
+          curl -s "https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions&apikey=$OPENSTATES_API_KEY" \
+            | jq . > "live_fl_${prefix}${num}.json"
+          diff "local_fl_${prefix}${num}.json" "live_fl_${prefix}${num}.json"
+        done
+      done
 
       # 6. Also run the generic quality_check.py pass as a broader sanity check
       OPENSTATES_API_KEY=<your v3.openstates.org key> python3 quality_check.py \
@@ -909,6 +923,10 @@ Document here so the work is scoped when the time comes. Do not execute until th
         mismatching names (likely a formatting difference — e.g. "Last, First" vs "First Last",
         a nickname, or a suffix) rather than guessing. Only after that reproduction is a real fix
         (probably adding `other_names` aliases to the affected `people/` YAML entries) scoped.
+        **Not a cutover blocker (clarified 2026-07-28, 3rd PM review pass):** same low-severity
+        reasoning as FL/UT applies — bill/vote data still imports completely, only some
+        individual voter attribution is silently missing — so VA stays in Stage 1 of the
+        `DDP_OPENSTATES_JURISDICTIONS` rollout below while this investigation continues.
       - **UT: accept, monitor only.** Same shape of gap as VA (name-only matching in
         `scrapers/ut/bills.py`), but the actual error counts are trace (4 errors on a 1,907-vote-
         event run, then 0 on the next) — not enough signal to justify the VA-style investigation
@@ -962,6 +980,15 @@ Document here so the work is scoped when the time comes. Do not execute until th
 
       1. **Stage 1 (deployable now):** `DDP_OPENSTATES_JURISDICTIONS=MI,AZ,VA,WA,UT` — i.e. the
          target list minus FL, MA, and US, all three still gated on open items above.
+         **Why these five are safe (added 2026-07-28, 3rd PM review pass):** MI and UT are
+         already live in prod today as the two canary jurisdictions — no change in exposure for
+         them. AZ and WA have no open item anywhere in this checklist. **VA has an open
+         org/person-resolution investigation (above) but it is explicitly *not* a cutover
+         blocker** — same low-severity reasoning already applied to FL/UT (bill/vote data still
+         imports completely; only some individual voter attribution is silently missing), the
+         investigation is about narrowing down the exact cause for a possible *future* fix, not
+         about whether VA is safe to expose today. If that reasoning changes, revisit VA's
+         inclusion here explicitly rather than silently.
       2. Edit the one line in `/opt/ddp-broker-py/.env` with the stage's value.
       3. Recreate — not just restart — the containers that read it, since env vars are baked in
          at container creation: `web`, `celery`, **and** `celery-beat` (the fetch/routing logic
@@ -974,18 +1001,24 @@ Document here so the work is scoped when the time comes. Do not execute until th
            -f infra/compose/prod.yml up -d --no-deps web celery celery-beat
          ```
       4. **Verify all three containers actually picked up the new value** (easy to miss since
-         it's baked in at creation, not read live):
+         it's baked in at creation, not read live). If any of the three don't show the expected
+         value, re-run step 3 with `--force-recreate` appended (added 2026-07-28, 3rd PM review
+         pass — compose sometimes skips recreation if it doesn't detect a meaningful change):
          ```
          docker compose -p ddp-broker-py exec web env | grep DDP_OPENSTATES_JURISDICTIONS
          docker compose -p ddp-broker-py exec celery env | grep DDP_OPENSTATES_JURISDICTIONS
          docker compose -p ddp-broker-py exec celery-beat env | grep DDP_OPENSTATES_JURISDICTIONS
          ```
       5. Validate: confirm a newly-added jurisdiction (MI/AZ/VA/WA/UT) is actually resolving
-         through the DDP replica rather than live OpenStates (check for `openstates_service.py`'s
-         own routing-decision log line, or diff a sample fetch against known replica-only data).
-         Also check the broker's logs after the next scheduled Celery fetch for that jurisdiction
-         completes (not a formal monitoring window — just confirm the first real scheduled run
-         after the flip doesn't error) before moving on to Stage 2.
+         through the DDP replica rather than live OpenStates. **Concrete evidence (added 2026-07-28,
+         3rd PM review pass — the earlier draft only gestured at "the routing-decision log
+         line" without naming it):** `openstates_service.py`'s `_get_client_for_jurisdiction()`
+         logs `Routing {jurisdiction_iso2} to DDP OpenStates replica` at debug level
+         (`openstates_service.py:1292`) — grep the broker's logs for this exact string with the
+         new jurisdiction's ISO2 code after triggering a fetch for it. Also check the broker's
+         logs after the next scheduled Celery fetch for that jurisdiction completes (not a formal
+         monitoring window — just confirm the first real scheduled run after the flip doesn't
+         error) before moving on to Stage 2.
       6. Rollback, if needed, is low-risk and symmetric: revert the one `.env` line (or remove it
          to fall back to the `UT,MI` code default) and re-run the same recreate command. No
          migrations, no schema changes — this flag doesn't change any served JSON shape.
