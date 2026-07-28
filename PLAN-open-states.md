@@ -553,18 +553,53 @@ Document here so the work is scoped when the time comes. Do not execute until th
 ### 8.1 Prerequisites before cutover
 
 - Shadow scrapes have run nightly for ≥ 4 weeks with no silent gaps
-- Parallel validation (§10.2) has passed for all 9 jurisdictions
+- Parallel validation (§10.2) has passed, **per jurisdiction, before that jurisdiction is added**
+  — **corrected 2026-07-28 (2nd PM review pass): rewritten from a single "all 8 jurisdictions"
+  gate**, which no longer matches the staged rollout in the deploy-gap item below (jurisdictions
+  are added to `DDP_OPENSTATES_JURISDICTIONS` incrementally as each one's own validation/repair
+  closes, not all at once). The 8 tracked jurisdictions are FL/WA/US/VA/MI/MA/UT/AZ; AL is
+  explicitly untracked per §2 and was never part of this count.
 - Session alias mapping resolved (see below)
 - pg_dump backup confirmed working
 
 ### 8.1a ddp-broker-py remaining blockers (found 2026-07-21)
 
-- [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from
-      `DDP_OPENSTATES_JURISDICTIONS`. The replica has 45 vote events across 10,959 MA bills,
+- [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from the *local
+      checkout's target* `DDP_OPENSTATES_JURISDICTIONS` list (**clarified 2026-07-28, 2nd PM
+      review pass, to avoid the same local-vs-prod ambiguity flagged elsewhere in this
+      section** — prod itself is still `UT,MI` only, per the deploy-gap item below; this bullet
+      is about local validation readiness, not prod exposure). The replica has 45 vote events
+      across 10,959 MA bills,
       matching the motion-classifier's known total (RUNBOOK "Motion classification"), so the
       scraper itself works — but the formal §10.2 parallel diff against live
       `v3.openstates.org` hasn't been run/recorded for MA specifically. Run it, then add `MA`
       to the jurisdictions list.
+
+      **Scoped 2026-07-28 — concrete bills to use for the diff.** Queried the local replica for
+      real MA bills with vote data to use, following the same pattern as §10.2's FL HB1 example:
+
+      ```bash
+      # Primary case — H 4240 (194th session), 16 vote events, the most vote-heavy MA bill
+      # in the replica, good stress test for motion_text/counts/individual-vote parsing:
+      curl "http://localhost:8002/bills?jurisdiction=ma&session=194th&identifier=H4240&include=votes,actions,sponsorships" \
+        | jq . > local_ma_h4240.json
+      curl "https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=H4240&include=votes,actions,sponsorships&apikey=$OPENSTATES_API_KEY" \
+        | jq . > live_ma_h4240.json
+      diff local_ma_h4240.json live_ma_h4240.json
+
+      # Secondary case — H 58 (194th session), 2 vote events, simpler bill for a sanity check
+      curl "http://localhost:8002/bills?jurisdiction=ma&session=194th&identifier=H58&include=votes,actions,sponsorships" \
+        | jq . > local_ma_h58.json
+      curl "https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=H58&include=votes,actions,sponsorships&apikey=$OPENSTATES_API_KEY" \
+        | jq . > live_ma_h58.json
+      diff local_ma_h58.json live_ma_h58.json
+      ```
+
+      Check the same fields §10.2 already lists (motion_text, vote counts, individual votes,
+      sponsorships, people's name/district/division_id). If both diff clean, MA is validated —
+      run the checklist add-to-`DDP_OPENSTATES_JURISDICTIONS` step next (see item 1 above, which
+      found that step itself has no documented deploy path yet on the actual prod host — MA's
+      addition is blocked on the same prerequisite, not just its own validation).
 - [x] **`openstates-core`'s `apply-local-patches.sh` tooling gap — FIXED 2026-07-21 (commit
       `af9ad95` on `phase1-bill-provenance`).** `openstates-core` sits on `phase1-bill-provenance`, which per
       `ddp-infra/PLAN-bill-document-provenance.md` is **intentionally held back** — its
@@ -612,21 +647,21 @@ Document here so the work is scoped when the time comes. Do not execute until th
       those 499 errors; a second bug surfaced while fixing the first — once `cherry-pick-line` is
       actually synced, its history contains ordinary GitHub merge commits, which `git
       cherry-pick`'s range-pick can't replay without `-m 1`, which would crash the whole nightly
-      rebuild the next time any PR merges into that branch normally. **Both fixes are in
-      `ddp-open-states` PR #15 (`fix/apply-local-patches-sync-cherry-pick-line`), open as of
-      2026-07-28, not yet merged** — verified so far only in a disposable local clone, explicitly
-      *not* against this production checkout, because a WA scrape was running at the time. Per the
-      PR's own test plan: merge only during a confirmed quiet window
-      (`ps aux | grep -i "run-scrape\|os-update\|os-text-extract"` returns nothing), then run
-      `apply-local-patches.sh` for real to confirm `local-patches` finally picks up PR #1 and #2,
-      and re-run `os-text-extract archive fl` afterward to sweep up the ~499 documents that failed
-      with unretried 429s (skipped by the natural-key check for everything already archived).
-      **Practical effect: until PR #15 merges and a fresh `apply-local-patches.sh` run confirms
-      it, neither the archive retry fix nor the OPEN-2 vote-person fix below should be treated as
-      actually live, regardless of their GitHub merge state.**
+      rebuild the next time any PR merges into that branch normally. **Both fixes shipped in
+      `ddp-open-states` PR #15 (`fix/apply-local-patches-sync-cherry-pick-line`), merged
+      2026-07-28 during a confirmed quiet window (no scrape running).**
+
+      **Confirmed live 2026-07-28:** ran `apply-local-patches.sh` for real after the merge —
+      `local-patches` now includes both PR #1 (retry settings) and PR #2 (OPEN-2 vote-person
+      resolution), and `openstates-core/openstates/cli/text_extract.py` shows
+      `scraper.retry_attempts = 5` / `retry_wait_seconds = 5` as expected. Also re-ran
+      `os-text-extract archive fl` (no `--session`) to sweep up the ~499 documents that failed
+      with unretried 429s during the 2026-07-26 run; the natural-key check correctly skipped
+      everything already archived and only re-fetched the previously-failed ones. **Both fixes
+      are genuinely live now — the "not yet live" caveat below no longer applies.**
 - [ ] **US federal vote-person resolution gap (OPEN-2) — separate from the FL/MA org-resolution
-      gap above, fix merged on GitHub 2026-07-26 but NOT yet actually live in production (see the
-      2026-07-28 correction above), backfill not yet run for real.** Distinct issue: ~27.6% of US
+      gap above. Fix confirmed live in production as of 2026-07-28. The one-time backfill for
+      already-scraped rows is the only remaining step.** Distinct issue: ~27.6% of US
       Congress person-vote rows (147,473 of 534,522, across 1,535 roll calls) had a null
       `voter_id` because same-surname legislators (three different Garcias, three different
       Carters, etc.) couldn't be disambiguated by name-matching alone, even though the House
@@ -637,27 +672,151 @@ Document here so the work is scoped when the time comes. Do not execute until th
       `openstates-core` (`VoteEvent.vote()` now accepts `id=`, `resolve_person()` tries an
       identifier match before falling back to name-matching — PR #2, merged to `cherry-pick-line`
       on GitHub, **not** `main`, per the fork's convention, see
-      `notes/openstates-core-cherry-pick-line-targeting-20260726.md` — but per the correction
-      above, not yet actually applied to any real `local-patches` build), `openstates-scrapers`
-      (`scrapers/usa/votes.py` now passes `id=bioguide`/`id=lis_id` — PR #8, fork `main`, this one
-      *is* live since `openstates-scrapers`'s sync step was never affected by the bug above), and
-      `ddp-open-states` (`backfill-vote-person-resolution.py`, PR #12, `main` — re-resolves
-      already-scraped null-`voter_id` rows without re-scraping, and doesn't depend on
+      `notes/openstates-core-cherry-pick-line-targeting-20260726.md` — **confirmed applied to a
+      real `local-patches` build 2026-07-28**, see the correction above), `openstates-scrapers`
+      (`scrapers/usa/votes.py` now passes `id=bioguide`/`id=lis_id` — PR #8, fork `main`, also
+      live), and `ddp-open-states` (`backfill-vote-person-resolution.py`, PR #12, `main` —
+      re-resolves already-scraped null-`voter_id` rows without re-scraping, and doesn't depend on
       `local-patches` at all since it works directly off the `note` column already sitting in the
       DB). `--dry-run` against the real local DB shows 144,340 of 147,473 (97.9%) would resolve;
       the remaining ~3,100 have no matching identifier (e.g. former members not in `people/`) and
       are left alone. **The backfill script has not been run for real yet** — it mutates the
-      production Postgres DB, so that's an explicit separate action. Ordering still matters, just
-      differently than first thought: the backfill itself is safe to run anytime (it's a one-time
-      pass over existing data, independent of `local-patches`), but core PR #2's `id=` resolution
-      won't apply to *newly scraped* US votes going forward until PR #15 merges and a real
-      `apply-local-patches.sh` run confirms `local-patches` actually contains it.
-- [ ] **FL vote-completeness audit across the WAF-outage window.** The flhouse.gov WAF-cookie
-      bug (fixed fork PR #5, merged 2026-07-18) silently dropped House committee votes on
-      scrapes running past ~1 hour. FL is *already* in `DDP_OPENSTATES_JURISDICTIONS`, so if it
-      was routed there before the fix, some House votes served to prod during that window may
-      be missing. Run a targeted vote-count check (or a full `quality_check.py` diff) for FL's
-      current session(s) before fully trusting this data.
+      production Postgres DB, so that's an explicit separate action, now the only thing left open
+      on this item since the code fix itself is confirmed live for new scrapes going forward.
+
+      **Before running it for real (added 2026-07-28, PM review; extended in the 2nd pass to
+      make the dump actually durable and verified):** take a `pg_dump` of the `openstates` DB
+      first — this is a one-time bulk write against `opencivicdata_personvote`, and a plain
+      pre-run dump is the simplest possible undo path if some rows resolve to the wrong person.
+      **Copy it out of the container immediately** (a dump left inside `/tmp` in the container
+      doesn't survive the container being recreated or cleaned up — see the same class of
+      concern already raised for the broker EC2 deploy above) and **verify it's a valid,
+      restorable dump** with `pg_restore --list` before proceeding:
+      ```bash
+      DUMP_NAME="openstates-pre-backfill-$(date +%Y%m%d).dump"
+      DUMP_PATH="$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME"
+      docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc -f "/tmp/$DUMP_NAME"
+      docker cp "ddp-agents-postgres-1:/tmp/$DUMP_NAME" "$DUMP_PATH"
+      pg_restore --list "$DUMP_PATH" | head -5
+      # Restore procedure, if ever needed (fixed 2026-07-28, 3rd PM review pass -- the earlier
+      # draft redirected from the bare filename, not the durable path it was actually copied to):
+      # first stop anything that could write to the DB concurrently with the restore (the
+      # nightly scrape/import via launchd, and api-v3 if it's running), then:
+      #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_PATH"
+      ```
+- [ ] **FL vote-completeness gap from the WAF outage — corrected 2026-07-28: this was never a
+      prod data-quality incident, but it IS a real, unrepaired gap in the local replica.** The
+      premise in this item's original wording ("FL is already in `DDP_OPENSTATES_JURISDICTIONS`")
+      was stale — it was written before, and never updated to reflect, the 2026-07-23 correction
+      at the top of §8 and item 1 above: FL was never actually flipped on in prod (still
+      `UT,MI` only as of the most recent check), so nothing affected by this bug ever reached a
+      real consumer. The actual exposure is confined to the local shadow-scrape DB used for QA.
+
+      **What's actually confirmed broken, with evidence:** PR #5 (the `_FLHouseWAFSource` cookie
+      fix) merged 2026-07-18T03:01:02Z. FL session **`"2026"`** (the current regular session) was
+      scraped full-mode 2026-06-25→06-26 — *before* the fix — hit `flhouse.gov` bot-detection
+      backoffs starting 29 seconds into the run and continuing throughout (2,435 House-search
+      fetches, 538 backoffs, 539 "could not find bill in House Search" errors, a ~22% loss rate)
+      — and this run **was successfully imported** into the replica. **540 distinct FL bill
+      numbers** hit at least one bot-detection event in that run (re-verified 2026-07-28 directly
+      against `logs/scraper.log.20260714T020000Z.gz`, lines 21838-51119 — the earlier ~496/538
+      estimates were close but not exact) — candidates for silently-missing House votes. Every FL
+      "2026" scrape since has been an incremental no-op (0 bills changed),
+      so nothing has backfilled this gap — it's been sitting unrepaired since 2026-06-26. All
+      other FL sessions currently in the replica (2023/2024/2025 + specials) were scraped/backfilled
+      on or after 2026-07-16, after the fix was live, and are confirmed clean per `RUNBOOK.md`.
+
+      **Concrete steps to close this out, before FL is ever added to the prod jurisdiction list:**
+
+      **Corrected 2026-07-28 (PM review) — validate against the actual known-affected bill list,
+      not a random sample.** A generic `quality_check.py --bills 50` sample has no particular
+      reason to land on the 540 bills that actually hit a WAF backoff during the bad run — it
+      could easily report "clean" while missing the real gap. Extract the actual candidate list
+      from the archived 2026-06-25/26 log first, then check specifically against it:
+      ```bash
+      cd ~/Developer/repos/ddp-open-states
+
+      # 1. Extract the candidate bill numbers that hit a WAF backoff in the bad run. Verified
+      #    2026-07-28: the correct archive is scraper.log.20260714T020000Z.gz (NOT
+      #    scraper.log.20260624.gz, which predates the run and was wrongly cited in an earlier
+      #    draft of this item). The bad run spans lines 21838-51119 in that archive (bounded by
+      #    its own "Starting scrape: fl session=2026 (full)" / next-marker lines, same
+      #    shared-log-interleaving trap as the org/person-resolution table above) — 540 distinct
+      #    bill numbers confirmed, close to the ~496-538 estimated originally:
+      gzcat logs/scraper.log.20260714T020000Z.gz | sed -n '21838,51119p' \
+        | grep "flhouse.gov bot detection" | grep -oE "BillNumber=[0-9]+" | grep -oE "[0-9]+" \
+        | sort -un > /tmp/fl-2026-waf-affected-bills.txt
+      wc -l /tmp/fl-2026-waf-affected-bills.txt   # expect 540
+
+      # 2. Targeted BEFORE count — run this same query now, before touching anything, so there's
+      #    an actual before/after comparison (2nd PM review pass: the original draft only ran
+      #    this after the re-scrape, which can't prove the repair changed anything). Caveat:
+      #    b.identifier is stored with a chamber prefix (e.g. "HB 170"), but the extracted
+      #    candidate list above is bare numbers -- matching on the numeric part alone with
+      #    regexp_replace is intentionally a superset match (it can't distinguish "HB 170" from
+      #    "SB 170"). That's fine for this purpose -- a superset only makes the "did the count go
+      #    up" signal more conservative, never less -- but don't treat this count as an exact
+      #    per-bill accounting:
+      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      SELECT count(DISTINCT v.id) AS house_vote_events
+      FROM opencivicdata_bill b
+      JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+      JOIN opencivicdata_voteevent v ON v.bill_id = b.id
+      JOIN opencivicdata_organization o ON v.organization_id = o.id
+      WHERE ls.jurisdiction_id = 'ocd-jurisdiction/country:us/state:fl/government'
+        AND ls.identifier = '2026' AND o.classification = 'lower'
+        AND regexp_replace(b.identifier, '[^0-9]', '', 'g') = ANY(string_to_array('$(paste -sd, /tmp/fl-2026-waf-affected-bills.txt)', ','));
+      "
+      # Record this number before proceeding.
+
+      # 3. The actual fix — force a full re-scrape of session 2026 (the one confirmed-bad,
+      #    never-repaired session), now that the WAF fix and its retry-settings follow-up are
+      #    both live:
+      rm -f logs/last-run/fl_session_2026.ts   # clears the incremental cutoff so it runs full
+      ./run-scrape.sh fl "session=2026"
+
+      # 4. Re-run the exact same query from step 2 — the count should go up, not stay flat,
+      #    for bills that actually had missing votes.
+      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      SELECT count(DISTINCT v.id) AS house_vote_events
+      FROM opencivicdata_bill b
+      JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+      JOIN opencivicdata_voteevent v ON v.bill_id = b.id
+      JOIN opencivicdata_organization o ON v.organization_id = o.id
+      WHERE ls.jurisdiction_id = 'ocd-jurisdiction/country:us/state:fl/government'
+        AND ls.identifier = '2026' AND o.classification = 'lower'
+        AND regexp_replace(b.identifier, '[^0-9]', '', 'g') = ANY(string_to_array('$(paste -sd, /tmp/fl-2026-waf-affected-bills.txt)', ','));
+      "
+
+      # 5. Stronger than the aggregate count alone (2nd PM review pass): pick 2-3 specific
+      #    affected bills from the candidate list and diff them against live v3.openstates.org,
+      #    the same pattern already used for the MA validation above -- this actually confirms
+      #    the repaired votes match live data, not just that *some* count went up.
+      #    Corrected 2026-07-28 (3rd PM review pass): derive the actual bill numbers to check
+      #    FROM the candidate file rather than guessing an example -- an earlier draft hardcoded
+      #    "HB170" without confirming it was really one of the 540 affected bills. Check both
+      #    HB/SB prefixes since the affected-bill list is bare numbers spanning both chambers:
+      for num in $(head -3 /tmp/fl-2026-waf-affected-bills.txt); do
+        for prefix in HB SB; do
+          curl -s "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions" \
+            | jq -e '.results[0]' >/dev/null 2>&1 || continue   # skip if this prefix/number doesn't exist
+          curl -s "http://localhost:8002/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions" \
+            | jq . > "local_fl_${prefix}${num}.json"
+          curl -s "https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=${prefix}${num}&include=votes,actions&apikey=$OPENSTATES_API_KEY" \
+            | jq . > "live_fl_${prefix}${num}.json"
+          diff "local_fl_${prefix}${num}.json" "live_fl_${prefix}${num}.json"
+        done
+      done
+
+      # 6. Also run the generic quality_check.py pass as a broader sanity check
+      OPENSTATES_API_KEY=<your v3.openstates.org key> python3 quality_check.py \
+        --jurisdiction fl --bills 50 --no-people
+      ```
+
+      This also means: fix the stale premise itself, not just the data — this checklist item
+      should not be read as "FL cutover is blocked on a prod incident," since no such incident
+      occurred. It's a one-time local-DB repair, decoupled from whether/when FL gets added to
+      `DDP_OPENSTATES_JURISDICTIONS` (see item 1 above for that separate blocker).
 - [x] **FL historical backfill (2023/2024 regular)** — **DONE 2026-07-25.** The root-cause fix
       (`db7ab1cc0`, "use `self.source.url` instead of nonexistent `self.url` in FloorVote")
       merged via `openstates-scrapers` PR #6 (`fix/fl-floor-vote-source-url`), along with a
@@ -726,27 +885,157 @@ Document here so the work is scoped when the time comes. Do not execute until th
       Organization attribution on the affected action/vote, or the affected individual voter's
       choice within an otherwise-complete roll call, is silently left unset/missing.
 
-      **Not yet assessed / next steps:**
-      - Re-run a full MA import post-vote-fix to get a current, trustworthy MA number.
-      - Root-cause VA/UT's people-resolution gaps (legislator name-matching? term/session
-        boundary issue like FL's, or something else?).
-      - Decide per-jurisdiction whether this is worth fixing (e.g. a per-session historical
-        committee/people scrape for FL/MA-style term changes; MA may instead need its
-        org/people scraper extended to cover the external-entity types bill actions reference) or
-        just documenting as a known limitation.
-      - Severity is low for bill-text/status use cases (nothing here affects bill data itself) but
-        should be sized — especially for MA — before this data is used for committee-level,
-        agency-attribution, or per-legislator vote analysis.
+      **Decision, scoped 2026-07-28 — fix vs. accept, per jurisdiction:**
+
+      - **FL: accept as a documented limitation, no fix planned.** Root cause (committee
+        renaming across terms) would require a per-session historical committee scrape — real
+        scraper work — to fix, and severity is low: nothing here drops bill/vote data, it only
+        leaves some Organization attribution unset on already-imported records. **Correction
+        2026-07-28 (PM review caught this):** FL is only in the *local checkout's target*
+        `DDP_OPENSTATES_JURISDICTIONS` list — per the deploy-gap item below, it is **not**
+        actually live in prod yet. So this is a decision about whether FL is *fit* to be added,
+        not about live prod data. Revisit only if a consumer specifically needs committee-level
+        historical attribution (none currently does).
+      - **MA: get a fresh number first, then apply the same accept-as-limitation reasoning as
+        FL — but this one actually gates a decision, not just documentation.** Unlike FL, MA
+        hasn't been added to `DDP_OPENSTATES_JURISDICTIONS` yet, so this number is a live input
+        to the MA vote-data validation item above, not just a nice-to-have. Re-run a full MA
+        import post-vote-fix to replace the stale, pre-fix 215/348 numbers before deciding. If
+        the fresh numbers are in the same range, the reasoning is identical to FL's (external
+        entities, not legislative committees — a categorical scraper-scope gap, not a temporal
+        one) and the same accept decision applies; a fix would mean extending MA's org/people
+        scraper to also capture the external entity types (Attorney General, DAs, agencies, etc)
+        bill actions reference, which is more speculative scope than FL's fix and not recommended
+        unless the fresh number turns out much worse than expected.
+      - **VA: root cause traced 2026-07-28, needs one more reproduction step before it's a fully
+        scoped fix.** `scrapers/va/bills.py`'s `add_votes()` (line 394-397) and `add_sponsors()`
+        (line 233-246) both pass only `MemberDisplayName` — a bare name string, no stable
+        identifier — to `bill.vote()`/`add_sponsorship()`, the same shape of gap OPEN-2 found and
+        fixed for US federal votes. Unlike OPEN-2, though, VA's own `people/` YAML has no clean
+        structured identifier to key off (its LIS member code, e.g. `S113`, is embedded in a link
+        URL, not a dedicated `identifiers:` field), and the actual failing names aren't visible in
+        the current logs — `openstates-core/openstates/importers/base.py:663`'s
+        `"no people returned for spec"` error is logged generically without the name that failed,
+        confirmed by reading the importer code directly. **Next step:** write a short read-only
+        script that re-runs the same name-matching query (`base.py`'s `Q(name__iexact=...) |
+        Q(other_names__name__iexact=...) | Q(family_name__iexact=...)`) against every
+        `MemberDisplayName` VA's vote/sponsor API actually returns, to surface the specific
+        mismatching names (likely a formatting difference — e.g. "Last, First" vs "First Last",
+        a nickname, or a suffix) rather than guessing. Only after that reproduction is a real fix
+        (probably adding `other_names` aliases to the affected `people/` YAML entries) scoped.
+        **Not a cutover blocker (clarified 2026-07-28, 3rd PM review pass):** same low-severity
+        reasoning as FL/UT applies — bill/vote data still imports completely, only some
+        individual voter attribution is silently missing — so VA stays in Stage 1 of the
+        `DDP_OPENSTATES_JURISDICTIONS` rollout below while this investigation continues.
+      - **UT: accept, monitor only.** Same shape of gap as VA (name-only matching in
+        `scrapers/ut/bills.py`), but the actual error counts are trace (4 errors on a 1,907-vote-
+        event run, then 0 on the next) — not enough signal to justify the VA-style investigation
+        above. No action; revisit if future UT runs show a growing error count.
+
+      Severity across all four remains low for bill-text/status use cases (nothing here affects
+      bill data itself); the above should be treated as final for FL/UT and provisional for
+      MA/VA pending the one remaining step each (fresh MA import; VA name-mismatch reproduction).
 - [x] **Off-host backup (WS9, `PLAN-production-hardening.md`)** — **DONE, found already resolved
       while updating this checklist 2026-07-25.** No longer blocked on AWS creds: `backup-openstates-db.sh`
       now pushes nightly `pg_dump`s off-host via the `ddp-prod-s3-openstates-backups` proxy wrapper
       (commit `0276b3a`, merged via PR #7 `fix/ws9-s3-proxy-wrapper`), and `com.ddp.openstates-db-backup`
       already runs this nightly at 07:00 local as a system LaunchDaemon (`ddp-infra/README.md`). This
       item was stale on this branch — the fix landed on `main` while this branch sat unmerged.
-- [x] Confirm the `DDP_OPENSTATES_JURISDICTIONS` value in the *actual* EC2 deployment matches
+- [ ] Confirm the `DDP_OPENSTATES_JURISDICTIONS` value in the *actual* EC2 deployment matches
       the local checkout's `.env` (`US,FL,MI,AZ,VA,WA,UT`) — **CONFIRMED 2026-07-23: it does
       NOT match.** Prod runs the code default (`UT,MI` only); the local `.env`'s wider list has
       not been deployed. See the correction note at the top of §8.
+
+      **Scoped 2026-07-28 — this is not a small "flip a config value" task; there is currently no
+      documented or scripted way to deploy this change at all.** `ddp-broker-py` production runs
+      on its own dedicated EC2 host (separate from the WireGuard-connected "civic" instance that
+      runs ddp-sync/votebot/ddp-api), managed by a systemd unit
+      (`infra/systemd/ddp-broker.service`) that only starts/stops a Docker Compose stack from
+      whatever is already checked out at `/opt/ddp-broker-py` — it doesn't pull code or touch env
+      vars. There is no CI/CD pipeline (no `.github/workflows/`), no Ansible/Terraform, and no
+      Secrets Manager/SSM usage for this service. The one deploy script that exists
+      (`infra/scripts/deploy-broker-runtime.sh`) is explicitly documented in two places
+      (`ddp-broker-py/RUNBOOK.local.md` and a prior deploy-night handoff note) as **dev-only** —
+      it drives a local Mac Studio Docker stack, not the real EC2 box, and both docs say outright
+      that the real EC2 deploy process (SSH target, script, whatever it is) isn't established
+      anywhere yet. `ddp-infra/README.md` independently flags the identical gap ("EC2 service
+      management... not yet documented"). The read-only prod-access tools that do exist
+      (`ddp-prod-rds-readonly` etc.) only reach RDS/S3 through proxy wrappers, not the broker
+      host itself.
+
+      **Concrete steps, once SSH access to the broker host is established (the actual blocker):**
+
+      **Gated 2026-07-28 (PM review caught this) — do not deploy the full 7-jurisdiction list as
+      a single step; FL, MA, and US each have an open prerequisite above that must close first.**
+      FL should not be included until the WAF-outage re-scrape (item above) has actually been run
+      and `quality_check.py` confirms the gap is closed — right now FL's local replica has a
+      known, unrepaired vote-completeness hole. MA should not be included until its §10.2 diff
+      (item above) has actually been run and passed. **US should not be included until the
+      OPEN-2 vote-person backfill (item above) has actually been run for real** (added in the
+      2nd PM review pass — the code fix is live for new scrapes, but every already-scraped US
+      Congress roll call still has its ~27.6% null-`voter_id` gap until the one-time backfill
+      runs; unlike FL/MA's org-resolution gaps, which the plan already decided to accept as
+      permanent documented limitations, this one has a ready, tested fix sitting unrun — no
+      reason to expose it before running a ~30-minute script). Deploy in stages, not all at once:
+
+      1. **Stage 1 (deployable now):** `DDP_OPENSTATES_JURISDICTIONS=MI,AZ,VA,WA,UT` — i.e. the
+         target list minus FL, MA, and US, all three still gated on open items above.
+         **Why these five are safe (added 2026-07-28, 3rd PM review pass):** MI and UT are
+         already live in prod today as the two canary jurisdictions — no change in exposure for
+         them. AZ and WA have no open item anywhere in this checklist. **VA has an open
+         org/person-resolution investigation (above) but it is explicitly *not* a cutover
+         blocker** — same low-severity reasoning already applied to FL/UT (bill/vote data still
+         imports completely; only some individual voter attribution is silently missing), the
+         investigation is about narrowing down the exact cause for a possible *future* fix, not
+         about whether VA is safe to expose today. If that reasoning changes, revisit VA's
+         inclusion here explicitly rather than silently.
+      2. Edit the one line in `/opt/ddp-broker-py/.env` with the stage's value.
+      3. Recreate — not just restart — the containers that read it, since env vars are baked in
+         at container creation: `web`, `celery`, **and** `celery-beat` (the fetch/routing logic
+         is shared by the API views and the Celery tasks, so recreating only `web` would leave
+         scheduled scrapes routing the old 2 jurisdictions while the API serves the new ones — a
+         silent inconsistency window):
+         ```
+         cd /opt/ddp-broker-py
+         docker compose -p ddp-broker-py --env-file /opt/ddp-broker-py/.env \
+           -f infra/compose/prod.yml up -d --no-deps web celery celery-beat
+         ```
+      4. **Verify all three containers actually picked up the new value** (easy to miss since
+         it's baked in at creation, not read live). If any of the three don't show the expected
+         value, re-run step 3 with `--force-recreate` appended (added 2026-07-28, 3rd PM review
+         pass — compose sometimes skips recreation if it doesn't detect a meaningful change):
+         ```
+         docker compose -p ddp-broker-py exec web env | grep DDP_OPENSTATES_JURISDICTIONS
+         docker compose -p ddp-broker-py exec celery env | grep DDP_OPENSTATES_JURISDICTIONS
+         docker compose -p ddp-broker-py exec celery-beat env | grep DDP_OPENSTATES_JURISDICTIONS
+         ```
+      5. Validate: confirm a newly-added jurisdiction (MI/AZ/VA/WA/UT) is actually resolving
+         through the DDP replica rather than live OpenStates. **Concrete evidence (added 2026-07-28,
+         3rd PM review pass — the earlier draft only gestured at "the routing-decision log
+         line" without naming it):** `openstates_service.py`'s `_get_client_for_jurisdiction()`
+         logs `Routing {jurisdiction_iso2} to DDP OpenStates replica` at debug level
+         (`openstates_service.py:1292`) — grep the broker's logs for this exact string with the
+         new jurisdiction's ISO2 code after triggering a fetch for it. Also check the broker's
+         logs after the next scheduled Celery fetch for that jurisdiction completes (not a formal
+         monitoring window — just confirm the first real scheduled run after the flip doesn't
+         error) before moving on to Stage 2.
+      6. Rollback, if needed, is low-risk and symmetric: revert the one `.env` line (or remove it
+         to fall back to the `UT,MI` code default) and re-run the same recreate command. No
+         migrations, no schema changes — this flag doesn't change any served JSON shape.
+      7. **Stage 2, once each item's prerequisite closes:** add `US` once the OPEN-2 backfill has
+         actually been run; add `FL` once the WAF re-scrape/validation above is done; add `MA`
+         once its §10.2 diff passes. Each addition repeats
+         steps 2-5 above with the updated value.
+
+      There is no staging/blue-green environment for this service, so this change goes live for
+      real traffic the moment the containers recreate — no canary option exists.
+
+      **Open question this raises for the rest of §8.1a:** whatever validation/confidence work
+      has already been done against "prod" for FL/AZ/VA/WA (e.g. the WAF-outage audit below, or
+      the org/person-resolution counts above) may have actually run against the local Mac Studio
+      dev stack rather than real prod traffic, since prod was never actually running the wider
+      jurisdiction list to begin with. Worth double-checking which environment each of those
+      checks actually targeted before treating them as prod-validated.
 - [ ] **People/roster data has no cutover path at all yet — found 2026-07-27, DDP now has its own
       fork of `people` too.** Everything in §8.1-8.3 is about the *bills/votes* path
       (`ddp-api` → api-v3 over WireGuard). Legislator roster data (`Role`/tenure dates) reaches
@@ -811,14 +1100,100 @@ Revert = restore original env vars and restart. No image rebuild required.
 
 The live `v3.openstates.org` resolves this internally. The local api-v3 does exact matching.
 
-**Fix options (choose one at cutover time):**
-1. Add a jurisdiction→session alias map in `BillVotesService.get_bill_info()` (~10 lines)
-2. Add a fuzzy session resolver in api-v3's `/bills/{jurisdiction}/{session}/{bill_id}` route that accepts a year and resolves it to the matching session identifier
-3. Populate a `KNOWN_SESSIONS` config in votebot that maps `(jurisdiction, year) → session_identifier`
+**Decision, scoped 2026-07-28 — Option 1 (jurisdiction-aware resolver inside votebot), not a static
+table or an api-v3 patch.** Checked the real session-identifier format for all 8 tracked
+jurisdictions directly against each scraper's `__init__.py` (the plan's own §2 table turns out to
+be wrong for AZ — it lists `"2025"`, but AZ's actual format is `"57th-1st-regular"`):
 
-ddp-broker-py and ddp-sync are unaffected — they look up sessions by explicit code from the broker DB, not by year probing.
+| Jurisdiction | Actual format | Derivable from a plain year by formula? |
+|---|---|---|
+| FL | `"2025"`, specials `"2025C"` | Yes |
+| VA | `"2026"`, specials `"2026S1"` | Yes (regular sessions) |
+| UT | `"2025"`, specials `"2025S1"` | Yes (regular sessions) |
+| **WA** | `"2025-2026"` (biennium) | Yes — deterministic |
+| **MI** | `"2025-2026"` (biennium) | Yes — deterministic |
+| **US** | `"119"` (Congress number) | Yes — deterministic (`(year-1789)//2+1`) |
+| MA | `"194th"` (Great Court ordinal) | No — needs an anchor constant |
+| AZ | `"57th-1st-regular"` | No — needs an anchor constant (§2's table is wrong here) |
 
-**Person lookup endpoint difference** — votebot calls `GET /people/{person_id}` for party enrichment on vote records. api-v3 does not have this route; the correct form is `GET /people?id={person_id}`. One-line fix in `votebot/src/votebot/services/bill_votes.py` at cutover time.
+Only MA and AZ are genuinely non-formulaic, and neither is named as a §8.3 blocker — WA, MI, and
+US (the jurisdictions that actually matter here) are 100% derivable from a calendar year with a
+closed-form rule that never goes stale. That rules out **Option 3** (a static
+`(jurisdiction, year) → session` table): WA/MI/US would need a manually-added row every year/
+biennium/Congress forever, for jurisdictions that don't actually need it — pure maintenance
+overhead with no upside over a formula. It also rules out **Option 2** (patching api-v3's route):
+`ddp-open-states/api-v3` is a plain, unmodified checkout of upstream `openstates/api-v3` — unlike
+`openstates-core`/`openstates-scrapers`/`people`, it is **not** one of DDP's three formal forks
+(`PLAN-fork-management.md`) and has no mechanism to preserve a local edit across future syncs; a
+hand-edit would be silently clobbered on the next `git pull`. It would also only fix a
+votebot-specific problem while adding an unmanaged fork liability — `ddp-broker-py`/`ddp-sync`
+already look up sessions by explicit code, unaffected either way.
+
+**Implementation — `votebot/src/votebot/services/bill_votes.py`, `get_bill_info()`:**
+
+```python
+class BillVotesService:
+    ...
+    # Jurisdictions whose session identifier is a biennium range, e.g. "2025-2026".
+    # A *format rule*, not a per-year lookup table -- grows only when a new jurisdiction
+    # with the same naming scheme is onboarded, never because a year changed.
+    _BIENNIUM_JURISDICTIONS = {"wa", "mi"}
+
+    @staticmethod
+    def _session_candidates(jurisdiction: str, session: str) -> list[str]:
+        """Translate a caller-supplied session/year hint into an ordered list of
+        session identifiers to probe, in the jurisdiction's actual format. `session`
+        may already be an exact identifier ("2025-2026", "2026S1", "194th") -- those
+        pass through unchanged."""
+        jurisdiction = jurisdiction.lower()
+        try:
+            year = int(session)
+        except ValueError:
+            return [session]  # not a bare integer -- trust the caller as-is
+
+        if jurisdiction == "us":
+            if year >= 1000:  # looks like a calendar year, not a Congress number
+                congress = (year - 1789) // 2 + 1
+                return [str(congress), str(congress - 1)]
+            return [str(year), str(year - 1)]  # already a Congress number
+
+        if jurisdiction in BillVotesService._BIENNIUM_JURISDICTIONS:
+            start = year if year % 2 == 1 else year - 1
+            return [f"{start}-{start + 1}", f"{start - 2}-{start - 1}"]
+
+        return [str(year), str(year - 1), str(year - 2)]  # FL/UT/AZ/VA-style, unchanged
+```
+
+Then in `get_bill_info()`, replace the current year-probe block with
+`sessions_to_try = self._session_candidates(jurisdiction, session)`. This is a no-op for the
+existing FL/UT/AZ/VA path, self-heals WA/MI/US, and needs no maintenance as years pass. It also
+transparently fixes two duplicated "no session provided" defaults in `agent.py` (~lines 1705 and
+2078, which today compute `session = str(year)` for every non-US jurisdiction — correct for FL,
+wrong for WA/MI) since those callers just pass a bare year into `get_bill_info()`.
+
+**Flag for later, not blocking:** MA/AZ aren't derivable from a year without an anchor constant.
+Not needed now since neither is a §8.3 blocker, but if either is promoted to the votebot cutover
+path, `_session_candidates` needs an anchor-based branch for them — and §2's session-format
+table should be corrected for AZ regardless of when that happens.
+
+**Person lookup endpoint difference — corrected 2026-07-28: wrong file, and not a one-line fix.**
+Every live party-enrichment call in votebot's actual request path (`bill_votes.py`'s
+`_get_legislator_parties`, `federal_legislator_cache.py`'s `_fetch_chamber_members`) already
+correctly uses the bulk-list form (`GET /people?jurisdiction=...&org_classification=...`) — those
+are fine against api-v3 as-is. The real `GET /people/{person_id}` call is in
+**`votebot/scripts/refresh_openstates_cache.py`** (lines 103 and 111, a 429-retry duplicate),
+inside `fetch_legislators_for_state()` — a standalone offline maintenance script, not part of
+votebot's live request path, and not currently listed in §8.2's file table either. Since the
+response shape changes (single object → paginated list), the fix is ~5 lines across both call
+sites, not one line:
+
+```python
+detail_response = await client.get(f"{base_url}/people", params={"id": person_id}, headers=headers)
+...
+if detail_response.status_code == 200:
+    results = detail_response.json().get("results", [])
+    full_person = results[0] if results else person  # fall back to basic data
+```
 
 ---
 
@@ -1111,6 +1486,55 @@ there — not re-checked as part of this update.
 | **Cutover total** | | **6–8 hrs** |
 
 Phase 3 is minimal — `api-v3` is already built and tested by OpenStates. The scrapes (Phase 2) are the most time-variable depending on how many states need debugging.
+
+**Stale as of 2026-07-28 (PM review caught this) — the cutover total above doesn't reflect
+what's actually been discovered since.** It predates: establishing broker-host deploy access
+(currently unscoped — no estimate possible until SSH access exists), the people-repo
+`cherry-pick-line` cutover design (small, comparable to the `openstates-core` work already done,
+but not yet estimated in hours), the FL WAF re-scrape + targeted validation (~1 hr, mostly
+wait-time for the re-scrape itself), the US vote-person backfill (~30 min including the
+pre-run `pg_dump`), and VA's name-mismatch reproduction script (~1-2 hrs, not yet written). Not
+re-totaled here — treat the `6–8 hrs` figure as covering only the original Phase 4/6/session-alias
+scope, not these newer items.
+
+---
+
+## 13. Future Consideration: EC2/RDS Hosting at 50-State + Congress Scale
+
+**Status: DRAFT, not decided — raised 2026-07-28 during a `ddp-infra/PLAN-bill-document-provenance.md` design discussion, not yet a scoped or committed piece of work.** Recorded here because it's a direct *alternative* to §3/§8's target architecture (Mac Studio hosts `openstates` + `api-v3` indefinitely; EC2 consumers reach it over WireGuard or `ddp-api`'s proxy), not an addition to it — if adopted, this would replace real infrastructure that's already partially live (§8.1a: `DDP_OPENSTATES_JURISDICTIONS=UT,MI` in prod today, `ddp-api`'s `openstates_proxy.py` already built), not extend it.
+
+### The question
+
+Today's target state (§3, §8.2) keeps the OpenStates replica — Postgres, `api-v3`, the scrapers themselves — on the Mac Studio permanently, with EC2 services reaching it over WireGuard (`ddp-sync`/`votebot` directly; `ddp-broker-py` via `ddp-api`'s proxy, since EC2 broker has no WireGuard peer). That was the right call at 8 tracked jurisdictions. The question raised while discussing `ddp-broker-py`'s `BillArtifact` design in the provenance plan: does it stay the right call once DDP tracks all 50 states + Congress (51 jurisdictions — a ~6.4x jump from today's 8), or is there a case for running the scrapers on EC2 instead, with `openstates` living in RDS as a separate database alongside (not merged with) `ddp-broker-py`'s?
+
+### Why this isn't free to answer either way
+
+**Case for moving:** the Mac Studio is already on a path to concentrate risk — it hosts the scrapers, `openstates` Postgres, and `api-v3` today, and per `PLAN-bill-document-provenance.md` Phase 8/9 will also host LegBot/MLX/Ollama and, eventually, `ddp-sync` itself. That concentration is already a named, deliberately-deferred risk in that plan's Risk Register ("Mac Studio becomes a heavier single point of failure... a separate redundancy plan is being scoped later, not part of this document"). Moving scraping + its DB to EC2/RDS directly mitigates that risk, and RDS's snapshot/backup posture is a stronger floor than a Docker-container Postgres backed by a home-grown `pg_dump`-to-S3 script (`PLAN-production-hardening.md` WS9). It would also likely retire `ddp-api`'s `openstates_proxy.py` — that proxy exists purely because the Mac Studio isn't reachable from all EC2 instances directly; if the data it fronts lived in the VPC instead, the proxy's reason for existing goes away.
+
+**Case against:** this repo's own recent history is a cautionary tale, not a hypothetical one. `ddp-open-states` didn't have a real dev/prod split until three days ago (`ddp-open-states-dev`), and this same week found two real, previously-undetected bugs in `apply-local-patches.sh`'s core reactivation mechanism (never syncing the local `cherry-pick-line` ref from its remote; a merge-commit cherry-pick crash) that had silently no-op'd a merged fix for two days — see §2.5 and §8.1a above. Migrating scraping + its database to a new host is a materially bigger, riskier undertaking than the local-venv fix that already produced that fragility. It also isn't free (RDS sizing/ongoing AWS cost vs. hardware already owned) and doesn't touch the upstream-fork maintenance burden (`PLAN-fork-management.md`) at all — that's orthogonal to which box runs the code.
+
+**It also directly undercuts `PLAN-bill-document-provenance.md`'s own Phase 9 reasoning.** Phase 9 (consolidate `ddp-sync` onto the Mac Studio) is justified specifically because, once Webflow is gone, `ddp-sync`'s remaining dependencies — `api-v3`, OpenStates Postgres, Ollama — are *entirely* on the Mac Studio, making `ddp-sync` on EC2 "a WireGuard hop with no resiliency upside." If OpenStates data moves to EC2/RDS, that premise breaks: `ddp-sync`'s dependencies split again (broker RDS + now openstates RDS, both EC2-side; only LLM dispatch stays Mac-Studio-adjacent, and that already goes through CAMS's task API rather than a direct call). Adopting this proposal argues for the *opposite* of Phase 9 — keeping `ddp-sync` on EC2, near both RDS databases. Whoever decides this should decide both questions together, not in isolation.
+
+### Resource/compute spike — proposed scope, not yet run
+
+Before writing a real design note (this section is explicitly not one), the actual sizing question needs an answer: how much EC2 compute would 51 concurrent jurisdictions realistically need, given that the Mac Studio's abundant RAM has meant parallel-scrape memory has never once been a constraint worth measuring — and that headroom doesn't transfer to a provisioned, costed EC2 fleet.
+
+**What's already known, no new scraping needed:**
+- Today's real concurrency ceiling is only 8 jurisdictions (FL/VA/WA/UT/AZ/MI/MA + US), not 51.
+- There's already a real (if unmeasured) concurrency data point: `ddp-sync`'s `secondary` group (VA/MI/MA/UT/AZ, §9.1 / `sync_schedule.yaml`) already runs **simultaneously** every Sunday 02:00 UTC with no reported memory problems — nobody's ever attached a profiler to it.
+- A quick live sample taken during this discussion: the archive-sweep process (`os-text-extract archive fl`) sits around 300–330MB RSS — but that's the lightweight fetch/extract/upload step, not the scraper+importer itself, which holds full `Bill`/`VoteEvent`/`Person` object graphs in memory and is almost certainly heavier.
+- **A real memory anti-pattern is already known and directly relevant.** FL's scraper (inherited from public upstream, not DDP-authored — a 2025-03-05 commit, "handle blockages from fl website") used to wrap its *entire* session's bill generator in `retry_on_connection_error(lambda: list(do_scrape_with_retry()))`, buffering every bill's text/floor-votes/committee-votes fully in memory before writing anything to disk. Fixed for FL (`fix/fl-incremental-bill-scrape`, see §2.5), but nobody's checked whether any other state's scraper class — especially the high-volume states DDP doesn't track yet (CA, NY, TX, IL by legislative volume) — has the same pattern. This is exactly the kind of per-state variance that would break a naive "average memory × 51" estimate.
+
+**What the spike needs to measure:**
+1. Peak RSS **separately** for the scrape step and the import step, per jurisdiction — different memory shapes (HTTP fetch/parse vs. bulk Django ORM writes), averaging them together hides the real peak.
+2. A sample across bill-volume tiers, not just the 7 states currently tracked — the highest-volume states are exactly the ones with zero real data today.
+3. A code-read check (cheap — grep, not a live run) for the FL-style full-session-buffering pattern in any state before running it for real.
+4. **The concurrency model itself, not just a number** — is the design target "all 51 run at the same clock time" (memory scales linearly with jurisdiction count), or a bounded worker pool that processes N at a time regardless of total jurisdictions (memory stays flat, wall-clock time grows instead)? Today's schedule already staggers rather than truly parallelizing all 8 (§9.1) — that's a de facto worker-pool model already, and probably the single highest-leverage decision in this whole question, ahead of any specific RSS number.
+5. Translate (1)–(4) into an actual EC2 instance-family/cost estimate — likely memory-optimized (`r`-family), since scraping is I/O-bound (waiting on state legislature websites, not CPU-bound), once a real peak-per-worker-slot number and a chosen concurrency bound exist.
+
+**Proposed cheap first pass (not yet run, needs sign-off before executing):** instrument the archive-sweep and the next Sunday secondary-group run for real RSS/CPU numbers (free — already-scheduled work, just needs a profiler attached); separately, grep `openstates-scrapers` for the FL-style buffering pattern across all currently-tracked states. Only after that decide whether fresh test scrapes against untracked high-volume states (CA/NY/TX/IL) are worth running before committing to a concurrency-model decision.
+
+**Cross-reference:** `ddp-infra/PLAN-bill-document-provenance.md` Phase 1 (the document-archive step's ownership split assumes `ddp-open-states` and `DDP-HOT` are physically co-located) and Phase 9 (the `ddp-sync` consolidation logic this would directly affect — see above).
 
 ---
 
