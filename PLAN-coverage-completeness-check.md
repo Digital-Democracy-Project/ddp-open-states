@@ -1,6 +1,8 @@
 # PLAN: Coverage & Completeness Checks Against Public OpenStates
 
-**Status:** DRAFT — analysis complete 2026-07-24, no implementation started yet.
+**Status:** IMPLEMENTED (Tier 1 + Tier 2) 2026-07-28 — `quality_check.py --coverage
+JURISDICTION SESSION`, per §8's implementation order. First real run against MA found a large,
+genuine coverage gap — see §10.
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -228,11 +230,57 @@ monthly-sweep cadence already catches drift before it compounds.
 
 ## 9. Open Questions
 
-- What's the real pagination response shape from `v3.openstates.org/bills` — confirm field
-  names (`pagination.max_page` is an assumption, not verified) before writing real code
+- ~~What's the real pagination response shape from `v3.openstates.org/bills`~~ — **confirmed
+  2026-07-28**: `pagination.page`/`max_page`/`total_items`/`per_page`, exactly as assumed.
+  `per_page` caps at 20 (`per_page=100` errors "invalid per_page, must be in [1, 20]") — matches
+  local `api-v3`'s own `max_per_page = 20`, so `fetch_all_public_identifiers()` uses 20.
 - Should Tier 1 coverage checks also run against jurisdictions not currently in
   `active_jurisdictions` (e.g. `al`, which `quality_check.py` already samples but `ddp-sync`
   doesn't track as active) — or scope strictly to the 7 tracked states + USA federal?
 - Does a coverage gap on a jurisdiction currently paused (e.g. FL's weekly scraper is paused
   during the 2023/2024 backfill — see `PLAN-fork-management.md`'s sibling context) need special
   handling, or does "run after every backfill" already cover that case naturally?
+
+---
+
+## 10. First Real Run — MA 194th, 2026-07-28: a large, genuine coverage gap
+
+**Triggered by:** the api-v3 stale-database investigation (`PLAN-open-states.md` §8.1a) — once
+that bug was fixed and MA's votes/FL's 2023 session were confirmed actually being served
+correctly, a direct diff against live `v3.openstates.org` still showed a smaller vote-count
+mismatch on one MA bill (16 vs 18 votes), prompting "how widespread is this" — this coverage
+check is the answer.
+
+**Command:** `OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage ma 194th
+--tier2-limit 150`. Full output: `logs/quality-check/ma_194th.log`.
+
+**Tier 1 (coverage) result:**
+```
+live=18542  local=10959  missing=7583  extra=0  both=10959
+```
+**7,583 of MA's 18,542 live bills for the 194th session (~41%) are missing from the local
+replica entirely** — not scraped-and-incomplete, never scraped at all. Zero `extra` (nothing
+locally that isn't also live) — so this isn't a phantom-bill or renumbering artifact, purely a
+one-directional gap.
+
+**Tier 2 (sub-record completeness) result, on 150 of the 10,959 bills we do have:**
+```
+599/601 passed | 1 warnings | 1 failures | 0 skipped
+```
+The single "failure" recorded is the Tier 1 headline number itself (folded into the same
+report); the actual Tier 2 sub-record checks were **599/600 clean** — only one bill had a
+stale `latest_action` text (a timing/staleness difference, not a structural problem). Titles,
+vote-event counts, and sponsorship counts all matched. **This reframes the finding: it is not
+a data-quality problem on bills we've scraped — it's specifically a coverage problem.**
+Something is causing MA's scraper to silently stop well short of the full bill list, upstream
+of any vote-serving or database-layer bug.
+
+**Not yet root-caused as of this entry** — see `notes/` for the follow-up investigation into
+MA's scraper logs (network rejections vs. a pagination/limit bug in
+`scrape_bill_list()`'s single-shot fetch from `malegislature.gov/api/GeneralCourts/{session}
+/Documents`, which has no visible pagination handling).
+
+**Not yet done:** running this same Tier 1 check against the other 7 tracked jurisdictions to
+determine whether this is MA-specific or a systemic gap across the whole replica. Given the
+size of this one finding, that comparison should happen before deciding how broadly to invest
+in a fix.
