@@ -704,6 +704,57 @@ Document here so the work is scoped when the time comes. Do not execute until th
       # nightly scrape/import via launchd, and api-v3 if it's running), then:
       #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_PATH"
       ```
+- [ ] **UT has zero bill-version/document links since its 2025 site redesign — found 2026-07-28
+      while enabling bill-document archiving for a second jurisdiction, likely the same
+      underlying issue that made UT one of the two founding canary jurisdictions in the first
+      place.** Running `os-text-extract archive ut` (the very first attempt to archive anything
+      for UT) completed cleanly but fetched **nothing**: 1,021 bills checked, 0
+      fetched/skipped/archived. Traced the cause directly: `scrapers/ut/bills.py`'s
+      `scrape_bill_details_from_api()` — the code path used for every UT session since the site
+      switched to API/JSON-rendered bill pages around 2025 — never calls
+      `add_version_link()`/`add_document_link()` at all. Confirmed via direct DB query: **0**
+      `BillVersionLink`/`BillDocumentLink` rows exist for Utah, vs. 12,928 for Michigan (the
+      other canary jurisdiction, unaffected) and 8,904+ for other tracked states. This is a real,
+      previously-unknown scraper gap, not an archive-tool problem — UT bill *text* has been
+      silently uncaptured this entire time, separate from (and in addition to) the votes gap
+      below.
+
+      **The likely connection to why UT/MI are the two jurisdictions already loaded from our
+      fork in prod today:** this plan's own Motivation section (top of document) cites "Two bugs
+      (UT #5695, MI #5696) went unnoticed until we filed PRs ourselves" as the founding reason
+      DDP built this whole local-replica project — and `DDP_OPENSTATES_JURISDICTIONS`'s prod
+      code-default is, not coincidentally, exactly those same two states (`UT,MI`). Re-read
+      `openstates-scrapers` PR #5695 directly (commit `5e345a2d0`, "UT: fix votes not scraped for
+      2025+ sessions"): before that fix, the call site was
+      `self.scrape_bill_details_from_api(bill, url, session_slug)` — a **plain function call on a
+      generator, with no `yield from` and no iteration at all**. Since Python generator bodies
+      don't execute a single line until iterated, this means **absolutely nothing** in that
+      function ran for any 2025+ UT bill before the fix — not just votes, but sponsors, actions,
+      *and* whatever version/document handling might have existed — it was all silently inert.
+      The fix added `yield from`, which correctly restored sponsors/actions/votes (all of which
+      the fix's own commit message describes the function as already "handling"). But
+      `add_version_link()`/`add_document_link()` were **never actually written into this
+      function** at all, even after the fix — confirmed by grep: those calls exist only in
+      `parse_bill_details_from_html()`, the legacy pre-2025 path. So the fix that made UT trustworthy
+      enough to become a canary jurisdiction was real and correct for what it covered
+      (votes/sponsors/actions) — but it never extended to bill text, because that capability was
+      never ported to the new API-rendered code path in the first place. The gap has been sitting
+      there, unnoticed, since the 2025 rendering switch, through every incremental UT scrape run
+      since — this is the first time anyone tried to consume UT's version/document data (via the
+      archive step) and actually noticed nothing was there.
+
+      **Practical impact:** if any consumer (prod or otherwise) expects to read UT bill text or
+      document links from the local replica, it will find none for any 2025+ session — this
+      silently affects UT's data completeness the same way the votes bug did before #5695, just
+      for a different field. Not yet assessed whether any current consumer actually relies on UT
+      bill text (`ddp-broker-py`'s celery fetch tasks would be the ones to check).
+
+      **Not yet scoped as a fix** — needs someone to port the same `add_version_link`/
+      `add_document_link` extraction logic from `parse_bill_details_from_html()` into
+      `scrape_bill_details_from_api()`, using whatever version/document fields the JSON API
+      response actually exposes (not yet inspected). Left `ut` enabled in
+      `ARCHIVE_ENABLED_STATES` regardless — it's a harmless no-op for archiving purposes, not a
+      failure, until this scraper gap is fixed.
 - [ ] **FL vote-completeness gap from the WAF outage — corrected 2026-07-28: this was never a
       prod data-quality incident, but it IS a real, unrepaired gap in the local replica.** The
       premise in this item's original wording ("FL is already in `DDP_OPENSTATES_JURISDICTIONS`")
