@@ -553,7 +553,9 @@ Document here so the work is scoped when the time comes. Do not execute until th
 ### 8.1 Prerequisites before cutover
 
 - Shadow scrapes have run nightly for ≥ 4 weeks with no silent gaps
-- Parallel validation (§10.2) has passed for all 9 jurisdictions
+- Parallel validation (§10.2) has passed for all 8 tracked jurisdictions (FL/WA/US/VA/MI/MA/UT/AZ
+  — **corrected 2026-07-28, PM review caught the stale "9" here**; AL is explicitly untracked
+  per §2 and was never part of this count)
 - Session alias mapping resolved (see below)
 - pg_dump backup confirmed working
 
@@ -674,6 +676,15 @@ Document here so the work is scoped when the time comes. Do not execute until th
       are left alone. **The backfill script has not been run for real yet** — it mutates the
       production Postgres DB, so that's an explicit separate action, now the only thing left open
       on this item since the code fix itself is confirmed live for new scrapes going forward.
+
+      **Before running it for real (added 2026-07-28, PM review):** take a `pg_dump` of the
+      `openstates` DB first — this is a one-time bulk write against `opencivicdata_personvote`,
+      and a plain pre-run dump is the simplest possible undo path if some rows resolve to the
+      wrong person:
+      ```bash
+      docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc \
+        -f /tmp/openstates-pre-backfill-$(date +%Y%m%d).dump
+      ```
 - [ ] **FL vote-completeness gap from the WAF outage — corrected 2026-07-28: this was never a
       prod data-quality incident, but it IS a real, unrepaired gap in the local replica.** The
       premise in this item's original wording ("FL is already in `DDP_OPENSTATES_JURISDICTIONS`")
@@ -687,20 +698,36 @@ Document here so the work is scoped when the time comes. Do not execute until th
       scraped full-mode 2026-06-25→06-26 — *before* the fix — hit `flhouse.gov` bot-detection
       backoffs starting 29 seconds into the run and continuing throughout (2,435 House-search
       fetches, 538 backoffs, 539 "could not find bill in House Search" errors, a ~22% loss rate)
-      — and this run **was successfully imported** into the replica. ~496 distinct FL bill
-      numbers hit at least one bot-detection event in that run — candidates for silently-missing
-      House votes. Every FL "2026" scrape since has been an incremental no-op (0 bills changed),
+      — and this run **was successfully imported** into the replica. **540 distinct FL bill
+      numbers** hit at least one bot-detection event in that run (re-verified 2026-07-28 directly
+      against `logs/scraper.log.20260714T020000Z.gz`, lines 21838-51119 — the earlier ~496/538
+      estimates were close but not exact) — candidates for silently-missing House votes. Every FL
+      "2026" scrape since has been an incremental no-op (0 bills changed),
       so nothing has backfilled this gap — it's been sitting unrepaired since 2026-06-26. All
       other FL sessions currently in the replica (2023/2024/2025 + specials) were scraped/backfilled
       on or after 2026-07-16, after the fix was live, and are confirmed clean per `RUNBOOK.md`.
 
       **Concrete steps to close this out, before FL is ever added to the prod jurisdiction list:**
+
+      **Corrected 2026-07-28 (PM review) — validate against the actual known-affected bill list,
+      not a random sample.** A generic `quality_check.py --bills 50` sample has no particular
+      reason to land on the 540 bills that actually hit a WAF backoff during the bad run — it
+      could easily report "clean" while missing the real gap. Extract the actual candidate list
+      from the archived 2026-06-25/26 log first, then check specifically against it:
       ```bash
-      # 1. Quick check — sample vote completeness for FL via the existing quality tool
-      #    (default sample is only 5 bills/jurisdiction; ask for more to actually catch gaps)
       cd ~/Developer/repos/ddp-open-states
-      OPENSTATES_API_KEY=<your v3.openstates.org key> python3 quality_check.py \
-        --jurisdiction fl --bills 50 --no-people
+
+      # 1. Extract the candidate bill numbers that hit a WAF backoff in the bad run. Verified
+      #    2026-07-28: the correct archive is scraper.log.20260714T020000Z.gz (NOT
+      #    scraper.log.20260624.gz, which predates the run and was wrongly cited in an earlier
+      #    draft of this item). The bad run spans lines 21838-51119 in that archive (bounded by
+      #    its own "Starting scrape: fl session=2026 (full)" / next-marker lines, same
+      #    shared-log-interleaving trap as the org/person-resolution table above) — 540 distinct
+      #    bill numbers confirmed, close to the ~496-538 estimated originally:
+      gzcat logs/scraper.log.20260714T020000Z.gz | sed -n '21838,51119p' \
+        | grep "flhouse.gov bot detection" | grep -oE "BillNumber=[0-9]+" | grep -oE "[0-9]+" \
+        | sort -un > /tmp/fl-2026-waf-affected-bills.txt
+      wc -l /tmp/fl-2026-waf-affected-bills.txt   # expect 540
 
       # 2. The actual fix — force a full re-scrape of session 2026 (the one confirmed-bad,
       #    never-repaired session), now that the WAF fix and its retry-settings follow-up are
@@ -708,7 +735,26 @@ Document here so the work is scoped when the time comes. Do not execute until th
       rm -f logs/last-run/fl_session_2026.ts   # clears the incremental cutoff so it runs full
       ./run-scrape.sh fl "session=2026"
 
-      # 3. Re-run quality_check.py afterward to confirm the gap actually closed
+      # 3. Targeted re-check — House vote-event count specifically for the affected bills,
+      #    before vs. after (should go up, not stay flat, for bills that actually had missing
+      #    votes). Note: b.identifier is stored with a chamber prefix (e.g. "HB 170"), but the
+      #    extracted candidate list above is bare numbers -- match on the numeric part only
+      #    with regexp_replace, since the WAF-affected flhouse.gov lookups touch both House and
+      #    Senate bills routed through House committees, not just HB-prefixed ones:
+      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      SELECT count(DISTINCT v.id) AS house_vote_events
+      FROM opencivicdata_bill b
+      JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+      JOIN opencivicdata_voteevent v ON v.bill_id = b.id
+      JOIN opencivicdata_organization o ON v.organization_id = o.id
+      WHERE ls.jurisdiction_id = 'ocd-jurisdiction/country:us/state:fl/government'
+        AND ls.identifier = '2026' AND o.classification = 'lower'
+        AND regexp_replace(b.identifier, '[^0-9]', '', 'g') = ANY(string_to_array('$(paste -sd, /tmp/fl-2026-waf-affected-bills.txt)', ','));
+      "
+
+      # 4. Also run the generic quality_check.py pass as a broader sanity check
+      OPENSTATES_API_KEY=<your v3.openstates.org key> python3 quality_check.py \
+        --jurisdiction fl --bills 50 --no-people
       ```
 
       This also means: fix the stale premise itself, not just the data — this checklist item
@@ -788,9 +834,12 @@ Document here so the work is scoped when the time comes. Do not execute until th
       - **FL: accept as a documented limitation, no fix planned.** Root cause (committee
         renaming across terms) would require a per-session historical committee scrape — real
         scraper work — to fix, and severity is low: nothing here drops bill/vote data, it only
-        leaves some Organization attribution unset on already-imported records. FL is already
-        live in `DDP_OPENSTATES_JURISDICTIONS`; revisit only if a consumer specifically needs
-        committee-level historical attribution (none currently does).
+        leaves some Organization attribution unset on already-imported records. **Correction
+        2026-07-28 (PM review caught this):** FL is only in the *local checkout's target*
+        `DDP_OPENSTATES_JURISDICTIONS` list — per the deploy-gap item below, it is **not**
+        actually live in prod yet. So this is a decision about whether FL is *fit* to be added,
+        not about live prod data. Revisit only if a consumer specifically needs committee-level
+        historical attribution (none currently does).
       - **MA: get a fresh number first, then apply the same accept-as-limitation reasoning as
         FL — but this one actually gates a decision, not just documentation.** Unlike FL, MA
         hasn't been added to `DDP_OPENSTATES_JURISDICTIONS` yet, so this number is a live input
@@ -855,23 +904,43 @@ Document here so the work is scoped when the time comes. Do not execute until th
       host itself.
 
       **Concrete steps, once SSH access to the broker host is established (the actual blocker):**
-      1. Edit the one line in `/opt/ddp-broker-py/.env`: `DDP_OPENSTATES_JURISDICTIONS=US,FL,MI,AZ,VA,WA,UT`
-      2. Recreate — not just restart — the containers that read it, since env vars are baked in
+
+      **Gated 2026-07-28 (PM review caught this) — do not deploy the full 7-jurisdiction list as
+      a single step; FL and MA each have an open prerequisite above that must close first.**
+      FL should not be included until the WAF-outage re-scrape (item above) has actually been run
+      and `quality_check.py` confirms the gap is closed — right now FL's local replica has a
+      known, unrepaired vote-completeness hole. MA should not be included until its §10.2 diff
+      (item above) has actually been run and passed. Deploy in stages, not all at once:
+
+      1. **Stage 1 (deployable now):** `DDP_OPENSTATES_JURISDICTIONS=US,MI,AZ,VA,WA,UT` — i.e.
+         the target list minus FL and MA, both of which are still gated on open items above.
+      2. Edit the one line in `/opt/ddp-broker-py/.env` with the stage's value.
+      3. Recreate — not just restart — the containers that read it, since env vars are baked in
          at container creation: `web`, `celery`, **and** `celery-beat` (the fetch/routing logic
          is shared by the API views and the Celery tasks, so recreating only `web` would leave
-         scheduled scrapes routing the old 2 jurisdictions while the API serves the new 7 — a
+         scheduled scrapes routing the old 2 jurisdictions while the API serves the new ones — a
          silent inconsistency window):
          ```
          cd /opt/ddp-broker-py
          docker compose -p ddp-broker-py --env-file /opt/ddp-broker-py/.env \
            -f infra/compose/prod.yml up -d --no-deps web celery celery-beat
          ```
-      3. Validate: confirm a newly-added jurisdiction (FL/AZ/VA/WA) is actually resolving through
+      4. **Verify all three containers actually picked up the new value** (easy to miss since
+         it's baked in at creation, not read live):
+         ```
+         docker compose -p ddp-broker-py exec web env | grep DDP_OPENSTATES_JURISDICTIONS
+         docker compose -p ddp-broker-py exec celery env | grep DDP_OPENSTATES_JURISDICTIONS
+         docker compose -p ddp-broker-py exec celery-beat env | grep DDP_OPENSTATES_JURISDICTIONS
+         ```
+      5. Validate: confirm a newly-added jurisdiction (AZ/VA/WA) is actually resolving through
          the DDP replica rather than live OpenStates (check for `openstates_service.py`'s own
          routing-decision log line, or diff a sample fetch against known replica-only data).
-      4. Rollback, if needed, is low-risk and symmetric: revert the one `.env` line (or remove it
+      6. Rollback, if needed, is low-risk and symmetric: revert the one `.env` line (or remove it
          to fall back to the `UT,MI` code default) and re-run the same recreate command. No
          migrations, no schema changes — this flag doesn't change any served JSON shape.
+      7. **Stage 2, once each item's prerequisite closes:** add `FL` once the WAF re-scrape/
+         validation above is done; add `MA` once its §10.2 diff passes. Each addition repeats
+         steps 2-5 above with the updated value.
 
       There is no staging/blue-green environment for this service, so this change goes live for
       real traffic the moment the containers recreate — no canary option exists.
@@ -1332,6 +1401,16 @@ there — not re-checked as part of this update.
 | **Cutover total** | | **6–8 hrs** |
 
 Phase 3 is minimal — `api-v3` is already built and tested by OpenStates. The scrapes (Phase 2) are the most time-variable depending on how many states need debugging.
+
+**Stale as of 2026-07-28 (PM review caught this) — the cutover total above doesn't reflect
+what's actually been discovered since.** It predates: establishing broker-host deploy access
+(currently unscoped — no estimate possible until SSH access exists), the people-repo
+`cherry-pick-line` cutover design (small, comparable to the `openstates-core` work already done,
+but not yet estimated in hours), the FL WAF re-scrape + targeted validation (~1 hr, mostly
+wait-time for the re-scrape itself), the US vote-person backfill (~30 min including the
+pre-run `pg_dump`), and VA's name-mismatch reproduction script (~1-2 hrs, not yet written). Not
+re-totaled here — treat the `6–8 hrs` figure as covering only the original Phase 4/6/session-alias
+scope, not these newer items.
 
 ---
 
