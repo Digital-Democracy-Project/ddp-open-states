@@ -1722,6 +1722,35 @@ file), append the call to the end of `run-all-scrapes.sh`, and verify against th
 (the `ma_session_194th` key is absent right now, so a dry run should immediately alert once,
 which doubles as an integration test).
 
+#### Flagged idea: containerize scraper runs (raised 2026-07-28, not scoped, not decided)
+
+The underlying problem: `ddp-open-states` has exactly one production checkout, shared by every
+scrape regardless of jurisdiction. `~/Developer/repos/ddp-open-states-dev` (built 2026-07-24,
+after a live FL backfill was mid-run when `run-scrape.sh` itself got edited on disk — see
+`ddp-infra/PLAN-bill-document-provenance.md`'s Risk Register and Open Question 21a) solved "don't
+develop against the live checkout," but deliberately left the harder half unsolved: *deploying*
+a merged fix into the one shared production checkout still requires a quiet window with no scrape
+running anywhere in the repo — there's still no way to promote new code without racing whatever's
+currently running there.
+
+The idea: have each scrape/archive invocation run in its own container built from an image
+snapshot of the code, the way Postgres and `api-v3` already run. A merge/rebuild could never race
+a running process, since the running process's container already has its own immutable copy —
+this closes the gap the dev checkout didn't, without the bigger EC2/RDS split in §13.
+
+**Why this isn't free:** the toolchain is already known to be finicky to package — the pinned
+`pydantic<2` + `pip<24.1` + editable-install setup needed a real workaround just to build once
+(`RUNBOOK.md`). A container image build would need to reproduce that reliably, likely on every
+merge. The archive step also reaches outside a natural container boundary in two ways that would
+need explicit wiring: the host-mounted `/Volumes/DDP-HOT` volume, and the sudo-gated
+`ddp-prod-s3-bill-archive` wrapper (`/Users/agentsmith/bin/`), which is deliberately host-side only
+(see `ddp-infra/Production_S3_Wrappers.md` — no raw AWS credentials exist inside any container or
+checkout by design).
+
+**Not scoped, not decided.** Revisit if the "wait for a quiet window before syncing" pain keeps
+recurring (as it did prompting this note) — cross-reference §13's EC2/RDS question, since both
+are ways of addressing the same single-shared-Mac-Studio risk concentration, at different scales.
+
 ### 11.4 Scraper fixes and upstream contributions
 
 **Superseded 2026-07-17 onward — see §2.5.** The "maintain cherry-picks until upstream merges"
