@@ -1,6 +1,16 @@
 # Plan: Incremental Bill Scraping — All Active Jurisdictions
 
-**Status: IMPLEMENTED 2026-06-22.** All 8 jurisdictions patched. Shell timestamp layer live. See `logs/last-run/` for per-jurisdiction cutoff files and RUNBOOK.md for operational details.
+**Status: REOPENED 2026-07-27 — core implementation is live, but not complete.** All 8
+jurisdictions were patched 2026-06-22 and the shell timestamp layer (`logs/last-run/`) has run
+nightly since; see `RUNBOOK.md` for operational details. But three of this plan's own follow-ups
+were never closed out, and re-investigating why a routine WA scrape was taking ~70 minutes during
+an out-of-session week surfaced that this is systemic to three jurisdictions, not a fluke. See
+**"Reopened 2026-07-27: the per-bill network floor"** below for the full write-up. Short version:
+this plan shipped the *client-side* filtering it set out to build for every jurisdiction, but two
+of its own explicitly-flagged stretch goals (WA's WSDL date-range check, MI's signal-semantics
+verification) were never followed up on, and nothing before now had named the underlying pattern
+(no list-level date data forces a per-bill fetch regardless of `start=`) as a durable, cross-cutting
+property of WA/UT/AZ rather than a one-off WA quirk.
 
 ## Context
 
@@ -30,20 +40,115 @@ Implementation is local patches only (no upstream PRs).
 
 ---
 
-## Implementation status (as of 2026-06-22)
+## Implementation status (as of 2026-06-22; SHAs corrected 2026-07-27)
 
 | State | Incremental support | Signal used | SHA | Notes |
 |---|---|---|---|---|
-| USA | ✅ | GovInfo sitemap `lastmod` | `371e7e6` | Format string fix only — filter already existed |
-| FL | ✅ | Last-action date in HTML `td[3]` | `5ccf523` | `SkipItem` in `BillList.process_item()`; td[3] verified against live HTML |
-| WA | ✅ | `CurrentStatus/ActionDate` from GetLegislation | `8bc4525` | Still O(n) GetLegislation calls; skips 5-6 downstream calls per unchanged bill |
-| MI | ✅ | `dateFrom=` URL param | `b9e2d6f` | Semantics unverified — may be intro date not last-action date |
-| UT | ✅ | `actionHistoryList[0].actionDate` | `4cb3f8d` | Saves processing only, not HTTP calls |
-| MA | ✅ | `PrimarySponsor.ResponseDate` | `e9e4c28` | Weak proxy — sponsor date not action date; acceptable since votes are now scraped |
-| AZ | ✅ | `max(BillStatusAction.ReportDate)` | `939b4b7` | Still O(n) API calls; skips sub-calls for unchanged bills |
-| VA | ✅ | `max(EventDate)` from events call | `bdd256b` | Events call unavoidable; saves 3/4 per-bill calls |
+| USA | ✅ | GovInfo sitemap `lastmod` | `6d5ce6d9e` | Format string fix only — filter already existed |
+| FL | ✅ | Last-action date in HTML `td[3]` | `3295ea4d0` | `SkipItem` in `BillList.process_item()`; td[3] verified against live HTML |
+| WA | ⚠️ partial | `CurrentStatus/ActionDate` from GetLegislation | `5d6644b09` | **Still O(n) `GetLegislation` calls — the per-bill fetch itself is not skippable, only the 5-6 downstream calls are.** See the 2026-07-27 write-up below |
+| MI | ✅ (signal still unverified) | `dateFrom=` URL param | `8db6514f5` | **Semantics still unverified as of 2026-07-27** — may be intro date not last-action date; `RUNBOOK.md` carries the same open caveat |
+| UT | ⚠️ partial | `actionHistoryList[0].actionDate` | `2c1d7a0df` | Saves processing/DB-write time only, not HTTP calls — same class of gap as WA |
+| MA | ✅ | `PrimarySponsor.ResponseDate` | `c211b3506` | Weak proxy — sponsor date not action date; acceptable since votes are now scraped |
+| AZ | ⚠️ partial | `max(BillStatusAction.ReportDate)` | `58f006fa6` | Still O(n) API calls; skips sub-calls for unchanged bills — same class of gap as WA |
+| VA | ✅ (mostly) | `max(EventDate)` from events call | `50422a94f` | Events call unavoidable (VA's list-level date fields are confirmed always null); skips 3 of 4 per-bill calls |
 
-All patches on `ddp-incremental` branch in `openstates-scrapers` fork. Cherry-picked via `apply-local-patches.sh`.
+**SHA correction, 2026-07-27:** the SHAs above no longer match the ones originally recorded here
+(`8bc4525`, `4cb3f8d`, etc.) — those commits still exist in the repo's object database but are no
+longer reachable from `main`, almost certainly rewritten when `openstates-scrapers` became a
+formal DDP fork on 2026-07-17 (see `PLAN-fork-management.md`). Same commit messages, same
+authorship, different hashes; verified via `git log main -- scrapers/<state>/bills.py` that the
+actual code is unchanged and live. `RUNBOOK.md` already had the corrected SHAs; this table did
+not — now fixed. There is no longer a `ddp-incremental` branch, and nothing in
+`apply-local-patches.sh` cherry-picks these anymore — see the "Deployment convention" section
+below, also now stale for the same reason.
+
+---
+
+## Reopened 2026-07-27: the per-bill network floor (WA/UT/AZ), plus two unclosed follow-ups
+
+Triggered by investigating why a routine WA scrape was taking ~70 minutes during an
+out-of-session week with almost no legislative activity to report. The answer turned out to be
+expected behavior given how this plan's own per-jurisdiction implementations work — not a
+regression — but re-checking it surfaced that the underlying limitation is a real,
+cross-jurisdiction pattern this plan never named as such, plus two of the plan's own explicit
+follow-ups were never actually done.
+
+### The pattern: "incremental" means different things per jurisdiction, and three of eight can't skip the per-bill fetch at all
+
+Rechecking each `scrape()`/`scrape_bill()` in `openstates-scrapers` for whether the `start=`
+cutoff check happens *before* or *after* the per-bill network fetch:
+
+| Jurisdiction | Per-bill fetch skippable when unchanged? | Date signal used | Source |
+|---|---|---|---|
+| **FL** | Yes — filters before any per-bill fetch | Last-action date already in the bill-list HTML row | `bills.py` `BillList.process_item()` |
+| **US federal** | Yes — filters before any per-bill fetch | `lastmod` in the govinfo sitemap XML (bulk, already fetched) | `bills.py` `parse_bill_list()` |
+| **MI** | Yes — server-side; unchanged bills never even get listed | `dateFrom=` passed as a query param to MI's own search endpoint | `bills.py` `scrape()` |
+| **MA** | Yes — filters before any per-bill fetch | Sponsor `ResponseDate` in one bulk JSON list call | `bills.py` `scrape_bill_list()` |
+| **VA** | Partial — skips 3 of 4 per-bill calls (versions/sponsors/votes), not the 4th (events) | `max(EventDate)` from the events call, itself unavoidable | `bills.py` scrape loop |
+| **WA** | **No** — one full `GetLegislation` fetch per bill is unavoidable; only the 5-6 *downstream* calls (sponsors/actions/hearings/votes/etc.) are skipped | `CurrentStatus/ActionDate`, only available after the fetch | `bills.py` `scrape_bill()` |
+| **UT** | **No** — one full per-bill JSON fetch is unavoidable (already an all-in-one response, so nothing extra beyond parsing/DB-write time is saved) | `actionHistoryList[0].actionDate`, only available after the fetch | `bills.py` `scrape_bill_details_from_api()` |
+| **AZ** | **No** — one full per-bill JSON fetch is unavoidable; downstream sponsor/version/vote sub-calls are skipped | `max(BillStatusAction.ReportDate)`, only available after the fetch | `bills.py` `scrape_bill()` |
+
+For WA/UT/AZ this is structural: their bill-*list* endpoints carry no date field at all, so
+there's nothing to filter on until each bill's own detail is individually fetched. VA's list
+endpoint has 5 date fields but this plan's own 2026-06-22 research (Part 9 above) already
+confirmed all of them are null for every bill, and every guessed date-range/server-side-filter
+endpoint either has no effect or 404s — so VA is stuck with at least the one events call per bill
+too, same root cause as WA/UT/AZ, just with a smaller remaining bill count.
+
+This plan's original per-state write-ups (Parts 4, 6, 8 above) already *said* this in each
+section's own "Impact" note (e.g. WA: "One `GetLegislation` call per bill is unavoidable") — the
+gap wasn't a wrong technical claim, it's that nothing tied these three together as one
+cross-cutting property worth tracking as its own open item, so it read as three independent
+minor caveats rather than a real, un-closed part of "incremental scraping."
+
+### Concrete impact, confirmed live 2026-07-27
+
+WA's biennium has ~3,400 bills. At `SCRAPELIB_RPM=60` (~1 request/sec), that's a hard floor of
+~55-60 minutes for the scrape phase alone, regardless of how many bills actually changed — an
+out-of-session week with zero real legislative activity pays this same cost every night, because
+WA is one of the three **daily**-scraped jurisdictions. UT/AZ pay the same *shape* of cost but are
+**weekly**-scraped secondary states, so it's less visible day-to-day; VA is both weekly-scraped
+and has the shortest active bill list of the four (its 2026S1 special session was only 273
+bills), so it's the least urgent — consistent with this plan's original per-jurisdiction urgency
+ranking ("Implementation order" below), which is still accurate today.
+
+### Two follow-ups this plan named and never closed
+
+1. **WA's WSDL upgrade path was never checked.** "Implementation order" step 5 below says to
+   "check WSDL for date-range endpoint upgrade" alongside shipping the WA filter — that check
+   never happened. Concretely: verify whether WA's SOAP API
+   (`http://wslwebservices.leg.wa.gov/legislationservice.asmx`) exposes a
+   `GetLegislativeStatusChangesByDateRange`-style operation. If it does, it would return only the
+   bill IDs with status changes in a date range, eliminating the O(n) `GetLegislation` calls
+   entirely instead of just skipping the downstream sub-calls — the only one of the three
+   (WA/UT/AZ) with a plausible path to removing the per-bill-fetch floor rather than just working
+   around it, since UT's and AZ's per-bill calls are already single all-in-one responses with no
+   equivalent lighter-weight endpoint to check for.
+2. **MI's date signal is still unverified.** The Implementation status table above has carried
+   "semantics unverified — may be intro date not last-action date" since 2026-06-22; `RUNBOOK.md`
+   still lists the same open caveat today. Nobody has forced a full MI scrape and diffed counts
+   against a normal incremental run to settle this, per this plan's own suggested verification
+   method ("If MI incremental runs return unexpectedly few bills, force a full scrape and compare
+   counts").
+
+### Practical takeaway for scheduling/monitoring
+
+WA/UT/AZ/VA's nightly runtime has a floor set by each jurisdiction's *total* bill count, not by
+legislative activity — an out-of-session run taking as long as an in-session one is expected
+behavior, not a sign of a stuck or misbehaving scrape. Any future "this run is taking too long"
+alert threshold should account for this rather than assuming session status predicts runtime.
+`PLAN-open-states.md` §2.6 has a short pointer to this section for readers coming from that plan.
+
+**Not yet done / next steps:**
+- Check WA's WSDL for a date-range-capable operation (see above); if one exists, scope the
+  scraper change to use it instead of per-bill `GetLegislation` calls.
+- Force a full MI scrape and diff against a normal incremental run to settle the
+  intro-date-vs-last-action-date question.
+- No action proposed for UT/AZ specifically — both already have single all-in-one per-bill
+  responses with no cheaper alternative identified, so there's no equivalent upgrade path to
+  chase the way there might be for WA.
 
 ---
 
@@ -543,19 +648,17 @@ incremental work — but the pattern is clean to implement.
 
 ## Deployment convention
 
-Every scraper change goes through the local-patches mechanism:
-
-```
-# In openstates-scrapers (after apply-local-patches.sh puts us on local-patches):
-git add scrapers/<state>/bills.py
-git commit -m "feat(<state>): add start= incremental filtering"
-# Note the SHA
-```
-
-Add to `apply-local-patches.sh`:
-```bash
-cherry_pick <sha>  # feat(<state>): start= incremental filtering
-```
+**Stale as of 2026-07-17 — kept for history, does not describe how `openstates-scrapers`
+patches actually ship anymore.** This section originally described a local-patches/cherry-pick
+mechanism (a throwaway branch, `cherry_pick <sha>` lines hand-added to `apply-local-patches.sh`).
+`openstates-scrapers` became a formal DDP fork on 2026-07-17: fixes now merge via a normal
+branch → PR → the fork's own `main`, and `apply-local-patches.sh` just does a plain
+`git checkout main && git pull origin main` for it — no cherry-picking, no per-SHA list to
+maintain. This is why the SHAs in the table above needed correcting: the original commits were
+rewritten during that transition. See `PLAN-fork-management.md` §1 and `PLAN-open-states.md`
+§2.5 for the current model. (`openstates-core` is different — it still uses a cherry-pick
+mechanism, just range-based off a `cherry-pick-line` branch rather than hand-listed SHAs; not
+relevant to this plan since none of the incremental-scraping work touches `openstates-core`.)
 
 The `case "$STATE"` guard in `run-scrape.sh` can serve as a rollout gate — add each
 state to the `case` as its scraper patch is validated.
