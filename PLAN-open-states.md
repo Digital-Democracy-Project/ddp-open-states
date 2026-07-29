@@ -1250,6 +1250,64 @@ Document here so the work is scoped when the time comes. Do not execute until th
       when prioritizing this class of fix. Not scoped further yet — needs its own design pass,
       probably as a new §8.1b once someone picks this up.
 
+- [ ] **The S3 bill-archive relay is undersized and already gets overloaded at today's
+      concurrency — found 2026-07-29 while restarting archive runs after the UT/VA fixes.**
+      `os-text-extract archive`'s S3 upload step never talks to AWS directly (per
+      `ddp-infra/Production_S3_Wrappers.md`, no raw AWS credentials exist on this Mac by
+      design): it shells out to a sudo-gated local wrapper
+      (`/usr/local/db-proxy/s3-bill-archive.sh`), which SSHes into a small dedicated EC2 box
+      (`ubuntu@10.0.0.1`, referred to here as the "S3 relay") and runs the real `aws s3`/`aws
+      s3api` command there. Every archived document costs **two** round trips through this
+      relay (`_upload_and_verify()` in `text_extract.py`: one `put`, one `info` to confirm the
+      upload via ETag).
+
+      **What was actually found, ruled out in order:** a single `info` call was taking
+      consistently ~7-8 seconds. Checked and ruled out, in sequence: (1) this Mac's own `aws`
+      CLI usage isn't the path at all — the wrapper relays everything over SSH, so nothing
+      about credentials or environment on this Mac is even in play; (2) SSH connection-reuse
+      (`ControlMaster`/`ControlPersist`) was missing, added, confirmed working (a live
+      multiplexed socket existed), and made **no difference** — ruling out SSH handshake
+      overhead; (3) `aws --version` alone, run directly on the relay box with no network call
+      and no credentials involved at all, still took ~6 seconds with real CPU time consumed (not
+      idle waiting) — ruling out AWS/network entirely and pointing at the relay box itself; (4)
+      `nproc`/`uptime`/`top` on the relay box confirmed it: **2 vCPUs, load average ~5.9-5.9,
+      four separate `aws` processes observed running concurrently**, each getting roughly a
+      third of a core. The relay box simply doesn't have enough processing power for the number
+      of `aws` invocations arriving at once, so every single one queues and takes several
+      seconds instead of a fraction of one.
+
+      **Not just a testing artifact — this concurrency is already part of the real schedule.**
+      The four concurrent `aws` processes observed were almost certainly this session's parallel
+      archive test runs (WA/VA/MA/US federal all archiving at once), but `ddp-sync`'s existing
+      Sunday `secondary` group (§13 below) already runs VA/MI/UT/AZ **simultaneously** every
+      week in normal, already-scheduled operation — a very similar shape of concurrent load to
+      what triggered this. This isn't a hypothetical scaling concern; today's actual weekly
+      schedule already produces the conditions that overload this relay.
+
+      **Directly relevant to §13's open EC2-sizing question below** — that section asks how
+      much compute a 51-jurisdiction future would need and proposes a "spike" to measure it;
+      this is real, already-collected evidence that the *existing* small-scale relay
+      infrastructure is under-provisioned for even today's 8-jurisdiction load, before any
+      scale-up discussion.
+
+      **Not yet fixed — two remediation paths, not mutually exclusive:**
+      1. Resize the relay EC2 instance to more vCPUs — the direct fix, removes the contention
+         outright.
+      2. Reduce how many jurisdictions archive concurrently (e.g. stagger the Sunday secondary
+         group instead of running it simultaneously) — cheaper, no infra change, but works
+         against the existing `sync_schedule.yaml` design rationale (§13/`PLAN-bill-document-
+         provenance.md` Phase 1's own note treats simultaneous secondary-group execution as
+         already-acceptable).
+      3. Independent of either: `_upload_and_verify()`'s two-calls-per-document design could be
+         cut to one, halving the relay's load regardless of which of the above is chosen —
+         not scoped further here.
+
+      **Why this belongs in the cutover strategy:** full production cutover means more
+      jurisdictions and/or larger backfill volumes archiving through this same single relay,
+      not fewer — whatever concurrency exists today only grows from here. This should be
+      resolved (or explicitly accepted as a known limit) before treating the archive pipeline as
+      cutover-ready, not discovered again under real production load.
+
 **Not blockers** (clarifying since they're easy to conflate with the above): the WA/US-Congress
 session-alias-mapping problem (§8.3) is a **votebot**-only issue — ddp-broker-py looks up
 sessions by explicit code, not by year-probing, so it's unaffected. The `OPENSTATES_API_BASE`
@@ -1850,6 +1908,7 @@ Before writing a real design note (this section is explicitly not one), the actu
 - There's already a real (if unmeasured) concurrency data point: `ddp-sync`'s `secondary` group (VA/MI/MA/UT/AZ, §9.1 / `sync_schedule.yaml`) already runs **simultaneously** every Sunday 02:00 UTC with no reported memory problems — nobody's ever attached a profiler to it.
 - A quick live sample taken during this discussion: the archive-sweep process (`os-text-extract archive fl`) sits around 300–330MB RSS — but that's the lightweight fetch/extract/upload step, not the scraper+importer itself, which holds full `Bill`/`VoteEvent`/`Person` object graphs in memory and is almost certainly heavier.
 - **A real memory anti-pattern is already known and directly relevant.** FL's scraper (inherited from public upstream, not DDP-authored — a 2025-03-05 commit, "handle blockages from fl website") used to wrap its *entire* session's bill generator in `retry_on_connection_error(lambda: list(do_scrape_with_retry()))`, buffering every bill's text/floor-votes/committee-votes fully in memory before writing anything to disk. Fixed for FL (`fix/fl-incremental-bill-scrape`, see §2.5), but nobody's checked whether any other state's scraper class — especially the high-volume states DDP doesn't track yet (CA, NY, TX, IL by legislative volume) — has the same pattern. This is exactly the kind of per-state variance that would break a naive "average memory × 51" estimate.
+- **Not memory, but a real CPU/capacity data point now exists, found 2026-07-29 (§8.1a above).** The S3 bill-archive relay — a small dedicated EC2 box (2 vCPUs) everything's document uploads pass through — was found overloaded (load average ~5.9 on 2 cores) simply from today's normal Sunday secondary-group concurrency (VA/MI/UT/AZ archiving simultaneously, the same "no reported memory problems" group cited above). Nobody had profiled it because nothing had looked broken from the Mac Studio side — the pipeline still completed, just many times slower than it should have. Worth treating as a preview of what "nobody profiled it" can hide even at today's 8-jurisdiction scale, before extrapolating that same lack-of-signal to 51.
 
 **What the spike needs to measure:**
 1. Peak RSS **separately** for the scrape step and the import step, per jurisdiction — different memory shapes (HTTP fetch/parse vs. bulk Django ORM writes), averaging them together hides the real peak.
@@ -1901,3 +1960,85 @@ See Phase 8.2 table — 7 small edits across 7 files, all adding `os.getenv("OPE
 | Log file | `logs/cams-server.log` | systemd journal | `logs/queries/` | **`logs/scraper.log`, `logs/os-api.log`** |
 | launchd label | `com.ddp.cams-server` | `com.ddp.broker` | — | **`com.ddp.openstates-api`, `com.ddp.openstates-scraper`** |
 | Browser profile | `~/.config/grantbot/` | — | — | **none** (no browser needed) |
+
+## Appendix D: Known bug — `/jurisdictions/{iso2}?include=legislative_sessions` returns HTTP 500
+
+**Found:** 2026-07-28, while building `ddp-next`'s `/explore` feature
+(`ddp-next/PLAN-openstates-integration.md`), which needed a session picker and so called
+`OpenStates.get_jurisdiction_detail(iso2)` (`ddp-broker-py`:
+`fetch/interfaces/OpenStates/openstates_client.py:136-158`) against the DDP replica for the
+first time — this exact code path (this method, with its default
+`include=["legislative_sessions"]`) had apparently never been exercised against the live
+replica before.
+
+**Symptom:** `GET https://api.digitaldemocracyproject.org/openstates/jurisdictions/{iso2}?include=legislative_sessions`
+returns `HTTP 500` (empty-ish body, 21 bytes) for every tracked jurisdiction tested (FL, UT, MI,
+US) — not jurisdiction-specific.
+
+**Isolated to the `include` param:** the same request *without*
+`include=legislative_sessions` succeeds (200) against the replica. The failure is specifically
+in whatever server-side logic resolves the `legislative_sessions` include on `/jurisdictions/{iso2}`
+in this deployment of `api-v3`.
+
+**Impact:** `ddp-broker-py`'s new `GET /api/openstates-jurisdictions/<iso2>/sessions/` endpoint
+(added for `ddp-next`'s session picker) correctly catches this as an upstream failure and
+returns a clean `503` rather than crashing — so this isn't causing any 500s to leak out of
+`ddp-broker-py`. But the session picker itself has no working data source until this is fixed
+here, in the replica.
+
+**Update 2026-07-29 — root cause found**, in `api-v3/api/db/models/jurisdiction.py`. Two
+relationships declare a one-sided `back_populates` that its partner doesn't reciprocate:
+
+```python
+# Jurisdiction (line 26-30)
+legislative_sessions = relationship(
+    "LegislativeSession",
+    order_by="LegislativeSession.start_date",
+    back_populates="jurisdiction",   # <-- expects LegislativeSession.jurisdiction to reciprocate
+)
+```
+```python
+# LegislativeSession (line 54) -- does NOT reciprocate
+jurisdiction = relationship("Jurisdiction")   # no back_populates at all
+```
+
+Same broken pattern a second time, one level down:
+
+```python
+# LegislativeSession (line 56-60)
+downloads = relationship(
+    "DataExport",
+    back_populates="session",   # <-- expects DataExport.session to reciprocate
+    primaryjoin="...",
+)
+```
+```python
+# DataExport (line 73) -- does NOT reciprocate
+session = relationship(LegislativeSession)   # no back_populates at all
+```
+
+SQLAlchemy only raises a mapper-configuration error for a mismatched `back_populates` pair
+the first time it actually has to fully configure that relationship — which happens on eager
+load. `include_map_overrides` (`api-v3/api/pagination.py`'s `JurisdictionPagination`) maps
+`legislative_sessions` to `selectinload("legislative_sessions")` *and*
+`selectinload("legislative_sessions.downloads")` — i.e. asking for this one include forces
+SQLAlchemy to configure **both** broken pairs at once. That's why it's 500 for every
+jurisdiction (a mapper/schema bug, not data-dependent) and why omitting the include avoids the
+crash entirely (neither relationship ever gets resolved).
+
+**This is genuine upstream code, not a DDP patch** — confirmed via `PRIMITIVES.md`'s own
+description of `api-v3/` as a pristine, gitignored, deliberately-unpatched checkout ("kept out
+of the public `api-v3/` checkout on purpose, so that checkout stays pristine/upstream-mergeable").
+So this bug (if it isn't already fixed in a newer upstream commit) most likely exists in the
+public `openstates/api-v3` project itself, not something DDP introduced.
+
+**Options, not yet acted on:**
+1. Report/fix upstream (`https://github.com/openstates/issues/`, per `api-v3`'s own README) —
+   the "correct" fix given this repo's stay-pristine convention for `api-v3/`.
+2. Patch the local checkout directly — works, but breaks the pristine/upstream-mergeable
+   property this repo deliberately maintains for `api-v3/`, and wouldn't survive a fresh
+   upstream sync.
+3. Leave it broken and keep working around it downstream — current state; `ddp-next` has
+   disabled the one feature (session picker) that exercises this code path
+   (`ddp-next/PLAN-openstates-integration.md`, and the fix commit disabling the client-side
+   sessions fetch) rather than depend on a fix here.
