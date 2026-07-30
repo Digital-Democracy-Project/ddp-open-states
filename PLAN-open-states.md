@@ -2061,9 +2061,15 @@ this incident.
 
 **Decision, 2026-07-29:** keep PR #1 as legitimate independent upstream hygiene (option 2 below,
 in effect) — api-v3 is now formally DDP's fourth fork, see `PLAN-fork-management.md` §1a for its
-status and the still-open gap between the fork's `main` and what's actually running. Outstanding,
-not done as part of this decision: repoint the local `api-v3/` checkout at the fork, rebuild the
-image, and redeploy, so PR #1 (and any future fork patch) actually reaches production.
+status and the gap between the fork's `main` and what's actually running.
+
+**Update, 2026-07-29, later the same day: deployed.** Pulled the fork's `main` (now including PR
+#2, OPEN-13, a real feature — see `PLAN-fork-management.md` §1a) into the local checkout, rebuilt
+`ddp-openstates-api:local`, redeployed. Both PR #1 and PR #2 confirmed live. The redeploy itself
+caused a separate, real incident (an unscoped `--force-recreate` also restarted the shared
+dedicated Postgres, killing two live scrapes mid-write) — see `RUNBOOK.md` → "Known gotchas" for
+the full account; no bill/vote data was lost, but it's an unrelated lesson about this specific
+compose file, not about api-v3 or this bug.
 
 *(Original options considered before the correction above, kept for context:*
 1. *Report/fix upstream — the "correct" fix given this repo's stay-pristine convention for*
