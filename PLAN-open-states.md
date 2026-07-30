@@ -1801,34 +1801,11 @@ file), append the call to the end of `run-all-scrapes.sh`, and verify against th
 (the `ma_session_194th` key is absent right now, so a dry run should immediately alert once,
 which doubles as an integration test).
 
-#### Flagged idea: containerize scraper runs (raised 2026-07-28, not scoped, not decided)
+#### Containerizing scraper runs
 
-The underlying problem: `ddp-open-states` has exactly one production checkout, shared by every
-scrape regardless of jurisdiction. `~/Developer/repos/ddp-open-states-dev` (built 2026-07-24,
-after a live FL backfill was mid-run when `run-scrape.sh` itself got edited on disk — see
-`ddp-infra/PLAN-bill-document-provenance.md`'s Risk Register and Open Question 21a) solved "don't
-develop against the live checkout," but deliberately left the harder half unsolved: *deploying*
-a merged fix into the one shared production checkout still requires a quiet window with no scrape
-running anywhere in the repo — there's still no way to promote new code without racing whatever's
-currently running there.
-
-The idea: have each scrape/archive invocation run in its own container built from an image
-snapshot of the code, the way Postgres and `api-v3` already run. A merge/rebuild could never race
-a running process, since the running process's container already has its own immutable copy —
-this closes the gap the dev checkout didn't, without the bigger EC2/RDS split in §13.
-
-**Why this isn't free:** the toolchain is already known to be finicky to package — the pinned
-`pydantic<2` + `pip<24.1` + editable-install setup needed a real workaround just to build once
-(`RUNBOOK.md`). A container image build would need to reproduce that reliably, likely on every
-merge. The archive step also reaches outside a natural container boundary in two ways that would
-need explicit wiring: the host-mounted `/Volumes/DDP-HOT` volume, and the sudo-gated
-`ddp-prod-s3-bill-archive` wrapper (`/Users/agentsmith/bin/`), which is deliberately host-side only
-(see `ddp-infra/Production_S3_Wrappers.md` — no raw AWS credentials exist inside any container or
-checkout by design).
-
-**Not scoped, not decided.** Revisit if the "wait for a quiet window before syncing" pain keeps
-recurring (as it did prompting this note) — cross-reference §13's EC2/RDS question, since both
-are ways of addressing the same single-shared-Mac-Studio risk concentration, at different scales.
+**Promoted to a full scoped section — see §11.5.** (Originally flagged 2026-07-28 as a one-paragraph
+idea, not scoped; scoped out 2026-07-30 after a concrete incident made the underlying problem
+vivid — see §11.5 for the full design, tradeoffs, and open questions.)
 
 ### 11.4 Scraper fixes and upstream contributions
 
@@ -1852,6 +1829,178 @@ For a new scraper fix:
 Also monitor `openstates/openstates-scrapers` (public upstream) for whether the original UT
 (#5695) and MI (#5696) fixes referenced in earlier revisions of this section have since merged
 there — not re-checked as part of this update.
+
+### 11.5 Containerizing scraper runs
+
+**Status: DRAFT, scoped 2026-07-30 — promoted from a one-paragraph flagged idea (2026-07-28).**
+Not yet built. Scoping prompted by a concrete incident the same week that made the underlying
+architecture gap vivid rather than theoretical (see "Why now" below).
+
+#### The problem, restated precisely
+
+Two completely different deployment models coexist in this stack today, and it's easy to
+conflate them:
+
+- **`api-v3` is Dockerized.** Code changes sit inert until an explicit `docker-compose build` +
+  `up -d --force-recreate <service>` step. This is why the OPEN-12/OPEN-13 deploy earlier this
+  week needed a rebuild+redeploy, not just a `git pull`.
+- **The scrapers are not.** `run-scrape.sh`, `openstates-core`, `openstates-scrapers`, and
+  `people` all run as native processes against this repo's dedicated `.venv`, reading code
+  directly off disk in `~/Developer/repos/ddp-open-states` — `os-update` is a plain
+  `#!/…/.venv/bin/python` script, no container involved anywhere in the call chain. A code change
+  here takes effect on the *very next* scrape invocation, with zero rebuild step. That immediacy
+  is exactly why CLAUDE.md forbids editing files or switching branches in this checkout while a
+  scrape is running: there's no container boundary insulating a live process from a code change
+  landing underneath it.
+
+`~/Developer/repos/ddp-open-states-dev` (built 2026-07-24, after a live FL backfill was mid-run
+when `run-scrape.sh` itself got edited on disk — see `ddp-infra/PLAN-bill-document-provenance.md`'s
+Risk Register and Open Question 21a) solved *"don't develop against the live checkout."* It
+deliberately left the harder half unsolved: *promoting* a merged fix into the one shared
+production checkout still requires a quiet window with no scrape running anywhere in the repo —
+there's still no way to ship code without racing whatever's currently running there.
+
+#### Why now: what this week's incident actually showed
+
+Reloading Colima on 2026-07-29 to pick up an unrelated Docker fix bounced every container on the
+Mac, including the dedicated `ddp-openstates-postgres-1` — which killed two live scrapes (`va`,
+`ut`) mid-write with `server closed the connection unexpectedly` (`RUNBOOK.md` → "Known gotchas").
+The revealing detail: **`ut` and a separately-scheduled `wa` run survived the exact same Colima
+bounce untouched**, because at that instant they were in their scrape phase (writing bill JSON to
+local disk, no Postgres involved) rather than their import/archive phase. `va` only failed because
+it happened to be mid-write at that exact second.
+
+That's the sharpest illustration available of the two-sided nature of this problem:
+- **Being native saved `ut`/`wa` this time** — they have zero dependency on Docker/Colima at all,
+  so an infra event entirely unrelated to scraping (a Colima reload for an api-v3 fix) couldn't
+  touch them except through the one shared piece of infrastructure (Postgres) they do depend on.
+- **Being native is *also* the exact mechanism** that makes a mid-scrape code edit dangerous in the
+  first place — the same lack of a container boundary that let `ut`/`wa` dodge one class of
+  disruption is precisely what removes any insulation against the other class (a code change
+  landing mid-run). Containerizing the scrapers would trade one risk for the other, not eliminate
+  risk outright — see "What this does *not* fix," below.
+
+#### Proposed design
+
+**Unit of containerization: one ephemeral container per `run-scrape.sh` invocation**, not a
+long-running daemon — this matches the existing model (`run-scrape.sh <state> [session=...]` is
+already a one-shot batch job, not a service) and avoids the very different problem of managing a
+persistent worker pool.
+
+1. **Image build reproduces the existing toolchain**, not a new one. The `pydantic<2` +
+   `pip<24.1` + editable-install recipe already documented in `RUNBOOK.md`
+   (`/usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' && .venv/bin/pip install
+   --no-deps -r requirements-openstates.txt`) is the same recipe a `Dockerfile` needs to bake in —
+   this is a translation exercise, not new dependency work. `openstates-core`, `openstates-scrapers`,
+   and `people` get `COPY`'d (or installed editable) into the image at whatever commit the nightly
+   patch-refresh cycle (`apply-local-patches.sh`) currently produces.
+2. **Code changes reach a running image the same way api-v3's do: rebuild, don't hot-swap.**
+   Extend `apply-local-patches.sh`'s existing nightly cadence (`ddp-sync`'s
+   `openstates_patch_refresh` cron, 01:00 UTC) to also rebuild and re-tag a
+   `ddp-openstates-scraper:latest` image immediately after refreshing the git checkouts, mirroring
+   how `apply-local-patches.sh` already treats `openstates-scrapers` (formal fork, plain
+   `git pull origin main`) and `openstates-core` (cherry-pick-line rebuild) differently — see
+   `PLAN-fork-management.md`. A scrape that's already running holds a reference to the image it
+   started with; a same-night patch refresh can never touch it.
+3. **`run-scrape.sh` becomes a thin wrapper**, not a rewrite: same CLI (`run-scrape.sh <state>
+   [session=...]`), same call sites (`run-all-scrapes.sh`, `backfill-fl-historical.sh`,
+   `ddp-sync`'s scheduler) — internally it becomes `docker run --rm ddp-openstates-scraper:latest
+   <state> [session=...]` instead of calling `$OS_UPDATE` directly. Every primitive in
+   `PRIMITIVES.md`'s discipline checklist (the `.ts`/`.count` marker files, `log()`, the
+   `SCRAPE SUMMARY` line, Slack alert-on-failure) needs to keep working unchanged — the wrapper
+   bind-mounts `logs/` and `logs/last-run/` into the container rather than reimplementing any of
+   this inside it.
+4. **Volumes — what's baked in vs. mounted:**
+   - Code (`openstates-core`, `openstates-scrapers`, `people`) — **baked into the image**, not
+     mounted. This is the one non-negotiable design constraint: if code is volume-mounted from the
+     host checkout instead, this whole effort reintroduces the exact race it's meant to close.
+   - `logs/`, `logs/last-run/`, `_data/`, `_cache/` — host bind-mounts, same paths `run-scrape.sh`
+     already uses via `--datadir`/`--cachedir` (`activate.sh`'s note about `cwd=/` under launchd
+     applies identically here).
+   - The dedicated Postgres (`:5433`) — reached over the same Docker network `api-v3` already uses,
+     no change needed there; it's already containerized.
+   - `/Volumes/DDP-HOT` (the archive step's host-mounted volume) and the sudo-gated
+     `ddp-prod-s3-bill-archive`/`ddp-prod-s3-bill-archive` wrappers (`/Users/agentsmith/bin/`,
+     `ddp-infra/Production_S3_Wrappers.md`) — **the real open design problem**, not a mechanical
+     one. These are deliberately host-side only so that no raw AWS credentials ever exist inside
+     any container or checkout. A containerized archive step either (a) keeps the actual S3 upload
+     call as a host-side step the container's output feeds into (container writes archived
+     documents to a bind-mounted staging directory; a host-side process does the sudo-gated
+     upload), or (b) stays entirely un-containerized for now, with only the scrape+import phase
+     moving into a container first. Not resolved here — needs its own decision before Phase 2
+     below can be scoped in detail.
+
+#### Migration phases (proposed, not yet started)
+
+1. **Prove the toolchain builds and one jurisdiction scrapes correctly inside a container.**
+   Pick a simple, no-external-API-key jurisdiction (UT is a reasonable choice — no `VA_API_KEY`-
+   style gate) and validate `docker run` against the existing dedicated Postgres produces the same
+   result as today's native run, diffed with `quality_check.py`.
+2. **Resolve the archive-step boundary question** (above) before wiring the archive phase in —
+   this blocks any container from doing a full end-to-end `scrape → import → archive` run.
+3. **Wrap `run-scrape.sh`** to shell out to `docker run` instead of `$OS_UPDATE` directly, keeping
+   every existing primitive (markers, logging, Slack alerts) working unchanged. Validate against
+   all 8 tracked jurisdictions, one at a time, before touching the scheduler.
+4. **Wire image rebuilds into `apply-local-patches.sh`'s existing nightly cadence.** Decide
+   whether nightly-only is fast enough, or whether a merge to `openstates-scrapers`'s fork `main`
+   (or `openstates-core`'s `cherry-pick-line`) should trigger an on-demand rebuild too — see the
+   latency tradeoff below.
+5. **Cut over `ddp-sync`'s scheduler and `run-all-scrapes.sh`/`backfill-fl-historical.sh`** to the
+   containerized wrapper. Retire the worktree-lock protocol
+   (`/tmp/ddp-openstates-scrapes/`, `PRIMITIVES.md`) once every scrape genuinely runs from an
+   immutable image — the whole reason that lock exists (a patch rebuild racing a live native
+   process reading the same files) stops applying.
+6. **Relax the CLAUDE.md "never edit files while a scrape is running" rule** — but only for the
+   scraper checkouts specifically. The equivalent rule for `api-v3` (a Dockerized service that
+   still needs an explicit, careful redeploy — see this week's `--force-recreate` incident) doesn't
+   go away; if anything, this plan makes the two subsystems' deployment models finally consistent
+   with each other, rather than the current split where one is native and one is Dockerized for
+   unrelated historical reasons.
+
+#### What this does *not* fix
+
+- **The single-shared-Mac-Studio resource concentration risk is unchanged.** This keeps everything
+  on the same machine — it's explicitly a different scale of fix than §13's EC2/RDS proposal, not
+  a step toward it (though see the portability note below).
+- **The S3 relay's own CPU capacity limit** (§8.1a, PLAN-fork-management.md-adjacent) is a
+  completely separate bottleneck on a different box; this plan doesn't touch it either way.
+- **It makes Colima/Docker a harder single point of failure for the scrapers than today.** This is
+  the direct, honest counter-argument this week's incident surfaced: `ut` and `wa` survived
+  Wednesday's Colima reload specifically *because* they aren't Dockerized yet. Once scrapers run in
+  containers too, **every** future Colima reload would interrupt every in-flight scrape uniformly,
+  not just the unlucky one mid-DB-write. That's a real regression in one dimension (blast radius of
+  a Colima bounce) traded for a real improvement in another (blast radius of a code deploy). Worth
+  weighing explicitly, not assuming the containerized state is strictly safer.
+- **It doesn't remove the latency a rebuild-based model adds.** Today, a merged fix is live on the
+  very next scrape invocation, full stop. A containerized model requires an explicit image rebuild
+  before any fix reaches a running scrape — if rebuilds stay nightly-only, a same-day fix (like
+  this week's UT/VA incremental-skip fix, merged and needed immediately) would sit inert for up to
+  a day unless rebuilds are also triggered on-merge, not just on a cron schedule.
+
+#### Open questions
+
+1. **S3 wrapper boundary** (above) — host-side staging step vs. archive phase staying
+   un-containerized initially. Blocks Phase 2.
+2. **Per-invocation container vs. a small worker pool** — for short jobs (FL incremental runs in
+   6–8 minutes today), does `docker run` startup overhead become noticeable at the low end, or is
+   it negligible relative to actual scrape time? Not measured.
+3. **Rebuild cadence** — nightly-only (simple, matches today's patch-refresh cycle, but adds
+   latency to same-day fixes) vs. on-merge (closes that gap, but is new automation this repo
+   doesn't have yet — no CI currently builds anything here).
+4. **Does this design stay portable to §13's EC2/RDS scenario, if that's ever adopted?** A
+   container image that only knows how to reach `localhost:5433` isn't automatically portable to
+   an RDS endpoint; worth a design pass that parameterizes the DB connection the same way
+   `activate.sh` already does, so this isn't wasted work if §13 is later adopted — or wasted
+   worry if it never is.
+5. **Does relaxing the "never edit while a scrape is running" rule for scrapers create a false
+   sense of safety about the checkout in general?** `apply-local-patches.sh`'s worktree lock and
+   this rule exist for the same underlying reason; retiring one without fully replacing the other
+   with an equivalent container-based guarantee would be a regression, not a simplification.
+
+**Not yet started.** Revisit sequencing against §13 (EC2/RDS) and `PLAN-fork-management.md`'s own
+open items before beginning Phase 1 above — all three touch the same underlying question of how
+much more infrastructure investment this single-Mac architecture is worth before a bigger
+structural decision gets made.
 
 ---
 
