@@ -6,10 +6,11 @@
 (`Digital-Democracy-Project/openstates-core`, `Digital-Democracy-Project/openstates-scrapers`)
 rather than local-patch-only checkouts (scrapers went formal 2026-07-17, core went formal
 2026-07-19). **`people` joined them 2026-07-27** (`Digital-Democracy-Project/people`, created to
-open openstates/people#3902 — Susan Valdés's missing 2022-2024 FL House term). Forking solved
-"how do we ship our own fixes," but nothing was ever set up to answer "how do we keep receiving
-*upstream's* fixes." This plan documents the current state, the gap, and a concrete process to
-close it.
+open openstates/people#3902 — Susan Valdés's missing 2022-2024 FL House term). **`api-v3` joined
+2026-07-29** (`Digital-Democracy-Project/api-v3`, created for OPEN-12) — it doesn't fit the model
+below at all yet; see §1a. Forking solved "how do we ship our own fixes," but nothing was ever set
+up to answer "how do we keep receiving *upstream's* fixes." This plan documents the current state,
+the gap, and a concrete process to close it.
 
 ---
 
@@ -40,6 +41,36 @@ moment anyone forgets to sync the fork's `main`. Keeping `origin` on public upst
 weekly refresh is always current by construction; `ddp` exists solely so a local fix (like
 `8b864d85`) has somewhere to be pushed from and a PR opened against upstream, exactly like
 `ddp`/`cherry-pick-line` already does for `openstates-core`.
+
+### `api-v3` — a fourth, differently-shaped fork (added 2026-07-29)
+
+`Digital-Democracy-Project/api-v3` forked from `openstates/api-v3` on 2026-07-29, prompted by
+OPEN-12 (`GET /jurisdictions/{iso2}?include=legislative_sessions` 500ing — see
+`PLAN-open-states.md` Appendix D). First and so far only patch: PR #1, a one-sided `back_populates`
+fix on `Jurisdiction`/`LegislativeSession`/`DataExport`. Decided to keep this fork and its patch
+(2026-07-29) even though live testing showed the patch wasn't actually necessary for OPEN-12 — the
+table-creation fix in `start-os-api.sh` was sufficient on its own, confirmed by the endpoint
+responding correctly through the *original, unpatched* code. The back_populates fix is being kept
+as legitimate independent hygiene, not reverted.
+
+**Doesn't fit the table above** — it has a fork and a merged patch, but no sync mechanism at all
+yet:
+- No `apply-local-patches.sh`-style refresh step, no cron.
+- The local checkout (`~/Developer/repos/ddp-open-states/api-v3`) still has `origin` pointed at
+  public `openstates/api-v3`, sitting at pre-fork commit `58696e5` — it has never been repointed
+  at the DDP fork, so a plain `git pull` here won't reach PR #1.
+- The running `ddp-openstates-api` container's image hasn't been rebuilt since 2026-06-24 — the
+  fork's patch isn't just unpulled locally, it isn't deployed even if the checkout were updated.
+- **Outstanding, not done as part of creating this fork:** decide a remote convention (probably
+  the `core`/`people` shape — `origin` on public upstream, `ddp` as the fork — since api-v3
+  currently has no DDP-authored fix that needs protecting from an upstream overwrite the way
+  `scrapers`'s do), pull PR #1, rebuild `ddp-openstates-api:local`, and redeploy via
+  `start-os-api.sh` or an equivalent manual `docker-compose ... up -d --build --force-recreate`.
+
+This is a smaller-stakes fork than the other three — one harmless hygiene commit, not yet
+deployed, not gating any live functionality (the actual OPEN-12 fix already ships without it) —
+but it should eventually get the same treatment (§5.A documentation, a place in the upstream-sync
+cadence of §5.B–D) rather than being left as a one-off exception.
 
 ---
 
@@ -360,3 +391,9 @@ deleted from the script too, since nothing calls it anymore).
   monthly pull would instead risk a bigger, less frequent merge-conflict reckoning, batched up
   once a month instead of surfaced nightly. Whichever way this goes, resolve it the same time as
   H's original migration (§5.H, §6.1) — don't leave `openstates-core` on a third, in-between model.
+- **Added 2026-07-29: when does api-v3's fork actually get deployed?** §1a's patch (PR #1) has
+  been sitting merged-but-undeployed since creation — no forcing function decides when the local
+  checkout gets repointed, rebuilt, and redeployed, or what remote convention (`core`/`people`'s
+  `origin`-stays-public shape vs. `scrapers`'s formal-fork-is-`origin` shape) it should follow
+  long-term. Low urgency today only because the one patch that exists isn't load-bearing — that
+  won't stay true once a real fix lands on this fork.
