@@ -659,27 +659,34 @@ Document here so the work is scoped when the time comes. Do not execute until th
       command. Since the container has been pointed at the *wrong* DB this whole time, "rollback"
       here only restores prior (broken) behavior — there's no data-correctness reason to revert,
       only an availability one if the new connection somehow fails.
-- [ ] **Missing `bulk_dataexport` table causes a 500 on every `/jurisdictions/{state}?include=
+- [x] **Missing `bulk_dataexport` table causes a 500 on every `/jurisdictions/{state}?include=
       legislative_sessions` call — found 2026-07-28 while investigating the item above, unrelated
-      to the stale-database bug.** `os-initdb` never creates this table (confirmed: `relation
-      "bulk_dataexport" does not exist`, from the container's own traceback), but api-v3's
-      jurisdiction-detail endpoint unconditionally queries it via a `selectinload` on
-      `LegislativeSession` → `BulkDataExport`. This affects every jurisdiction, not just FL —
-      it's a schema/migration gap, not a data problem. **Right-sized fix (guarding against
-      over-building an unused feature):** DDP has no use for bulk CSV data export — the
-      `os-initdb`/`os-update` pipeline this plan is built around never produces or needs
-      `BulkDataExport` rows. Rather than adding a migration to create and maintain an entirely
-      unused table (real ongoing surface: schema drift risk, more to keep in sync with upstream),
-      the smaller, right-sized fix is to stop eagerly loading it when it isn't needed: change the
-      jurisdiction-detail endpoint's `legislative_sessions` include to `noload` (or drop) the
-      `BulkDataExport` relationship rather than `selectinload` it, matching the pattern this same
-      codebase already uses elsewhere (`Pagination.select_or_noload()`) to skip relationships
-      that aren't requested. This is an `api-v3` code change, and `api-v3` is currently a plain,
-      unmodified upstream checkout with no fork/patch mechanism (see §8.3's session-alias
-      decision) — so landing this fix durably needs the same prerequisite noted there: `api-v3`
-      would need to become a fourth formal DDP fork (or gain some other local-patch mechanism)
-      before a fix like this survives a future `git pull`. Not yet scoped further — this is a
-      small, contained code fix once that prerequisite is decided.
+      to the stale-database bug. RESOLVED 2026-07-29.** `os-initdb` never creates this table
+      (confirmed: `relation "bulk_dataexport" does not exist`, from the container's own
+      traceback), but api-v3's jurisdiction-detail endpoint unconditionally queries it via a
+      `selectinload` on `LegislativeSession` → `BulkDataExport`. This affects every jurisdiction,
+      not just FL — it's a schema/migration gap, not a data problem.
+
+      **Actual shipped fix, different from the approach sketched below when this item was
+      written:** rather than changing api-v3's code to `noload` the relationship, `start-os-api.sh`
+      now creates `bulk_dataexport` idempotently at boot (`create_all(checkfirst=True)` via
+      api-v3's own `DataExport` model) and smoke-tests the exact failing include for all 7 tracked
+      jurisdictions. See `PRIMITIVES.md`'s api-v3 entry and
+      `notes/openstates-jurisdiction-sessions-500-root-cause-20260729.md` for the full incident.
+      Confirmed live 2026-07-29: `GET /jurisdictions/fl?include=legislative_sessions` returns 200
+      in ~35ms. Full reconciliation with the *other* fix this bug picked up the same day (api-v3
+      PR #1, a `back_populates` patch) is in Appendix D below and `PLAN-fork-management.md` §1a —
+      short version: PR #1 wasn't actually needed for this incident, but is being kept anyway, and
+      api-v3 did become DDP's fourth fork as this item anticipated, just not for this fix.
+
+      *(Original, superseded proposal, kept for context: DDP has no use for bulk CSV data export,
+      so the "right-sized" fix considered here was to stop eagerly loading it — change the
+      jurisdiction-detail endpoint's `legislative_sessions` include to `noload`/drop the
+      `BulkDataExport` relationship instead of `selectinload` it, matching
+      `Pagination.select_or_noload()`'s existing pattern. That would have required api-v3 to
+      become a fork first, same prerequisite §8.3's session-alias decision notes. Not implemented —
+      the boot-time table-creation fix above shipped instead and needs no api-v3 code change at
+      all.)*
 
       **Confirmed 2026-07-28 (PM review) — this is the only touchpoint; no other endpoint can
       hit the missing table.** Grepped `api-v3` for every reference to `BulkDataExport`/
@@ -1961,7 +1968,7 @@ See Phase 8.2 table — 7 small edits across 7 files, all adding `os.getenv("OPE
 | launchd label | `com.ddp.cams-server` | `com.ddp.broker` | — | **`com.ddp.openstates-api`, `com.ddp.openstates-scraper`** |
 | Browser profile | `~/.config/grantbot/` | — | — | **none** (no browser needed) |
 
-## Appendix D: Known bug — `/jurisdictions/{iso2}?include=legislative_sessions` returns HTTP 500
+## Appendix D: Known bug — `/jurisdictions/{iso2}?include=legislative_sessions` returns HTTP 500 (RESOLVED 2026-07-29 — see correction below; the root cause here was wrong)
 
 **Found:** 2026-07-28, while building `ddp-next`'s `/explore` feature
 (`ddp-next/PLAN-openstates-integration.md`), which needed a session picker and so called
@@ -2032,13 +2039,36 @@ of the public `api-v3/` checkout on purpose, so that checkout stays pristine/ups
 So this bug (if it isn't already fixed in a newer upstream commit) most likely exists in the
 public `openstates/api-v3` project itself, not something DDP introduced.
 
-**Options, not yet acted on:**
-1. Report/fix upstream (`https://github.com/openstates/issues/`, per `api-v3`'s own README) —
-   the "correct" fix given this repo's stay-pristine convention for `api-v3/`.
-2. Patch the local checkout directly — works, but breaks the pristine/upstream-mergeable
-   property this repo deliberately maintains for `api-v3/`, and wouldn't survive a fresh
-   upstream sync.
-3. Leave it broken and keep working around it downstream — current state; `ddp-next` has
-   disabled the one feature (session picker) that exercises this code path
-   (`ddp-next/PLAN-openstates-integration.md`, and the fix commit disabling the client-side
-   sessions fetch) rather than depend on a fix here.
+**Correction, 2026-07-29 (later the same day) — this diagnosis is wrong.** See
+`notes/openstates-jurisdiction-sessions-500-root-cause-20260729.md`: independently calling
+`sqlalchemy.orm.configure_mappers()` against api-v3's real, unmodified model graph succeeds
+cleanly (zero errors) under this codebase's pinned SQLAlchemy (1.4.44), and upstream's own green
+CI already exercises this exact include combination. The real cause, confirmed via a live
+traceback: the `bulk_dataexport` table (backing `DataExport`/`LegislativeSession.downloads`)
+doesn't exist in DDP's hand-provisioned schema — it belongs to openstates.org's own bulk-CSV-export
+feature, which `os-initdb`'s OCD/pupa scraping schema never creates. Fixed by creating the table
+idempotently at boot instead (`start-os-api.sh`, `PRIMITIVES.md`'s api-v3 entry). Confirmed live
+2026-07-29: `GET /jurisdictions/fl?include=legislative_sessions` returns 200 in ~35ms.
+
+Despite that, **api-v3 PR #1** (`Digital-Democracy-Project/api-v3`, merged 2026-07-29T20:31 UTC)
+patches this exact back_populates mismatch anyway, and `ddp-next`'s NEXT-11 fix commit (`9fcf7cd4`)
+cites OPEN-12 as "fixed and verified live" shortly after. That attribution doesn't hold up:
+production's `api-v3/` checkout is still at the pre-fork commit (`58696e5`, April) and the running
+`ddp-openstates-api` image hasn't been rebuilt since 2026-06-24 — well before PR #1 existed. The
+fast, correct response confirmed above is coming from the *original, unpatched* code, via the
+table fix alone. PR #1 is real and harmless, but isn't deployed anywhere and wasn't necessary for
+this incident.
+
+**Decision, 2026-07-29:** keep PR #1 as legitimate independent upstream hygiene (option 2 below,
+in effect) — api-v3 is now formally DDP's fourth fork, see `PLAN-fork-management.md` §1a for its
+status and the still-open gap between the fork's `main` and what's actually running. Outstanding,
+not done as part of this decision: repoint the local `api-v3/` checkout at the fork, rebuild the
+image, and redeploy, so PR #1 (and any future fork patch) actually reaches production.
+
+*(Original options considered before the correction above, kept for context:*
+1. *Report/fix upstream — the "correct" fix given this repo's stay-pristine convention for*
+   *`api-v3/`, back when the mismatch was believed to be the root cause.*
+2. *Patch the local checkout directly — breaks the pristine/upstream-mergeable property this repo*
+   *deliberately maintained for `api-v3/`. This is what ended up happening, via PR #1, independent*
+   *of this bug's actual fix.*
+3. *Leave it broken and work around it downstream — moot; the bug is fixed.)*
