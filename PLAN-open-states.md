@@ -584,9 +584,12 @@ Document here so the work is scoped when the time comes. Do not execute until th
 
 ### 8.1a ddp-broker-py remaining blockers (found 2026-07-21)
 
-- [ ] **CRITICAL — api-v3 has been serving a Postgres snapshot frozen 2026-06-24, not the live
-      replica, since the container was created. Root cause found and fix scoped 2026-07-28;
-      not yet applied.** Discovered while running the MA vote-data validation below: MA bills
+- [x] **CRITICAL — api-v3 has been serving a Postgres snapshot frozen 2026-06-24, not the live
+      replica, since the container was created. RESOLVED — fix applied and verified live
+      2026-07-29 (re-confirmed 2026-07-30).** `ddp-openstates-api-1`'s own
+      `socket.gethostbyname('ddp-openstates-postgres-1')` now resolves on the correct `default`
+      network subnet (not CAMS's `ddp-agents_default`), matching the acceptance checklist below.
+      Discovered while running the MA vote-data validation below: MA bills
       resolved correctly via `api-v3` but `votes` always came back empty even for bills with
       confirmed vote data in the DB (`H 4240`: 16 vote events; `H 58`: 2). A second, seemingly
       unrelated symptom — FL's entire 2023 session (1,828 bills, the recently-completed
@@ -700,16 +703,30 @@ Document here so the work is scoped when the time comes. Do not execute until th
       `include=` that isn't requested) — this is a pure bug fix restoring the endpoint to
       working, not a behavior change any current caller depends on, since the endpoint 500s for
       every jurisdiction today and so has no working callers to preserve compatibility with.
-- [ ] **MA vote-data validation.** MA is the only jurisdiction still excluded from the *local
-      checkout's target* `DDP_OPENSTATES_JURISDICTIONS` list (**clarified 2026-07-28, 2nd PM
-      review pass, to avoid the same local-vs-prod ambiguity flagged elsewhere in this
-      section** — prod itself is still `UT,MI` only, per the deploy-gap item below; this bullet
-      is about local validation readiness, not prod exposure). The replica has 45 vote events
-      across 10,959 MA bills,
-      matching the motion-classifier's known total (RUNBOOK "Motion classification"), so the
-      scraper itself works — but the formal §10.2 parallel diff against live
-      `v3.openstates.org` hasn't been run/recorded for MA specifically. Run it, then add `MA`
-      to the jurisdictions list.
+- [ ] **MA vote-data validation — corrected 2026-07-30: this was actually run, via a deeper
+      check than the §10.2 diff below, and found a real, still-open coverage gap (not a
+      validation gap).** MA is the only jurisdiction still excluded from the *local checkout's
+      target* `DDP_OPENSTATES_JURISDICTIONS` list (**clarified 2026-07-28, 2nd PM review pass,
+      to avoid the same local-vs-prod ambiguity flagged elsewhere in this section** — prod
+      itself is still `UT,MI` only, per the deploy-gap item below; this bullet is about local
+      validation readiness, not prod exposure).
+
+      **What actually ran:** `PLAN-coverage-completeness-check.md` §10, 2026-07-28 —
+      `quality_check.py --coverage ma 194th`, a full Tier 1 (every live bill identifier vs. every
+      local one) + Tier 2 (sub-record diff on bills present in both) sweep, not just the 2-bill
+      spot-check originally proposed below. **Tier 2 result: genuinely clean** — 599/600 bills
+      matched live on title, vote-event count, and sponsorship count (one stale `latest_action`
+      text, not a structural problem). Titles/votes/sponsorships for bills we have are validated.
+      **Tier 1 result: a real, precisely-quantified gap** — after correcting for MA's
+      docket-number/bill-number duplicate-identifier quirk (raw diff overstated it as 41%), ~162
+      real `H`/`S` bills exist live that we don't have at all (1.8% of live's bill-numbered
+      items). Root cause: MA's weekly cron has not completed a single full scrape since
+      2026-06-16 — a cache-key bug made it silently fall back to a full (12+ hour) re-scrape every
+      week instead of incremental, so it never finished before being superseded. The session-arg
+      part of that bug was fixed 2026-07-28 (`run-all-scrapes.sh` now passes `session=194th`
+      explicitly — confirmed live in the current file), **but the one-off full backfill needed to
+      actually close the 162-bill gap and establish a working incremental cutoff has not been run
+      yet.** That backfill run — not another validation pass — is what's actually left here.
 
       **Scoped 2026-07-28 — concrete bills to use for the diff.** Queried the local replica for
       real MA bills with vote data to use, following the same pattern as §10.2's FL HB1 example:
@@ -731,11 +748,15 @@ Document here so the work is scoped when the time comes. Do not execute until th
       diff local_ma_h58.json live_ma_h58.json
       ```
 
-      Check the same fields §10.2 already lists (motion_text, vote counts, individual votes,
-      sponsorships, people's name/district/division_id). If both diff clean, MA is validated —
-      run the checklist add-to-`DDP_OPENSTATES_JURISDICTIONS` step next (see item 1 above, which
-      found that step itself has no documented deploy path yet on the actual prod host — MA's
-      addition is blocked on the same prerequisite, not just its own validation).
+      **Superseded by the Tier 1/2 coverage-completeness check above** — this 2-bill spot-check
+      is still fine as a quick sanity re-check after the full backfill runs, but it's no longer
+      the gating validation; the Tier 2 sweep already covered 150 bills, not 2, and the real
+      remaining gate is the full backfill closing the 162-bill Tier 1 gap, not another diff.
+      Once that backfill completes, re-run `quality_check.py --coverage ma 194th` (cheaper and
+      more thorough than this snippet) to confirm the gap actually closed, then proceed to the
+      checklist add-to-`DDP_OPENSTATES_JURISDICTIONS` step (see item 1 above, which found that
+      step itself has no documented deploy path yet on the actual prod host — MA's addition is
+      blocked on the same prerequisite, not just its own validation).
 - [x] **`openstates-core`'s `apply-local-patches.sh` tooling gap — FIXED 2026-07-21 (commit
       `af9ad95` on `phase1-bill-provenance`).** `openstates-core` sits on `phase1-bill-provenance`, which per
       `ddp-infra/PLAN-bill-document-provenance.md` is **intentionally held back** — its
@@ -795,9 +816,9 @@ Document here so the work is scoped when the time comes. Do not execute until th
       with unretried 429s during the 2026-07-26 run; the natural-key check correctly skipped
       everything already archived and only re-fetched the previously-failed ones. **Both fixes
       are genuinely live now — the "not yet live" caveat below no longer applies.**
-- [ ] **US federal vote-person resolution gap (OPEN-2) — separate from the FL/MA org-resolution
-      gap above. Fix confirmed live in production as of 2026-07-28. The one-time backfill for
-      already-scraped rows is the only remaining step.** Distinct issue: ~27.6% of US
+- [x] **US federal vote-person resolution gap (OPEN-2) — separate from the FL/MA org-resolution
+      gap above. Fix confirmed live in production as of 2026-07-28. RESOLVED 2026-07-29 — the
+      one-time backfill has actually been run.** Distinct issue: ~27.6% of US
       Congress person-vote rows (147,473 of 534,522, across 1,535 roll calls) had a null
       `voter_id` because same-surname legislators (three different Garcias, three different
       Carters, etc.) couldn't be disambiguated by name-matching alone, even though the House
@@ -816,9 +837,25 @@ Document here so the work is scoped when the time comes. Do not execute until th
       `local-patches` at all since it works directly off the `note` column already sitting in the
       DB). `--dry-run` against the real local DB shows 144,340 of 147,473 (97.9%) would resolve;
       the remaining ~3,100 have no matching identifier (e.g. former members not in `people/`) and
-      are left alone. **The backfill script has not been run for real yet** — it mutates the
-      production Postgres DB, so that's an explicit separate action, now the only thing left open
-      on this item since the code fix itself is confirmed live for new scrapes going forward.
+      are left alone.
+
+      **Corrected 2026-07-30 — the commands below originally targeted the wrong container.**
+      Every `docker exec`/`docker cp` in this item said `ddp-agents-postgres-1` — that's CAMS's
+      own Postgres container, which happens to *also* have a database literally named
+      `openstates` sitting on it as a frozen, pre-migration snapshot (see §8.1a item 1's
+      wrong-`DATABASE_URL` diagnosis above — same stale copy, same container). The real, live
+      replica is `ddp-openstates-postgres-1` (host port 5433). Had the backfill actually been run
+      against the name as originally written, it would have mutated the dead snapshot and left
+      the real 27.6% null-`voter_id` gap completely untouched while looking "done." Commands below
+      corrected to the right container.
+
+      **RESOLVED 2026-07-29 — run for real, confirmed against the live DB 2026-07-30.** Ran
+      against `ddp-openstates-postgres-1` (see [[project-open2-vote-resolution-prs]] /
+      commit `b7749c6`, "record the OPEN-2 vote-person backfill run and fix the Grijalva
+      misattribution it surfaced" — the backfill itself surfaced and fixed a real misattribution
+      bug the same day). Verified directly 2026-07-30: US Congress `personvote` null-`voter_id`
+      rate is now **1.1%** (6,093 of 534,622), down from the 27.6% baseline — matching the
+      `--dry-run`'s predicted ~97.9% resolution rate.
 
       **Before running it for real (added 2026-07-28, PM review; extended in the 2nd pass to
       make the dump actually durable and verified):** take a `pg_dump` of the `openstates` DB
@@ -831,14 +868,14 @@ Document here so the work is scoped when the time comes. Do not execute until th
       ```bash
       DUMP_NAME="openstates-pre-backfill-$(date +%Y%m%d).dump"
       DUMP_PATH="$HOME/Developer/repos/ddp-open-states/logs/db-backups/$DUMP_NAME"
-      docker exec ddp-agents-postgres-1 pg_dump -U openstates -d openstates -Fc -f "/tmp/$DUMP_NAME"
-      docker cp "ddp-agents-postgres-1:/tmp/$DUMP_NAME" "$DUMP_PATH"
+      docker exec ddp-openstates-postgres-1 pg_dump -U openstates -d openstates -Fc -f "/tmp/$DUMP_NAME"
+      docker cp "ddp-openstates-postgres-1:/tmp/$DUMP_NAME" "$DUMP_PATH"
       pg_restore --list "$DUMP_PATH" | head -5
       # Restore procedure, if ever needed (fixed 2026-07-28, 3rd PM review pass -- the earlier
       # draft redirected from the bare filename, not the durable path it was actually copied to):
       # first stop anything that could write to the DB concurrently with the restore (the
       # nightly scrape/import via launchd, and api-v3 if it's running), then:
-      #   docker exec -i ddp-agents-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_PATH"
+      #   docker exec -i ddp-openstates-postgres-1 pg_restore -U openstates -d openstates --clean --if-exists < "$DUMP_PATH"
       ```
 - [x] **UT has zero bill-version/document links — found 2026-07-28, root cause corrected same
       day, fixed via `openstates-scrapers` PR #10.** Running `os-text-extract archive ut` (the
@@ -866,11 +903,17 @@ Document here so the work is scoped when the time comes. Do not execute until th
       bill, leaving existing data alone. Verified live: the skip path now yields nothing; the
       normal path still populates versions/documents exactly as before.
 
-      **Still needed, not yet done:** once PR #10 is merged and synced to production, UT needs a
-      **fresh full scrape** (not just an incremental one) to actually repopulate the data this
-      bug already deleted — an incremental run alone won't backfill bills whose last action is
-      older than any future cutoff. Re-run `os-text-extract archive ut` afterward to confirm it
-      now finds and archives real documents, matching AZ/FL's clean results.
+      **RESOLVED 2026-07-30 — the full re-scrape was run and confirmed to have restored the
+      deleted data.** `run-scrape.sh`'s incremental cutoff file was backed up
+      (`logs/last-run/ut.ts.bak-pre-full-rescrape-20260728`) and cleared to force a full run,
+      which completed 2026-07-28 18:07→19:14 (1,021 bills). Verified directly against the live DB
+      2026-07-30: **9,371** `BillVersionLink` rows, **37,340** `BillAction` rows, **1,774**
+      `BillSponsorship` rows for Utah — all previously zero. (A second manual retry the next night,
+      2026-07-29, was killed by SIGTERM mid-run — irrelevant, since the 07-28 run had already
+      restored the data.) Still outstanding, not yet re-verified: re-running
+      `os-text-extract archive ut` to confirm it now finds and archives real documents, matching
+      AZ/FL's clean results — the DB-level data is confirmed restored, but the archive step itself
+      hasn't been re-run against it yet.
 
       **Original (partially superseded) diagnosis, kept for its still-useful history:**
 
@@ -923,9 +966,29 @@ Document here so the work is scoped when the time comes. Do not execute until th
       against `logs/scraper.log.20260714T020000Z.gz`, lines 21838-51119 — the earlier ~496/538
       estimates were close but not exact) — candidates for silently-missing House votes. Every FL
       "2026" scrape since has been an incremental no-op (0 bills changed),
-      so nothing has backfilled this gap — it's been sitting unrepaired since 2026-06-26. All
-      other FL sessions currently in the replica (2023/2024/2025 + specials) were scraped/backfilled
-      on or after 2026-07-16, after the fix was live, and are confirmed clean per `RUNBOOK.md`.
+      so nothing has backfilled this gap — it's been sitting unrepaired since 2026-06-26.
+
+      **Corrected 2026-07-30 — the "confirmed clean per RUNBOOK.md" claim below was checked
+      directly against `scraper.log`, and the reasoning for the small special sessions was
+      wrong even though the conclusion holds.** The big historical backfills (2023, 2024, 2025 —
+      1,828/1,902/1,959 bills) really did run full-mode on 07-24/07-24/07-25, after the 07-18 fix,
+      and really do show zero bot-detection hits — clean for the reason originally stated. But
+      the small special sessions (2023B, 2023C, 2025A, 2025B, 2025C — 2 to 22 bills each) actually
+      ran full-mode on **07-16, two days before** the fix merged — "after the fix was live" is
+      false for these. They're clean anyway, for a different reason: the WAF bug only manifests
+      on long-running scrapes (the F5 cookie expires around the 1-hour mark), and each of these
+      finished in 5-8 minutes — checked directly, zero bot-detection lines in any of their five
+      run windows. Same conclusion (no repair needed), different mechanism than stated.
+
+      **IN PROGRESS 2026-07-30 — steps 1-3 below have been executed; steps 4-6 (verification)
+      still need to run once the re-scrape finishes.** The candidate-bill-list (540 bills) was
+      regenerated and confirmed to match the original count. The step-2 BEFORE baseline was
+      captured: **75** House vote events currently exist across the 540 affected bills. The
+      incremental cutoff was backed up (`logs/last-run/fl_session_2026.ts.bak-pre-waf-rescrape-20260730`)
+      and cleared, and the full re-scrape (`./run-scrape.sh fl "session=2026"`) was started as a
+      background job — for scale reference, the comparable 2024/2025 full backfills each took
+      ~13-14h. Steps 4-6 (re-run the AFTER count, diff 2-3 specific bills against live
+      `v3.openstates.org`, run `quality_check.py`) are still open until that finishes.
 
       **Concrete steps to close this out, before FL is ever added to the prod jurisdiction list:**
 
@@ -958,7 +1021,7 @@ Document here so the work is scoped when the time comes. Do not execute until th
       #    "SB 170"). That's fine for this purpose -- a superset only makes the "did the count go
       #    up" signal more conservative, never less -- but don't treat this count as an exact
       #    per-bill accounting:
-      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      docker exec ddp-openstates-postgres-1 psql -U openstates -d openstates -c "
       SELECT count(DISTINCT v.id) AS house_vote_events
       FROM opencivicdata_bill b
       JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
@@ -978,7 +1041,7 @@ Document here so the work is scoped when the time comes. Do not execute until th
 
       # 4. Re-run the exact same query from step 2 — the count should go up, not stay flat,
       #    for bills that actually had missing votes.
-      docker exec ddp-agents-postgres-1 psql -U openstates -d openstates -c "
+      docker exec ddp-openstates-postgres-1 psql -U openstates -d openstates -c "
       SELECT count(DISTINCT v.id) AS house_vote_events
       FROM opencivicdata_bill b
       JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
@@ -1190,6 +1253,20 @@ Document here so the work is scoped when the time comes. Do not execute until th
          investigation is about narrowing down the exact cause for a possible *future* fix, not
          about whether VA is safe to expose today. If that reasoning changes, revisit VA's
          inclusion here explicitly rather than silently.
+
+         **Verified 2026-07-30 — MI and UT double-checked directly, not assumed:** UT's bill
+         data was confirmed restored after its full re-scrape (see the resolved item above —
+         9,371 version links, 37,340 actions, 1,774 sponsorships, all previously zero). MI's
+         actual *bill scraper* is healthy — weekly cadence, current data, and its DB timestamp
+         looking 11 days old is a legitimate no-op (nothing new in the legislature since 07-19),
+         the same shape as AZ/WA, not a failure. **Don't confuse this with MI's separately-blocked
+         *archive* step** (`os-text-extract archive mi` — a different code path that fetches bill
+         documents for S3, gated by `ARCHIVE_ENABLED_STATES`, unrelated to `DDP_OPENSTATES_JURISDICTIONS`
+         or ddp-broker-py's bills/votes path): `legislature.mi.gov`'s WAF has blocked it twice
+         (2026-07-28) with a "user validation required" page, a UA-matching fix didn't clear it,
+         and the current call is to wait for the next scheduled attempt (2026-08-02) rather than
+         retry — see `notes/mi-waf-wait-and-see-20260729.md`. This does not affect MI's bill/vote
+         data or its Stage-1 readiness, only document-archival completeness.
       2. Edit the one line in `/opt/ddp-broker-py/.env` with the stage's value.
       3. Recreate — not just restart — the containers that read it, since env vars are baked in
          at container creation: `web`, `celery`, **and** `celery-beat` (the fetch/routing logic
@@ -1314,6 +1391,17 @@ Document here so the work is scoped when the time comes. Do not execute until th
       not fewer — whatever concurrency exists today only grows from here. This should be
       resolved (or explicitly accepted as a known limit) before treating the archive pipeline as
       cutover-ready, not discovered again under real production load.
+- [ ] **WA's bill-document archive hits a natural-key conflict on nearly its whole catalog and
+      never completes — found 2026-07-30, not a bills/votes blocker.** WA's nightly no-op scrape
+      (healthy — see the MI note above for the same DB-timestamp-vs-real-health distinction) only
+      recently started reaching its archive step on no-op nights (a past fix removed a gap where
+      archiving was skipped entirely on no-op runs). The first time it did, 2026-07-28, it hit a
+      "natural-key conflict" warning on ~3,264 of WA's ~3,411 bills — the dedup check isn't
+      recognizing already-archived WA documents as done — and ran for over an hour past midnight
+      without ever logging completion. Because the archive step runs before `run-scrape.sh`
+      rewrites the incremental-cutoff file, WA's cutoff has been stuck at 07-26 since. Doesn't
+      affect bill/vote data or cutover readiness, only document-archival completeness — same
+      category as the MI/S3-relay items above. Not yet investigated further.
 
 **Not blockers** (clarifying since they're easy to conflate with the above): the WA/US-Congress
 session-alias-mapping problem (§8.3) is a **votebot**-only issue — ddp-broker-py looks up
