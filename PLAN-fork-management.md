@@ -42,35 +42,43 @@ weekly refresh is always current by construction; `ddp` exists solely so a local
 `8b864d85`) has somewhere to be pushed from and a PR opened against upstream, exactly like
 `ddp`/`cherry-pick-line` already does for `openstates-core`.
 
-### `api-v3` — a fourth, differently-shaped fork (added 2026-07-29)
+### `api-v3` — a fourth, differently-shaped fork (added 2026-07-29, deployed same day)
 
 `Digital-Democracy-Project/api-v3` forked from `openstates/api-v3` on 2026-07-29, prompted by
 OPEN-12 (`GET /jurisdictions/{iso2}?include=legislative_sessions` 500ing — see
-`PLAN-open-states.md` Appendix D). First and so far only patch: PR #1, a one-sided `back_populates`
-fix on `Jurisdiction`/`LegislativeSession`/`DataExport`. Decided to keep this fork and its patch
-(2026-07-29) even though live testing showed the patch wasn't actually necessary for OPEN-12 — the
-table-creation fix in `start-os-api.sh` was sufficient on its own, confirmed by the endpoint
-responding correctly through the *original, unpatched* code. The back_populates fix is being kept
-as legitimate independent hygiene, not reverted.
+`PLAN-open-states.md` Appendix D). **Remote convention: `origin` already points at the DDP fork**
+(matching `openstates-scrapers`'s model, not `core`/`people`'s) — this was set up correctly at
+fork-creation time, no separate `upstream`/`ddp` split was ever needed here.
 
-**Doesn't fit the table above** — it has a fork and a merged patch, but no sync mechanism at all
-yet:
-- No `apply-local-patches.sh`-style refresh step, no cron.
-- The local checkout (`~/Developer/repos/ddp-open-states/api-v3`) still has `origin` pointed at
-  public `openstates/api-v3`, sitting at pre-fork commit `58696e5` — it has never been repointed
-  at the DDP fork, so a plain `git pull` here won't reach PR #1.
-- The running `ddp-openstates-api` container's image hasn't been rebuilt since 2026-06-24 — the
-  fork's patch isn't just unpulled locally, it isn't deployed even if the checkout were updated.
-- **Outstanding, not done as part of creating this fork:** decide a remote convention (probably
-  the `core`/`people` shape — `origin` on public upstream, `ddp` as the fork — since api-v3
-  currently has no DDP-authored fix that needs protecting from an upstream overwrite the way
-  `scrapers`'s do), pull PR #1, rebuild `ddp-openstates-api:local`, and redeploy via
-  `start-os-api.sh` or an equivalent manual `docker-compose ... up -d --build --force-recreate`.
+Two patches merged the same day:
+- **PR #1** — a one-sided `back_populates` fix on `Jurisdiction`/`LegislativeSession`/`DataExport`.
+  Kept even though live testing showed it wasn't actually necessary for OPEN-12 — the
+  table-creation fix in `start-os-api.sh` was sufficient on its own. Being kept as legitimate
+  independent hygiene, not reverted.
+- **PR #2** — OPEN-13, exposes archived full bill text (`raw_text`) on `BillDocumentLink` for
+  single-bill detail queries. A real feature, not hygiene — reviewed diff-by-diff, its schema
+  assumption (`ddp_bill_version_document`) verified against the actual production DB (unlike
+  OPEN-12's wrong assumption), and its full test suite run in an isolated container (something the
+  PR's own author couldn't do) — 100/100 pass, no regressions.
 
-This is a smaller-stakes fork than the other three — one harmless hygiene commit, not yet
-deployed, not gating any live functionality (the actual OPEN-12 fix already ships without it) —
-but it should eventually get the same treatment (§5.A documentation, a place in the upstream-sync
-cadence of §5.B–D) rather than being left as a one-off exception.
+**Deployed 2026-07-29, later the same day:** repointed the local checkout
+(`~/Developer/repos/ddp-open-states/api-v3`) with a plain `git pull` (already on the right remote),
+rebuilt `ddp-openstates-api:local`, redeployed via `docker-compose -f deploy/docker-compose.ddp.yml
+up -d --force-recreate api`. Both fixes confirmed live: OPEN-12 endpoint 200s in ~126ms, OPEN-13
+`raw_text` confirmed present on a real archived FL bill. Backup image tagged
+`ddp-openstates-api:pre-pr1-pr2-backup-20260729` for rollback.
+
+**Real incident during this deploy, not this fork's fault:** the first redeploy attempt ran
+`--force-recreate` with no service name, which also recreated the *shared* dedicated Postgres
+(`ddp-openstates-postgres-1`, :5433) and killed two live scrapes (`va`, `ut`) mid-write. No bill/vote
+data was lost; both had to be manually restarted. Full writeup in `RUNBOOK.md` → "Known gotchas" →
+the `--force-recreate` entry — the lesson is general to this compose file, not specific to api-v3.
+
+Still doesn't fit the table above — no `apply-local-patches.sh`-style refresh step or cron exists
+for this fork yet, so future patches will need the same manual pull/rebuild/redeploy cycle until
+one is built. Lower urgency than it looks, since deploys are infrequent so far, but worth the same
+eventual treatment (§5.A documentation, a place in the upstream-sync cadence of §5.B–D) rather than
+staying a one-off manual process indefinitely.
 
 ---
 
@@ -391,9 +399,9 @@ deleted from the script too, since nothing calls it anymore).
   monthly pull would instead risk a bigger, less frequent merge-conflict reckoning, batched up
   once a month instead of surfaced nightly. Whichever way this goes, resolve it the same time as
   H's original migration (§5.H, §6.1) — don't leave `openstates-core` on a third, in-between model.
-- **Added 2026-07-29: when does api-v3's fork actually get deployed?** §1a's patch (PR #1) has
-  been sitting merged-but-undeployed since creation — no forcing function decides when the local
-  checkout gets repointed, rebuilt, and redeployed, or what remote convention (`core`/`people`'s
-  `origin`-stays-public shape vs. `scrapers`'s formal-fork-is-`origin` shape) it should follow
-  long-term. Low urgency today only because the one patch that exists isn't load-bearing — that
-  won't stay true once a real fix lands on this fork.
+- **Resolved 2026-07-29, same day as raised: PR #1 and #2 deployed** (§1a) — remote convention
+  question turned out to already be settled (`origin` = fork, `scrapers`'s shape) at fork-creation
+  time. **Still open:** no forcing function/cron exists for *future* patches on this fork the way
+  `apply-local-patches.sh`/`run-people-refresh.sh` do for the other three — each new fix will need
+  the same manual pull/rebuild/redeploy cycle until one is built. Worth revisiting once this fork
+  sees enough patch volume to justify the automation cost.
