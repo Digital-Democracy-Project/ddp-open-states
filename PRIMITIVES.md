@@ -168,11 +168,19 @@ step matters — a newer pip breaks one of the pinned deps' build.
   export Django app, not the OCD/pupa scraping schema `openstates-core`'s `os-initdb` creates —
   so it's absent from a freshly-initialized DDP database, and `JurisdictionPagination`
   (`api-v3/api/pagination.py`) always selectinloads `legislative_sessions.downloads` alongside
-  `legislative_sessions`, 500ing that include for every jurisdiction until the table exists. Since
-  api-v3 is pristine/unpatched (see below) and has no migration system of its own, **fix schema
-  gaps like this one here, in `start-os-api.sh`, not by hand-editing the api-v3 checkout** — see
+  `legislative_sessions`, 500ing that include for every jurisdiction until the table exists. At
+  the time of this fix api-v3 was pristine/unpatched, so schema gaps like this one belonged here,
+  in `start-os-api.sh`, not in a hand-edited api-v3 checkout — see
   `notes/openstates-jurisdiction-sessions-500-root-cause-20260729.md` for the full incident
-  (OPEN-12) and why the ticket's original back_populates diagnosis was wrong.
+  (OPEN-12) and why the ticket's original back_populates diagnosis was wrong. **That diagnosis
+  mattered again a few hours later:** api-v3 became DDP's fourth formal fork the same day
+  (`Digital-Democracy-Project/api-v3`), with a first patch (PR #1) that fixes the very
+  back_populates mismatch this note's incident ruled out as harmless. Confirmed live 2026-07-29
+  that the table fix alone is sufficient — the endpoint returns 200 in ~35ms today running the
+  *original* unpatched `jurisdiction.py` (neither the local checkout nor the running image has
+  picked up PR #1). Kept anyway as legitimate upstream hygiene, not reverted — see
+  `PLAN-fork-management.md` §1a for the fork's status and the still-open gap between what's merged
+  and what's actually deployed, and `PLAN-open-states.md` Appendix D for the full reconciliation.
 - **`backup-openstates-db.sh`** — nightly `pg_dump -Fc` of the dedicated Postgres, keep-7 local
   copies (`ls -1t ... | tail -n +8 | xargs rm -f` — the same "keep-N" idiom `run-scrape.sh` uses
   for gzipped log archives). Off-host S3 push is wired but commented out (blocked on AWS creds —
