@@ -215,49 +215,16 @@ require_import_lock() {
     return $rc
 }
 
-# Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1). Gated per-
-# jurisdiction via ARCHIVE_ENABLED_STATES (activate.sh) so a new jurisdiction's first-ever run
-# (a full historical backfill, not an incremental update) only happens once explicitly enabled.
-#
-# Failure handling is explicit here, not left to the ambient `set -e` + `trap ... ERR` above.
-# Found 2026-07-26: when this function is called from finish_no_op() (the incremental-no-op
-# path), which is itself invoked from inside an `if [ "$rc" -ne 0 ]; then ... fi` block, a
-# failing command inside archive_if_enabled() still halts the script via set -e (confirmed:
-# nothing after the crash ever runs) but the ERR trap never fires -- a real bash quirk, verified
-# with an isolated repro, not assumed. That's exactly the class of failure this alerting exists
-# to catch, and it went completely unreported: no Slack message, no CAMS failure report, despite
-# both tokens being configured. Explicit handling here doesn't depend on which branch called this
-# function. Same single-fire discipline as the main scrape/import failure path below
-# ("Alert once (disable the ERR trap so it can't double-fire)") -- this only ever runs once per
-# invocation: os-text-extract archive dies on its first unhandled exception rather than looping
-# through remaining bills (confirmed from the 2026-07-25/26 incident's traceback), and this
-# function itself is only ever called once per script run (from finish_no_op() OR the main flow,
-# never both).
-archive_if_enabled() {
-    case ",${ARCHIVE_ENABLED_STATES:-}," in
-        *",$STATE,"*)
-            log "Archiving bill documents: $STATE..."
-            ARCHIVE_OUT=$(mktemp)
-            $OS_TEXT_EXTRACT archive "$STATE" 2>&1 | tee "$ARCHIVE_OUT" >> "$LOG_DIR/scraper.log"
-            archive_rc="${PIPESTATUS[0]}"  # tee's own exit code, not os-text-extract's, would mask a real failure
-            if [ "$archive_rc" -ne 0 ]; then
-                FAILURE_MESSAGE=$(grep -E '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception): ' "$ARCHIVE_OUT" 2>/dev/null | tail -1)
-                FAILURE_ERROR_TYPE=$(echo "$FAILURE_MESSAGE" | grep -oE '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception)')
-                FAILURE_ERROR_TYPE="${FAILURE_ERROR_TYPE:-ArchiveFailure}"
-                FAILURE_MESSAGE="${FAILURE_MESSAGE:-bill-document archive failed for $STATE (see logs/scraper.log)}"
-                rm -f "$ARCHIVE_OUT"
-                trap - ERR  # alert once, can't double-fire
-                on_failure
-                exit 1
-            fi
-            rm -f "$ARCHIVE_OUT"
-            log "Archiving done: $STATE."
-            ;;
-        *)
-            : # not yet enabled for this jurisdiction
-            ;;
-    esac
-}
+# Bill-document archiving used to run here, at the end of every scrape, gating the .ts/.count
+# marker write below on the archive step finishing too (PLAN-bill-document-provenance.md, Phase
+# 1). Split out to run-archive.sh (2026-07-31) — see PLAN-open-states.md's incremental-scraping
+# section for why: archiving to DDP-HOT is slower and less reliable than scrape+import, and
+# coupling the incremental cutoff to it created a compounding failure mode. A run whose archive
+# step ran long or died left the cutoff stuck at its old value; the next run then had to treat
+# more bills as "changed since cutoff," making that run slower too, more likely to also miss its
+# archive window, and so on — observed live: a WA run still archiving 1h45m+ after scrape+import
+# had already finished cleanly. The scraper and the archiver are now fully independent processes
+# with independent schedules; this script no longer touches archiving at all.
 
 if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
     mkdir -p "$(dirname "$IMPORT_LOCK_DIR")"
@@ -300,12 +267,6 @@ scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log
 finish_no_op() {
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=incremental | bills_scraped=0 | no changes since cutoff (no-op) ==="
     log "No new bills for $STATE ${SESSION_ARG} since cutoff; skipping import."
-
-    # Still archive, even on a no-op scrape — the natural-key skip check is cheap to run
-    # every time regardless of whether anything new was scraped, and this function used to
-    # `exit 0` before ever reaching an archive step, which would otherwise skip archiving on
-    # any night with zero new activity for a jurisdiction.
-    archive_if_enabled
 
     mkdir -p "$LAST_RUN_DIR"
     date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
@@ -454,12 +415,6 @@ else
 fi
 
 log "Import done: $STATE."
-
-# Permanently archive every not-yet-captured bill version + document (PLAN-bill-document-
-# provenance.md, Phase 1). Runs across the whole jurisdiction, not scoped to $SESSION_ARG — the
-# natural-key skip check makes already-archived versions a cheap DB check, not a re-fetch. A
-# failure here is treated the same as a scrape/import failure by the `trap ERR` above.
-archive_if_enabled
 
 mkdir -p "$LAST_RUN_DIR"
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
