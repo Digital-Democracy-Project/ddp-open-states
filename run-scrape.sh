@@ -121,7 +121,7 @@ touch "$READER_MARKER"
 # the backgrounded sweep loop has its own separate copy of this variable in its own process
 # memory, so this trap (which runs in the main script, on the main script's exit) can only ever
 # see this process's own true "do I currently hold it" state, never the sweep's.
-trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null; wait "$SWEEP_PID" 2>/dev/null;
+trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true;
       [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR"' EXIT
 
 MODE="full"
@@ -439,7 +439,14 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
     # write, which can't happen here). Blocks (doesn't skip) if a sweep is still finishing its
     # own import; a lock-wait timeout or the import itself failing both hit the same
     # set -e + ERR trap -> on_failure path as any other import failure below.
-    kill "$SWEEP_PID" 2>/dev/null; wait "$SWEEP_PID" 2>/dev/null
+    #
+    # `|| true` on both: confirmed live (2026-07-30, FL 2026F test run) that `wait` on a job you
+    # just `kill`ed reports that job's signal-terminated exit status (143, not 0) — under set -e,
+    # that alone aborted the script right here, before require_import_lock ever ran, with no
+    # actual import failure at all. The two-line difference between "cleanly stopped a background
+    # loop" and "a real failure" matters: only require_import_lock's own result should ever
+    # trigger on_failure below.
+    kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true
     require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS >> \"$LOG_DIR/scraper.log\" 2>&1"
 else
     $OS_UPDATE "$STATE" --import $IMPORT_FLAGS $DIR_FLAGS \
