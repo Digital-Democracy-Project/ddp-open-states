@@ -147,8 +147,19 @@ IMPORT_FLAGS=""
 # jurisdiction (canary on VA/UT first) via SWEEP_IMPORT_ENABLED=1 in the calling environment.
 SWEEP_IMPORT_ENABLED="${SWEEP_IMPORT_ENABLED:-0}"
 STATE_DATADIR="$SCRAPED_DATA_DIR/$STATE"
-IMPORT_LOCK_DIR="/tmp/ddp-openstates-import-locks/$STATE"
-SWEEP_STAGING_DIR="/tmp/ddp-openstates-sweep-staging/$STATE"
+# Keyed by $SCRAPE_KEY (state+session+chamber, same key the .ts/.count markers already use),
+# NOT bare $STATE. Found live 2026-07-31: USA lower and upper both have STATE=usa, so a
+# lock/staging path keyed on $STATE alone is shared between them -- one sweep cycle's
+# `rm -rf "$SWEEP_STAGING_DIR"` deleted the staging dir out from under the other's concurrent
+# read (FileNotFoundError), and both competed for the same import lock. Handled gracefully at
+# the time (the excluded-from-staging retry logic caught it, nothing crashed or was lost), but
+# the fix is to not let unrelated invocations share a path at all. $STATE_DATADIR itself stays
+# keyed by bare $STATE on purpose -- that's openstates-core's own directory (do_scrape()/
+# do_import() resolve it from args.module, which is always the bare state), not something this
+# script can namespace further; lower/upper genuinely do share that one, which is exactly why
+# production runs them sequentially rather than concurrently.
+IMPORT_LOCK_DIR="/tmp/ddp-openstates-import-locks/$SCRAPE_KEY"
+SWEEP_STAGING_DIR="/tmp/ddp-openstates-sweep-staging/$SCRAPE_KEY"
 SWEEP_INTERVAL_SECS="${SWEEP_INTERVAL_SECS:-120}"
 LOCK_WAIT_TIMEOUT_SECS="${LOCK_WAIT_TIMEOUT_SECS:-180}"
 IMPORT_LOCK_HELD=0
