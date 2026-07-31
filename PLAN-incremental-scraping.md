@@ -588,6 +588,60 @@ containerizing scraper runs: this class of bug (code that's correct bash, wrong 
 machine's* bash) is exactly what a Linux container image would remove entirely, not just this one
 instance of it.
 
+## Reopened 2026-07-31: the incremental cutoff was still gated on archiving, not on data safety
+
+Triggered by watching a live WA run: scrape and import finished cleanly (confirming rounds 1-3's
+fix works), but `run-scrape.sh`'s own process sat for well over an hour afterward — because the
+`.ts`/`.count` marker write, the thing that makes the *next* run actually incremental, doesn't
+happen until `archive_if_enabled()` also finishes. That function is a separate concern
+(uploading bill documents to DDP-HOT) with a separate, slower, less reliable failure mode than
+scrape+import, and this plan's own fixes never touched it — the marker write was still one
+all-or-nothing gate, just moved from "scrape+import+archive" down to "just archive."
+
+**The vicious cycle this creates:** a run whose archive step runs long or dies leaves the `.ts`
+cutoff stuck at its old value. The next run's cutoff is now staler, so more bills look "changed
+since cutoff," so more of the jurisdiction's own per-bill work fires (for WA/UT/AZ specifically,
+per this plan's "Reopened 2026-07-27" section — their downstream sub-calls only get skipped for
+bills *before* the cutoff), so that run takes longer too, so it's *more* likely to also miss its
+own archive window. Each cycle compounds; eventually a run can hit `ddp-sync`'s own per-jurisdiction
+timeout (8h for WA) and get killed outright, at which point the cutoff never advances at all and
+the next night inherits the same growing staleness. Not yet observed reaching that failure point
+live, but the shape of it — tonight's WA run was 1h45m+ into archiving alone, on top of an
+already-completed scrape+import — was directly visible.
+
+### The fix: archiving is now a fully separate process, on its own schedule
+
+`run-scrape.sh` no longer calls `archive_if_enabled` at all — removed from both the main flow and
+the incremental no-op path. The `.ts`/`.count` marker now gets written immediately after import
+succeeds, with zero downstream dependency. Archiving moved to a new standalone script,
+`run-archive.sh <state>` (same logging/Slack/CAMS-alert conventions, same worktree-lock reader
+marker so `apply-local-patches.sh` can't rebuild the checkout while it reads from it — but
+deliberately does **not** run `apply-local-patches.sh` itself, since doing so would just
+reintroduce the exact `local-patches` git-branch race two concurrent scrapes could already hit,
+for no benefit: `ddp-sync`'s own nightly `openstates_patch_refresh` job already keeps that branch
+current).
+
+Wired into `ddp-sync` (separate repo, changes described here for the record) as its own
+independent job:
+- `src/ddp_sync/pipelines/openstates_archive.py` — `run_archive_jobs()` fans out `run-archive.sh`
+  across every `ARCHIVE_ENABLED_STATES` jurisdiction concurrently (`asyncio.gather`, same pattern
+  as the existing secondary-states scrape job); `run_single_archive_job()` for one jurisdiction.
+- `scheduler.py`'s new `_register_openstates_archive_jobs()`, registered alongside (not
+  inside) `_register_openstates_scrape_jobs()`.
+- `config/sync_schedule.yaml`'s new top-level `openstates_archive` block — `sync_time_utc:
+  "05:00"` daily, same jurisdiction list as `ARCHIVE_ENABLED_STATES`. The exact time is a
+  convenience stagger, not a correctness requirement — archiving is safe to run concurrently with
+  a scrape for the same jurisdiction (the natural-key skip check makes an already-archived
+  version a cheap DB check, not a re-fetch) or a different one.
+- A matching manual trigger, `POST /ddp-sync/v1/trigger/openstates-archive/{target}` (`all` or a
+  single jurisdiction code), mirroring the existing scrape trigger's shape.
+
+**Not yet done:** the live `ddp-sync` service (uvicorn, already running) needs an explicit
+restart/redeploy before any of this actually takes effect — scheduler registration happens once
+at process startup, not read fresh per-request. Restarting it affects every other job that
+scheduler runs (Voatz sync, Webflow batch, votebot eval, etc.), not just OpenStates, so that's a
+deliberate decision for whoever owns that call, not bundled into this fix automatically.
+
 ### Non-goals (deferred, not dismissed)
 
 - **True per-bill streaming import from inside the scraper process itself.** Would require
