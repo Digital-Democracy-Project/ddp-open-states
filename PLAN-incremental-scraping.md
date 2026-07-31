@@ -559,6 +559,35 @@ causes today, just now scoped to one bill instead of the whole run's data.
 **D. Locking** — the `mkdir`+PID-file mutex, now correctly attributing ownership via `$BASHPID`
 (fix 1) and able to reclaim a lock abandoned by a hard-killed process (fix 2).
 
+### Implementation note (2026-07-30): round 3's own fix used two things that don't exist on this fleet's bash
+
+Approved and implemented immediately after round 3 — but two of round 3's own building blocks
+turned out to be bash 4+-only, and this Mac's `/bin/bash` is **3.2.57** (frozen there permanently:
+Apple won't ship a GPLv3-licensed bash newer than 3.2). Caught by actually running the code
+against this machine, not by re-reading it — both are completely ordinary bash 4+ syntax, so
+nothing about them *looks* wrong:
+
+- **`$BASHPID` is empty on this bash.** `echo $BASHPID` prints nothing. Replaced with a direct
+  `sh -c 'echo $PPID'` redirect (`sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"`, not through
+  `$(...)` — command substitution forks an extra subshell layer that changes whose PID `$PPID`
+  ends up reporting). Verified empirically against `$!` in both a plain and a backgrounded-function
+  context before relying on it.
+- **`declare -A` (associative arrays, used for `EXCLUDED_FROM_STAGING`) errors outright**
+  (`declare: -A: invalid option`). Replaced with a comma-delimited string and a `case` pattern
+  match for membership — same idiom this file's own `apply-local-patches.sh`-adjacent code already
+  uses elsewhere (`case ",${ARCHIVE_ENABLED_STATES:-}," in *",$STATE,"*)`).
+- **Found one more bug testing this, unrelated to bash version:** the sweep loop inherits `set -e`
+  and the `ERR` trap from the main script, so a single incidental failure in its own bookkeeping
+  (not the import call itself, which was already guarded) would silently kill sweeping for the
+  rest of a multi-hour run. Fixed by scoping `set +e; trap - ERR` to the sweep loop specifically.
+
+None of this changes the design in "The fix, revised again (round 3)" above — same lock semantics,
+same staging/exclusion behavior — only the bash primitives used to implement it. See
+`PLAN-open-states.md` §11.5 for the broader argument this incident adds to the case for
+containerizing scraper runs: this class of bug (code that's correct bash, wrong for *this specific
+machine's* bash) is exactly what a Linux container image would remove entirely, not just this one
+instance of it.
+
 ### Non-goals (deferred, not dismissed)
 
 - **True per-bill streaming import from inside the scraper process itself.** Would require

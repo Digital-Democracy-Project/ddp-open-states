@@ -263,3 +263,11 @@ mapping, import/copy from here, don't re-derive it from the OCD URIs inline.
 7. **Cross-repo?** If the work touches how `ddp-sync`, `ddp-agents`/CAMS, or `ddp-broker-py`
    consume this repo's output, check their own PLAN docs too — `RUNBOOK.md`'s "Scraper state"
    and "Services" sections list what's currently live and what depends on what.
+8. **Writing or extending a bash script?** This Mac's `/bin/bash` is **3.2.57** — frozen there
+   permanently (Apple won't ship a GPLv3-licensed bash newer than 3.2) — not bash 4+. `$BASHPID`
+   and `declare -A` (associative arrays) both silently don't exist / error out; found the hard way
+   2026-07-30 building `run-scrape.sh`'s import-as-you-go fix (`PLAN-incremental-scraping.md`,
+   "Reopened 2026-07-30", implementation note). Same goes for `stat`/`find`/`date` flags — this
+   machine's are BSD, not GNU (`stat -f %m`, not `stat -c %Y`). Test any new bash against `bash -n`
+   *and* by actually running it here — bash 4+ syntax looks completely ordinary and gives no
+   warning before failing on this specific machine.
