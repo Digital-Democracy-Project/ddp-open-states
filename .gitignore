@@ -30,5 +30,6 @@ __pycache__/
 .env
 .venv/
 
-# Internal ops docs — not for public repo
-RUNBOOK.md
+# Internal ops docs — not for public repo (RUNBOOK.md itself was redacted and made public
+# 2026-07-30; this supplement holds what got pulled out of it)
+RUNBOOK.internal.md
