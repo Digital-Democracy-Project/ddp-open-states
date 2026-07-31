@@ -1968,6 +1968,24 @@ That's the sharpest illustration available of the two-sided nature of this probl
   landing mid-run). Containerizing the scrapers would trade one risk for the other, not eliminate
   risk outright — see "What this does *not* fix," below.
 
+**A second, unrelated incident the same week (2026-07-30) showed a different cost of staying
+native — not a deploy-timing risk, but a toolchain-fragility one.** Building the import-as-you-go
+fix (`PLAN-incremental-scraping.md`, "Reopened 2026-07-30") for `run-scrape.sh`, two things that
+work everywhere else silently wouldn't have worked here: `$BASHPID` (needs bash 4+) and
+`declare -A` associative arrays (same) both fail on this Mac's actual `/bin/bash`, which is
+**3.2.57** — frozen there permanently because Apple won't ship a GPLv3-licensed bash newer than
+3.2. Both bugs were caught only by actually running the code against this specific machine's
+actual shell, not by writing or reviewing it — a generic "does this bash script look right"
+pass would have missed both, since the code is completely ordinary bash 4+ syntax. The same class
+of problem shows up one level down too: this script already has to branch between BSD and GNU
+`stat` (`stat -f %m` vs `stat -c %Y`) because macOS and Linux disagree on flags for a basic
+coreutils command. None of this is a one-time cost — every future change to this script (or any
+script like it) carries the same silent risk, because the failure mode is "looks correct, fails
+only on this exact machine's exact tool versions." A Linux container image sidesteps the entire
+class: any normal base image ships a current bash and GNU coreutils, so code can be written
+straightforwardly instead of defensively re-deriving portable equivalents for tools it can't
+change.
+
 #### Proposed design
 
 **Unit of containerization: one ephemeral container per `run-scrape.sh` invocation**, not a
@@ -1975,13 +1993,19 @@ long-running daemon — this matches the existing model (`run-scrape.sh <state> 
 already a one-shot batch job, not a service) and avoids the very different problem of managing a
 persistent worker pool.
 
-1. **Image build reproduces the existing toolchain**, not a new one. The `pydantic<2` +
+1. **Image build reproduces the existing Python toolchain**, not a new one. The `pydantic<2` +
    `pip<24.1` + editable-install recipe already documented in `RUNBOOK.md`
    (`/usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' && .venv/bin/pip install
    --no-deps -r requirements-openstates.txt`) is the same recipe a `Dockerfile` needs to bake in —
    this is a translation exercise, not new dependency work. `openstates-core`, `openstates-scrapers`,
    and `people` get `COPY`'d (or installed editable) into the image at whatever commit the nightly
    patch-refresh cycle (`apply-local-patches.sh`) currently produces.
+   **The shell/coreutils layer underneath that, by contrast, is a genuine upgrade, not just a
+   reproduction** — any normal Linux base image ships bash 4+ and GNU coreutils, replacing this
+   Mac's frozen bash 3.2.57 and BSD-flavored `stat`/`find`/`date`. `run-scrape.sh` itself would
+   need no further changes to *benefit* from this (it already has to support both today), but new
+   scripts written after this migration could drop the dual-syntax handling entirely — see the
+   bash-3.2 incident in "Why now" above.
 2. **Code changes reach a running image the same way api-v3's do: rebuild, don't hot-swap.**
    Extend `apply-local-patches.sh`'s existing nightly cadence (`ddp-sync`'s
    `openstates_patch_refresh` cron, 01:00 UTC) to also rebuild and re-tag a

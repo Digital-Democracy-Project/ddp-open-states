@@ -1,18 +1,29 @@
 # Plan: Incremental Bill Scraping — All Active Jurisdictions
 
-**Status: REOPENED 2026-07-27, and again 2026-07-28 — core implementation is live, but not
-complete, and one part of it was actively deleting data.** All 8 jurisdictions were patched
-2026-06-22 and the shell timestamp layer (`logs/last-run/`) has run nightly since; see
-`RUNBOOK.md` for operational details. But three of this plan's own follow-ups were never closed
-out, and re-investigating why a routine WA scrape was taking ~70 minutes during an out-of-session
-week surfaced that this is systemic to three jurisdictions, not a fluke — see **"Reopened
-2026-07-27: the per-bill network floor"** below. Then, a day later, investigating why Utah had
-zero archived bill documents found something worse than a missed efficiency case: **UT's and VA's
-`start=` implementations were silently deleting each unchanged bill's already-scraped versions,
-sponsorships, actions, and votes on every incremental run** — see **"Reopened 2026-07-28: the
-UT/VA skip pattern was deleting data, not just saving time"** below. Both are now fixed
-(`openstates-scrapers` PRs #10 and #11), but the already-lost data for both jurisdictions still
-needs a fresh full scrape to come back.
+**Status: REOPENED 2026-07-27, again 2026-07-28, and again 2026-07-30 — core implementation is
+live, but not complete, and two separate parts of the surrounding pipeline were actively
+destroying data.** All 8 jurisdictions were patched 2026-06-22 and the shell timestamp layer
+(`logs/last-run/`) has run nightly since; see `RUNBOOK.md` for operational details. But three of
+this plan's own follow-ups were never closed out, and re-investigating why a routine WA scrape was
+taking ~70 minutes during an out-of-session week surfaced that this is systemic to three
+jurisdictions, not a fluke — see **"Reopened 2026-07-27: the per-bill network floor"** below. Then,
+a day later, investigating why Utah had zero archived bill documents found something worse than a
+missed efficiency case: **UT's and VA's `start=` implementations were silently deleting each
+unchanged bill's already-scraped versions, sponsorships, actions, and votes on every incremental
+run** — see **"Reopened 2026-07-28: the UT/VA skip pattern was deleting data, not just saving
+time"** below. Both are now fixed (`openstates-scrapers` PRs #10 and #11), but the already-lost
+data for both jurisdictions still needs a fresh full scrape to come back. Then, two days after
+that, a manually-restarted FL/MA backfill made clear that **"incremental scraping" was never about
+when data reaches Postgres at all** — the scrape→import handoff is still one all-or-nothing batch
+at the very end of a run, and a run that dies before that point loses everything, including
+already-scraped JSON on disk if it's ever retried — see **"Reopened 2026-07-30: import only
+happens once, at the very end — a killed scrape loses everything"** below.
+
+**2026-07-30: the import-as-you-go fix (round 3 of the design, below) is approved for
+implementation** — landing now in `fix/import-as-you-go-sweep`, in `run-scrape.sh` only. The open
+questions listed at the end of that section (partial-run visibility sign-off, sweep
+interval/timeout tuning, DB load under FL/USA) are explicitly not blocking implementation — they
+gate the *rollout* (opt-in flag, canary jurisdiction first), not writing the code.
 
 ## Context
 
@@ -236,6 +247,434 @@ last action is years (or, for VA's 2026S1, months) in the past. Both jurisdictio
 before creating/populating a `Bill`, or skip by simply not yielding it" — never partially
 populate a `Bill` and yield it anyway on the skip path. Worth a one-line callout in this plan's
 "Standard pattern" section above for anyone implementing this for a 9th jurisdiction later.
+
+---
+
+## Reopened 2026-07-30: import only happens once, at the very end — a killed scrape loses everything
+
+Triggered by a manual FL/MA backfill (chasing 162 FL bills missed during a WAF block) that got
+killed when the Claude Code session that launched it closed — the launching process wasn't
+detached from the session, a separate and now-fixed problem. What it surfaced is more important
+than the detachment bug itself: **neither run had written a single row to Postgres**, even though
+FL had scraped 213 bills and MA 473 to local JSON before dying, and restarting both runs silently
+**deleted** that JSON — none of it was ever recoverable. This plan's name is "incremental
+scraping," and it was reasonable to assume — a teammate did, out loud — that meant incremental
+*ingestion*. It doesn't. Nothing in this plan, or anywhere else in this codebase, changes when
+scraped data reaches Postgres. That's a separate, unaddressed gap, and it's worse than "batched
+until the end" — it's "batched until the end, in one transaction, on top of a data directory that
+gets wiped the moment anyone retries."
+
+### The bug: three compounding gaps, none of them new, none of them touched by this plan
+
+All three live in `openstates-core` (upstream, unpatched by DDP) and `run-scrape.sh`, and none of
+them care whether the scrape itself was full or incremental:
+
+1. **`run-scrape.sh` calls `os-update --scrape` and `os-update --import` as two separate process
+   invocations**, scrape fully first, then import — not a single pipeline where scraping a bill
+   and importing it are one step.
+2. **`do_scrape()` (`openstates-core/openstates/cli/update.py:81-82`) deletes every existing JSON
+   file in the jurisdiction's data directory before writing anything new:**
+   ```python
+   for f in glob.glob(datadir + "/*.json"):
+       os.remove(f)
+   ```
+   Confirmed live 2026-07-30: after FL and MA's original runs died mid-scrape (213 and 473 bill
+   files respectively, all pre-import), restarting both jobs left every `bill_*.json` in
+   `_data/fl/` and `_data/ma/` timestamped from the *restart*, none from the original run. The
+   scraped work was not resumed; it was silently destroyed by the next `--scrape` invocation's own
+   cleanup step.
+3. **`do_import()` (`update.py:284`) wraps the entire import for one invocation — jurisdiction,
+   every bill, every vote event, every event — in a single `with transaction.atomic():` block.**
+   A single bad record anywhere in that batch rolls back everything else in the same call, not
+   just the offending row.
+
+Put together: a scrape that dies before its one `--import` call reaches `do_import()` loses that
+run's data completely, with no partial credit at the file layer (next scrape wipes it) or the DB
+layer (there was never a transaction to partially commit). The **only** existing mitigation is
+`_cache/`, the raw HTTP response cache used by `--fastmode` — it survives a restart and avoids
+re-hitting the legislature's website, but it does nothing for the parsed `Bill` objects, which
+have to be rebuilt from that cache from scratch.
+
+**This was not something this plan (or any other) claimed to fix.** `PLAN-incremental-scraping.md`
+'s own scope, top to bottom, is which bills get *scraped* on a given run (skip bills unchanged
+since `start=`) — it never touches the scrape→JSON→import→Postgres handoff. The confusion is
+understandable: "incremental scraping" and "incremental ingestion" sound like the same feature.
+They aren't, and until now nobody had scoped the second one at all.
+
+### Confirmed: repeat imports are safe (this fix's central assumption)
+
+Before proposing anything that calls `--import` more than once per run, it's worth confirming that
+doing so doesn't corrupt or duplicate data. Checked directly against
+`openstates-core/openstates/importers/base.py`:
+
+- `BaseImporter.import_item()` looks up each incoming record by natural key
+  (`self.get_object(data)`); if it exists, fields are diffed and only saved on an actual change
+  (`what = "update"`); if it doesn't, it's inserted. There is no import-once assumption baked in —
+  every existing nightly run already calls `import_directory()` on "whatever's currently in the
+  directory," this plan just proposes calling it on a *growing* directory, more often.
+- The `DuplicateItemError` guard (`obj.id in self.json_to_db_id.values()`) only fires *within* a
+  single `import_data()` call (two different JSON files resolving to the same DB row in the same
+  batch) — `json_to_db_id` is reset at the start of every call, so it says nothing about, and does
+  not conflict with, calling import repeatedly across separate invocations.
+- `do_import()`'s `transaction.atomic()` wraps one *invocation*, not the whole run — so calling
+  `--import` N times across a long scrape produces N independent transactions. A failure in sweep
+  #12 rolls back only sweep #12's batch; sweeps #1-11 already committed and stay committed. This
+  is the actual mechanism that turns "one all-or-nothing multi-hour transaction" into "bounded,
+  recoverable chunks."
+
+### PM review (2026-07-30) — verdict `high_risk`, do not ship the first draft
+
+Sent the design above (before the "The fix" subsection was revised to what follows) to
+`/pm-review`. Verdict: **`high_risk`, do_not_ship_yet.** Three findings changed the design, not
+just the write-up:
+
+1. **Files are written `open()` → `json.dump()` → `close()`, not staged and renamed into place.**
+   A sweep's `glob()` can catch a bill file mid-write. `json.load()` on a half-written file raises,
+   and because `do_import()` wraps the *entire* directory's import in one transaction, that one
+   bad read fails every file in that sweep — and, since nothing removes the bad file, **every
+   subsequent sweep too**, indefinitely. The original draft's "sweeps #1-11 stay committed even if
+   #12 fails" claim is only true for a transient failure; a stuck-forever poison file breaks the
+   stated loss-bound entirely. Needed a real fix, not just a caveat.
+2. **The recovery-import snippet (A) defeated its own purpose on failure.** It logged a warning and
+   *proceeded with the rescrape anyway* — which wipes the directory it just failed to save. Fixed
+   below: recovery-import failure now blocks the rescrape and alerts, instead of silently finishing
+   the job the recovery step existed to prevent.
+3. **`kill "$SWEEP_PID"; wait` is not a real lock.** If the sweep loop is killed while its child
+   `os-update --import` is mid-flight, the signal doesn't necessarily reach or wait on that child —
+   the final import could start while a sweep's import is still running, both writing to the same
+   directory's data. Fixed below with the same `mkdir`-based mutex pattern this file already uses
+   for `SCRAPE_MARKER_DIR` (atomic, no missing-CLI-tool risk — `flock` isn't guaranteed present on
+   macOS the way it is on Linux).
+
+Also flagged, not yet resolved (see "Open questions," carried forward): this changes when a
+jurisdiction's data becomes visible in Postgres, from "all at once when the whole scrape finishes"
+to "incrementally, over the run" — a product-visible change for anything reading live, not just an
+internal implementation detail, and worth a explicit yes before shipping rather than assuming it's
+fine because it sounds like a pure improvement.
+
+### PM review round 2 (2026-07-30) — still `high_risk`, but on the lock/quarantine plumbing, not the design
+
+Sent the revision above back for a second pass. Verdict: **`high_risk`, do_not_ship_yet** again,
+but every finding this time was a concrete bug in the round-1 fix's own bash, not a new design
+concern:
+
+1. **`with_import_lock` returned success (`0`) when it *skipped* due to contention.** Fine for a
+   best-effort sweep; not fine for recovery/final import, which could "succeed" without having
+   imported anything and then proceed to rescrape/wipe, or finish the run reporting a clean exit
+   with the last window never actually imported.
+2. **The final import reused the sweep's age-filtered staging copy**, which would exclude the
+   files written right before the scraper exited — undercutting the "final import catches
+   everything since the last sweep" claim. Once `scrape_attempt()` has returned there's no writer
+   left, so the final import doesn't need staging or an age filter at all — it can read
+   `$STATE_DATADIR` directly.
+3. **The quarantine `grep` searched for the original `$STATE_DATADIR` path**, but sweeps import
+   from the *staged* copy — the importer's own error output would reference the staged path, so the
+   pattern would never match and quarantine would silently never fire.
+4. **`find ... -mmin +0.08`** — fractional-minute `find` semantics untested on this deployment's
+   actual `find`; not worth the risk when a `stat`-based loop is simple and already verified working
+   on this exact machine.
+5. **`mkdir "$IMPORT_LOCK_DIR"`** would fail (and, per bug 1, be silently treated as "lock busy") if
+   its parent directory doesn't exist yet — `/tmp/ddp-openstates-import-locks` is never created
+   anywhere in the original snippet.
+
+**Triaged the rest of the review's recommendations rather than applying all of it** — the reviewer
+also suggested full lock-ownership metadata (start time, command, hostname/session), a
+metrics/dashboard layer (files staged, files imported, skipped-due-to-lock, quarantine counts,
+etc.), and an exhaustive stale-lock/orphan-process test matrix. Judgment call: those are reasonable
+*eventually*, but disproportionate for closing the five concrete bugs above. Fixed below with the
+minimum that actually closes each one — a single PID field (not a full metadata record) is enough
+for the trap to know whether it owns the lock it's about to remove; a blocking acquire with a
+timeout (not a distributed-lock system) is enough to make "recovery/final either really imported or
+really failed" true; one added test per fixed bug (not a full matrix) is enough to prove each fix
+concretely, in the existing "Testing plan" section.
+
+### PM review round 3 (2026-07-30) — still `high_risk`: one real hole in round 2's own fix, plus a legitimate simplification (not more machinery)
+
+Sent round 2's revision back with an explicit ask to guard against over-engineering this time —
+confirm the round-2 bugs are actually closed, and flag anything that's grown more complex than the
+failure mode it protects against actually warrants. Verdict: **`high_risk`, do_not_ship_yet**, but
+the shape of the findings changed again — one is a real, important bug in round 2's own fix; the
+right response to the other is to *cut* code, not add more:
+
+1. **`$$` doesn't do what round 2's ownership fix assumed.** `sweep_import` runs as a *backgrounded
+   function*, not a true subshell with its own `$$` — in bash, `$$` inside a background job still
+   reports the **top-level script's** PID, not the job's own. So `echo "$$" > .../pid` from inside
+   the sweep loop writes the *same* value the main script itself would write, and the EXIT trap's
+   `[ "$(cat pid)" = "$$" ]` check is always true regardless of which of the two actually holds the
+   lock — round 2's fix for "the trap can remove a lock it doesn't own" didn't actually change
+   anything. Real bug, cheap fix: use `$BASHPID` (the actual running process's PID, distinct for a
+   backgrounded job) everywhere the lock records and checks ownership, not `$$`.
+2. **A hard-killed process (`SIGKILL`, not caught by any trap) leaves the `mkdir` lock permanently
+   held** — nothing ever runs `release_import_lock` for it, and there's no path back. Given this
+   fix exists *because* a process got killed out from under a running scrape, this isn't a
+   theoretical edge case — it needs handling, but a proportionate one: check whether the PID
+   recorded in the lock is still alive (`kill -0`) before treating a failed `mkdir` as "someone else
+   legitimately holds this"; if it's dead, the lock is stale and safe to reclaim.
+3. **Automatic quarantine (moving the live source file out of `$STATE_DATADIR` on a sweep failure)
+   was itself unsafe, for two compounding reasons the reviewer named:** the `grep` scans the
+   *entire, cumulative* `scraper.log`, so a genuinely unrelated failure (DB hiccup, transient error
+   with no file path at all) could still match some *older* staged-path mention and quarantine an
+   innocent, already-valid bill; and moving the live file at all, during an active scrape, risks
+   relocating a file the scraper still has open, permanently hiding a bill that was actually about
+   to finish writing correctly. Both are real ways this fix could **cause** the exact kind of
+   silent, hard-to-detect data loss it exists to prevent.
+
+**On (3): the fix is to remove the mechanism, not harden it.** The reviewer's own suggested
+mitigations for it — a per-sweep-scoped log capture, confirmed-error-signature matching before
+quarantining, revalidating a file as "still bad" before moving it — are reasonable but add real
+complexity to close a hole that doesn't need to exist in the first place. Sweeps never need to
+touch the live file at all: excluding a suspect file from *this run's staging* only (an in-memory
+list, never written to disk, never touching `$STATE_DATADIR`) gets the same practical benefit —
+one bad file stops blocking every future sweep — without ever risking the live directory. A file
+that's *actually* permanently bad (not just transiently mid-write) gets one more real attempt at
+the final import, which already reads `$STATE_DATADIR` directly and already alerts on failure via
+the existing `on_failure` path — identical to how a bad file fails a scrape today, just now with
+every *other* bill from the run already safely in Postgres via the sweeps that succeeded around it.
+No new alerting path, no quarantine directory, no ownership question about who reviews it — this is
+strictly less code than round 2's version, not more, and it's what closes the review's actual
+concern.
+
+*Declined again, consistent with rounds 1-2's triage, now that (3) removes the need for most of
+it:* per-sweep log capture and error-signature matching (moot — nothing is being auto-moved
+anymore, so mis-identifying "the bad file" only costs one extra retry next cycle, not a misfiled
+bill); canary promotion metrics as a formal gate (still an open, tunable-later item, not a
+correctness fix).
+
+### The fix, revised again (round 3): `$BASHPID` for lock ownership, stale-lock reclaim, in-memory sweep exclusion instead of quarantine
+
+**Goal:** unchanged. **Shared setup** — same two lock modes as round 2, now using `$BASHPID` (fixes
+finding 1) and reclaiming a lock whose recorded PID is no longer alive (fixes finding 2):
+
+```bash
+STATE_DATADIR="$SCRAPED_DATA_DIR/$STATE"
+IMPORT_FLAGS=""
+[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] && IMPORT_FLAGS="--allow_duplicates"
+
+IMPORT_LOCK_DIR="/tmp/ddp-openstates-import-locks/$STATE"
+mkdir -p "$(dirname "$IMPORT_LOCK_DIR")"
+IMPORT_LOCK_HELD=0
+
+acquire_import_lock() {
+    if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
+        echo "$BASHPID" > "$IMPORT_LOCK_DIR/pid"  # $BASHPID, not $$ — distinct per backgrounded job (fix 1)
+        IMPORT_LOCK_HELD=1
+        return 0
+    fi
+    # mkdir failed — check whether the recorded holder is actually still alive before
+    # treating this as real contention (fix 2: a SIGKILL'd process never releases the lock).
+    local holder; holder=$(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null)
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+        log "Import lock for $STATE held by dead pid $holder — reclaiming"
+        rm -rf "$IMPORT_LOCK_DIR"
+        mkdir "$IMPORT_LOCK_DIR" 2>/dev/null && { echo "$BASHPID" > "$IMPORT_LOCK_DIR/pid"; IMPORT_LOCK_HELD=1; return 0; }
+    fi
+    return 1
+}
+release_import_lock() {
+    [ "$IMPORT_LOCK_HELD" = "1" ] || return 0
+    rm -rf "$IMPORT_LOCK_DIR"
+    IMPORT_LOCK_HELD=0
+}
+try_import_lock() {  # $1 = command to eval; return 2 if busy (distinct from the command's own exit code)
+    acquire_import_lock || return 2
+    eval "$1"; local rc=$?
+    release_import_lock
+    return $rc
+}
+require_import_lock() {  # $1 = command to eval; blocks up to LOCK_WAIT_TIMEOUT_SECS, then fails
+    local waited=0 timeout="${LOCK_WAIT_TIMEOUT_SECS:-180}"
+    until acquire_import_lock; do
+        [ "$waited" -ge "$timeout" ] && {
+            log "ERROR: timed out after ${timeout}s waiting for import lock for $STATE (held by pid $(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null))"
+            return 1
+        }
+        sleep 5; waited=$((waited + 5))
+    done
+    eval "$1"; local rc=$?
+    release_import_lock
+    return $rc
+}
+```
+
+**A. Pre-scrape recovery import** — unchanged from round 2: `require_import_lock`, blocks the
+rescrape and alerts via `on_failure` on any real failure (import failure or lock timeout).
+
+**B. Periodic import sweep — no more quarantine directory or `mv`.** A failed sweep just excludes
+the suspected file from staging for the rest of *this run* (in-memory, resets on the next
+`run-scrape.sh` invocation — no persistence needed, since a truly bad file will fail the final
+import too and alert exactly as today):
+
+```bash
+SWEEP_INTERVAL_SECS="${SWEEP_INTERVAL_SECS:-120}"
+SWEEP_STAGING_DIR="/tmp/ddp-openstates-sweep-staging/$STATE"
+
+sweep_import() {
+    declare -A EXCLUDED_FROM_STAGING  # basename -> 1; in-memory only, this process's lifetime
+    while true; do
+        sleep "$SWEEP_INTERVAL_SECS"
+        [ -d "$STATE_DATADIR" ] || continue
+
+        rm -rf "$SWEEP_STAGING_DIR"; mkdir -p "$SWEEP_STAGING_DIR/$STATE"
+        CUTOFF_EPOCH=$(( $(date +%s) - 5 ))
+        for f in "$STATE_DATADIR"/*.json; do
+            [ -e "$f" ] || continue
+            [ -n "${EXCLUDED_FROM_STAGING[$(basename "$f")]:-}" ] && continue
+            mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null)
+            [ -n "$mtime" ] && [ "$mtime" -lt "$CUTOFF_EPOCH" ] && cp "$f" "$SWEEP_STAGING_DIR/$STATE/"
+        done
+
+        rc=0
+        try_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS --datadir $SWEEP_STAGING_DIR --cachedir \$CACHE_DIR >> \"$LOG_DIR/scraper.log\" 2>&1" || rc=$?
+        if [ "$rc" = 2 ]; then
+            log "Import already in progress for $STATE — skipping this sweep cycle"
+        elif [ "$rc" != 0 ]; then
+            # Best-effort: exclude the most-recently-referenced staged file from future sweeps
+            # this run, so one bad bill doesn't block every later valid one. Nothing is moved or
+            # deleted — worst case of a wrong guess here is one extra bill waits until final
+            # import, not a bill silently vanishing from the live directory.
+            BAD_STAGED=$(grep -oE "$SWEEP_STAGING_DIR/$STATE/[A-Za-z_]+_[0-9a-f-]+\.json" "$LOG_DIR/scraper.log" | tail -1)
+            [ -n "$BAD_STAGED" ] && EXCLUDED_FROM_STAGING[$(basename "$BAD_STAGED")]=1
+            log "WARNING: periodic import sweep failed for $STATE — excluding ${BAD_STAGED:-unknown file} from staging until final import"
+        fi
+    done
+}
+sweep_import &
+SWEEP_PID=$!
+trap 'kill "$SWEEP_PID" 2>/dev/null; wait "$SWEEP_PID" 2>/dev/null;
+      [ "$(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null)" = "$BASHPID" ] && rm -rf "$IMPORT_LOCK_DIR"' EXIT
+```
+
+Sweep failures still don't call `on_failure` on the first miss — log, exclude, retry next cycle.
+Escalate to the existing Slack/CAMS path only after 3 consecutive real failures (`try_import_lock`
+returning `2` — busy, not broken — doesn't count toward that streak).
+
+**C. Final import** — unchanged from round 2: reads `$STATE_DATADIR` directly (no staging, no
+exclusion list — everything gets a real attempt), under `require_import_lock`. **Its failure or a
+lock-wait timeout hits the exact same `on_failure`/Slack/CAMS/exit path as any other import failure
+today** — stated explicitly per review ask; mechanically this already falls out of `set -e` + the
+existing `trap ... ERR`, nothing new to build. If a file excluded by every sweep this run is
+genuinely corrupt, this is where it surfaces and alerts — same outcome as an unfixed bad file
+causes today, just now scoped to one bill instead of the whole run's data.
+
+**D. Locking** — the `mkdir`+PID-file mutex, now correctly attributing ownership via `$BASHPID`
+(fix 1) and able to reclaim a lock abandoned by a hard-killed process (fix 2).
+
+### Implementation note (2026-07-30): round 3's own fix used two things that don't exist on this fleet's bash
+
+Approved and implemented immediately after round 3 — but two of round 3's own building blocks
+turned out to be bash 4+-only, and this Mac's `/bin/bash` is **3.2.57** (frozen there permanently:
+Apple won't ship a GPLv3-licensed bash newer than 3.2). Caught by actually running the code
+against this machine, not by re-reading it — both are completely ordinary bash 4+ syntax, so
+nothing about them *looks* wrong:
+
+- **`$BASHPID` is empty on this bash.** `echo $BASHPID` prints nothing. Replaced with a direct
+  `sh -c 'echo $PPID'` redirect (`sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"`, not through
+  `$(...)` — command substitution forks an extra subshell layer that changes whose PID `$PPID`
+  ends up reporting). Verified empirically against `$!` in both a plain and a backgrounded-function
+  context before relying on it.
+- **`declare -A` (associative arrays, used for `EXCLUDED_FROM_STAGING`) errors outright**
+  (`declare: -A: invalid option`). Replaced with a comma-delimited string and a `case` pattern
+  match for membership — same idiom this file's own `apply-local-patches.sh`-adjacent code already
+  uses elsewhere (`case ",${ARCHIVE_ENABLED_STATES:-}," in *",$STATE,"*)`).
+- **Found one more bug testing this, unrelated to bash version:** the sweep loop inherits `set -e`
+  and the `ERR` trap from the main script, so a single incidental failure in its own bookkeeping
+  (not the import call itself, which was already guarded) would silently kill sweeping for the
+  rest of a multi-hour run. Fixed by scoping `set +e; trap - ERR` to the sweep loop specifically.
+
+None of this changes the design in "The fix, revised again (round 3)" above — same lock semantics,
+same staging/exclusion behavior — only the bash primitives used to implement it. See
+`PLAN-open-states.md` §11.5 for the broader argument this incident adds to the case for
+containerizing scraper runs: this class of bug (code that's correct bash, wrong for *this specific
+machine's* bash) is exactly what a Linux container image would remove entirely, not just this one
+instance of it.
+
+### Non-goals (deferred, not dismissed)
+
+- **True per-bill streaming import from inside the scraper process itself.** Would require
+  patching `openstates-core`'s scrape internals (not just `run-scrape.sh`), opening a live Django/DB
+  connection for the full duration of a multi-hour scrape, and reworking `do_import()`'s
+  transaction to be per-object instead of per-directory. Bigger surface, more risk (a long-held DB
+  connection across a scrape that can run 30+ hours), and the periodic-sweep design gets the
+  practical loss-bound down to minutes without any of that. Worth revisiting only if a 2-minute
+  loss window ever proves insufficient in practice.
+- **Fixing `do_scrape()`'s unconditional directory wipe upstream.** The pre-scrape recovery import
+  (A) — now blocking on failure — makes this safe in practice, so patching the wipe itself isn't
+  required for this fix.
+- **A stronger atomic-write guarantee inside the scraper (write-to-temp + rename).** The staging
+  copy + age filter in (B) makes a mid-write read very unlikely without touching scraper internals;
+  a true fix (temp file + `os.rename()`, which is atomic on the same filesystem) would remove the
+  risk entirely but requires an `openstates-core` patch. Worth doing later as defense in depth, not
+  a blocker for this fix.
+
+### Open questions for review
+
+- **Product sign-off on partial-run visibility.** This changes a jurisdiction's data in Postgres
+  from "consistent snapshot, updated once when the whole scrape finishes" to "updated
+  incrementally throughout a multi-hour run." Anything reading this data live (`api-v3`,
+  dashboards) should be confirmed fine with seeing a jurisdiction mid-update, not assumed fine
+  because the change sounds like a pure reliability win.
+- **DB load from resweeping.** Even staged/filtered, each sweep still touches every
+  already-imported bill in the directory (a no-op `get_object` lookup, no write). For FL's
+  ~2,000-bill session at a 120s cadence over 30+ hours, that's up to ~900 sweeps × up to 2,000
+  lookups. Phase 1 ships this as-is (simplest, correct); Phase 2 fast-follow if load is real:
+  only stage files modified since the last sweep's own marker (`find -newer <marker touched each
+  cycle>`), which the natural-key upsert model handles just as safely, just cheaper.
+- **Sweep interval value.** 120s is a starting proposal. Needs a measured answer, not a guess: how
+  long does a full `--import` pass actually take for FL/MA at peak size (must stay well under the
+  interval or sweeps start backing up), and what DB load can the Mac Studio's Postgres instance
+  absorb during FL/USA's longest concurrent runs.
+- **Rollout gating.** Given the `high_risk` verdict on the first draft, ship behind an explicit
+  opt-in flag (`SWEEP_IMPORT_ENABLED=1`, default off) and canary on the smallest/lowest-risk
+  jurisdiction (VA or UT) first, with sweep duration/outcome logged per cycle, before enabling for
+  FL/MA/USA where the incident risk (and the DB load question above) is highest.
+- **`LOCK_WAIT_TIMEOUT_SECS` value.** 180s is a starting proposal for `require_import_lock`, same
+  status as the 120s sweep interval — a guess to be replaced with a measured one once real sweep
+  durations for FL/MA are known (the timeout needs to comfortably exceed one real sweep's runtime,
+  or the final import will spuriously time out on every normal run).
+
+*Removed as an open question after round 3, not just deferred:* what to do about quarantined files
+sitting unreviewed — there's no quarantine directory anymore (see round 3), so nothing accumulates
+that needs a review loop. A file excluded from staging this run either imports fine on the final
+pass or fails it exactly like any other bad-file failure does today.
+
+*Deliberately left as-is, not chased further, after rounds 2-3:* full lock-ownership metadata beyond
+a PID (start time, command, hostname), a dedicated sweep metrics/dashboard layer (files staged,
+skipped-due-to-lock counts, etc.) beyond the existing per-cycle log lines, and per-sweep-scoped log
+capture with confirmed-error-signature matching (moot once sweeps stopped moving files — see round
+3). All reasonable future hardening, none required to make this fix safe to ship.
+
+### Testing plan (added per review — not in the original draft; extended after rounds 2-3)
+
+Failure-injection, not just unit-level: kill the scrape process at each of these points and verify
+(a) expected bills are in Postgres, (b) no corruption, (c) the next run behaves correctly —
+- Mid-scrape, before any sweep has run.
+- Mid-scrape, immediately after a sweep succeeds.
+- During a sweep's `--import` call itself.
+- Between the sweep-loop `kill` and the final import call.
+- During the final import call.
+- During the pre-scrape recovery import (verify it blocks the rescrape as designed, doesn't wipe).
+
+Plus, one test per fixed bug:
+- Hand-craft a malformed `bill_*.json` mid-run; confirm it's excluded from staging (not moved or
+  deleted — still present in `$STATE_DATADIR`) within one sweep cycle, that later sweeps for other
+  bills succeed, and that the final import still attempts it and fails/alerts exactly as an
+  unfixed bad file would today.
+- Hold the import lock artificially (background `mkdir` + sleep) while the final import runs;
+  confirm it blocks and retries rather than skipping, and confirm it fails loudly (alerts) if held
+  past `LOCK_WAIT_TIMEOUT_SECS` instead of silently reporting success.
+- `kill -9` `run-scrape.sh` itself while it holds the lock (mid `require_import_lock`); confirm the
+  *next* invocation for the same `$STATE` detects the recorded PID is dead and reclaims the lock
+  rather than blocking for the full timeout every time.
+
+### Files changed (proposed)
+
+| File | Change |
+|---|---|
+| `run-scrape.sh` | Shared `IMPORT_FLAGS` + two-mode lock (`try`/`require`) setup using `$BASHPID` with stale-lock reclaim; pre-scrape recovery import via `require_import_lock`, blocks on failure (A); background sweep loop via `try_import_lock` with staged/`stat`-age-filtered import + in-memory exclusion list (no file moves) (B); final import reads the live directory directly via `require_import_lock` (C, D) |
+
+No `openstates-core` or `openstates-scrapers` changes required — this is entirely a `run-scrape.sh`
+orchestration fix, calling the existing `os-update --import` CLI more often instead of patching
+what it does internally.
 
 ---
 

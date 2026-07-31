@@ -113,7 +113,16 @@ SCRAPE_MARKER_DIR=/tmp/ddp-openstates-scrapes
 mkdir -p "$SCRAPE_MARKER_DIR"
 READER_MARKER="$SCRAPE_MARKER_DIR/$$"
 touch "$READER_MARKER"
-trap 'rm -f "$READER_MARKER"' EXIT
+# Single EXIT trap for the whole script — bash keeps only the last one registered for a given
+# signal, so the sweep-loop cleanup below is folded in here rather than set again later (which
+# would silently drop this READER_MARKER cleanup). $SWEEP_PID is a harmless no-op when
+# SWEEP_IMPORT_ENABLED=0 (never set). $IMPORT_LOCK_HELD tracks, in THIS process's own memory,
+# whether it currently holds the import lock — correct without needing to compare PIDs at all:
+# the backgrounded sweep loop has its own separate copy of this variable in its own process
+# memory, so this trap (which runs in the main script, on the main script's exit) can only ever
+# see this process's own true "do I currently hold it" state, never the sweep's.
+trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null; wait "$SWEEP_PID" 2>/dev/null;
+      [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR"' EXIT
 
 MODE="full"
 [ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
@@ -122,6 +131,89 @@ log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${IN
 # Pass cache/data dirs explicitly so os-update doesn't fall back to
 # os.getcwd()/_cache — which resolves to /_cache (read-only) under launchd.
 DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
+
+# MI has a pagination overlap that produces duplicate bill JSON files.
+# VA has the same issue (confirmed 2026-06-29 via DuplicateItemError on HB 1054).
+# --allow_duplicates keeps the first instance and silently skips the rest.
+# See: https://github.com/openstates/openstates-scrapers/issues/5697
+IMPORT_FLAGS=""
+[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] && IMPORT_FLAGS="--allow_duplicates"
+
+# Import-as-you-go (PLAN-incremental-scraping.md, "Reopened 2026-07-30", approved for
+# implementation) — off by default. When enabled, a killed scrape no longer loses everything:
+# a periodic sweep imports scraped JSON into Postgres throughout the run instead of in one
+# all-or-nothing transaction at the very end, and a pre-scrape recovery import saves any
+# un-imported JSON from a previous interrupted run before --scrape wipes it. Roll out per
+# jurisdiction (canary on VA/UT first) via SWEEP_IMPORT_ENABLED=1 in the calling environment.
+SWEEP_IMPORT_ENABLED="${SWEEP_IMPORT_ENABLED:-0}"
+STATE_DATADIR="$SCRAPED_DATA_DIR/$STATE"
+IMPORT_LOCK_DIR="/tmp/ddp-openstates-import-locks/$STATE"
+SWEEP_STAGING_DIR="/tmp/ddp-openstates-sweep-staging/$STATE"
+SWEEP_INTERVAL_SECS="${SWEEP_INTERVAL_SECS:-120}"
+LOCK_WAIT_TIMEOUT_SECS="${LOCK_WAIT_TIMEOUT_SECS:-180}"
+IMPORT_LOCK_HELD=0
+
+# mkdir is atomic — either it succeeds (we now own the lock) or it fails (someone else does).
+#
+# Records the holder's real PID via a direct `sh -c 'echo $PPID' > file` redirect — NOT
+# `$BASHPID` (bash 4+ only; this fleet's bash is 3.2, verified: `echo $BASHPID` is empty) and
+# NOT `$$` (verified empirically: inside a backgrounded function, bash 3.2's `$$` still reports
+# the *top-level script's* PID, not the background job's own — it can't tell "the sweep loop
+# holds this" from "the main script holds this"). Running `sh -c '...'` as a *direct* child
+# (redirected straight to a file, not through `$(...)` — command substitution forks an extra
+# subshell layer that changes whose PID `$PPID` reports) gets the calling process's own real
+# PID correctly in either context; verified against `$!` in both the main script and a
+# backgrounded function. This is what lets a stale lock left by a hard-killed process (SIGKILL,
+# no trap runs) be detected and reclaimed, rather than blocking every future import for this
+# $STATE forever.
+acquire_import_lock() {
+    if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
+        sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"
+        IMPORT_LOCK_HELD=1
+        return 0
+    fi
+    local holder; holder=$(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null)
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+        log "Import lock for $STATE held by dead pid $holder — reclaiming"
+        rm -rf "$IMPORT_LOCK_DIR"
+        if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
+            sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"
+            IMPORT_LOCK_HELD=1
+            return 0
+        fi
+    fi
+    return 1
+}
+release_import_lock() {
+    [ "$IMPORT_LOCK_HELD" = "1" ] || return 0
+    rm -rf "$IMPORT_LOCK_DIR"
+    IMPORT_LOCK_HELD=0
+}
+# Best-effort — used by the periodic sweep. Returns 2 (distinct from the wrapped command's own
+# exit code) when the lock is busy, which the caller treats as "try again next cycle," not a
+# failure.
+try_import_lock() {
+    acquire_import_lock || return 2
+    eval "$1"; local rc=$?
+    release_import_lock
+    return $rc
+}
+# Blocking — used by recovery/final import, which must never silently "succeed" by skipping.
+# Waits up to LOCK_WAIT_TIMEOUT_SECS for the lock, then fails loudly (same as any other
+# scrape/import failure — set -e + the ERR trap below catches a bare nonzero return from this).
+require_import_lock() {
+    local waited=0
+    until acquire_import_lock; do
+        if [ "$waited" -ge "$LOCK_WAIT_TIMEOUT_SECS" ]; then
+            log "ERROR: timed out after ${LOCK_WAIT_TIMEOUT_SECS}s waiting for import lock for $STATE (held by pid $(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null))"
+            return 1
+        fi
+        sleep 5; waited=$((waited + 5))
+    done
+    eval "$1"; local rc=$?
+    release_import_lock
+    return $rc
+}
 
 # Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1). Gated per-
 # jurisdiction via ARCHIVE_ENABLED_STATES (activate.sh) so a new jurisdiction's first-ever run
@@ -167,6 +259,25 @@ archive_if_enabled() {
     esac
 }
 
+if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
+    mkdir -p "$(dirname "$IMPORT_LOCK_DIR")"
+
+    # Recover any un-imported JSON left behind by a previous run that never reached its own
+    # import step — the --scrape call below wipes $STATE_DATADIR unconditionally
+    # (openstates-core's do_scrape()), so anything sitting there now is the only copy of that
+    # work. Blocks and alerts on failure rather than proceeding to the wipe underneath it — a
+    # warn-and-continue here would defeat the point of recovering the data at all.
+    if compgen -G "$STATE_DATADIR/bill_*.json" > /dev/null 2>&1; then
+        log "Found un-imported JSON from a previous run in $STATE_DATADIR — importing before rescrape"
+        if ! require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS >> \"$LOG_DIR/scraper.log\" 2>&1"; then
+            FAILURE_MESSAGE="Recovery import failed for $STATE — refusing to rescrape (would wipe the only copy of this data)"
+            trap - ERR
+            on_failure
+            exit 1
+        fi
+    fi
+fi
+
 # Marker file so we can count only files written by this scrape, not leftovers.
 SCRAPE_MARKER=$(mktemp)
 
@@ -210,6 +321,71 @@ FIRST_ATTEMPT_FLAGS=""
 if [ "${FASTMODE_ONLY:-}" = "1" ]; then
     FIRST_ATTEMPT_FLAGS="--fastmode"
     log "FASTMODE_ONLY=1: starting with --fastmode (cache-only, no network)"
+fi
+
+# Periodic import sweep — imports scraped JSON into Postgres throughout the scrape instead of
+# only once at the end, so a run that dies mid-scrape has already gotten most of its bills into
+# Postgres via earlier sweeps rather than losing everything. Best-effort: a failed sweep just
+# excludes the suspected file from staging for the rest of this run and retries next cycle —
+# it never touches $STATE_DATADIR, so a wrong guess costs one extra retry, not a lost bill. A
+# file that's genuinely bad gets a real attempt (and alerts) at the final import below, same as
+# an unfixed bad file would fail a scrape today.
+if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
+    sweep_import() {
+        # Disable set -e and the inherited ERR trap for this backgrounded loop specifically —
+        # verified empirically that a background job inherits both, so an incidental failure in
+        # this loop's OWN bookkeeping (mkdir, cp, a vanished file between the existence check and
+        # the stat) would otherwise kill the entire loop after its first occurrence, silently, for
+        # the rest of a multi-hour run — not just fail one sweep cycle. The one call whose failure
+        # actually matters ($OS_UPDATE via try_import_lock) is already explicitly captured via
+        # `|| rc=$?` below, independent of this.
+        set +e; trap - ERR
+
+        # Comma-delimited basenames, not an associative array — this fleet's bash is 3.2
+        # (verified: `declare -A` errors out with "invalid option"; associative arrays are a
+        # bash 4+ feature). In-memory, this process's lifetime only.
+        EXCLUDED_FROM_STAGING=","
+        SWEEP_FAILURES=0
+        while true; do
+            sleep "$SWEEP_INTERVAL_SECS"
+            [ -d "$STATE_DATADIR" ] || continue
+
+            rm -rf "$SWEEP_STAGING_DIR"; mkdir -p "$SWEEP_STAGING_DIR/$STATE"
+            local cutoff=$(( $(date +%s) - 5 ))  # skip files touched in the last 5s — cheap
+                                                  # insurance against a bill file the scraper is
+                                                  # still mid-write on (single open/dump/close,
+                                                  # not write-then-rename)
+            for f in "$STATE_DATADIR"/*.json; do
+                [ -e "$f" ] || continue
+                case "$EXCLUDED_FROM_STAGING" in *",$(basename "$f"),"*) continue ;; esac
+                local mtime; mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null)
+                [ -n "$mtime" ] && [ "$mtime" -lt "$cutoff" ] && cp "$f" "$SWEEP_STAGING_DIR/$STATE/"
+            done
+
+            local rc=0
+            try_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS --datadir $SWEEP_STAGING_DIR --cachedir \$CACHE_DIR >> \"$LOG_DIR/scraper.log\" 2>&1" || rc=$?
+            if [ "$rc" = 2 ]; then
+                log "Import already in progress for $STATE — skipping this sweep cycle"
+            elif [ "$rc" != 0 ]; then
+                SWEEP_FAILURES=$((SWEEP_FAILURES + 1))
+                local bad_staged; bad_staged=$(grep -oE "$SWEEP_STAGING_DIR/$STATE/[A-Za-z_]+_[0-9a-f-]+\.json" "$LOG_DIR/scraper.log" | tail -1)
+                [ -n "$bad_staged" ] && EXCLUDED_FROM_STAGING="$EXCLUDED_FROM_STAGING$(basename "$bad_staged"),"
+                log "WARNING: periodic import sweep failed for $STATE — excluding ${bad_staged:-unknown file} from staging until final import"
+                # 3 in a row is a systemic problem (DB down, disk full), not one bad record —
+                # escalate through the normal alert path rather than retrying silently forever.
+                if [ "$SWEEP_FAILURES" -ge 3 ]; then
+                    FAILURE_MESSAGE="3 consecutive periodic import sweeps failed for $STATE — possible systemic issue (DB down, disk full)"
+                    on_failure
+                    SWEEP_FAILURES=0
+                fi
+            else
+                SWEEP_FAILURES=0
+            fi
+        done
+    }
+    sweep_import &
+    SWEEP_PID=$!
+    # Cleanup on exit is handled by the single EXIT trap set alongside READER_MARKER above.
 fi
 
 rc=0; scrape_attempt "$FIRST_ATTEMPT_FLAGS" || rc=$?
@@ -257,15 +433,16 @@ fi
 
 log "Scrape done: $STATE. Starting import..."
 
-# MI has a pagination overlap that produces duplicate bill JSON files.
-# VA has the same issue (confirmed 2026-06-29 via DuplicateItemError on HB 1054).
-# --allow_duplicates keeps the first instance and silently skips the rest.
-# See: https://github.com/openstates/openstates-scrapers/issues/5697
-if [ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ]; then
-    $OS_UPDATE "$STATE" --import --allow_duplicates $DIR_FLAGS \
-        >> "$LOG_DIR/scraper.log" 2>&1
+if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
+    # There's no writer left once scrape_attempt() has returned, so this reads $STATE_DATADIR
+    # directly (no staging/age-filter needed — that's only for protecting against a concurrent
+    # write, which can't happen here). Blocks (doesn't skip) if a sweep is still finishing its
+    # own import; a lock-wait timeout or the import itself failing both hit the same
+    # set -e + ERR trap -> on_failure path as any other import failure below.
+    kill "$SWEEP_PID" 2>/dev/null; wait "$SWEEP_PID" 2>/dev/null
+    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS >> \"$LOG_DIR/scraper.log\" 2>&1"
 else
-    $OS_UPDATE "$STATE" --import $DIR_FLAGS \
+    $OS_UPDATE "$STATE" --import $IMPORT_FLAGS $DIR_FLAGS \
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 
