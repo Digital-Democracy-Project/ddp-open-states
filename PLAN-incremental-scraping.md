@@ -1581,20 +1581,55 @@ timeout-kill silence directly, making it a real backstop, so the wrapper's own b
 longer has to be provably perfect — worst case, `ddp-sync` alerts even if the wrapper's timing
 guess was wrong.
 
-**Shipped** (`ddp-sync`, branch `fix/scrape-timeout-alerting`, not yet merged): `_run_scrape()`
-now fires a Slack (`#automation-errors`) + CAMS alert via a new `_alert_scrape_failure()` helper on
+**Implemented** (`ddp-sync`, PR [#15](https://github.com/Digital-Democracy-Project/ddp-sync/pull/15),
+branch `fix/scrape-timeout-alerting`, **not yet merged/deployed** — the live `ddp-sync` process
+won't pick this up until that PR lands and the service restarts): `_run_scrape()` now fires a
+Slack (`#automation-errors`) + CAMS alert via a new `_alert_scrape_failure()` helper on
 `subprocess.TimeoutExpired` and on any exception raised before `run-scrape.sh` even starts — the
 two paths that happen entirely outside `run-scrape.sh`'s own process, which is why they were
 silent before (its own `set -e` + `trap 'on_failure' ERR` only covers failures *inside* that
-process). Ordinary nonzero-exit failures are deliberately not re-alerted here, since
-`run-scrape.sh` already alerted on those itself. Applies uniformly to every jurisdiction that
-calls `_run_scrape()` — FL, WA, USA, all five secondary states, and the manual single-jurisdiction
-trigger — since the fix lives in that one shared function, not per-caller; nothing to stage.
-Verified: `ruff check` shows zero new findings (18 pre-existing, none in the added code), the
-existing test suite passes unchanged (29 passed), and a manual smoke test with both tokens unset
-confirms it degrades to a warning log without raising. Documented in `ddp-sync/README.md`'s
+process). Applies uniformly to every jurisdiction that calls `_run_scrape()` — FL, WA, USA, all
+five secondary states, and the manual single-jurisdiction trigger — since the fix lives in that
+one shared function, not per-caller; nothing to stage. Documented in `ddp-sync/README.md`'s
 architecture section. Does **not** cover `run_patch_refresh_job`/`run_people_refresh_job` — same
 silent-timeout shape, different (non-per-jurisdiction) scripts, tracked separately, not yet fixed.
+
+### Round 3 (PM review of the actual diff, not just the plan): two more real findings
+
+Sent PR #15 + PR #43 back to review together as a combined diff. Verdict `needs_revision`,
+`ship_with_caution`. Two of the findings were substantive and got fixed before merge; the rest
+were reasonable but lower-priority asks, addressed where cheap:
+
+- **The "ordinary nonzero exit is already alerted" claim didn't cover signal kills.** A negative
+  `returncode` (process killed by `SIGTERM`/`SIGKILL`/OOM from outside, not via our own timeout
+  path) was being silently lumped in with an ordinary `exit 1` and *not* alerted — but
+  `run-scrape.sh`'s `trap ... ERR` can't fire on a signal delivered to its own process, so that
+  path was just as silent as the timeout case this whole fix was for. Fixed: `_run_scrape` now
+  splits on `returncode < 0` (alert — this is a signal, `run-scrape.sh` never got a chance) vs
+  `returncode > 0` (don't alert — its own `on_failure()` already fired).
+- **The "kills the whole process tree" claim in the original comment was false.** Reviewer
+  correctly pointed out `subprocess.run(timeout=...)` only kills the *direct* child on
+  `TimeoutExpired`, regardless of `start_new_session=True` — that flag only makes the child its
+  own process-group leader, it doesn't make anything target that group. Verified empirically
+  (spawn a Python child that spawns a `sleep 30` grandchild, timeout after 2s, `pgrep` afterward):
+  the grandchild survived. For `run-scrape.sh` specifically this meant a real `ddp-sync` timeout
+  would leave the actual scrape/import process and the backgrounded sweep-import loop running as
+  orphans — still holding the import lock, still writing into `$STATE_DATADIR` — while `ddp-sync`
+  had already declared the run failed and moved on. Fixed: replaced the `subprocess.run()` call
+  with a small `_run_with_group_kill()` helper that manages the `Popen` object directly and calls
+  `os.killpg(os.getpgid(process.pid), signal.SIGKILL)` on timeout. Re-ran the same empirical test
+  against the fix — grandchild confirmed killed.
+- Added a `requests` dependency check (already declared in `pyproject.toml`, no actual risk) and 8
+  unit tests (`ddp-sync/tests/test_openstates_scrape_alerting.py`) covering the timeout/nonzero/
+  signal/success/subprocess-start-failure paths through `_run_scrape` and `_alert_scrape_failure`'s
+  never-raises behavior against Slack/CAMS failure responses — reviewer correctly noted this
+  alerting-critical code had zero test coverage.
+- Not addressed, judged acceptable as noted rather than fixed: enumerating exactly which
+  `run-scrape.sh` exit paths are guaranteed to self-alert (would mean auditing/annotating every
+  `exit` in that script — bigger than this PR's scope, and the signal-kill fix above closes the
+  one concrete gap that mattered); a live production smoke test of real Slack/CAMS delivery
+  (deferred to post-merge, per PR #15's test plan); `run_patch_refresh_job`/`run_people_refresh_job`
+  coverage (already an explicitly tracked, separate follow-up, not this PR's job).
 
 **Not yet done:** the simplified retry wrapper itself (`run-scrape-retrying.sh`). With `ddp-sync`'s
 alerting gap closed, it no longer needs the live-elapsed-time budget logic or a watchdog — closer
