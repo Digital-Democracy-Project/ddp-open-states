@@ -1637,3 +1637,30 @@ to the original round-1 design (fixed attempt count + backoff, single `SUPPRESS_
 guard in `run-scrape.sh`, no `RETRY_TOTAL_BUDGET_SECS`). Design and PM-review to be redone once
 this companion fix lands; MA/USA-first staged rollout and MI opt-out recommendations from round 2
 still apply to that piece.
+
+### Round 4 (explicit over-engineering check): approve
+
+Sent PR #15 + PR #43 back once more after round 3's fixes, explicitly asking whether the process-
+group-kill helper plus 8 tests had grown past what a best-effort alerting side-channel warrants.
+Verdict: `approve`, `ship_with_caution` — the growth was "justified by empirically demonstrated
+correctness bugs, not speculative polish," and the test count was "proportionate... not
+excessive." Explicit instruction from the review: **do not expand this PR further unless
+required.** Remaining lower-severity items are accepted as-is rather than fixed, per that
+guidance:
+
+- A theoretical edge case where a descendant process escapes the killed process group while still
+  holding `stdout`/`stderr` pipes open (`communicate()` would then block waiting for EOF) —
+  accepted risk; nothing in `run-scrape.sh` creates a descendant like that today, and defending
+  against a scenario that can't currently happen is exactly the over-engineering this round was
+  checking for.
+- `ddp-sync` itself being killed mid-scrape (deploy, host restart, supervisor action) — genuinely
+  out of scope; this fix was about `ddp-sync`'s own timeout-kill being silent, not about `ddp-sync`
+  disappearing entirely.
+- Production `SLACK_BOT_TOKEN`/`CAMS_API_TOKEN`/`CAMS_BASE_URL` verification — an operational
+  pre-deploy checklist item, not a code change.
+- `run_patch_refresh_job`/`run_people_refresh_job` coverage — already tracked separately (rounds
+  1-3, above); reviewer explicitly agreed not to fold it into this PR.
+
+**Status: ready to merge.** Companion fix (`ddp-sync` PR #15) and this decision record
+(`ddp-open-states` PR #43) are both considered done for this stage of the effort. The retry
+wrapper itself (`run-scrape-retrying.sh`) remains the next, separate piece of work.
