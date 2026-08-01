@@ -77,8 +77,18 @@ trap 'rm -f "$READER_MARKER"' EXIT
 case ",${ARCHIVE_ENABLED_STATES:-}," in
     *",$STATE,"*)
         log "Archiving bill documents: $STATE..."
+        # os-text-extract archive takes the DB/metadata abbreviation, not the scraper module
+        # name -- `usa` (used everywhere else: run-scrape.sh, ARCHIVE_ENABLED_STATES, ddp-sync's
+        # trigger routing) isn't in STATES_BY_ABBR at all; the archiver expects `us`. Found live
+        # 2026-07-31 sizing-testing federal archiving: passing `$STATE` straight through raised
+        # `KeyError: 'USA'`, which reads like federal jurisdiction isn't supported at all -- it
+        # is, `os-text-extract archive us` runs fine. This is the one known exception (every
+        # other ARCHIVE_ENABLED_STATES entry is already a 2-letter code matching both
+        # conventions); see PRIMITIVES.md's "module name is usa, not us" gotcha.
+        ARCHIVE_ABBR="$STATE"
+        [ "$STATE" = "usa" ] && ARCHIVE_ABBR="us"
         ARCHIVE_OUT=$(mktemp)
-        $OS_TEXT_EXTRACT archive "$STATE" 2>&1 | tee "$ARCHIVE_OUT" >> "$LOG_DIR/scraper.log"
+        $OS_TEXT_EXTRACT archive "$ARCHIVE_ABBR" 2>&1 | tee "$ARCHIVE_OUT" >> "$LOG_DIR/scraper.log"
         archive_rc="${PIPESTATUS[0]}"  # tee's own exit code, not os-text-extract's, would mask a real failure
         if [ "$archive_rc" -ne 0 ]; then
             FAILURE_MESSAGE=$(grep -E '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception): ' "$ARCHIVE_OUT" 2>/dev/null | tail -1)
