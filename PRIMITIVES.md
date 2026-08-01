@@ -232,6 +232,12 @@ mapping, import/copy from here, don't re-derive it from the OCD URIs inline.
   editing already uses.
 - **Module name is `usa`, not `us`** — the scraper module for US Congress is `usa` (jurisdiction
   short-code in the DB is still `us`). Get this wrong and `run-scrape.sh usa ...` 404s.
+  **`os-text-extract archive` is subject to this too, in the opposite direction** — it takes
+  the DB abbreviation (`us`), not the scraper module name, so `os-text-extract archive usa`
+  raises `KeyError: 'USA'` (reads like federal isn't supported at all; it is — `archive us`
+  works fine). `run-archive.sh` translates this automatically; calling `os-text-extract`
+  directly, use `us`. Cost real time twice (2026-07-24, then again 2026-07-31) before this
+  line existed.
 - **`session=` argument shape** — `run-scrape.sh <state> "session=<id>"`, quoted as one string
   because some jurisdictions pack extra key=value pairs in there (`"session=119 chamber=lower"`
   for US House/Senate, scraped as two separate invocations).
