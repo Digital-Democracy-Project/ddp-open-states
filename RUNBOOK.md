@@ -222,6 +222,22 @@ source activate.sh && $OS_PEOPLE to-database az       # end-to-end
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
 > does not use this venv.
 
+**Playwright browser binaries (added 2026-08-01, OPEN-19)** — MI's WAF-cookie warm-up
+(`openstates.utils.mi_cookies.MI_COOKIE_PROVIDER`, wired into `scrapers/mi/*.py` and
+`os-text-extract archive mi`) launches a real Chromium via Playwright the first time it needs to
+warm up a cookie jar (cache miss, expiry, or a detected block). `pip install`ing the `playwright`
+package from `requirements-openstates.txt` only installs the Python bindings — the actual browser
+binary is a separate one-time step, required once per venv:
+
+```bash
+.venv/bin/playwright install chromium
+```
+
+Skipping this doesn't break anything until the cache is actually empty/expired/invalidated — a
+scrape can look fine for weeks (reusing the cached `x-bni-fpc`/`x-bni-rncf` cookies) and then fail
+the moment a re-warm is actually needed, so run this as part of every venv rebuild above, not just
+if/when MI scraping breaks.
+
 ---
 
 ## Development / testing environment (`ddp-open-states-dev`)
@@ -741,6 +757,29 @@ recovered the votes.
 
 If you see `flhouse.gov WAF rejection persists` warnings, the site behavior has changed again.
 Full technical detail (WAF vendor/cookie specifics) is in `RUNBOOK.internal.md` (not public).
+
+### Michigan blocking (Barracuda WAF) — cookie-reuse fetcher (OPEN-19)
+
+`legislature.mi.gov` runs Barracuda's bot-detection/WAF, which validates clients via a
+JavaScript challenge a plain `requests`/scrapelib client can't execute — the actual root
+cause behind the `get_session_list()` crash (OPEN-17) and disguised-404 bill-fetch blocks
+(OPEN-18), and behind the archiver's long-standing MI `fetch_errors`/circuit-breaker trips.
+
+**Primary fix (this ticket):** `openstates.utils.mi_cookies.MI_COOKIE_PROVIDER` launches a
+real Playwright browser once to pass the WAF challenge, extracts the two long-lived cookies
+(`x-bni-fpc`/`x-bni-rncf`) that let a plain HTTP client back in, and caches them to disk
+(`CACHE_DIR/mi_waf_cookies.json`, keyed by their real expiry) — see
+`openstates/utils/cookie_provider.py` for the generic mechanism. `scrapers/mi/bills.py`,
+`events.py`, `__init__.py`'s `get_session_list()`, and `os-text-extract archive mi` all
+attach these cached cookies to every request via the shared `mi_waf_get`/`fetch_with_retry`
+helpers, invalidating and re-warming exactly once on a detected block before treating it as
+a real failure. Requires the Playwright browser binary — see "Playwright browser binaries"
+above.
+
+OPEN-17/OPEN-18's own fallbacks (known-sessions safety net, block-page heuristics) remain in
+place as defense-in-depth for if/when this cookie strategy stops working — this is
+behavioral evidence from testing, not a guarantee about Barracuda's internals (see the
+module docstring in `mi_cookies.py`).
 
 ### `SELECT DISTINCT + ORDER BY RANDOM()` fails in PostgreSQL
 
