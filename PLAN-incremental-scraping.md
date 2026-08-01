@@ -1315,3 +1315,352 @@ cat logs/last-run/fl_session_2026.ts     # should show today's UTC timestamp
 ./run-scrape.sh fl "session=2026"        # second run uses timestamp
 grep "Incremental run" logs/scraper.log | tail -5
 ```
+
+## Reopened 2026-08-01: bounded auto-restart after an intermittent scrape failure
+
+Triggered live: MA's full re-scrape (the one this plan's sweep-import fix was protecting) ran
+~5 hours, then died on a plain network timeout — `malegislature.gov` refused a connection
+fetching one bill's cosponsor page, after already surviving one internal `--fastmode` retry. No
+code bug, no data loss (the periodic sweep had already landed everything importable; the
+recovery-import step picked up the rest on relaunch) — just a transient failure that needed a
+human to notice the Slack alert and manually rerun `run-scrape.sh ma`. That gap between "failed"
+and "someone relaunches it" is the thing worth closing.
+
+### Goal
+
+If a scrape fails, automatically try again a bounded number of times, on a backoff, before
+falling back to today's alert-and-stop behavior — so a transient failure (dead connection,
+5xx, DNS blip) recovers unattended, the same way a human relaunching it tonight did.
+
+### Non-goal: classifying failure cause
+
+Tempting to only auto-retry "network-looking" failures and alert immediately on anything else.
+Rejected — MI's bot-detection block and a real code bug both *look* like connection/HTTP errors
+in the log, and building a reliable classifier for "transient vs. permanent" from scraped
+exception text is exactly the kind of fragile heuristic this plan's earlier rounds (rounds 1-3,
+above) got burned by. A hard attempt cap already bounds the cost of guessing wrong in the other
+direction: a permanently-broken jurisdiction retries a few times, then alerts, same as it would
+without this feature — it just costs a few extra attempts' worth of time, not a silent forever-loop.
+
+### Design: retry the whole invocation from outside, not the internals
+
+Rejected restructuring `run-scrape.sh` itself into a retry loop — the recovery-import/sweep/lock
+internals took three PM-review rounds to get right (rounds 1-3, above), and wrapping control flow
+around them raises the same class of risk (a retry landing mid-sweep, a second `sweep_import &`
+never getting cleaned up, etc.) for no real benefit, since **the script is already safely
+re-runnable end to end** — that's the whole point of the recovery-import step, and it's exactly
+what tonight's manual relaunch exercised.
+
+Instead: a new thin wrapper, `run-scrape-retrying.sh <state> [session]`, that calls
+`run-scrape.sh` as a subprocess up to `MAX_SCRAPE_ATTEMPTS` (default 3) times, stopping on the
+first success (`exit 0`), sleeping `RETRY_BACKOFF_SECS` (default 900 = 15m) between attempts.
+`run-scrape.sh` itself is untouched except for one guard (below) — everything about
+recovery-import, sweep-import, and locking stays exactly as-is, and each attempt is a fully
+independent, already-battle-tested run.
+
+```bash
+#!/usr/bin/env bash
+# Usage: run-scrape-retrying.sh <state> [session]
+set -e
+MAX_SCRAPE_ATTEMPTS="${MAX_SCRAPE_ATTEMPTS:-3}"
+RETRY_BACKOFF_SECS="${RETRY_BACKOFF_SECS:-900}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+attempt=1
+while [ "$attempt" -le "$MAX_SCRAPE_ATTEMPTS" ]; do
+    is_final_attempt=0
+    [ "$attempt" -eq "$MAX_SCRAPE_ATTEMPTS" ] && is_final_attempt=1
+
+    rc=0
+    SUPPRESS_FAILURE_ALERT=$([ "$is_final_attempt" -eq 1 ] && echo 0 || echo 1) \
+        "$SCRIPT_DIR/run-scrape.sh" "$@" || rc=$?
+
+    [ "$rc" -eq 0 ] && exit 0
+    [ "$is_final_attempt" -eq 1 ] && exit "$rc"   # run-scrape.sh already alerted on this one
+
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Attempt $attempt/$MAX_SCRAPE_ATTEMPTS failed for $* — retrying in ${RETRY_BACKOFF_SECS}s" \
+        >> "${LOG_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/logs}/scraper.log"
+    sleep "$RETRY_BACKOFF_SECS"
+    attempt=$((attempt + 1))
+done
+```
+
+**One guard added to `run-scrape.sh`:** its existing `on_failure` call (fires the Slack + CAMS
+alert) gets wrapped —
+
+```bash
+[ "${SUPPRESS_FAILURE_ALERT:-0}" = "1" ] || on_failure
+```
+
+— at the one call site that reports a genuine scrape/import failure (not the recovery-import
+failure path, which should keep alerting immediately every time regardless of attempt number,
+since that one guards against actually losing data, not just a slow retry). Unset by default, so
+every existing direct/manual/`ddp-sync`-triggered call to `run-scrape.sh` alerts exactly as it
+does today — this is opt-in only for callers going through the new wrapper.
+
+### Alerting semantics
+
+- Intermediate failed attempts: one line in `scraper.log`, no Slack/CAMS alert. Visible to anyone
+  looking, not paged.
+- Final attempt (whether that's attempt 1 with `MAX_SCRAPE_ATTEMPTS=1`, i.e. feature effectively
+  off, or the last of N): alerts exactly as today, unchanged.
+- Net effect for tonight's MA failure, replayed under this design: attempt 1 fails at ~5h (network
+  timeout), retries silently at +15m, attempt 2 either succeeds or fails; only if all 3 attempts
+  fail does anyone get paged — vs. tonight's reality of paging on the first failure and waiting for
+  a human to relaunch by hand.
+
+### Deployment
+
+- `ddp-sync`'s scheduled jobs switch their invocation from `run-scrape.sh` to
+  `run-scrape-retrying.sh` (one-line change per call site in `openstates_scrape.py`'s equivalent).
+  Manual one-off runs (like tonight's) can call either script directly — `run-scrape.sh` for "I
+  want to see exactly what happens right now," `run-scrape-retrying.sh` for "just get this done."
+- `MAX_SCRAPE_ATTEMPTS`/`RETRY_BACKOFF_SECS` are per-invocation env overrides, not per-jurisdiction
+  config — no evidence yet that any jurisdiction needs a different policy, and adding
+  jurisdiction-specific tuning now would be speculative.
+- Does **not** change `ddp-sync`'s own per-jurisdiction timeout (e.g. WA's 8h) — a wrapper retrying
+  for 3 attempts × several hours each could still get killed by that outer timeout on a bad night.
+  Out of scope here; flagged as a real interaction, not silently ignored.
+
+### Files changed (proposed)
+
+- New: `run-scrape-retrying.sh`
+- `run-scrape.sh` — one `SUPPRESS_FAILURE_ALERT` guard around the genuine-failure `on_failure`
+  call
+- `ddp-sync/src/ddp_sync/pipelines/openstates_scrape.py` (or equivalent) — switch scheduled calls
+  to the new wrapper script
+- `PRIMITIVES.md` — note the new script and its env vars
+
+### Round 2 (PM review): the real risk is ddp-sync's *own* timeout, not run-scrape.sh's internals
+
+First-round review (`needs_revision`) correctly flagged the dangerous case: `ddp-sync` enforces
+its own per-jurisdiction subprocess timeout independent of anything in this repo
+(`SCRAPE_TIMEOUT_S` in `openstates_scrape.py` — `fl` 16h, `wa` 8h, `usa` 4h, everything else
+including MA falls through to `default` = 6h). Checked what happens when that timeout fires
+today: **nothing alerts.** `subprocess.TimeoutExpired` is caught, logged at `ERROR` via the
+structured logger, folded into a result dict, and written to a best-effort Redis flow-status key
+that isn't even in the set `health.py` surfaces back out. No Slack, no CAMS, no exception that
+reaches anything that would page anyone. This is a pre-existing gap, not something this feature
+creates — but it changes the risk calculus for the suppression design:
+
+**The concrete failure mode:** MA's own run tonight took ~5h before failing — already most of its
+6h default `ddp-sync` timeout budget. Under the original design, if attempt 1 fails at ~5h
+(suppressed, since it's not the final attempt) and the wrapper sleeps 15m then starts attempt 2,
+`ddp-sync`'s 6h clock (which now wraps the whole `run-scrape-retrying.sh` invocation, not just one
+`run-scrape.sh` attempt) can fire ~45 minutes into attempt 2 and kill the entire process tree —
+while that attempt's alert is suppressed and `ddp-sync` itself alerts on nothing. Net effect: a
+run that would have paged immediately today goes completely silent. That's a strictly worse
+outcome than not shipping this feature at all, so the design needs to close this before anything
+ships, not defer it as an open question.
+
+**The fix: a self-contained time budget, not attempt count alone.** The wrapper tracks its own
+elapsed wall-clock time from its own start (`date +%s`, not calendar-arithmetic across restarts —
+consistent with this codebase's existing `stat -f %m`-style avoidance of anything fancier than
+integer epoch seconds). Before starting attempt N+1, it checks elapsed time against a new
+`RETRY_TOTAL_BUDGET_SECS` (no default — must be set explicitly per call site, see Deployment
+below, so a caller can't silently inherit an unsafe value). If the next attempt plus its backoff
+would push past the budget, the wrapper treats the *current* failure as final regardless of
+attempt count: it alerts (unsuppressed) and exits, instead of retrying into a window `ddp-sync`
+could kill silently. "Exhausted" is now `attempt == MAX_SCRAPE_ATTEMPTS OR remaining budget too
+small for another attempt` — whichever comes first — which means the wrapper always alerts on
+its *own* terms, strictly before `ddp-sync`'s outer timeout could ever intervene, as long as the
+budget is set with real margin (see below).
+
+```bash
+#!/usr/bin/env bash
+# Usage: run-scrape-retrying.sh <state> [session]
+set -e
+MAX_SCRAPE_ATTEMPTS="${MAX_SCRAPE_ATTEMPTS:-3}"
+RETRY_BACKOFF_SECS="${RETRY_BACKOFF_SECS:-900}"
+RETRY_TOTAL_BUDGET_SECS="${RETRY_TOTAL_BUDGET_SECS:?must be set explicitly per call site — see PLAN-incremental-scraping.md Deployment}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE=/Users/agentsmith/Developer/repos/ddp-open-states/logs/scraper.log
+START_EPOCH=$(date +%s)
+
+attempt=1
+while [ "$attempt" -le "$MAX_SCRAPE_ATTEMPTS" ]; do
+    elapsed=$(( $(date +%s) - START_EPOCH ))
+    budget_left=$(( RETRY_TOTAL_BUDGET_SECS - elapsed ))
+    is_final_attempt=0
+    if [ "$attempt" -eq "$MAX_SCRAPE_ATTEMPTS" ] || [ "$budget_left" -lt "$RETRY_BACKOFF_SECS" ]; then
+        is_final_attempt=1
+    fi
+
+    rc=0
+    SUPPRESS_FAILURE_ALERT=$([ "$is_final_attempt" -eq 1 ] && echo 0 || echo 1) \
+        RETRY_ATTEMPT_INFO="attempt $attempt/$MAX_SCRAPE_ATTEMPTS, ${elapsed}s elapsed of ${RETRY_TOTAL_BUDGET_SECS}s budget" \
+        "$SCRIPT_DIR/run-scrape.sh" "$@" || rc=$?
+
+    [ "$rc" -eq 0 ] && exit 0
+    [ "$is_final_attempt" -eq 1 ] && exit "$rc"   # run-scrape.sh already alerted on this one
+
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Attempt $attempt/$MAX_SCRAPE_ATTEMPTS failed for $* — retrying in ${RETRY_BACKOFF_SECS}s (${budget_left}s budget remaining)" \
+        >> "$LOG_FILE"
+    sleep "$RETRY_BACKOFF_SECS"
+    attempt=$((attempt + 1))
+done
+```
+
+(Dropped the `${LOG_DIR:-...}` fallback from round 1 — reviewer correctly called it brittle;
+this wrapper always writes to the same hardcoded prod log path `run-scrape.sh` itself uses,
+no env-driven fallback to get wrong.)
+
+**`RETRY_ATTEMPT_INFO`** is a second new passthrough: `run-scrape.sh`'s final `on_failure` message
+now includes it when set, so the alert that does fire says e.g. "attempt 3/3, 5h12m elapsed of
+5h30m budget" instead of just today's generic failure text — directly answering reviewer's ask
+for attempt-count/elapsed-time visibility in the alert itself.
+
+**Recovery-import alerting was never in question — restating as settled, not open.** The
+`SUPPRESS_FAILURE_ALERT` guard was already scoped (round 1) to the one call site that reports a
+genuine scrape/import failure. The recovery-import failure path (data-loss risk, not just a slow
+retry) has its own separate `on_failure` call that this guard never touches — it alerts
+immediately on every attempt, unconditionally, same as today. Reviewer's question is answered by
+the existing scope of the change, not a new decision.
+
+### Deployment (revised)
+
+- `ddp-sync`'s scheduled jobs switch their invocation from `run-scrape.sh` to
+  `run-scrape-retrying.sh`, each call site setting `RETRY_TOTAL_BUDGET_SECS` to comfortably under
+  its own `SCRAPE_TIMEOUT_S` entry — e.g. MA/default (6h ddp-sync timeout) gets
+  `RETRY_TOTAL_BUDGET_SECS=18000` (5h), WA (8h) gets `25200` (7h). Margin is deliberately generous
+  (≥1h) since `ddp-sync`'s own timeout-kill still alerts on nothing — this is the only backstop.
+- **Staged rollout, not a blanket switch**: start with MA and USA only — the two jurisdictions
+  that have actually shown transient-looking failures this month — running for a week before
+  extending to the rest of `ARCHIVE_ENABLED_STATES`'s scrape counterparts. Reviewer's concern
+  about an untested blanket switch is valid; there's no operational history yet to justify
+  applying this everywhere on day one.
+- **MI opts out explicitly**: `MAX_SCRAPE_ATTEMPTS=1` for MI's call site specifically (not a
+  general classifier — a named, deliberate carve-out, same convention `activate.sh` already uses
+  for MI's `ARCHIVE_ENABLED_STATES` exclusion). MI's known failure mode is `legislature.mi.gov`'s
+  bot-detection, which retrying doesn't fix and could plausibly make worse (more requests against
+  something already blocking it).
+- Manual one-off runs (like tonight's) can keep calling `run-scrape.sh` directly — this feature is
+  opt-in for `ddp-sync`'s scheduled jobs only, not a replacement for the plain script.
+
+### Companion fix, tracked separately (not blocking this one)
+
+`ddp-sync`'s own timeout-kill path alerting nothing is a real, pre-existing gap independent of
+this feature — worth its own small fix (a Slack/CAMS call alongside the existing
+`logger.error(...)` in `_run_scrape()`'s `TimeoutExpired` handler) so a hung/killed job pages
+someone even without going through this new wrapper at all. Filed as a `ddp-sync` follow-up, not
+bundled into this PR — different repo, different owner, and this plan's own budget-based fix
+above makes the wrapper safe on its own regardless of whether that companion fix lands.
+
+### Test matrix (added per review)
+
+- Direct `run-scrape.sh` call (no wrapper): alerts on failure exactly as today — regression check.
+- Wrapper, attempt 1 of 3 fails within budget: no Slack/CAMS alert, one `scraper.log` line, sleeps,
+  retries.
+- Wrapper, final attempt (by count) fails: alerts, includes `RETRY_ATTEMPT_INFO` in the message.
+- Wrapper, an attempt fails with too little budget left for another round (budget path, not
+  count): alerts immediately even though `attempt < MAX_SCRAPE_ATTEMPTS` — this is the case the
+  round-1 gap was in, so it needs an explicit test, not just code review.
+- Recovery-import failure on any attempt: alerts immediately regardless of
+  `SUPPRESS_FAILURE_ALERT` — confirms the guard's scope didn't leak.
+- Wrapper killed (`SIGTERM`) mid-sleep: on relaunch (next `ddp-sync` scheduled invocation),
+  confirm no double-import / stale-lock issue — exercises the same recovery-import path tonight's
+  manual relaunch already validated live, just triggered by the wrapper instead of a human.
+
+### Open questions for review
+
+- Is 3 attempts / 15m backoff the right default (independent of the budget fix above), or should
+  backoff grow (e.g. 15m, 30m, 60m) given tonight's failure only manifested after ~5 hours of
+  otherwise-healthy scraping?
+- Acceptable to file the `ddp-sync` timeout-alerting gap as a separate follow-up rather than
+  requiring it as a prerequisite for this PR?
+
+### Decision: path A — fix ddp-sync's alerting gap first, simplify the wrapper after
+
+Round 2 review's core finding — the budget-based suppression logic decides "is this final"
+*before* an attempt runs, using stale data, so a long attempt (like MA's ~5h one) can still burn
+the whole budget and get silently suppressed — was correct, and fixing it properly would need
+either a live-elapsed-time decision moved into `run-scrape.sh` itself or a real watchdog/kill
+timeout in the wrapper. Both add real complexity to code this plan has already had to fight hard
+to keep simple (rounds 1-3, above). Chose the other branch instead: close `ddp-sync`'s own
+timeout-kill silence directly, making it a real backstop, so the wrapper's own bookkeeping no
+longer has to be provably perfect — worst case, `ddp-sync` alerts even if the wrapper's timing
+guess was wrong.
+
+**Implemented** (`ddp-sync`, PR [#15](https://github.com/Digital-Democracy-Project/ddp-sync/pull/15),
+branch `fix/scrape-timeout-alerting`, **not yet merged/deployed** — the live `ddp-sync` process
+won't pick this up until that PR lands and the service restarts): `_run_scrape()` now fires a
+Slack (`#automation-errors`) + CAMS alert via a new `_alert_scrape_failure()` helper on
+`subprocess.TimeoutExpired` and on any exception raised before `run-scrape.sh` even starts — the
+two paths that happen entirely outside `run-scrape.sh`'s own process, which is why they were
+silent before (its own `set -e` + `trap 'on_failure' ERR` only covers failures *inside* that
+process). Applies uniformly to every jurisdiction that calls `_run_scrape()` — FL, WA, USA, all
+five secondary states, and the manual single-jurisdiction trigger — since the fix lives in that
+one shared function, not per-caller; nothing to stage. Documented in `ddp-sync/README.md`'s
+architecture section. Does **not** cover `run_patch_refresh_job`/`run_people_refresh_job` — same
+silent-timeout shape, different (non-per-jurisdiction) scripts, tracked separately, not yet fixed.
+
+### Round 3 (PM review of the actual diff, not just the plan): two more real findings
+
+Sent PR #15 + PR #43 back to review together as a combined diff. Verdict `needs_revision`,
+`ship_with_caution`. Two of the findings were substantive and got fixed before merge; the rest
+were reasonable but lower-priority asks, addressed where cheap:
+
+- **The "ordinary nonzero exit is already alerted" claim didn't cover signal kills.** A negative
+  `returncode` (process killed by `SIGTERM`/`SIGKILL`/OOM from outside, not via our own timeout
+  path) was being silently lumped in with an ordinary `exit 1` and *not* alerted — but
+  `run-scrape.sh`'s `trap ... ERR` can't fire on a signal delivered to its own process, so that
+  path was just as silent as the timeout case this whole fix was for. Fixed: `_run_scrape` now
+  splits on `returncode < 0` (alert — this is a signal, `run-scrape.sh` never got a chance) vs
+  `returncode > 0` (don't alert — its own `on_failure()` already fired).
+- **The "kills the whole process tree" claim in the original comment was false.** Reviewer
+  correctly pointed out `subprocess.run(timeout=...)` only kills the *direct* child on
+  `TimeoutExpired`, regardless of `start_new_session=True` — that flag only makes the child its
+  own process-group leader, it doesn't make anything target that group. Verified empirically
+  (spawn a Python child that spawns a `sleep 30` grandchild, timeout after 2s, `pgrep` afterward):
+  the grandchild survived. For `run-scrape.sh` specifically this meant a real `ddp-sync` timeout
+  would leave the actual scrape/import process and the backgrounded sweep-import loop running as
+  orphans — still holding the import lock, still writing into `$STATE_DATADIR` — while `ddp-sync`
+  had already declared the run failed and moved on. Fixed: replaced the `subprocess.run()` call
+  with a small `_run_with_group_kill()` helper that manages the `Popen` object directly and calls
+  `os.killpg(os.getpgid(process.pid), signal.SIGKILL)` on timeout. Re-ran the same empirical test
+  against the fix — grandchild confirmed killed.
+- Added a `requests` dependency check (already declared in `pyproject.toml`, no actual risk) and 8
+  unit tests (`ddp-sync/tests/test_openstates_scrape_alerting.py`) covering the timeout/nonzero/
+  signal/success/subprocess-start-failure paths through `_run_scrape` and `_alert_scrape_failure`'s
+  never-raises behavior against Slack/CAMS failure responses — reviewer correctly noted this
+  alerting-critical code had zero test coverage.
+- Not addressed, judged acceptable as noted rather than fixed: enumerating exactly which
+  `run-scrape.sh` exit paths are guaranteed to self-alert (would mean auditing/annotating every
+  `exit` in that script — bigger than this PR's scope, and the signal-kill fix above closes the
+  one concrete gap that mattered); a live production smoke test of real Slack/CAMS delivery
+  (deferred to post-merge, per PR #15's test plan); `run_patch_refresh_job`/`run_people_refresh_job`
+  coverage (already an explicitly tracked, separate follow-up, not this PR's job).
+
+**Not yet done:** the simplified retry wrapper itself (`run-scrape-retrying.sh`). With `ddp-sync`'s
+alerting gap closed, it no longer needs the live-elapsed-time budget logic or a watchdog — closer
+to the original round-1 design (fixed attempt count + backoff, single `SUPPRESS_FAILURE_ALERT`
+guard in `run-scrape.sh`, no `RETRY_TOTAL_BUDGET_SECS`). Design and PM-review to be redone once
+this companion fix lands; MA/USA-first staged rollout and MI opt-out recommendations from round 2
+still apply to that piece.
+
+### Round 4 (explicit over-engineering check): approve
+
+Sent PR #15 + PR #43 back once more after round 3's fixes, explicitly asking whether the process-
+group-kill helper plus 8 tests had grown past what a best-effort alerting side-channel warrants.
+Verdict: `approve`, `ship_with_caution` — the growth was "justified by empirically demonstrated
+correctness bugs, not speculative polish," and the test count was "proportionate... not
+excessive." Explicit instruction from the review: **do not expand this PR further unless
+required.** Remaining lower-severity items are accepted as-is rather than fixed, per that
+guidance:
+
+- A theoretical edge case where a descendant process escapes the killed process group while still
+  holding `stdout`/`stderr` pipes open (`communicate()` would then block waiting for EOF) —
+  accepted risk; nothing in `run-scrape.sh` creates a descendant like that today, and defending
+  against a scenario that can't currently happen is exactly the over-engineering this round was
+  checking for.
+- `ddp-sync` itself being killed mid-scrape (deploy, host restart, supervisor action) — genuinely
+  out of scope; this fix was about `ddp-sync`'s own timeout-kill being silent, not about `ddp-sync`
+  disappearing entirely.
+- Production `SLACK_BOT_TOKEN`/`CAMS_API_TOKEN`/`CAMS_BASE_URL` verification — an operational
+  pre-deploy checklist item, not a code change.
+- `run_patch_refresh_job`/`run_people_refresh_job` coverage — already tracked separately (rounds
+  1-3, above); reviewer explicitly agreed not to fold it into this PR.
+
+**Status: ready to merge.** Companion fix (`ddp-sync` PR #15) and this decision record
+(`ddp-open-states` PR #43) are both considered done for this stage of the effort. The retry
+wrapper itself (`run-scrape-retrying.sh`) remains the next, separate piece of work.
