@@ -802,6 +802,68 @@ of bills. Because the detection lives in the shared `mi_waf_get()`, `events.py`'
 sites benefit from the same block-vs-real-error distinction automatically, even though they
 don't (yet) have their own skip-and-continue wrapping.
 
+**MI-specific rate limit + `http_resilience_mode` opt-in (OPEN-21):** scoping a fix for the
+wider IP-reputation/rate-history problem found MI got exactly the same request pacing as every
+other, less-sensitive jurisdiction — `Scraper.__init__` (`openstates-core`'s
+`openstates/scrape/base.py`) applies the platform-wide `SCRAPELIB_RPM` default (60 req/min,
+`openstates/settings.py`) uniformly, and the richer `http_resilience_mode` (jittered
+per-request delay, circuit breaker, connection-pool reset, retry-with-backoff) sits unused —
+wired only as an opt-in CLI flag, never set `True` anywhere. `MIBillScraper.__init__` and
+`MIEventScraper.__init__` (both via a shared `MIResilientScraperMixin` in `scrapers/mi/bills.py`)
+now force `http_resilience_mode=True` unconditionally, regardless of what the CLI/`State`
+instantiation path passes for other jurisdictions, and lower `self.requests_per_minute` to
+`MI_SCRAPELIB_RPM` (env var, default **10/min** — roughly 1/6th of the platform default, ~1
+request every 6s). This is a deliberately conservative *starting point*, not a measured
+threshold (none exists yet) — chosen to put several real seconds of spacing between requests on
+top of `http_resilience_mode`'s own 1-3s jittered delay, without making a full MI scrape
+impractically slow. **Trade-off:** MI scrapes run measurably slower than before in exchange for
+a meaningfully lower request footprint against the one jurisdiction with a confirmed,
+escalating reputation-based block — expected to be revisited once OPEN-22's
+sustained-blocking-escalation investigation has more data on what volume/cadence actually
+triggers or clears a reputation hit. `MI_SCRAPELIB_RPM` is env-configurable so it can be tuned
+without a redeploy, matching this codebase's existing convention (`SCRAPELIB_RPM`,
+`STATS_BATCH_SIZE`, etc.).
+
+**Retry-stacking correction (also OPEN-21):** enabling `http_resilience_mode` naively would have
+made things *worse*, not better. `scrapelib.HTTPError` inherits
+`requests.exceptions.RequestException`, and `retry_on_connection_error`'s except clause already
+catches bare `RequestException` — so both `scrapelib.HTTPError` and
+`requests.exceptions.ConnectionError` would be retried there too (3x, exponential backoff
+10s→20s→40s) *before* `mi_waf_get()`'s own invalidate-and-retry-once dance (above) ever saw
+them, silently doubling MI's request volume on every WAF block instead of reducing it. Resolved
+by adding a generic, opt-in `_resilience_retry_excluded_exceptions` attribute to
+`openstates-core`'s `Scraper` base (`openstates/scrape/base.py`) — empty tuple by default, so
+every existing/future `http_resilience_mode` consumer keeps today's broad retry behavior unless
+it explicitly opts out — and having `MIResilientScraperMixin` set it to
+`(scrapelib.HTTPError, requests.exceptions.ConnectionError)`. This keeps `mi_waf_get()`'s
+invalidate-and-retry-once dance as the *only* retry layer for WAF-related failures, while
+`http_resilience_mode`'s other benefits (jittered delay, circuit breaker, connection-pool reset,
+retry-with-backoff for genuine timeouts/URL errors/connection resets unrelated to the WAF) still
+apply normally. Chose this over tuning `retry_on_connection_error`'s own backoff numbers because
+it fully removes the double-retry rather than just resizing it, and because it's a two-line,
+backward-compatible change to shared code rather than a duplicated retry loop living only in
+MI's module.
+
+**Live-verified 2026-08-02** (not just unit-tested, per this ticket's AC) against the real
+`legislature.mi.gov`, using a real Playwright cookie warm-up and a real `MIBillScraper`, with the
+raw transport call (`scrapelib.Scraper.get`) instrumented to count physical HTTP attempts:
+confirmed `http_resilience_mode is True`, `requests_per_minute == 10 < 60`, and
+`_resilience_retry_excluded_exceptions == (scrapelib.HTTPError, requests.exceptions.ConnectionError)`
+on a real instance. Two real scenarios both produced exactly **2** physical HTTP attempts (1
+initial + `mi_waf_get()`'s 1 rewarm-retry) rather than the 6+ the un-excluded resilience layer
+would have caused: (a) a real WAF block-page response (200 status, matched
+`BLOCK_PAGE_MARKERS`) on both attempts, correctly raising `WafBlockDetected` after the retry was
+exhausted; (b) a request made with deliberately corrupted cookie values, which got a real
+disguised-404 (`scrapelib.HTTPError`, OPEN-18's `content_matches_fake_404_block()` heuristic) on
+the first attempt and a real block-page match on the rewarm attempt — exercising both of
+`mi_waf_get()`'s detection paths live in one low-footprint run (4 real GETs total across the
+whole check). **Incidental finding, out of scope for this ticket:** the live Playwright warm-up
+returned zero matching cookies in this run (`x-bni-fpc`/`x-bni-rncf` absent from the warmed set)
+and every request in the check hit a real block regardless of cookies presented — consistent
+with the reputation-based override already documented in `mi_cookies.py`'s docstring and
+relevant to OPEN-19/OPEN-20/OPEN-22, but not something OPEN-21's rate-limit/retry-stacking scope
+addresses.
+
 ### `SELECT DISTINCT + ORDER BY RANDOM()` fails in PostgreSQL
 
 Must use a subquery. Already fixed in `quality_check.py`.
