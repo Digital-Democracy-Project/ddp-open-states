@@ -785,6 +785,23 @@ place as defense-in-depth for if/when this cookie strategy stops working — thi
 behavioral evidence from testing, not a guarantee about Barracuda's internals (see the
 module docstring in `mi_cookies.py`).
 
+**Second-layer defense — disguised-404 blocks in `scrape_bill()` (OPEN-18):** even with cached
+WAF cookies attached, a request can still come back as a *genuine* HTTP 404 whose body is
+legislature.mi.gov's own generic "The specified URL cannot be found" error page — for a bill
+that demonstrably exists (confirmed live 2026-08-01 via Playwright). This isn't caught by the
+200-status `BLOCK_PAGE_MARKERS` heuristic above, so `mi_waf_get()`'s `do_request` also catches
+`scrapelib.HTTPError` and checks the body against a separate marker,
+`content_matches_fake_404_block()` (`openstates/utils/cookie_provider.py`) — a match raises
+`WafBlockDetected` (feeding into the same invalidate-and-retry-once dance), while a body that
+doesn't match re-raises the original `HTTPError` unchanged, so a real dead link (e.g. a
+malformed `ObjectName`) still fails exactly as before. `MIBillScraper.scrape_bill()` catches a
+`WafBlockDetected` that survives the retry, logs a warning, and skips just that bill — but
+aborts the whole scrape with a `ScrapeError` after `MAX_CONSECUTIVE_WAF_BLOCKS` (3) consecutive
+detections, so a fully-blocked run fails fast and visibly instead of silently skipping hundreds
+of bills. Because the detection lives in the shared `mi_waf_get()`, `events.py`'s two call
+sites benefit from the same block-vs-real-error distinction automatically, even though they
+don't (yet) have their own skip-and-continue wrapping.
+
 ### `SELECT DISTINCT + ORDER BY RANDOM()` fails in PostgreSQL
 
 Must use a subquery. Already fixed in `quality_check.py`.
