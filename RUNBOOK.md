@@ -799,8 +799,18 @@ malformed `ObjectName`) still fails exactly as before. `MIBillScraper.scrape_bil
 aborts the whole scrape with a `ScrapeError` after `MAX_CONSECUTIVE_WAF_BLOCKS` (3) consecutive
 detections, so a fully-blocked run fails fast and visibly instead of silently skipping hundreds
 of bills. Because the detection lives in the shared `mi_waf_get()`, `events.py`'s two call
-sites benefit from the same block-vs-real-error distinction automatically, even though they
-don't (yet) have their own skip-and-continue wrapping.
+sites benefit from the same block-vs-real-error distinction automatically.
+
+**Circuit breaker parity for `MIEventScraper` (OPEN-22 AC7):** the counting/threshold/raise
+logic above is shared (`scrapers/mi/_waf_circuit_breaker.py`, `MIWafCircuitBreakerMixin`) rather
+than duplicated, so `MIBillScraper` and `MIEventScraper` can't drift into two different abort
+conventions. `MIEventScraper.scrape_event_page()` (called once per event link found on the
+calendar page, analogous to `scrape_bill()`'s per-bill loop) uses the same skip-and-count/abort-
+at-`MAX_CONSECUTIVE_WAF_BLOCKS` pattern. `MIEventScraper.scrape()`'s calendar-page fetch is
+different in kind — it runs exactly once per scrape, not in a loop — so there's nothing to count
+to 3 against; a block surviving `mi_waf_get`'s own retry there aborts immediately with
+`ScrapeError` instead of the 3-strikes wait, converting what used to be an uncaught
+`WafBlockDetected` crash into an explicit, intentional abort.
 
 **MI-specific rate limit + `http_resilience_mode` opt-in (OPEN-21):** scoping a fix for the
 wider IP-reputation/rate-history problem found MI got exactly the same request pacing as every
