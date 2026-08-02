@@ -215,8 +215,8 @@ source activate.sh && $OS_PEOPLE to-database az       # end-to-end
   more — `requirements-openstates.txt` is the frozen working set **minus the pydantic-v2 forcers**
   (`fastapi`, `pydantic-core`, `prometheus-fastapi-instrumentator`) **and minus `openstates` itself**
   (installed separately, editable, so it stays live).
-- Because it's editable, `apply-local-patches.sh` rebuilding `local-patches` (git-only, no pip
-  step) is sufficient going forward — no need to re-run `pip install` after every patch change.
+- Because it's editable, `apply-local-patches.sh` pulling a fresh `main` (git-only, no pip step)
+  is sufficient going forward — no need to re-run `pip install` after every patch change.
 
 > **Do NOT `pip install` FastAPI or any pydantic-v2 package into this venv** — that reintroduces the
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
@@ -354,38 +354,42 @@ patched state.
 | `6d5ce6d` | fix(usa): correct start= datetime format string | Phase 3B |
 | `565804c` | FL: don't let flhouse.gov bot detection crash the scrape (crash-avoidance only — never recovered House votes; superseded by PR #5) | Phase 3A |
 
-### `apply-local-patches.sh` cherry-picks (openstates-core only)
+### `apply-local-patches.sh` (openstates-core and openstates-scrapers)
 
-Run after every upstream `git pull` in `openstates-core`. The scrapers block was retired in
-`8cca7a2` (2026-07-03).
+Run periodically (ddp-sync's nightly `openstates_patch_refresh` job) or whenever someone's
+already touching either repo. Both repos are now formal forks — a plain `git checkout main &&
+git pull origin main`, same as any other fork. The scrapers block moved to this model in
+`8cca7a2` (2026-07-03); core followed 2026-08-01 (below).
 
-**Current mechanism (since 2026-07-25, see `PLAN-fork-management.md` rec H):** DDP-only commits
-for `openstates-core` land on the standing `cherry-pick-line` branch (on the `ddp` fork remote),
-not as individual SHAs hand-listed in this file. `apply-local-patches.sh` range-picks everything
-on `cherry-pick-line` not yet on `main` onto a freshly rebuilt `local-patches` branch every run —
-`local-patches` (LOCAL ONLY, never push it to `origin` or `ddp`) is what the editable install
-actually imports. Add new fixes to `cherry-pick-line` and they're picked up automatically; never
-hand-add a `cherry_pick <sha>` line here again.
+**openstates-core retired the cherry-pick-line model 2026-08-01** (`PLAN-fork-management.md`
+§6, "drop the cherry-pick-line model entirely and just become a clean fork like
+openstates-scrapers"). From 2026-07-25 to 2026-08-01, DDP-only commits for `openstates-core`
+landed on a standing `cherry-pick-line` branch, range-picked onto a freshly rebuilt
+`local-patches` branch on every refresh — the editable install actually imported
+`local-patches`, never `main` directly. Retired because upkeep cost kept exceeding the "cheap,
+one commit" premise that justified it: a frozen local ref silently missed two merged PRs
+(2026-07-27), `git cherry-pick` crashed on an ordinary merge commit (2026-07-27), and a PR
+merged to the wrong base branch went unnoticed until the next rebuild (2026-07-26, see
+`notes/openstates-core-cherry-pick-line-targeting-20260726.md` for that incident specifically —
+kept for historical record; the targeting gotcha it describes no longer applies now that both
+repos use the same plain-fork convention). The last three DDP fixes (core PRs #3, #5, #6) had
+already started merging straight to fork `main` in practice, ahead of the docs catching up.
 
-**Important gotcha (found 2026-07-26):** a PR for an `openstates-core` fix must target base
-`cherry-pick-line`, not `main` — `main` here tracks public upstream and nothing reads the ddp
-fork's own `main`. A PR merged into fork `main` is git-clean and totally inert. (`openstates-scrapers`
-is the opposite: it's a formal fork where fixes correctly target `main` directly — don't confuse
-the two conventions.) See `notes/openstates-core-cherry-pick-line-targeting-20260726.md`.
+**Remote convention, now identical for both repos:** `origin` = the DDP fork
+(`Digital-Democracy-Project/openstates-{core,scrapers}`), `upstream` = the real project
+(`openstates/openstates-{core,scrapers}`). `openstates-core`'s remotes were renamed to match
+2026-08-01 (previously `origin` = upstream, `ddp` = fork — the opposite of `openstates-scrapers`'
+existing convention, itself a minor contributor to the wrong-branch-targeting confusion above).
 
-**Fixes currently on `cherry-pick-line` / merged via that route:**
+**Historical: fixes merged via the retired `cherry-pick-line` route** (kept for record; already
+part of fork `main` since 2026-08-01, no action needed):
 
 | PR | Description | Status |
 |---|---|---|
 | [core PR #1](https://github.com/Digital-Democracy-Project/openstates-core/pull/1) | fix(archive): match FL scraper's retry settings for the document downloader | merged 2026-07-26 |
 | [core PR #2](https://github.com/Digital-Democracy-Project/openstates-core/pull/2) | fix: resolve vote records by bioguide/lis identifier before falling back to name match (OPEN-2, companion to scrapers PR #8 / ddp-open-states PR #12) | merged 2026-07-26 (retargeted from `main` to `cherry-pick-line` before merge) |
-
-**Still on the older holding branch (`ddp-patches`), not yet on `cherry-pick-line`:**
-```
-d6653a5  fix: read CACHE_DIR/SCRAPED_DATA_DIR from env vars; upstream PR pending (Phase 3C)
-```
-If `d6653a5` merges upstream: drop it from `ddp-patches`. If `cherry-pick-line` and `ddp-patches`
-are ever both empty of pending work: delete the script entirely (upstream sync is just `git pull`).
+| [core PR #3](https://github.com/Digital-Democracy-Project/openstates-core/pull/3) | fix(archive): detect bot-block/CAPTCHA pages before archiving them as real documents | merged 2026-07-28, direct to fork `main` |
+| [core PR #6](https://github.com/Digital-Democracy-Project/openstates-core/pull/6) | OPEN-19: Barracuda-cookie-reuse fetcher for Michigan WAF bypass | merged 2026-08-01, direct to fork `main` |
 
 ### Upstream issues
 
