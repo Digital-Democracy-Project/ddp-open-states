@@ -63,11 +63,11 @@ trap 'on_failure' ERR
 
 # Worktree lock (READER) — same marker convention run-scrape.sh uses, for the same reason:
 # os-text-extract is installed editable from openstates-core, so apply-local-patches.sh
-# rebuilding local-patches while this reads that checkout is the same class of risk as a live
+# pulling a fresh main while this reads that checkout is the same class of risk as a live
 # scrape. Deliberately does NOT run apply-local-patches.sh itself (unlike run-scrape.sh) — this
 # script can run independently of, and concurrently with, any scrape's own patch-refresh step;
 # doing its own refresh here would just re-introduce that exact race for no benefit, since
-# ddp-sync's nightly openstates_patch_refresh job already keeps local-patches current.
+# ddp-sync's nightly openstates_patch_refresh job already keeps both forks current.
 SCRAPE_MARKER_DIR=/tmp/ddp-openstates-scrapes
 mkdir -p "$SCRAPE_MARKER_DIR"
 READER_MARKER="$SCRAPE_MARKER_DIR/$$"

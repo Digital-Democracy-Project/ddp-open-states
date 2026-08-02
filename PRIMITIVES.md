@@ -18,7 +18,7 @@ instead of sourcing/calling the existing script is the failure mode this file ex
 
 ```
 run-scrape.sh <state> [session=X]      ← the one true scrape+import entrypoint
-    ├─ apply-local-patches.sh          ← rebuilds openstates-core's local-patches branch (skip via SKIP_PATCHES=1)
+    ├─ apply-local-patches.sh          ← pulls openstates-core + openstates-scrapers fork main (skip via SKIP_PATCHES=1)
     ├─ os-update --scrape bills ...    ← from openstates-scrapers (fork main)
     └─ os-update --import ...          ← writes to the dedicated Postgres (:5433)
 
@@ -69,7 +69,7 @@ should reuse rather than reimplement:
   If a third script needs this, extract it rather than copy-pasting a fourth time.
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
-  directory (writer side, see below) before touching `openstates-core`, so a patch rebuild can't
+  directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
   clobber code a running scrape is reading. **This is a live lock protocol between two scripts —
   if you add a third script that mutates `openstates-core`'s checkout, it needs to honor this
   same marker directory**, not add its own.
@@ -84,24 +84,23 @@ should reuse rather than reimplement:
 
 ## `apply-local-patches.sh` — fork/patch management (repo root)
 
-**Scrapers and core are on different conventions — know which one you're touching:**
-- `openstates-scrapers` is a **formal DDP org fork** (`Digital-Democracy-Project/openstates-scrapers`,
-  since 2026-07-03). Fork `main` IS the patched state — no cherry-picking, no local branch
-  rebuild. Day-to-day: `git checkout -b feat/x` → PR to fork `main`. The cherry-pick/rebuild
-  block was retired here in `8cca7a2` (Phase 2 of the fork plan) — **but a different, much
-  smaller block was added back on 2026-07-23**: a plain `git checkout main && git pull origin
-  main`, after a merged fix branch (`fix/fl-floor-vote-source-url`) sat checked out for 2 days,
-  silently feeding stale code to a running scrape. This is a freshness/safety guard, not a
-  patch-application step — it just keeps the checkout from drifting off of `main` — but it does
-  mean this script touches `openstates-scrapers` again, contrary to the previous version of this
-  note. See `PLAN-fork-management.md` §2 for the full reasoning.
-- `openstates-core` still uses the **older cherry-pick convention**: this script does
-  `git checkout main && git pull && git branch -D local-patches && git checkout -b local-patches`,
-  then cherry-picks a short list of DDP-only fixes not yet merged upstream (currently just
-  `d6653a5`, the `CACHE_DIR`/`SCRAPED_DATA_DIR` env-var fix). `cherry_pick()` silently skips a
-  commit that upstream already merged (detects the "nothing to commit"/"is now empty" cherry-pick
-  states) rather than failing — **reuse this helper** if a new script ever needs to cherry-pick
-  onto a rebuilt branch; don't write a second one.
+**Both repos now use the same convention** (as of 2026-08-01 — see `PLAN-fork-management.md`
+§6 for why `openstates-core` moved off its older, separate model):
+- Both `openstates-scrapers` (formal DDP org fork since 2026-07-03) and `openstates-core`
+  (moved 2026-08-01) are **formal forks** — fork `main` IS the patched state, no cherry-picking,
+  no local branch rebuild. Day-to-day: `git checkout -b feat/x` → PR to the fork's own `main`.
+  This script's job for both is just `git checkout main && git pull origin main` — a freshness
+  guard, not a patch-application step, so a merged fix branch left checked out (as happened to
+  `openstates-scrapers` on 2026-07-23, `fix/fl-floor-vote-source-url` sitting stale for 2 days
+  feeding a running scrape) doesn't silently drift off `main`.
+- **Remote convention, identical for both**: `origin` = the DDP fork
+  (`Digital-Democracy-Project/openstates-{core,scrapers}`), `upstream` = the real project.
+  `openstates-core` previously had these reversed (`origin` = upstream, a separate `ddp` remote
+  = fork) — renamed to match `openstates-scrapers`' existing convention as part of the same
+  2026-08-01 change, since the mismatch was itself a contributor to at least one wrong-branch
+  incident (see `RUNBOOK.md`'s `apply-local-patches.sh` section for the full history, kept as
+  record — `cherry_pick()`/`local-patches`/`cherry-pick-line` are retired terms as of this date,
+  you'll only see them in historical notes now).
 - **Worktree lock (writer side)** — before touching anything, scans `/tmp/ddp-openstates-scrapes/`
   for live PIDs (`kill -0`) and exits 0 (skip, don't fail) if a scrape is running; stale markers
   from dead scrapes are cleaned up automatically. This is the other half of `run-scrape.sh`'s
