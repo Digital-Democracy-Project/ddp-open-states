@@ -399,6 +399,23 @@ deleted from the script too, since nothing calls it anymore).
   monthly pull would instead risk a bigger, less frequent merge-conflict reckoning, batched up
   once a month instead of surfaced nightly. Whichever way this goes, resolve it the same time as
   H's original migration (§5.H, §6.1) — don't leave `openstates-core` on a third, in-between model.
+
+  **Resolved 2026-08-01: yes, drop it.** Decided while landing OPEN-19 (the MI Barracuda-cookie
+  fetcher) — same day this question predicted would happen ("resolve it the same time as H's
+  original migration") arrived in practice: PR #6 needed the fork's own `main` to be current,
+  and the cherry-pick-line rebuild had already been silently bypassed by the last three DDP
+  fixes (PRs #3, #5, #6 all merged direct to fork `main`) before anyone noticed the docs hadn't
+  caught up. `apply-local-patches.sh` rewritten to treat `openstates-core` identically to
+  `openstates-scrapers` (plain `checkout main && pull origin main`); `cherry-pick-line`/
+  `local-patches`/`ddp-patches` branches retired; remotes renamed to match `openstates-scrapers`'
+  convention (`origin` = fork, `upstream` = real project — previously reversed for `core`, which
+  was itself part of what made the 2026-07-26 wrong-branch-targeting incident easy to hit). On
+  the unweighed argument against: accepted the batched-monthly-merge-conflict risk as the right
+  trade — `openstates-core`'s fork was confirmed at zero commits behind real upstream at
+  migration time (checked directly, not assumed), so there's no backlog to batch yet, and the
+  same argument didn't stop `openstates-scrapers` from using this model successfully since
+  2026-07-03. See `RUNBOOK.md`'s `apply-local-patches.sh` section for the full incident history
+  kept as record, and `PRIMITIVES.md` for the current (single, unified) mechanism description.
 - **Resolved 2026-07-29, same day as raised: PR #1 and #2 deployed** (§1a) — remote convention
   question turned out to already be settled (`origin` = fork, `scrapers`'s shape) at fork-creation
   time. **Still open:** no forcing function/cron exists for *future* patches on this fork the way
