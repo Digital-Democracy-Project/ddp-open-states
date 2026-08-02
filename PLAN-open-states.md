@@ -338,44 +338,58 @@ This is a ~50-line script. Implement if full federal import becomes a performanc
 
 ### 2.5 Scraper known issues and fixes
 
-**Superseded 2026-07-17/2026-07-25 — both repos are now formal DDP forks, not local-patch-only
-checkouts, and the fix-tracking model below is stale.** `openstates-scrapers` went formal
-2026-07-17 (`Digital-Democracy-Project/openstates-scrapers`) and `openstates-core` went formal
-2026-07-19; the two use *different* fork models (see `PLAN-fork-management.md` §1 for the full
-reasoning, and the `project-patch-convention` memory):
-
-- **`openstates-scrapers`** — fixes merge via a normal branch → PR → the fork's own `main`, no
-  cherry-picking. `apply-local-patches.sh` just does `git checkout main && git pull origin main`
-  (`origin` here already **is** the DDP fork). The original UT (#5695) and MI (#5696) fixes
-  described below in earlier revisions of this plan now live as normal commits on that `main`.
-- **`openstates-core`** — fixes merge via branch → PR against the `cherry-pick-line` branch,
-  **never `main`** (a PR opened against `main` there is a silent no-op — `main` is never read by
-  anything; confirmed the hard way when `openstates-core` PR #2 was first opened against the
-  wrong base, see `notes/openstates-core-cherry-pick-line-targeting-20260726.md`).
-  `apply-local-patches.sh` rebuilds a throwaway `local-patches` branch every run: fresh public
-  `main` (via `origin`, the public `openstates/openstates-core`) + a range-pick of everything on
-  `cherry-pick-line` not yet upstream (`git cherry-pick --empty=drop
-  "$(git merge-base main cherry-pick-line)..cherry-pick-line"`) — no more hand-listed individual
-  commit SHAs. Add new DDP-only `openstates-core` fixes to `cherry-pick-line`; never hand-edit
-  the cherry-pick list in `apply-local-patches.sh` again.
-  **Bug found 2026-07-28 (PR #15, open, not yet merged):** this range-pick had been silently
-  inert since the branch's creation — the script refreshed `main` every run but never fetched the
-  *local* `cherry-pick-line` ref from its remote, so it sat frozen at its 2026-07-25 creation
-  commit no matter what merged on GitHub afterward. Two PRs (#1, #2) merged into `cherry-pick-line`
-  on GitHub during that window without ever actually reaching a real scrape — see §8.1a for the
-  concrete impact. PR #15 adds the missing `git fetch ddp cherry-pick-line && git branch -f
-  cherry-pick-line ddp/cherry-pick-line` step, plus `-m 1` on the cherry-pick so ordinary merge
-  commits on `cherry-pick-line` don't crash the rebuild. Until #15 merges and a real
-  `apply-local-patches.sh` run confirms it, don't assume a GitHub-merged `openstates-core` PR is
-  actually live.
-- Both refresh steps skip themselves (rather than mutate the tree) if a scrape is currently
-  running, tracked via PID markers in `/tmp/ddp-openstates-scrapes`.
+**Superseded again 2026-08-01 — `openstates-core` dropped the cherry-pick-line model entirely
+and is now a clean fork, same as `openstates-scrapers`.** Both repos now use the *identical*
+model: `origin` is the DDP fork, fixes merge via a normal branch → PR → the fork's own `main`, no
+cherry-picking, no `local-patches` rebuild. `apply-local-patches.sh` for both is just
+`git checkout main && git pull origin main` — a freshness guard, not a patch-application step.
+See `PRIMITIVES.md`'s `apply-local-patches.sh` section for the current, authoritative
+description (including the historical incidents that motivated dropping the old model — a frozen
+ref silently missing merged PRs, a cherry-pick crash on ordinary merges, a PR merged to the wrong
+branch going unnoticed) and `PLAN-fork-management.md` §1 for the full reasoning. The
+cherry-pick-line/`local-patches` model this section used to describe in detail no longer exists
+anywhere in either repo — don't follow stale instructions referencing it.
 
 **MI pagination duplicates** (issue #5697, not yet fixed upstream as of last check): The MI
 scraper produces duplicate bill JSON files due to pagination overlap. Workaround:
-`--allow_duplicates` flag on import. `run-scrape.sh` handles this automatically for `mi`.
+`--allow_duplicates` flag on import. `run-scrape.sh` handles this automatically for `mi`/`fl`/`va`.
 
 **CLIs are at `~/Library/Python/3.9/bin/`** (pip-installed, not poetry). `PYTHONPATH` must include the `scrapers/` directory. Both are set in `activate.sh`.
+
+**2026-08-02 — Virginia bill-text extraction (OPEN-15) and the MI WAF-blocking saga
+(OPEN-18 through OPEN-22), all CodeBot-dispatched, human/Claude-reviewed and merged:**
+
+- **OPEN-15 (Virginia):** every archived VA bill document was `is_error=True` with empty
+  `raw_text` — VA's LIS system was rebuilt as a React SPA over Azure blob storage, and the
+  extractor's `#mainC` selector no longer matched anything. Fixed in
+  `openstates-core`#10 (new `openstates/fulltext/va.py`, plus an unrelated mojibake bug found
+  during diagnosis — VA's HTML fragments declare no charset, so `lxml` was guessing an 8-bit
+  encoding — and a missing `application/pdf` extractor). Merged 2026-08-02. **Not yet confirmed
+  against the live archive** — the next real `os-text-extract archive va` run should be checked
+  for `is_error=False` before considering OPEN-9 (VA's noise-cleaning ticket, blocked on this)
+  unblocked.
+- **OPEN-18/19/20 (MI, already shipped before this session):** disguised-404 WAF-block
+  detection, a Barracuda-cookie-reuse fetcher, and (separately) the `Bill.openstates_id` drift
+  analysis (`notes/broker-openstates-id-drift-analysis-20260802.md` — mechanism confirmed, but
+  turned out to be a measurement artifact at the scale originally reported).
+- **OPEN-21 (MI rate limit + resilience mode):** MI was getting the same platform-wide 60
+  req/min as every other jurisdiction despite being the one with a confirmed, escalating
+  reputation-based WAF block. `openstates-core`#9 + `openstates-scrapers`#18 give MI its own
+  `MI_SCRAPELIB_RPM` (default 10) and force `http_resilience_mode=True`, with a new
+  `_resilience_retry_excluded_exceptions` opt-out so the resilience layer's own retry doesn't
+  stack ahead of MI's existing WAF-detection retry. Merged and **live-verified** 2026-08-02 via a
+  manual `./run-scrape.sh mi` run: the retry-stacking fix works exactly as designed (2 physical
+  HTTP attempts per try, no backoff stacking) — but MI is still fully WAF-blocked regardless of
+  fresh cookies, which was never this ticket's scope to fix.
+- **OPEN-22 (sustained-blocking escalation):** spans two repos. AC7 (MI-events WAF
+  circuit-breaker parity, `openstates-scrapers`#19 + `ddp-open-states`#53) merged 2026-08-02. The
+  rest (AC0-AC6 — per-jurisdiction rolling run history, failure classification, and the actual
+  escalation alert) lives entirely in `ddp-sync`, dispatched directly rather than through
+  CodeBot (its workspace never had that repo) — see `ddp-sync`'s own README.md and PR #20.
+- **Review process note:** none of `ddp-open-states`/`openstates-core`/`openstates-scrapers`/
+  `ddp-sync` have CI configured — every PR's "tests pass" claim in this saga was independently
+  re-run (checking out the actual branch, with its real cross-repo dependencies) before merging,
+  not taken on faith. Do this for any future CodeBot PR too.
 
 ### 2.6 Incremental scraping's per-bill network floor (WA/UT/AZ/VA)
 
