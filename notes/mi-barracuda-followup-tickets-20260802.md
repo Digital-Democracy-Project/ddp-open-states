@@ -66,10 +66,52 @@ Neither ticket is assigned yet.
 
 ## What to watch next
 
-- Whether the 2026-08-02 02:00 UTC `openstates_secondary_scrapes` run (the real-production-
-  traffic test the prior note was waiting on) came back clean, hit the OPEN-18
-  skip-and-continue path, or hit the circuit breaker — not checked from this session.
+- ~~Whether the 2026-08-02 02:00 UTC `openstates_secondary_scrapes` run... came back clean~~ —
+  **answered below: it did not.**
 - Whether OPEN-21/OPEN-22 get assigned, and if so, whether OPEN-21's required live-interaction
-  check between `http_resilience_mode` and `mi_waf_get()` turns up anything.
+  check between `http_resilience_mode` and `mi_waf_get()` turns up anything — **OPEN-21
+  answered below; OPEN-22 still open, unassigned.**
 - The still-open `events.py` gap disclosed in the OPEN-18 RUNBOOK entry (PR #49) — no ticket
-  filed for it yet as of this note.
+  filed for it yet as of this note. Still true as of this update.
+
+## Update, later 2026-08-02: the 02:00 UTC run failed; OPEN-21 shipped and live-verified; the
+## reputation block itself is still fully open (OPEN-22)
+
+The 2026-08-02 02:00 UTC `openstates_secondary_scrapes` run did **not** come back clean: MI
+failed with `returncode=1` in 17.5s (`ddp-sync` log), before OPEN-21's fix had landed. Two manual
+retrigger attempts the same day (12:56, 15:00 EDT) also failed the same way.
+
+OPEN-21 was then dispatched to CodeBot and shipped same day as three PRs — openstates-core #9
+(adds an opt-in `_resilience_retry_excluded_exceptions` attribute to `Scraper.retry_on_connection_error`,
+empty by default so no other jurisdiction's behavior changes), openstates-scrapers #18 (adds
+`MIResilientScraperMixin`: forces `http_resilience_mode=True`, lowers `requests_per_minute` to an
+env-tunable `MI_SCRAPELIB_RPM` — default 10, versus the platform default of 60 — and sets the new
+exclusion tuple to `(scrapelib.HTTPError, requests.exceptions.ConnectionError)` so `mi_waf_get()`'s
+own invalidate-and-retry-once dance stays the only retry layer for WAF failures), and
+ddp-open-states #51 (RUNBOOK.md write-up). All three reviewed by diff-read plus independently
+re-running each PR's test suite (checking out each branch for real, not trusting the self-reported
+"tests pass") before merging, then fast-forwarded into the production checkout via
+`apply-local-patches.sh` (core, scrapers) and a plain `git pull --ff-only` (outer repo) the same
+day — no scrape was running at the time.
+
+**Live-verified the same evening** via a manual `./run-scrape.sh mi` run (bypassing ddp-sync's
+HTTP trigger, so no API key needed) against the real, current `legislature.mi.gov`. Result,
+read from the actual traceback in `logs/scraper.log`:
+
+- The retry-stacking fix works exactly as designed: exactly 2 physical HTTP attempts per
+  top-level scrape try (one initial cookie warm-up + one `mi_waf_get()` rewarm-retry), ~2-3s
+  apart — no 10s/20s/40s exponential backoff stacking from the resilience layer's own retry
+  loop. `WafBlockDetected` propagated immediately through `mi_waf_get()` once the rewarm also
+  got blocked, instead of being caught and retried again by `retry_on_connection_error`.
+- MI is still fully blocked regardless of fresh cookies: both the initial warm-up and the
+  rewarm attempt hit the block within the same run. This is the *exact* sustained,
+  reputation-based override this note's "Scoping the wider problem" section already described
+  as out of OPEN-21's scope — OPEN-21 was about footprint/retry-stacking, never about defeating
+  the block itself.
+- No new CAMS-triaged failure ticket was filed from this run (checked `project = OPEN order by
+  created desc` immediately after) — consistent with this being the same, already-tracked
+  problem rather than a new bug.
+
+**Net: OPEN-21 is done and verified correct. OPEN-22 (detect/escalate a sustained blocking
+pattern) is still fully open** — MI won't scrape successfully again until that, or some other fix
+for the underlying reputation block, ships. Still unassigned as of this update.
