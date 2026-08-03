@@ -377,15 +377,33 @@ scraper produces duplicate bill JSON files due to pagination overlap. Workaround
   reputation-based WAF block. `openstates-core`#9 + `openstates-scrapers`#18 give MI its own
   `MI_SCRAPELIB_RPM` (default 10) and force `http_resilience_mode=True`, with a new
   `_resilience_retry_excluded_exceptions` opt-out so the resilience layer's own retry doesn't
-  stack ahead of MI's existing WAF-detection retry. Merged and **live-verified** 2026-08-02 via a
-  manual `./run-scrape.sh mi` run: the retry-stacking fix works exactly as designed (2 physical
-  HTTP attempts per try, no backoff stacking) — but MI is still fully WAF-blocked regardless of
-  fresh cookies, which was never this ticket's scope to fix.
-- **OPEN-22 (sustained-blocking escalation):** spans two repos. AC7 (MI-events WAF
-  circuit-breaker parity, `openstates-scrapers`#19 + `ddp-open-states`#53) merged 2026-08-02. The
-  rest (AC0-AC6 — per-jurisdiction rolling run history, failure classification, and the actual
-  escalation alert) lives entirely in `ddp-sync`, dispatched directly rather than through
-  CodeBot (its workspace never had that repo) — see `ddp-sync`'s own README.md and PR #20.
+  stack ahead of MI's existing WAF-detection retry. Merged and **live-verified twice** 2026-08-02
+  (once right after merging, again after restarting `ddp-sync` to pick up the new code) via
+  manual `./run-scrape.sh mi` runs: the retry-stacking fix works exactly as designed both times
+  (2 physical HTTP attempts per try, no backoff stacking) — but MI was still fully WAF-blocked
+  regardless of fresh cookies both times, which was never this ticket's scope to fix.
+- **OPEN-22 (sustained-blocking escalation):** spans three repos, all merged 2026-08-02. AC7
+  (MI-events WAF circuit-breaker parity, `openstates-scrapers`#19 + `ddp-open-states`#53). The
+  rest (AC0-AC6 — per-jurisdiction rolling run history in Redis, failure classification, and the
+  actual escalation alert) lives entirely in `ddp-sync` (`ddp-sync`#20 + `ddp-sync`#21, its own
+  new `CLAUDE.md`), dispatched directly rather than through CodeBot since its workspace never had
+  that repo — a fresh `ddp-sync-dev` clone was created for it, mirroring this repo's own dev/prod
+  split (see `ddp-sync`'s `CLAUDE.md`). The escalation alert only *detects and surfaces* a
+  sustained pattern; it doesn't fix the underlying block.
+- **IP-reputation block confirmed directly, not just inferred** (2026-08-02, after both OPEN-21
+  live-verification runs): a fresh Playwright browser — no scraper cookies, no automation
+  fingerprint — hit the identical Barracuda CAPTCHA challenge as the scraper, on both the exact
+  failing search URL and the plain domain root. The challenge page's own text: "Validation needed
+  due to the detection of invalid input from this client IP address, error code: 426." This rules
+  out a fixable scraper-side request signature as the cause and confirms the IP-reputation theory
+  OPEN-19/21/22's notes had been circling since 2026-08-01. Also surfaced a caution: the page's
+  "Number of attempts left: 5" counter implies manual verification testing itself consumes the
+  same budget OPEN-22's escalation is trying to detect a sustained pattern for — worth being
+  sparing with further ad-hoc live MI testing. See `notes/mi-ip-reputation-block-confirmed-20260802.md`
+  (`ddp-open-states`#56, open, awaiting merge) for the full write-up and screenshot. No ticket yet
+  scopes an actual fix for the underlying block — see that note's "Relationship to open tickets"
+  section for the remaining candidate approaches (and why IP/proxy rotation specifically needs an
+  explicit decision, not a default).
 - **Review process note:** none of `ddp-open-states`/`openstates-core`/`openstates-scrapers`/
   `ddp-sync` have CI configured — every PR's "tests pass" claim in this saga was independently
   re-run (checking out the actual branch, with its real cross-repo dependencies) before merging,
