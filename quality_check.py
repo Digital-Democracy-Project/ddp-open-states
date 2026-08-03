@@ -354,7 +354,8 @@ def compare_people(report, local, live, label):
 
 # ── Coverage & completeness (PLAN-coverage-completeness-check.md) ─────────────
 
-def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit=None):
+def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit=None,
+                        tier2_random=False):
     """
     Tier 1: full identifier-set diff (public vs local) for a jurisdiction+session --
     catches bills we never scraped at all, not just bills that differ once scraped.
@@ -388,9 +389,14 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
 
     # Tier 2: sub-record completeness on every bill present in both sets.
     # tier2_limit caps API usage for a first manual run; omit for a full sweep.
+    # tier2_random samples that many bills at random instead of taking the first N
+    # (sorted) -- first-N skews toward low-numbered, early-filed bills every time.
     tier2_ids = sorted(both)
     if tier2_limit:
-        tier2_ids = tier2_ids[:tier2_limit]
+        if tier2_random:
+            tier2_ids = sorted(random.sample(tier2_ids, min(tier2_limit, len(tier2_ids))))
+        else:
+            tier2_ids = tier2_ids[:tier2_limit]
     print(f"  Running Tier 2 sub-record checks on {len(tier2_ids)} of {len(both)} "
           f"bills present in both...")
     for i, identifier in enumerate(tier2_ids):
@@ -425,8 +431,14 @@ def main():
                         help="Run a Tier 1+2 coverage/completeness check instead of the "
                              "default sample-based check (PLAN-coverage-completeness-check.md)")
     parser.add_argument("--tier2-limit", type=int, default=None,
-                        help="Cap Tier 2 sub-record checks to the first N bills present in "
-                             "both APIs (only with --coverage; omit for a full sweep)")
+                        help="Cap Tier 2 sub-record checks to N bills present in both APIs "
+                             "(only with --coverage; omit for a full sweep). Takes the first "
+                             "N in sorted order by default -- combine with --tier2-random to "
+                             "randomly sample N instead.")
+    parser.add_argument("--tier2-random",  action="store_true",
+                        help="With --tier2-limit, randomly sample that many bills from the "
+                             "both-APIs set instead of taking the first N in sorted order "
+                             "(only with --coverage)")
     args = parser.parse_args()
 
     if not LIVE_KEY:
@@ -444,7 +456,8 @@ def main():
                 report = Report()
                 conn = psycopg2.connect(DB_URL)
                 run_coverage_check(report, conn, jurisdiction, session, LIVE_KEY,
-                                   tier2_limit=args.tier2_limit)
+                                   tier2_limit=args.tier2_limit,
+                                   tier2_random=args.tier2_random)
                 conn.close()
                 ok = report.summary()
             finally:
