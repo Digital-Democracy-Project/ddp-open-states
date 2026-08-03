@@ -666,12 +666,40 @@ footgun, not a cadence-automation concern per §7, since nothing today runs two 
 concurrently on a schedule) — just flagged so a future concurrent manual run isn't surprised by
 spurious `live API error` failures that are rate-limit noise, not real Tier 2 findings.
 
+**First real use of `--tier2-random`, same day: MI, 500-bill random sample.** Run directly against
+the fixed script (`quality_check.py --coverage mi 2025-2026 --tier2-limit 500 --tier2-random`),
+overlapping with the tail end of the Tier 1 sweep above (hence the 429s noted above). Result:
+`1996/2073 passed | 46 warnings | 31 failures`. Of the 31 failures, 23 are the rate-limit `429`
+noise described above — the remaining **8 are genuine `local is MISSING votes vs live` findings**,
+the exact failure mode this whole plan exists to catch, on a real, randomly-sampled cross-section
+rather than the lowest-numbered bills a first-N sample would always return:
+
+| Bill | Local votes | Live votes |
+|---|---|---|
+| HB 4023 | 1 | 2 |
+| HB 4187 | 1 | 3 |
+| HB 4750 | 1 | 3 |
+| HB 5233 | 1 | 2 |
+| HB 5249 | 1 | 2 |
+| HB 5697 | 1 | 3 |
+| SB 205 | 2 | 3 |
+| SB 716 | 1 | 2 |
+
+8 of 500 (~1.6%) MI bills sampled are missing at least one vote event compared to live — every
+one under-counts by exactly 1, never over-counts, and none are `title`/`latest_action`/
+`sponsorship` mismatches (those checks passed clean on all 8). **Not yet root-caused** — could be
+a systemic gap (e.g. a specific vote type MI's scraper misses) or independent per-bill drift;
+worth a follow-up look at what these 8 bills' missing votes have in common before writing this
+off as random noise. This is the first Tier 2 finding from this plan on any jurisdiction other
+than MA, and the first ever from a properly random (rather than first-N or MA-only) sample.
+
 **Still open after today, updated from §13's list:**
 - HD/SD docket-duplicate normalization (§10/§12/§13) — still not built.
 - `scraper-audit` (§5) — still untouched.
 - Cadence wiring (§7) — still nothing scheduled.
 - MA's docket/bill-number prefix breakdown — needs to be re-run against *today's* numbers, not
   just assumed to match the 2026-07-28 pattern.
-- A real Tier 2 sweep (not `--tier2-limit 1`) has still only ever been run at any real scale
-  against MA (§10, 150 bills) — today's sweep exercised every jurisdiction's Tier 1 for the first
-  time, but Tier 2 coverage at a meaningful sample size elsewhere is still effectively unstarted.
+- The 8 MI vote-count gaps above — not root-caused.
+- A real Tier 2 sweep at a meaningful sample size (not `--tier2-limit 1`) has now been run against
+  one jurisdiction other than MA (MI, 500 bills, above) — AL/AZ/FL/UT/VA/US still only have the
+  placeholder 1-bill Tier 2 check from today's sweep.

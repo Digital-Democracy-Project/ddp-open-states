@@ -994,6 +994,31 @@ from both `localhost:8002` and `v3.openstates.org`, and diffs key fields.
 
 Default run uses 5 bills + 3 people per jurisdiction ≈ 56 requests, well within the 250/day limit.
 
+**Coverage/completeness mode** (`--coverage`, see `PLAN-coverage-completeness-check.md` for the
+full design): checks whether upstream has any bills we never scraped at all, not just whether
+scraped bills match:
+
+```bash
+OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage <jurisdiction> <session>
+OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage mi 2025-2026 --tier2-limit 500 --tier2-random
+```
+
+- `--tier2-limit N` caps the sub-record (Tier 2) check to N bills instead of every bill present
+  in both APIs; omit for a full sweep.
+- `--tier2-random` (combine with `--tier2-limit`) samples N bills at random instead of the first
+  N in sorted order — without it, `--tier2-limit` always returns the same lowest-numbered,
+  earliest-filed bills, which isn't a representative sample of a session's health.
+- Output also written to `logs/quality-check/<jurisdiction>_<session>.log`.
+- **Known caveat (2026-08-03):** running a Tier 2 sample concurrently with a separate Tier 1
+  sweep can produce a burst of live-API `429 Too Many Requests` errors — each process
+  self-rate-limits to the licensed tier's 2 req/sec but they don't coordinate with each other.
+  These show up as `live API error` failures that are rate-limit noise, not real findings; don't
+  run two coverage checks against the live API at the same time if avoidable.
+- **US federal (`us`) coverage was broken until 2026-08-03** (fixed in
+  [PR #69](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/69)) — if you're
+  reading an older `--coverage us <session>` log showing 100% of bills "missing," that's the bug,
+  not a real gap.
+
 ---
 
 ## First-time setup (for reference)
