@@ -156,6 +156,37 @@ def fetch_all_local_identifiers(conn, jurisdiction_code, session):
     return {row[0] for row in cur.fetchall()}
 
 
+def sample_local_bills_for_session(conn, jurisdiction_code, session, limit=None, random_order=False):
+    """Identifiers for a jurisdiction + session, sampled entirely from the local DB --
+    no live API pagination needed. This is what lets Tier 2 run standalone: it doesn't
+    need Tier 1's public/local diff, just a starting set of bills to check individually
+    against live. Same us/state: split as fetch_all_local_identifiers, for the same
+    reason (US federal's OCD id has no state: component)."""
+    cur = conn.cursor()
+    order_clause = "ORDER BY RANDOM()" if random_order else "ORDER BY b.identifier"
+    limit_clause = "LIMIT %s" if limit else ""
+    if jurisdiction_code == "us":
+        params = (session, limit) if limit else (session,)
+        cur.execute(f"""
+            SELECT b.identifier FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            WHERE j.id = 'ocd-jurisdiction/country:us/government' AND ls.identifier = %s
+            {order_clause} {limit_clause}
+        """, params)
+    else:
+        like_pattern = f"%/state:{jurisdiction_code}/%"
+        params = (like_pattern, session, limit) if limit else (like_pattern, session)
+        cur.execute(f"""
+            SELECT b.identifier FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            WHERE j.id LIKE %s AND ls.identifier = %s
+            {order_clause} {limit_clause}
+        """, params)
+    return [row[0] for row in cur.fetchall()]
+
+
 def fetch_all_public_identifiers(jurisdiction, session, api_key):
     """Every bill identifier the live API has for a jurisdiction + session (paginated).
     Sleeps between pages to stay under the licensed tier's 2 req/sec limit (§6 of the plan).
@@ -425,6 +456,34 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
         "tier2_checked": len(tier2_ids),
     }
 
+
+def run_tier2_only_check(report, conn, jurisdiction, session, api_key, tier2_limit=None,
+                          tier2_random=False):
+    """Tier 2 sub-record completeness, standalone -- no Tier 1 identifier diff first.
+    Samples bills straight from the local DB (sample_local_bills_for_session) instead of
+    from Tier 1's public/local overlap, so this never pages through live's full bill list.
+    A locally-sampled bill that turns out not to exist live at all still produces a normal
+    compare_bills() finding ("missing from live API") rather than being silently excluded --
+    that's a real, useful signal here, just not one this mode set out looking for."""
+    print(f"\n{'═'*60}")
+    print(f"  TIER 2 (standalone): {jurisdiction.upper()} {session}")
+    print(f"{'═'*60}")
+
+    tier2_ids = sample_local_bills_for_session(conn, jurisdiction, session,
+                                                limit=tier2_limit, random_order=tier2_random)
+    print(f"  Checking {len(tier2_ids)} bills sampled directly from the local DB "
+          f"({'random' if tier2_random else 'identifier order'})...")
+    for i, identifier in enumerate(tier2_ids):
+        label = f"{jurisdiction.upper()} {identifier} ({session})"
+        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
+        live = fetch_bill(LIVE_API, api_key, jurisdiction, session, identifier)
+        compare_bills(report, local, live, label)
+        if i % 25 == 0:
+            print(f"    ...{i}/{len(tier2_ids)}")
+        time.sleep(0.5)  # stay under the live API's 2 req/sec limit
+
+    return {"tier2_checked": len(tier2_ids)}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -441,15 +500,22 @@ def main():
     parser.add_argument("--coverage", nargs=2, metavar=("JURISDICTION", "SESSION"),
                         help="Run a Tier 1+2 coverage/completeness check instead of the "
                              "default sample-based check (PLAN-coverage-completeness-check.md)")
+    parser.add_argument("--tier2", nargs=2, metavar=("JURISDICTION", "SESSION"),
+                        help="Run Tier 2 sub-record completeness standalone, with no Tier 1 "
+                             "identifier diff first -- samples bills directly from the local "
+                             "DB instead of from Tier 1's public/local overlap, so it never "
+                             "pages through live's full bill list. Use --coverage instead if "
+                             "you also want Tier 1's coverage numbers.")
     parser.add_argument("--tier2-limit", type=int, default=None,
-                        help="Cap Tier 2 sub-record checks to N bills present in both APIs "
-                             "(only with --coverage; omit for a full sweep). Takes the first "
-                             "N in sorted order by default -- combine with --tier2-random to "
-                             "randomly sample N instead.")
+                        help="Cap Tier 2 sub-record checks to N bills (with --coverage: N "
+                             "present in both APIs; with --tier2: N sampled from the local DB; "
+                             "omit either for a full sweep). Takes the first N in sorted order "
+                             "by default -- combine with --tier2-random to randomly sample N "
+                             "instead.")
     parser.add_argument("--tier2-random",  action="store_true",
-                        help="With --tier2-limit, randomly sample that many bills from the "
-                             "both-APIs set instead of taking the first N in sorted order "
-                             "(only with --coverage)")
+                        help="With --tier2-limit, randomly sample that many bills instead of "
+                             "taking the first N in sorted order (only with --coverage or "
+                             "--tier2)")
     args = parser.parse_args()
 
     if not LIVE_KEY:
@@ -469,6 +535,26 @@ def main():
                 run_coverage_check(report, conn, jurisdiction, session, LIVE_KEY,
                                    tier2_limit=args.tier2_limit,
                                    tier2_random=args.tier2_random)
+                conn.close()
+                ok = report.summary()
+            finally:
+                sys.stdout = old_stdout
+        print(f"\n  (full output also written to {log_path})")
+        sys.exit(0 if ok else 1)
+
+    if args.tier2:
+        jurisdiction, session = args.tier2
+        os.makedirs("logs/quality-check", exist_ok=True)
+        log_path = f"logs/quality-check/{jurisdiction}_{session}_tier2only.log"
+        with open(log_path, "w") as logf:
+            tee = Tee(sys.stdout, logf)
+            old_stdout, sys.stdout = sys.stdout, tee
+            try:
+                report = Report()
+                conn = psycopg2.connect(DB_URL)
+                run_tier2_only_check(report, conn, jurisdiction, session, LIVE_KEY,
+                                      tier2_limit=args.tier2_limit,
+                                      tier2_random=args.tier2_random)
                 conn.close()
                 ok = report.summary()
             finally:
