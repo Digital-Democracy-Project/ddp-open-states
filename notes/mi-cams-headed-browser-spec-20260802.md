@@ -31,6 +31,9 @@ first** (one real UA, matching whatever actually minted the cookies, used everyw
 lifetime of that cookie pair) and re-testing live before committing to the infrastructure below.
 It's a small, low-risk, same-day change; everything below is a real infrastructure project.
 
+Filed as [OPEN-23](https://digitaldemocracyproject.atlassian.net/browse/OPEN-23), with a full
+trace of all three identities and a task list for the fix.
+
 That said, here's the spec for the CAMS-hosted approach, since today's evidence (a headed browser
 got through when headless-driven `scrapelib` didn't) is real and worth having ready regardless.
 
@@ -44,6 +47,15 @@ got through when headless-driven `scrapelib` didn't) is real and worth having re
   the CAPTCHA in your own real Chrome. This matches `mi_cookies.py`'s own docstring, already
   written 2026-08-01: heavy automated traffic degrades the whole IP's reputation, overriding
   cookie validity, for real browsers included.
+- **Follow-up, same day: a normal, spaced-out browsing pace held up fine.** A later check
+  navigated a real headed browser through 5 pages in a row — homepage, the search-results page,
+  and three different real current bill pages (SB 1123/1124/1125) — spaced roughly 6-7 seconds
+  apart over about 30 seconds. All five came back clean. This is a useful positive data point
+  alongside the negative one above: it's consistent with the trigger being the scraper's own
+  *rapid-burst* pattern (several requests within 1-2 seconds, warm-up-and-rewarm cycles stacked
+  back to back) rather than simply "more than one request from this IP in a short window." Not
+  tested yet: where the actual line is between "5 pages at a human pace" (fine) and "the scraper's
+  own burst" (blocked) — that's still an open question, not something to assume an answer to.
 - **Net: headed mode is necessary-but-maybe-not-sufficient.** It gets past whatever check flags
   headless Chromium specifically, but does not appear to get past a volume/reputation-based block
   once that's tripped. Nothing built to this spec should be sold internally as "the fix" —
