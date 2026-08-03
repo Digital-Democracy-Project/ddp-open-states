@@ -7,7 +7,13 @@ in a script that's no longer the production driver. See §11 — and then §12: 
 ("the underlying bug is still live") doesn't hold up either. Filed and closed as
 [OPEN-24](https://digitaldemocracyproject.atlassian.net/browse/OPEN-24), not a real defect —
 `session=None` is deliberate, load-bearing behavior for jurisdictions with more than one active
-session, not a bug. See §12 before acting on §11's "what needs to happen" list.**
+session, not a bug. See §12 before acting on §11's "what needs to happen" list.** **Re-checked
+against all relevant repos 2026-08-03: no code progress on any of §12's four open items, but a
+new, previously undocumented MA scrape-reliability bug surfaced from prod's own logs — see §13.**
+**Later the same day: Tier 1 finally run against every tracked jurisdiction for the first time —
+8 of 9 real jurisdiction/session pairs came back clean, and a real, previously-undetected bug
+was found (and fixed) in the tool itself: Tier 1 had never actually been able to check US federal
+coverage at all. `--tier2-random` also added for representative Tier 2 sampling. See §14.**
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -509,3 +515,191 @@ necessary, correct behavior for VA/UT today, and harmless (if redundant) for AZ/
 **If a real, narrower problem surfaces later** — e.g. specifically wanting the cache key to be
 session-aware without restricting which sessions get scraped — that needs its own ticket scoped
 around that distinction, not a return to either option §11 proposed.
+
+---
+
+## 13. Repo audit, 2026-08-03 — no progress on §12's open items, but a new MA reliability bug found
+
+**Checked:** this repo plus nested `openstates-core`/`openstates-scrapers`/`people`, the
+`ddp-sync-dev` checkout, and prod `ddp-open-states`'s live logs (read-only) for anything
+relevant to this plan since §12 was written.
+
+**§12's four open items are all still exactly where they were — no commits have touched any of
+them:**
+- **HD/SD docket-duplicate normalization** — `quality_check.py` unchanged since `4025d31`
+  (2026-07-29). Still a raw identifier-set diff; nothing added to exclude a jurisdiction's
+  docket-stage duplicates the way MA's `H`/`S` vs `HD`/`SD` split needed.
+- **Tier 1 against VA/MI/UT/AZ** — never run. Prod's `logs/quality-check/` still contains only
+  `ma_194th.log`, last written 2026-07-28.
+- **`scraper-audit` (§5)** — still zero commits since the initial clone, and the directory isn't
+  even present in this checkout's working tree right now (it's `.gitignore`d and was never
+  actually cloned here, consistent with "never run," not a regression).
+- **Cadence wiring (§7)** — still nothing scheduled; the tool remains manual/ad-hoc.
+
+**One genuine confirmation, from `ddp-sync-dev`:** commit `6008660` ("docs: explain why
+session_arg=None is deliberate in run_secondary_scrapes_job", merged same day as §12 via PR #22)
+adds a 7-line comment directly above `run_secondary_scrapes_job`'s `asyncio.gather(*[_run_scrape(j,
+None, ...)])` call in `openstates_scrape.py`, spelling out verbatim the VA/UT two-active-session
+finding from §12. Good outcome — §12's conclusion is now load-bearing in the code itself, not
+just this doc, which lowers the odds of OPEN-24 getting re-litigated by someone who hasn't read
+this plan.
+
+**New finding: the two 2026-07-30 MA scrape failures §11 already noted, plus a third on
+2026-07-31 that §11 didn't mention, all share one previously-undiagnosed root cause.** Re-reading
+prod's `logs/scraper.log` around each `ERROR: scrape/import failed for ma` line shows all three
+are the same class of bug — an **uncaught network exception propagating all the way up through
+`do_scrape()` and killing the entire multi-hour run outright**, not three unrelated incidents:
+
+```
+2026-07-30 20:55:10  ReadTimeout       fetching a Senate roll-call PDF   scrape_senate_vote (ma/bills.py:517)
+2026-07-31 16:11:53  ReadTimeout       fetching a Senate roll-call PDF   scrape_senate_vote (ma/bills.py:517)
+2026-07-31 22:16:42  ConnectionError   fetching /Bills/194/S404/CoSponsor  get_as_ajax (ma/bills.py:569)
+```
+
+`ma/bills.py`'s main per-bill fetch (`scrape_bill`, line ~178) already wraps its `self.get(...)`
+call in `try/except requests.exceptions.RequestException`, logging a warning and skipping the
+bill rather than crashing — but `scrape_senate_vote`'s `self.urlretrieve(vurl)` (line 517) and
+`get_as_ajax`'s `s.get(url)` (line 569, called from `scrape_cosponsors`) have no equivalent
+guard, so a single transient timeout hitting either of those two call sites takes down the whole
+run. The scraper's own `self.raise_errors = False` (set in `__init__`) doesn't help here — that
+setting suppresses `scrapelib` re-raising on bad HTTP status codes, not connection-level
+exceptions like `ReadTimeout`/`ConnectionError`, which propagate regardless.
+
+**Why this matters for §10's starvation diagnosis:** §10 already established that a full MA
+scrape takes ~12+ hours and, at the time, couldn't benefit from incremental caching due to the
+session-key bug (since resolved in production per §11's re-check). This finding adds a second,
+independent reason full MA scrapes kept failing to complete even after the cache-key situation
+stabilized: **a single transient network hiccup anywhere in an 11,000+ document, multi-hour pass
+is fatal, with no partial-progress checkpoint** — every failure means restarting from bill #1
+again. The run that finally succeeded (2026-08-01 00:04:19 → 05:44:58, ~5h40m,
+`bills_scraped=1597`) did so because it happened not to hit a transient network error in that
+particular window, not because anything was fixed.
+
+**Still not reconciled, now with a partial (negative) lead:** 1,597 bills for that clean, fully
+completed run is still far short of both the ~11,406 live documents §10 measured and even the
+~8,828 live `H`/`S` bill-numbered items alone (i.e. excluding docket duplicates, per §10's own
+correction) — a >5x gap. Checked and ruled out chunking as the explanation:
+`ma/bills.py scrape()`'s `scrape_chunk_number` parameter defaults to `None` (unchunked full
+scrape), confirmed directly in source, and `run-scrape.sh`/`ddp-sync`'s invocation never passes
+it. The network-failure pattern above doesn't explain it either, since this specific run
+completed with no errors logged. **A fresh, dedicated Tier 1 run against current MA data is the
+only way to actually quantify this** — flagged here, not solved.
+
+**Recommendation, not yet implemented (an `openstates-scrapers` fix, not a `quality_check.py` /
+coverage-tooling one — outside this plan's own scope, but directly explains why this plan's own
+MA measurements keep landing on incomplete, restarting runs):** wrap `scrape_senate_vote`'s
+`urlretrieve` call and `get_as_ajax`'s `s.get` call in the same
+`try/except requests.exceptions.RequestException` pattern `scrape_bill` already uses two hundred
+lines above them in the same file — skip the one vote/cosponsor record on a transient failure
+rather than aborting the entire session's scrape.
+
+---
+
+## 14. Tier 1 finally run against every tracked jurisdiction, 2026-08-03 — closes §13's item #2,
+and finds a real bug that predates this whole plan
+
+Same day as §13, immediately after: ran `quality_check.py --coverage <jurisdiction> <session>
+--tier2-limit 1` against every currently-tracked jurisdiction+session pair — AL, AZ, FL, MA, MI,
+UT (both active sessions), VA (both active sessions), and US — closing the open item §11/§13 kept
+carrying forward ("Tier 1 has never been run against VA/MI/UT/AZ"). Full raw results committed to
+`notes/tier1-coverage-all-jurisdictions-20260803.md` (PR #68); summarized here:
+
+| Jurisdiction | Session | Live | Local | Missing | Extra |
+|---|---|---|---|---|---|
+| AL | 2026rs | 1507 | 1507 | 0 | 0 |
+| AZ | 57th-2nd-regular | 2190 | 2190 | 0 | 0 |
+| FL | 2026 | 1931 | 1897 | 34 | 0 |
+| MA | 194th | 18604 | 11094 | 7510 | 0 |
+| MI | 2025-2026 | 3884 | 3884 | 0 | 0 |
+| UT | 2026 | 1016 | 1016 | 0 | 0 |
+| UT | 2025S2 | 5 | 5 | 0 | 0 |
+| VA | 2026 | 3637 | 3637 | 0 | 0 |
+| VA | 2026S1 | 300 | 300 | 0 | 0 |
+| US | 119 | 18052 | 0 → **bug, see below** | 18052 → **bug, see below** | 0 |
+
+**8 of 9 real (non-US) jurisdiction/session pairs came back completely clean.** FL 2026 has a
+small, real, unexplained gap (34/1931, ~1.8%) — not investigated further here, consistent with
+normal drift rather than a systemic problem. MA 194th's ~40% headline is presumed still dominated
+by the same HD/SD docket-vs-bill-number duplication artifact §10 diagnosed on 2026-07-28 (that
+run: 41% raw / ~1.8% real after the prefix breakdown) — **not re-confirmed by prefix on today's
+numbers**, so treat as unconfirmed, not restated as fact, until someone actually re-runs that
+breakdown against today's `missing` set.
+
+**The US row surfaced a real bug in the coverage-check tool itself, not a coverage gap.**
+`fetch_all_local_identifiers()` (the function Tier 1 uses to query the local side) filtered on
+`j.id LIKE '%/state:{jurisdiction_code}/%'` — every state jurisdiction's OCD id has a `state:`
+component, but US federal's (`ocd-jurisdiction/country:us/government`) doesn't, so the query
+silently matched zero rows for `jurisdiction_code="us"` no matter how much data actually existed
+locally. A direct SQL query against the same DB, bypassing the tool, confirmed local `us`/`119`
+actually holds exactly 18,052 bills — matching live exactly. **This means Tier 1 has never once
+been able to correctly check US federal coverage since it was built on 2026-07-28** — every
+mention in this plan (including §9's own open question and the "8 tracked jurisdictions: 7 states
++ USA federal" framing) assumed US was checkable the same way the 7 states are, and it silently
+never was. `sample_bills()`/`sample_bills_us()` (used by the tool's older, non-`--coverage`
+sample-based mode) already special-case US the exact same way for the exact same reason —
+`fetch_all_local_identifiers()` had simply never been given the same treatment when it was
+written.
+
+**Fixed same day** — [PR #69](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/69):
+`fetch_all_local_identifiers()` now branches on `jurisdiction_code == "us"` and does an exact
+match on the federal OCD id, mirroring `sample_bills_us()`'s existing approach, instead of trying
+to force US through the state-shaped `LIKE` pattern. Verified directly (not yet re-run through the
+full paginated `--coverage us 119` CLI path, to avoid re-paginating live's ~900 pages twice in one
+day): `fetch_all_local_identifiers(conn, "us", "119")` now returns 18052, matching live exactly;
+`fetch_all_local_identifiers(conn, "mi", "2025-2026")` still correctly returns 3884, confirming no
+regression on the unchanged state-jurisdiction path.
+
+**Also added same day** — [PR #67](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/67):
+a new `--tier2-random` flag. `--tier2-limit N` on its own has always taken the first N identifiers
+in sorted order, which for almost every jurisdiction means the earliest-filed, lowest-numbered
+bills every single time — not a representative sample of a session's overall health. Combined
+with `--tier2-limit`, `--tier2-random` samples N bills at random from the both-APIs set instead.
+`--tier2-limit`'s original first-N behavior is unchanged when `--tier2-random` isn't passed.
+
+**Operational note for next time:** running a Tier 2 sample concurrently with a separate Tier 1
+sweep still in progress (done today, testing `--tier2-random` against MI while the US federal
+Tier 1 run was still finishing) produced a run of live-API `429 Too Many Requests` errors —
+plausibly the combined request rate from two independent processes, each individually
+rate-limiting itself to the licensed tier's 2 req/sec, but not coordinating with each other,
+briefly exceeding it. Not investigated further or fixed here (this is a manual-invocation
+footgun, not a cadence-automation concern per §7, since nothing today runs two of these
+concurrently on a schedule) — just flagged so a future concurrent manual run isn't surprised by
+spurious `live API error` failures that are rate-limit noise, not real Tier 2 findings.
+
+**First real use of `--tier2-random`, same day: MI, 500-bill random sample.** Run directly against
+the fixed script (`quality_check.py --coverage mi 2025-2026 --tier2-limit 500 --tier2-random`),
+overlapping with the tail end of the Tier 1 sweep above (hence the 429s noted above). Result:
+`1996/2073 passed | 46 warnings | 31 failures`. Of the 31 failures, 23 are the rate-limit `429`
+noise described above — the remaining **8 are genuine `local is MISSING votes vs live` findings**,
+the exact failure mode this whole plan exists to catch, on a real, randomly-sampled cross-section
+rather than the lowest-numbered bills a first-N sample would always return:
+
+| Bill | Local votes | Live votes |
+|---|---|---|
+| HB 4023 | 1 | 2 |
+| HB 4187 | 1 | 3 |
+| HB 4750 | 1 | 3 |
+| HB 5233 | 1 | 2 |
+| HB 5249 | 1 | 2 |
+| HB 5697 | 1 | 3 |
+| SB 205 | 2 | 3 |
+| SB 716 | 1 | 2 |
+
+8 of 500 (~1.6%) MI bills sampled are missing at least one vote event compared to live — every
+one under-counts by exactly 1, never over-counts, and none are `title`/`latest_action`/
+`sponsorship` mismatches (those checks passed clean on all 8). **Not yet root-caused** — could be
+a systemic gap (e.g. a specific vote type MI's scraper misses) or independent per-bill drift;
+worth a follow-up look at what these 8 bills' missing votes have in common before writing this
+off as random noise. This is the first Tier 2 finding from this plan on any jurisdiction other
+than MA, and the first ever from a properly random (rather than first-N or MA-only) sample.
+
+**Still open after today, updated from §13's list:**
+- HD/SD docket-duplicate normalization (§10/§12/§13) — still not built.
+- `scraper-audit` (§5) — still untouched.
+- Cadence wiring (§7) — still nothing scheduled.
+- MA's docket/bill-number prefix breakdown — needs to be re-run against *today's* numbers, not
+  just assumed to match the 2026-07-28 pattern.
+- The 8 MI vote-count gaps above — not root-caused.
+- A real Tier 2 sweep at a meaningful sample size (not `--tier2-limit 1`) has now been run against
+  one jurisdiction other than MA (MI, 500 bills, above) — AL/AZ/FL/UT/VA/US still only have the
+  placeholder 1-bill Tier 2 check from today's sweep.
