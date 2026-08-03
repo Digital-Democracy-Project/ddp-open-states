@@ -134,14 +134,25 @@ def sample_bills_us(conn, n):
 
 
 def fetch_all_local_identifiers(conn, jurisdiction_code, session):
-    """Every bill identifier we have locally for a jurisdiction + session."""
+    """Every bill identifier we have locally for a jurisdiction + session.
+    US federal has no `state:` component in its OCD id (unlike every state
+    jurisdiction), so it needs an exact match instead of the LIKE pattern below --
+    same split sample_bills()/sample_bills_us() already use for the same reason."""
     cur = conn.cursor()
-    cur.execute("""
-        SELECT b.identifier FROM opencivicdata_bill b
-        JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
-        JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
-        WHERE j.id LIKE %s AND ls.identifier = %s
-    """, (f"%/state:{jurisdiction_code}/%", session))
+    if jurisdiction_code == "us":
+        cur.execute("""
+            SELECT b.identifier FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            WHERE j.id = 'ocd-jurisdiction/country:us/government' AND ls.identifier = %s
+        """, (session,))
+    else:
+        cur.execute("""
+            SELECT b.identifier FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            WHERE j.id LIKE %s AND ls.identifier = %s
+        """, (f"%/state:{jurisdiction_code}/%", session))
     return {row[0] for row in cur.fetchall()}
 
 
