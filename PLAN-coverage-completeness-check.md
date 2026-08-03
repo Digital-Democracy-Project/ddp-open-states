@@ -7,7 +7,9 @@ in a script that's no longer the production driver. See §11 — and then §12: 
 ("the underlying bug is still live") doesn't hold up either. Filed and closed as
 [OPEN-24](https://digitaldemocracyproject.atlassian.net/browse/OPEN-24), not a real defect —
 `session=None` is deliberate, load-bearing behavior for jurisdictions with more than one active
-session, not a bug. See §12 before acting on §11's "what needs to happen" list.**
+session, not a bug. See §12 before acting on §11's "what needs to happen" list.** **Re-checked
+against all relevant repos 2026-08-03: no code progress on any of §12's four open items, but a
+new, previously undocumented MA scrape-reliability bug surfaced from prod's own logs — see §13.**
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -509,3 +511,80 @@ necessary, correct behavior for VA/UT today, and harmless (if redundant) for AZ/
 **If a real, narrower problem surfaces later** — e.g. specifically wanting the cache key to be
 session-aware without restricting which sessions get scraped — that needs its own ticket scoped
 around that distinction, not a return to either option §11 proposed.
+
+---
+
+## 13. Repo audit, 2026-08-03 — no progress on §12's open items, but a new MA reliability bug found
+
+**Checked:** this repo plus nested `openstates-core`/`openstates-scrapers`/`people`, the
+`ddp-sync-dev` checkout, and prod `ddp-open-states`'s live logs (read-only) for anything
+relevant to this plan since §12 was written.
+
+**§12's four open items are all still exactly where they were — no commits have touched any of
+them:**
+- **HD/SD docket-duplicate normalization** — `quality_check.py` unchanged since `4025d31`
+  (2026-07-29). Still a raw identifier-set diff; nothing added to exclude a jurisdiction's
+  docket-stage duplicates the way MA's `H`/`S` vs `HD`/`SD` split needed.
+- **Tier 1 against VA/MI/UT/AZ** — never run. Prod's `logs/quality-check/` still contains only
+  `ma_194th.log`, last written 2026-07-28.
+- **`scraper-audit` (§5)** — still zero commits since the initial clone, and the directory isn't
+  even present in this checkout's working tree right now (it's `.gitignore`d and was never
+  actually cloned here, consistent with "never run," not a regression).
+- **Cadence wiring (§7)** — still nothing scheduled; the tool remains manual/ad-hoc.
+
+**One genuine confirmation, from `ddp-sync-dev`:** commit `6008660` ("docs: explain why
+session_arg=None is deliberate in run_secondary_scrapes_job", merged same day as §12 via PR #22)
+adds a 7-line comment directly above `run_secondary_scrapes_job`'s `asyncio.gather(*[_run_scrape(j,
+None, ...)])` call in `openstates_scrape.py`, spelling out verbatim the VA/UT two-active-session
+finding from §12. Good outcome — §12's conclusion is now load-bearing in the code itself, not
+just this doc, which lowers the odds of OPEN-24 getting re-litigated by someone who hasn't read
+this plan.
+
+**New finding: the two 2026-07-30 MA scrape failures §11 already noted, plus a third on
+2026-07-31 that §11 didn't mention, all share one previously-undiagnosed root cause.** Re-reading
+prod's `logs/scraper.log` around each `ERROR: scrape/import failed for ma` line shows all three
+are the same class of bug — an **uncaught network exception propagating all the way up through
+`do_scrape()` and killing the entire multi-hour run outright**, not three unrelated incidents:
+
+```
+2026-07-30 20:55:10  ReadTimeout       fetching a Senate roll-call PDF   scrape_senate_vote (ma/bills.py:517)
+2026-07-31 16:11:53  ReadTimeout       fetching a Senate roll-call PDF   scrape_senate_vote (ma/bills.py:517)
+2026-07-31 22:16:42  ConnectionError   fetching /Bills/194/S404/CoSponsor  get_as_ajax (ma/bills.py:569)
+```
+
+`ma/bills.py`'s main per-bill fetch (`scrape_bill`, line ~178) already wraps its `self.get(...)`
+call in `try/except requests.exceptions.RequestException`, logging a warning and skipping the
+bill rather than crashing — but `scrape_senate_vote`'s `self.urlretrieve(vurl)` (line 517) and
+`get_as_ajax`'s `s.get(url)` (line 569, called from `scrape_cosponsors`) have no equivalent
+guard, so a single transient timeout hitting either of those two call sites takes down the whole
+run. The scraper's own `self.raise_errors = False` (set in `__init__`) doesn't help here — that
+setting suppresses `scrapelib` re-raising on bad HTTP status codes, not connection-level
+exceptions like `ReadTimeout`/`ConnectionError`, which propagate regardless.
+
+**Why this matters for §10's starvation diagnosis:** §10 already established that a full MA
+scrape takes ~12+ hours and, at the time, couldn't benefit from incremental caching due to the
+session-key bug (since resolved in production per §11's re-check). This finding adds a second,
+independent reason full MA scrapes kept failing to complete even after the cache-key situation
+stabilized: **a single transient network hiccup anywhere in an 11,000+ document, multi-hour pass
+is fatal, with no partial-progress checkpoint** — every failure means restarting from bill #1
+again. The run that finally succeeded (2026-08-01 00:04:19 → 05:44:58, ~5h40m,
+`bills_scraped=1597`) did so because it happened not to hit a transient network error in that
+particular window, not because anything was fixed.
+
+**Still not reconciled, now with a partial (negative) lead:** 1,597 bills for that clean, fully
+completed run is still far short of both the ~11,406 live documents §10 measured and even the
+~8,828 live `H`/`S` bill-numbered items alone (i.e. excluding docket duplicates, per §10's own
+correction) — a >5x gap. Checked and ruled out chunking as the explanation:
+`ma/bills.py scrape()`'s `scrape_chunk_number` parameter defaults to `None` (unchunked full
+scrape), confirmed directly in source, and `run-scrape.sh`/`ddp-sync`'s invocation never passes
+it. The network-failure pattern above doesn't explain it either, since this specific run
+completed with no errors logged. **A fresh, dedicated Tier 1 run against current MA data is the
+only way to actually quantify this** — flagged here, not solved.
+
+**Recommendation, not yet implemented (an `openstates-scrapers` fix, not a `quality_check.py` /
+coverage-tooling one — outside this plan's own scope, but directly explains why this plan's own
+MA measurements keep landing on incomplete, restarting runs):** wrap `scrape_senate_vote`'s
+`urlretrieve` call and `get_as_ajax`'s `s.get` call in the same
+`try/except requests.exceptions.RequestException` pattern `scrape_bill` already uses two hundred
+lines above them in the same file — skip the one vote/cosponsor record on a transient failure
+rather than aborting the entire session's scrape.
