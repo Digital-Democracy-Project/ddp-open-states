@@ -2,7 +2,9 @@
 
 **Status:** IMPLEMENTED (Tier 1 + Tier 2) 2026-07-28 — `quality_check.py --coverage
 JURISDICTION SESSION`, per §8's implementation order. First real run against MA found a large,
-genuine coverage gap — see §10.
+genuine coverage gap — see §10. **Audited again 2026-08-02: §10's proposed fix was built, but
+in a script that's no longer the production driver — the underlying bug it diagnosed is still
+live today. See §11.**
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -387,3 +389,65 @@ duplication pattern first** (§10's correction above) — inspect the raw headli
 by identifier prefix before reporting it as a real gap. Not every jurisdiction has a multi-stage
 identifier lifecycle like MA's, but assume nothing until checked; a raw diff can look far worse
 than reality for any jurisdiction that does.
+
+---
+
+## 11. Follow-up audit, 2026-08-02 — §10's fix landed in dead code; the real bug is still live
+
+**§10's proposed fix (item 1: pass an explicit `session=194th` argument for MA) was built —
+[`ddp-open-states` commit `a139ca2`](https://github.com/Digital-Democracy-Project/ddp-open-states/commit/a139ca2)
+(2026-07-28), changing `run-all-scrapes.sh` to invoke
+`bash run-scrape.sh ma "session=194th"`.** Confirmed still present in the file today. On its own
+terms, this is exactly the fix §10 asked for.
+
+**But `run-all-scrapes.sh` is no longer the production scheduler for secondary-state scrapes.**
+`ddp-sync/config/sync_schedule.yaml` states outright: *"Replaces the ad-hoc
+run-all-scrapes.sh launchd job."* The real driver is `ddp-sync`'s own
+`run_secondary_scrapes_job()` (`ddp-sync/src/ddp_sync/pipelines/openstates_scrape.py:589-608`),
+which fans out over `secondary.jurisdictions` (`va, mi, ma, ut, az`,
+`sync_schedule.yaml:263-268` — no `sessions:` key for this block, unlike `fl`/`usa`, which do
+have one) via `asyncio.gather(*[_run_scrape(j, None, openstates_root) for j in jurisdictions])`
+— **`None` is passed as the session arg unconditionally, for every jurisdiction in that list,
+including MA.** `_run_scrape` (same file, ~line 210-225) only appends a session argument
+`if session_arg:` — so the live, actually-scheduled path still invokes MA bare, exactly the
+behavior §10 diagnosed as the root cause. **The fix in `a139ca2` never had a chance to run in
+production** — `run-all-scrapes.sh` is dead code as far as the real weekly schedule is
+concerned.
+
+**What this means concretely, re-checked against real logs:**
+- MA did complete a full scrape on 2026-08-01 (`logs/scraper.log`: `bills_scraped=1597`,
+  `Scrape done: ma.`/`Import done: ma.`) and a real incremental run followed the same day
+  (45 bills, correct `cutoff=` applied) — so MA is no longer frozen at June 16th, and
+  incremental mode is genuinely engaging now.
+- But it's engaging under cache key `ma` (`logs/last-run/ma.ts`), not the `ma_session_194th`
+  key §10's diagnosis was built around — that keyed file still doesn't exist. The mechanism
+  works today only because `_run_scrape`'s `session_arg=None` path happens to produce a stable,
+  reusable key of its own (`ma`), not because §10's fix engaged.
+- Two attempts that *did* pass an explicit session (`logs/scraper.log`, 2026-07-30) both
+  **failed** (`ERROR: scrape/import failed for ma`) — so the "correct per §10" invocation shape
+  is, ironically, the one that's actually broken right now. Root cause of that failure not yet
+  investigated — flagged here, not solved.
+- **1,597 bills for a full MA pull is well short of the ~11,406 documents** §10's own
+  investigation measured live for the 194th session. Not reconciled — could be a real residual
+  coverage gap, a scope difference (e.g. docket-only placeholders correctly excluded per §10's
+  own HD/SD finding), or something else. Needs a fresh Tier 1 coverage run to actually quantify,
+  not assumed either way here.
+
+**Still open, unchanged from §10 as of this audit:**
+- `quality_check.py`'s Tier 1 diff still has no HD/SD docket-duplicate normalization — any
+  future coverage run against MA (or any jurisdiction with a similar multi-stage identifier
+  lifecycle) will still overstate the real gap the same way the initial 41%-vs-1.8% headline did.
+- Tier 1 has not been run against VA/MI/UT/AZ to check whether they share MA's
+  no-explicit-session shape in the code path that actually matters
+  (`run_secondary_scrapes_job`'s `_run_scrape(j, None, ...)` call applies identically to all
+  five secondary jurisdictions, not just MA — this was mis-scoped in §10 as a MA-specific
+  question when the underlying code passes `None` for all of them equally).
+- `scraper-audit` (§5) — still completely untouched, zero commits since the initial clone.
+
+**Not decided here:** whether the real fix belongs in `_run_scrape`'s caller (thread each
+jurisdiction's session through `sync_schedule.yaml`'s `secondary.jurisdictions` list, the same
+way `fl`/`usa` already carry an explicit `sessions:` block) or in `run_secondary_scrapes_job`
+itself defaulting each jurisdiction to its current session via the same lookup
+`list_current_session_bill_candidates` uses elsewhere. Either fixes the real bug; `a139ca2`'s
+fix to the now-bypassed `run-all-scrapes.sh` does not, for any of the five secondary
+jurisdictions, not just MA.
