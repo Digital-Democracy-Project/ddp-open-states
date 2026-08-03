@@ -10,6 +10,10 @@ in a script that's no longer the production driver. See §11 — and then §12: 
 session, not a bug. See §12 before acting on §11's "what needs to happen" list.** **Re-checked
 against all relevant repos 2026-08-03: no code progress on any of §12's four open items, but a
 new, previously undocumented MA scrape-reliability bug surfaced from prod's own logs — see §13.**
+**Later the same day: Tier 1 finally run against every tracked jurisdiction for the first time —
+8 of 9 real jurisdiction/session pairs came back clean, and a real, previously-undetected bug
+was found (and fixed) in the tool itself: Tier 1 had never actually been able to check US federal
+coverage at all. `--tier2-random` also added for representative Tier 2 sampling. See §14.**
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -588,3 +592,86 @@ MA measurements keep landing on incomplete, restarting runs):** wrap `scrape_sen
 `try/except requests.exceptions.RequestException` pattern `scrape_bill` already uses two hundred
 lines above them in the same file — skip the one vote/cosponsor record on a transient failure
 rather than aborting the entire session's scrape.
+
+---
+
+## 14. Tier 1 finally run against every tracked jurisdiction, 2026-08-03 — closes §13's item #2,
+and finds a real bug that predates this whole plan
+
+Same day as §13, immediately after: ran `quality_check.py --coverage <jurisdiction> <session>
+--tier2-limit 1` against every currently-tracked jurisdiction+session pair — AL, AZ, FL, MA, MI,
+UT (both active sessions), VA (both active sessions), and US — closing the open item §11/§13 kept
+carrying forward ("Tier 1 has never been run against VA/MI/UT/AZ"). Full raw results committed to
+`notes/tier1-coverage-all-jurisdictions-20260803.md` (PR #68); summarized here:
+
+| Jurisdiction | Session | Live | Local | Missing | Extra |
+|---|---|---|---|---|---|
+| AL | 2026rs | 1507 | 1507 | 0 | 0 |
+| AZ | 57th-2nd-regular | 2190 | 2190 | 0 | 0 |
+| FL | 2026 | 1931 | 1897 | 34 | 0 |
+| MA | 194th | 18604 | 11094 | 7510 | 0 |
+| MI | 2025-2026 | 3884 | 3884 | 0 | 0 |
+| UT | 2026 | 1016 | 1016 | 0 | 0 |
+| UT | 2025S2 | 5 | 5 | 0 | 0 |
+| VA | 2026 | 3637 | 3637 | 0 | 0 |
+| VA | 2026S1 | 300 | 300 | 0 | 0 |
+| US | 119 | 18052 | 0 → **bug, see below** | 18052 → **bug, see below** | 0 |
+
+**8 of 9 real (non-US) jurisdiction/session pairs came back completely clean.** FL 2026 has a
+small, real, unexplained gap (34/1931, ~1.8%) — not investigated further here, consistent with
+normal drift rather than a systemic problem. MA 194th's ~40% headline is presumed still dominated
+by the same HD/SD docket-vs-bill-number duplication artifact §10 diagnosed on 2026-07-28 (that
+run: 41% raw / ~1.8% real after the prefix breakdown) — **not re-confirmed by prefix on today's
+numbers**, so treat as unconfirmed, not restated as fact, until someone actually re-runs that
+breakdown against today's `missing` set.
+
+**The US row surfaced a real bug in the coverage-check tool itself, not a coverage gap.**
+`fetch_all_local_identifiers()` (the function Tier 1 uses to query the local side) filtered on
+`j.id LIKE '%/state:{jurisdiction_code}/%'` — every state jurisdiction's OCD id has a `state:`
+component, but US federal's (`ocd-jurisdiction/country:us/government`) doesn't, so the query
+silently matched zero rows for `jurisdiction_code="us"` no matter how much data actually existed
+locally. A direct SQL query against the same DB, bypassing the tool, confirmed local `us`/`119`
+actually holds exactly 18,052 bills — matching live exactly. **This means Tier 1 has never once
+been able to correctly check US federal coverage since it was built on 2026-07-28** — every
+mention in this plan (including §9's own open question and the "8 tracked jurisdictions: 7 states
++ USA federal" framing) assumed US was checkable the same way the 7 states are, and it silently
+never was. `sample_bills()`/`sample_bills_us()` (used by the tool's older, non-`--coverage`
+sample-based mode) already special-case US the exact same way for the exact same reason —
+`fetch_all_local_identifiers()` had simply never been given the same treatment when it was
+written.
+
+**Fixed same day** — [PR #69](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/69):
+`fetch_all_local_identifiers()` now branches on `jurisdiction_code == "us"` and does an exact
+match on the federal OCD id, mirroring `sample_bills_us()`'s existing approach, instead of trying
+to force US through the state-shaped `LIKE` pattern. Verified directly (not yet re-run through the
+full paginated `--coverage us 119` CLI path, to avoid re-paginating live's ~900 pages twice in one
+day): `fetch_all_local_identifiers(conn, "us", "119")` now returns 18052, matching live exactly;
+`fetch_all_local_identifiers(conn, "mi", "2025-2026")` still correctly returns 3884, confirming no
+regression on the unchanged state-jurisdiction path.
+
+**Also added same day** — [PR #67](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/67):
+a new `--tier2-random` flag. `--tier2-limit N` on its own has always taken the first N identifiers
+in sorted order, which for almost every jurisdiction means the earliest-filed, lowest-numbered
+bills every single time — not a representative sample of a session's overall health. Combined
+with `--tier2-limit`, `--tier2-random` samples N bills at random from the both-APIs set instead.
+`--tier2-limit`'s original first-N behavior is unchanged when `--tier2-random` isn't passed.
+
+**Operational note for next time:** running a Tier 2 sample concurrently with a separate Tier 1
+sweep still in progress (done today, testing `--tier2-random` against MI while the US federal
+Tier 1 run was still finishing) produced a run of live-API `429 Too Many Requests` errors —
+plausibly the combined request rate from two independent processes, each individually
+rate-limiting itself to the licensed tier's 2 req/sec, but not coordinating with each other,
+briefly exceeding it. Not investigated further or fixed here (this is a manual-invocation
+footgun, not a cadence-automation concern per §7, since nothing today runs two of these
+concurrently on a schedule) — just flagged so a future concurrent manual run isn't surprised by
+spurious `live API error` failures that are rate-limit noise, not real Tier 2 findings.
+
+**Still open after today, updated from §13's list:**
+- HD/SD docket-duplicate normalization (§10/§12/§13) — still not built.
+- `scraper-audit` (§5) — still untouched.
+- Cadence wiring (§7) — still nothing scheduled.
+- MA's docket/bill-number prefix breakdown — needs to be re-run against *today's* numbers, not
+  just assumed to match the 2026-07-28 pattern.
+- A real Tier 2 sweep (not `--tier2-limit 1`) has still only ever been run at any real scale
+  against MA (§10, 150 bills) — today's sweep exercised every jurisdiction's Tier 1 for the first
+  time, but Tier 2 coverage at a meaningful sample size elsewhere is still effectively unstarted.
