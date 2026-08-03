@@ -909,9 +909,19 @@ live value instead of a hardcoded/guessed string. `bills.py`'s old `USER_AGENT` 
 inheriting whatever resilience-mode's rotation last set), now get them too. Since scrapelib merges
 explicit per-call headers over session-level `self.headers`, this explicit-per-request value is
 what actually goes out on the wire regardless of `self.headers`' own state — the real correctness
-mechanism. `self.headers["User-Agent"]` is also set once at the top of each scraper's `scrape()`
-(from the same `MI_COOKIE_PROVIDER.get_user_agent()`) purely for introspection/logging hygiene, so
-a live debugger or log line sees the same consistent identity too.
+mechanism.
+
+**Correction, same day, post-merge:** an earlier revision of this fix also set
+`self.headers["User-Agent"]` once at the top of each scraper's `scrape()`, purely for
+introspection/logging hygiene (so a live debugger or log line would see the same consistent
+identity too). **Reverted** — reviewed against the full `scrapers/mi/tests/` suite (not just the
+subset this PR's own testing section originally ran) and found it forced an unscheduled
+`MI_COOKIE_PROVIDER` warm-up at the very top of `scrape()`, before any request actually needed
+one: an extra, unplanned hit against a WAF-sensitive site, and a footgun for any test that calls
+`scrape()` without stubbing `get_user_agent()` — confirmed it broke 3 of `MIEventScraper`'s own
+existing tests exactly that way (`ModuleNotFoundError` in an environment with no Playwright
+installed; a real live warm-up attempt in one that has it). Not load-bearing for the actual fix
+above, so simply removed rather than patched. Full suite: 34/34 passing after the revert.
 
 **Fix, part 2 — stop `http_resilience_mode` from clobbering it:** a new
 `_resilience_user_agent_rotation_enabled` flag on `openstates-core`'s `Scraper`
