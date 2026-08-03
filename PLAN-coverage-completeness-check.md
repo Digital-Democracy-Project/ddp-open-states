@@ -3,8 +3,11 @@
 **Status:** IMPLEMENTED (Tier 1 + Tier 2) 2026-07-28 — `quality_check.py --coverage
 JURISDICTION SESSION`, per §8's implementation order. First real run against MA found a large,
 genuine coverage gap — see §10. **Audited again 2026-08-02: §10's proposed fix was built, but
-in a script that's no longer the production driver — the underlying bug it diagnosed is still
-live today. See §11.**
+in a script that's no longer the production driver. See §11 — and then §12: §11's own framing
+("the underlying bug is still live") doesn't hold up either. Filed and closed as
+[OPEN-24](https://digitaldemocracyproject.atlassian.net/browse/OPEN-24), not a real defect —
+`session=None` is deliberate, load-bearing behavior for jurisdictions with more than one active
+session, not a bug. See §12 before acting on §11's "what needs to happen" list.**
 
 **Goal:** Make sure the DDP fork's scrapers never *silently* miss data that exists in the
 public `v3.openstates.org` API — not "does our data match public data" (we fork precisely
@@ -392,7 +395,13 @@ than reality for any jurisdiction that does.
 
 ---
 
-## 11. Follow-up audit, 2026-08-02 — §10's fix landed in dead code; the real bug is still live
+## 11. Follow-up audit, 2026-08-02 — §10's fix landed in dead code
+
+**Correction, 2026-08-03 (§12): this section's framing that the underlying behavior is itself
+"the real bug" is wrong** — `session=None` is deliberate, correct behavior for jurisdictions
+with more than one currently-active session (VA, UT), not an oversight. The factual findings
+below (where the code actually runs, what the logs show) still stand; the "what needs to
+happen" fix proposals do not — see §12 before acting on them.
 
 **§10's proposed fix (item 1: pass an explicit `session=194th` argument for MA) was built —
 [`ddp-open-states` commit `a139ca2`](https://github.com/Digital-Democracy-Project/ddp-open-states/commit/a139ca2)
@@ -437,17 +446,66 @@ concerned.
 - `quality_check.py`'s Tier 1 diff still has no HD/SD docket-duplicate normalization — any
   future coverage run against MA (or any jurisdiction with a similar multi-stage identifier
   lifecycle) will still overstate the real gap the same way the initial 41%-vs-1.8% headline did.
-- Tier 1 has not been run against VA/MI/UT/AZ to check whether they share MA's
-  no-explicit-session shape in the code path that actually matters
-  (`run_secondary_scrapes_job`'s `_run_scrape(j, None, ...)` call applies identically to all
-  five secondary jurisdictions, not just MA — this was mis-scoped in §10 as a MA-specific
-  question when the underlying code passes `None` for all of them equally).
+- Tier 1 has not been run against VA/MI/UT/AZ — ~~to check whether they share MA's
+  no-explicit-session shape in the code path that actually matters~~ **superseded by §12: this
+  is no longer the right reason to run it.** Still worth running for its own sake (real coverage
+  data on 4 more jurisdictions), just not as a bug hunt for this non-bug.
 - `scraper-audit` (§5) — still completely untouched, zero commits since the initial clone.
 
-**Not decided here:** whether the real fix belongs in `_run_scrape`'s caller (thread each
+~~**Not decided here:** whether the real fix belongs in `_run_scrape`'s caller (thread each
 jurisdiction's session through `sync_schedule.yaml`'s `secondary.jurisdictions` list, the same
 way `fl`/`usa` already carry an explicit `sessions:` block) or in `run_secondary_scrapes_job`
 itself defaulting each jurisdiction to its current session via the same lookup
 `list_current_session_bill_candidates` uses elsewhere. Either fixes the real bug; `a139ca2`'s
 fix to the now-bypassed `run-all-scrapes.sh` does not, for any of the five secondary
-jurisdictions, not just MA.
+jurisdictions, not just MA.~~ **Neither of these should be built — see §12.**
+
+---
+
+## 12. Correction, 2026-08-03 — §11 was wrong: `session=None` is deliberate, load-bearing
+behavior, not a bug. Closed as [OPEN-24](https://digitaldemocracyproject.atlassian.net/browse/OPEN-24)
+
+**Filed as a Jira ticket (OPEN-24) with §11's "what needs to happen" list as the proposed fix.
+Investigated before building either option — both would have been regressions.**
+
+`openstates-core`'s `do_scrape()` (`cli/update.py:108-125`) has an explicit, deliberate
+fallback: when no session is passed, it scrapes **every currently-active session** for that
+jurisdiction (`for session in active_sessions:`), where "active" comes from each jurisdiction's
+own scraper module (`check_session_list()`, same file, ~lines 319-337). This is documented
+behavior, not an incidental artifact of omitting an argument.
+
+**Checked what's actually active right now, from real scrape logs** (correlating
+`Starting scrape: <state>` with the immediately-following `no session provided, using active
+sessions: {...}` line):
+
+| Jurisdiction | Active sessions right now |
+|---|---|
+| VA | `2026S1` **and** `2027` — two, simultaneously |
+| UT | `2026` **and** `2025S2` — two, simultaneously |
+| AZ | `57th-2nd-regular` — one |
+| MI | `2025-2026` — one |
+| MA | `194th` — one |
+
+**VA and UT each have two sessions active at once, confirmed directly against
+`openstates-scrapers/scrapers/va/__init__.py` and `.../ut/__init__.py` (two `"active": True`
+entries each).** Either fix §11 proposed — hardcoding one session per jurisdiction into
+`sync_schedule.yaml`, or dynamically resolving "the current session" and passing just one —
+would silently stop scraping whichever second active session didn't get picked, for VA and UT
+specifically. **The current `session=None` behavior isn't a bug for those two; it's the only
+thing today that scrapes both of their active sessions in a single pass.**
+
+For AZ/MI/MA (one active session each right now), hardcoding wouldn't lose anything, but it
+also wouldn't fix anything real: MA is already confirmed reliably engaging incremental caching
+under the bare `ma` cache key since 2026-08-01 (§11 above), and the cache key not being
+session-scoped isn't causing any observed failure — it's not reset per-session, but nothing
+currently depends on it being reset either.
+
+**Net: there is no real defect here as §10/§11 scoped it.** Both docs assumed "no explicit
+session arg" was itself the problem, without checking what that fallback actually does for
+jurisdictions with more than one simultaneously active session. It isn't a problem — it's
+necessary, correct behavior for VA/UT today, and harmless (if redundant) for AZ/MI/MA.
+**OPEN-24 closed without a code change.**
+
+**If a real, narrower problem surfaces later** — e.g. specifically wanting the cache key to be
+session-aware without restricting which sessions get scraped — that needs its own ticket scoped
+around that distinction, not a return to either option §11 proposed.
