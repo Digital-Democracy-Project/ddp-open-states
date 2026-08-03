@@ -404,10 +404,40 @@ scraper produces duplicate bill JSON files due to pagination overlap. Workaround
   scopes an actual fix for the underlying block — see that note's "Relationship to open tickets"
   section for the remaining candidate approaches (and why IP/proxy rotation specifically needs an
   explicit decision, not a default).
+- **OPEN-23 (User-Agent consistency, filed and shipped 2026-08-02/03):** MI's cached cookie
+  session was getting reused across three mutually inconsistent browser/OS identities within a
+  single scrape attempt (the real Chromium that minted the cookies, `bills.py`'s hardcoded
+  `Firefox/118.0`-on-Linux constant, and `http_resilience_mode`'s random 7-entry rotation pool —
+  the last one a direct, unintended side effect of OPEN-21's own fix). CodeBot dispatched, three
+  PRs (`ddp-open-states`#62, `openstates-core`#11, `openstates-scrapers`#20) — `CookieProvider`
+  now captures and caches the real warm-up UA alongside the cookies as one atomic pair, and a new
+  `_resilience_user_agent_rotation_enabled` opt-out (mirroring OPEN-21's own
+  `_resilience_retry_excluded_exceptions` precedent) stops resilience-mode's rotation from
+  clobbering it, scoped to MI only. **Reviewing these PRs directly (not just trusting the
+  descriptions) found a real regression the PR's own testing missed:** an added "logging hygiene"
+  line synced `self.headers` at the top of `scrape()` too, which forced an unscheduled cookie
+  warm-up and broke 3 of `MIEventScraper`'s existing tests (they call `scrape()` without stubbing
+  the new `get_user_agent()`, so the tests silently tried a real Playwright warm-up) — running the
+  *full* `scrapers/mi/tests/` suite caught it; the PR's own narrower test command didn't. Fixed
+  directly and pushed to the same PR branch (34/34 tests passing after). Separately, PR #62 (the
+  RUNBOOK write-up) merged before that fix landed on #20, leaving RUNBOOK.md briefly describing
+  the reverted approach as shipped — corrected in `ddp-open-states`#63.
+  **Live-verified 2026-08-03** after fast-forwarding production (confirmed safe to do so
+  mid-concurrent-WA-scrape first, since OPEN-23 touches no code path WA's scraper uses and WA
+  runs as a single already-executing process, not one that reimports from disk mid-run — WA's own
+  scrape finished cleanly, undisturbed, moments later): the real scrape log shows `"Created fresh
+  session (user agent rotation disabled for this scraper)"` — direct proof the fix is live and
+  correctly scoped to MI, no regression. MI **still failed** the same live run — every cookie
+  warm-up attempt still hit the same reputation-based block. Net: OPEN-23 closed the
+  identity-consistency gap cleanly; Michigan scraping itself remains broken pending the separate,
+  harder IP-reputation problem (OPEN-19/20/22 — see `notes/mi-ip-reputation-block-confirmed-20260802.md`
+  and `notes/mi-cams-headed-browser-spec-20260802.md`/`notes/scrapebot-agent-design-20260802.md`
+  for the candidate next steps).
 - **Review process note:** none of `ddp-open-states`/`openstates-core`/`openstates-scrapers`/
   `ddp-sync` have CI configured — every PR's "tests pass" claim in this saga was independently
   re-run (checking out the actual branch, with its real cross-repo dependencies) before merging,
-  not taken on faith. Do this for any future CodeBot PR too.
+  not taken on faith, and in OPEN-23's case this caught a real regression the PR's own narrower
+  test command missed. Do this for any future CodeBot PR too.
 
 ### 2.6 Incremental scraping's per-bill network floor (WA/UT/AZ/VA)
 
