@@ -874,6 +874,89 @@ with the reputation-based override already documented in `mi_cookies.py`'s docst
 relevant to OPEN-19/OPEN-20/OPEN-22, but not something OPEN-21's rate-limit/retry-stacking scope
 addresses.
 
+**Cookie session presenting three inconsistent User-Agent identities (OPEN-23):** found
+2026-08-02 while live-testing OPEN-21's fix with a real Playwright browser
+(`notes/mi-ip-reputation-block-confirmed-20260802.md`). Independent of the IP-reputation/WAF
+question above, a real, separate bug: within a single MI scrape attempt, the cached cookie pair
+got reused across three mutually inconsistent browser/OS identities — the real headless Chromium
+that minted the cookies (`MI_COOKIE_PROVIDER`'s Playwright warm-up), a hardcoded
+`"Firefox/118.0 on Ubuntu Linux"` string (`scrapers/mi/bills.py`'s old module-level `USER_AGENT`
+constant) that every cookie-authenticated request sent instead, and a third, randomly-rotated
+identity from `get_random_user_agent()`'s 7-entry pool whenever `http_resilience_mode`'s circuit
+breaker, connection-error handling, or periodic fresh-session reset fired — a direct, unintended
+side effect of OPEN-21's own `http_resilience_mode=True` opt-in for MI, since none of that
+rotation code ever ran for MI before OPEN-21. A single cookie session presenting as three-plus
+unrelated identities within one scrape attempt, sometimes within seconds of each other, is exactly
+the kind of inconsistency bot-mitigation products like Barracuda are built to flag.
+
+**Fix, part 1 — capture and reuse the real warm-up UA:** `CookieProvider`'s Playwright warm-up
+(`openstates/utils/cookie_provider.py`) now also captures `navigator.userAgent` from the exact
+page/browser that receives the WAF-passing cookies (`page.evaluate("() => navigator.userAgent")`,
+right after the page load, before the browser closes), and caches it alongside the cookies in the
+same on-disk JSON file (a reserved `_meta.user_agent` key) — one warm-up populates both, never two
+independent derivations. A cache file missing that key (e.g. one written before this change) is
+treated like a missing/expired cookie: rewarmed once rather than silently handing back cookies
+with no matching UA. `CookieProvider.get_user_agent()` mirrors `get_cookies()`, and
+`fetch_with_retry(do_request)`'s contract changed so `do_request(cookies, user_agent)` always
+receives a matched pair — including on the one retry-after-invalidate, so a mid-scrape re-warm
+can never pair fresh cookies with a stale UA. `mi_waf_get()` (shared by `bills.py`, `events.py`,
+`__init__.py`'s `get_session_list()`, and — found via a related-code search, not originally in
+this ticket's file list — `openstates-core`'s `text_extract.py` archiver, which shares
+`MI_COOKIE_PROVIDER.fetch_with_retry` and previously sent no MI-specific UA at all) passes this
+through, and every call site now builds `headers={"User-Agent": user_agent}` explicitly from the
+live value instead of a hardcoded/guessed string. `bills.py`'s old `USER_AGENT` constant is gone;
+`events.py`'s two request sites, which previously set no explicit headers at all (silently
+inheriting whatever resilience-mode's rotation last set), now get them too. Since scrapelib merges
+explicit per-call headers over session-level `self.headers`, this explicit-per-request value is
+what actually goes out on the wire regardless of `self.headers`' own state — the real correctness
+mechanism. `self.headers["User-Agent"]` is also set once at the top of each scraper's `scrape()`
+(from the same `MI_COOKIE_PROVIDER.get_user_agent()`) purely for introspection/logging hygiene, so
+a live debugger or log line sees the same consistent identity too.
+
+**Fix, part 2 — stop `http_resilience_mode` from clobbering it:** a new
+`_resilience_user_agent_rotation_enabled` flag on `openstates-core`'s `Scraper`
+(`openstates/scrape/base.py`), default `True`, guards all 4 of `get_random_user_agent()`'s call
+sites (`__init__`, the circuit breaker's post-timeout rotation, the generic connection-error
+rotation, and `_create_fresh_session()`'s periodic reset) — mirrors OPEN-21's own
+`_resilience_retry_excluded_exceptions` precedent (an opt-out attribute, not a platform-wide
+behavior change) over the alternative of re-deriving the rotation from MI's own warm-up mechanism,
+since it keeps `openstates-core` generic and is a smaller diff. `MIResilientScraperMixin`
+(`scrapers/mi/bills.py`) sets it `False`. **Important implementation subtlety:** this had to be a
+**class attribute**, not an instance attribute assigned inside `__init__` (which is how
+`_resilience_retry_excluded_exceptions` itself works) — `Scraper.__init__`'s own rotation call
+fires *during* `super().__init__()`, before a subclass mixin's post-`super()` `__init__` body ever
+runs, so only a class-level override (resolved via MRO from the moment the instance exists) actually
+suppresses that specific call site; an instance-attribute copy of the existing pattern would have
+silently missed it. The rest of `http_resilience_mode` (jittered delay, circuit breaker pause,
+connection-pool reset) stays fully intact for MI — only the `self.headers["User-Agent"]` mutation
+itself is suppressed. Scoped to MI alone; no other jurisdiction currently uses
+`http_resilience_mode`, and a regression test (`openstates/scrape/tests/test_scraper.py`) confirms
+`get_random_user_agent()` still fires normally at every call site for a scraper that hasn't opted
+out.
+
+**Live-verified 2026-08-02** against the real `legislature.mi.gov`: a real Playwright warm-up
+(fresh temp cache file, not the real `CACHE_DIR/mi_waf_cookies.json` a scheduled scrape might be
+using) captured a genuine headless-Chromium UA
+(`Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ... HeadlessChrome/151.0.7922.34 Safari/537.36`),
+and a real `MIBillScraper` (`http_resilience_mode=True`,
+`_resilience_user_agent_rotation_enabled=False` confirmed on the live instance) made two real
+`mi_waf_get()`-wrapped requests against MI's own warm-up URL, with `requests.Session.send`
+instrumented to record every real outgoing `User-Agent` header. All 4 physical GETs across both
+attempts (each triggered `mi_waf_get()`'s own invalidate-and-retry-once, since both attempts hit a
+real block) presented the identical, warm-up-captured UA — including the second attempt, made
+*after* forcibly tripping the circuit breaker (`_consecutive_failures` set to threshold,
+`_circuit_breaker_timeout` temporarily reduced to 1s to avoid a real 120s sleep) — confirming the
+opt-out holds under a real resilience-mode event, not just in unit tests. **What this check
+does not show:** it drove `mi_waf_get()` directly rather than a full `scrape()` call, so
+`self.headers`'s own hygiene-only sync (part 1, above) wasn't exercised live — that's covered by
+the unit tests in `scrapers/mi/tests/test_user_agent_consistency.py` instead. **Incidental
+finding, same as OPEN-21's own live check:** every request in this run hit a real WAF block
+regardless of the (correctly matched) cookies/UA presented, and the warm-up itself returned zero
+of the required `x-bni-fpc`/`x-bni-rncf` cookies — consistent with the reputation-based override
+documented in `mi_cookies.py`, not something this ticket claims to have solved. This ticket
+removes one detection signal (identity inconsistency); it does not by itself clear the sustained
+IP-reputation block OPEN-22 is tracking.
+
 ### `SELECT DISTINCT + ORDER BY RANDOM()` fails in PostgreSQL
 
 Must use a subquery. Already fixed in `quality_check.py`.
