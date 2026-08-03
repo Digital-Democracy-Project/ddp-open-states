@@ -475,6 +475,7 @@ def main():
             local = fetch_bill(LOCAL_API, LOCAL_KEY, jid, session, identifier)
             live  = fetch_bill(LIVE_API,  LIVE_KEY,  jid, session, identifier)
             compare_bills(report, local, live, label)
+            time.sleep(0.5)  # stay under the live API's 2 req/sec limit
 
     if include_us:
         rows = sample_bills_us(conn, args.bills)
@@ -485,6 +486,7 @@ def main():
                 local = fetch_bill(LOCAL_API, LOCAL_KEY, jid, session, identifier)
                 live  = fetch_bill(LIVE_API,  LIVE_KEY,  jid, session, identifier)
                 compare_bills(report, local, live, label)
+                time.sleep(0.5)  # stay under the live API's 2 req/sec limit
 
     # ── People ─────────────────────────────────────────────────────────────
     if not args.no_people:
