@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./test-mi-scrape-sample.sh [--count N] [--session SESSION]
+# Usage: ./test-mi-scrape-sample.sh [--count N] [--session SESSION] [--mint-via-scrapebot]
 #
 # Thin wrapper: sources this checkout's ISOLATED dev environment
 # (activate-dev.sh, never production's activate.sh) then runs
