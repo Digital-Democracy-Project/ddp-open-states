@@ -703,3 +703,80 @@ than MA, and the first ever from a properly random (rather than first-N or MA-on
 - A real Tier 2 sweep at a meaningful sample size (not `--tier2-limit 1`) has now been run against
   one jurisdiction other than MA (MI, 500 bills, above) — AL/AZ/FL/UT/VA/US still only have the
   placeholder 1-bill Tier 2 check from today's sweep.
+
+## 15. Full Tier 2 sweep, a real vote-comparison bug found and fixed, and a 250-bill
+re-verification, 2026-08-03
+
+Later the same day as §14: PR #70 decoupled Tier 2 from Tier 1 (a standalone `--tier2` flag,
+sampling straight from the local DB via `sample_local_bills_for_session()` instead of paying
+Tier 1's full-pagination cost first), closing out §14's last open item — a real 500-bill
+`--tier2-random` sweep was then run against *every* tracked jurisdiction/session (AL, AZ, FL, MA,
+MI, US, UT×2, VA×2 — 10 pairs). Full results in `notes/*-tier2-500-bill-random-sample-20260803.md`
+(PRs #71/#72). Headline: AL/US/both UT sessions/VA's special session came back clean; AZ, FL, MA,
+MI, and VA's regular session all showed real or apparent issues — but the single largest warning
+category **in every jurisdiction** was "first vote counts differ" (557 instances total: AZ 113,
+FL 87, MA 3, MI 29, US 2, UT×2 174, VA×2 149).
+
+**Root cause: `compare_bills()` compared vote tallies by list position, not by identity.**
+`local_votes[0]` vs. `live_votes[0]` — whichever vote event happened to be first in each side's
+list — breaks the instant the two APIs order or paginate a bill's vote events differently, which
+turned out to be common. Several of the original writeups already suspected this (vote *event
+counts* matched in most flagged bills; only the "first" one's tally looked wrong).
+
+**Fixed in two steps, PR #73:**
+1. Group vote events by calendar date (`start_date[:10]` — both APIs return a full ISO timestamp
+   like `2026-02-25T03:28:00-05:00`, but only the date portion is reliable to match on) and
+   compare tallies only within a shared date, instead of by list position.
+2. That alone left same-day multi-vote bills (companion votes, committee + floor, or a
+   "vote-a-rama" of amendments all dated the same day) still misordered one level deeper — same
+   fix, applied within a date via `zip()`. Since `identifier` is blank on both APIs for every
+   jurisdiction checked, group same-date votes by `motion_text` (e.g. "Passed", "do pass amended")
+   first, falling back to positional pairing only for whatever's left unmatched.
+
+**Verified against a 156-bill stratified sample** of previously-flagged bills (all of MA/US/UT
+2025S2/VA 2026S1, plus 30-bill random samples of AZ/FL/MI/UT 2026/VA 2026 — done at reduced scale
+because the live API was answering in ~13-15s/request that day from cumulative sweep volume, not
+its normal sub-second speed): 88 of 156 fully resolved by date-matching alone; the motion_text
+step resolved most of the rest. **Only 9 of 156 (5.8%) held up as genuine local-vs-live tally
+disagreements** under every possible same-date pairing — e.g. VA HB 973 (94 vs. 93 "yes" votes),
+MI SB 501 (32/0/5 vs. 36/0/0). One residual, confirmed-unfixable case: VA HB 30, whose ~15
+same-day amendment votes all share the identical generic motion_text "Adopt Governor's
+Recommendation R" — no field in the data distinguishes "amendment #7 of 15" from any other, so
+this bill will keep surfacing spurious warnings indefinitely; it's a data-modeling limit, not a
+bug. Full methodology in `notes/quality-check-vote-date-matching-fix-20260803.md`.
+
+**Re-ran the full 10-jurisdiction sweep post-fix at 250 bills** (`notes/*-tier2-250-bill-post-fix-sweep-20260803.md`,
+branch `notes/tier2-250-bill-post-fix-sweep-20260803`, not yet PR'd):
+
+| Jurisdiction | Pass rate | Warnings: 500-bill run → 250-bill post-fix run |
+|---|---|---|
+| AL 2026rs | 100% | 0 → 0 |
+| AZ 57th-2nd-regular | 94.3% | 119 → 28 |
+| FL 2026 | 97.1% | 112 → 18 ("first vote counts differ" 87 → 0) |
+| MA 194th | 97.7% | 12 → 6 |
+| MI 2025-2026 | 96.4% | 61 → 16 ("first vote counts differ" 29 → 4) |
+| US 119 | 98.9% | 0 → 0 |
+| UT 2026 | 99.1% | 173 → **0** |
+| UT 2025S2 | 100% | 1 → 0 |
+| VA 2026 | 93.7% | 254 → 98 |
+| VA 2026S1 | 95.4% | 1 → 26 (all 26 trace to the single VA HB 30 case above) |
+
+**New finding surfaced by the re-sweep, not by the fix itself:** 20 of VA 2026's 36 remaining
+vote-tally warnings share one exact signature — all dated 2026-02-17, all local "yes" count
+exactly one higher than live, every other tally field matching — consistent with one shared
+floor "block vote" roll call (VA runs bills through en-bloc passage days) missing or gaining a
+single member's vote, applied identically across ~20 bills at once rather than 20 independent
+bugs. VA HB 973 (flagged "genuine" during the 156-bill verification) is part of this same pattern,
+not an isolated case. Not root-caused further.
+
+**Still open after today:**
+- Everything carried forward from §14 (HD/SD dedup, `scraper-audit`, cadence wiring, MA prefix
+  re-check, MI's 8 vote-count gaps — now possibly related to the same class of finding as VA's
+  2026-02-17 block vote, worth reconciling together).
+- VA's 2026-02-17 block-vote single-vote discrepancy (~20 bills) — not root-caused; would need to
+  identify which specific member's vote differs and cross-check against VA's own record.
+- FL's "local has MORE votes than live (our fix not merged?)" pattern (18-25 instances across
+  runs) — still not diagnosed, flagged as a possible undocumented local fix or vote-duplication
+  artifact in both the original FL writeup and this section's fix, never followed up.
+- The `notes/tier2-250-bill-post-fix-sweep-20260803` branch (10 notes docs + this plan update) is
+  not yet opened as a PR.
