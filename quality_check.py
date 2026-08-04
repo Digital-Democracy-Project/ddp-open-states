@@ -353,11 +353,46 @@ def compare_bills(report, local, live, label):
     if local_votes and live_votes and not shared_dates:
         report.record(WARN, f"{label}: no shared vote dates to compare tallies against",
                       f"local={sorted(local_by_date)} live={sorted(live_by_date)}")
+
+    def tally(v):
+        return {c["option"]: c["value"] for c in (v.get("counts") or [])}
+
     for date in shared_dates:
-        lvs, rvs = local_by_date[date], live_by_date[date]
-        for lv, rv in zip(lvs, rvs):
-            lc = {c["option"]: c["value"] for c in (lv.get("counts") or [])}
-            rc = {c["option"]: c["value"] for c in (rv.get("counts") or [])}
+        lvs, rvs = list(local_by_date[date]), list(live_by_date[date])
+
+        # A single day can carry more than one vote (companion votes, committee
+        # + floor, or a "vote-a-rama" of amendments all dated the same day) --
+        # matching same-date votes by list position breaks down exactly the
+        # same way full-list position did. motion_text (e.g. "Passed", "do pass
+        # amended") identifies the actual roll call and survives reordering
+        # even when identifier is blank on both sides, so pair on that first.
+        lvs_by_motion = defaultdict(list)
+        for v in lvs:
+            lvs_by_motion[normalize(v.get("motion_text"))].append(v)
+        rvs_by_motion = defaultdict(list)
+        for v in rvs:
+            rvs_by_motion[normalize(v.get("motion_text"))].append(v)
+
+        pairs = []
+        for motion in list(lvs_by_motion):
+            if not motion or motion not in rvs_by_motion:
+                continue
+            lgroup, rgroup = lvs_by_motion.pop(motion), rvs_by_motion.pop(motion)
+            pairs.extend(zip(lgroup, rgroup))
+            # Uneven counts under the same motion_text fall through to the
+            # positional fallback below rather than being silently dropped.
+            lvs_by_motion[""].extend(lgroup[len(rgroup):])
+            rvs_by_motion[""].extend(rgroup[len(lgroup):])
+
+        # Whatever motion_text couldn't match on both sides (blank, or only
+        # present on one side) falls back to positional pairing -- worse than
+        # a motion_text match, but still better than dropping the comparison.
+        remaining_local = [v for group in lvs_by_motion.values() for v in group]
+        remaining_live = [v for group in rvs_by_motion.values() for v in group]
+        pairs.extend(zip(remaining_local, remaining_live))
+
+        for lv, rv in pairs:
+            lc, rc = tally(lv), tally(rv)
             if lc == rc:
                 report.record(PASS, f"{label}: vote tally matches on {date} ({lc})")
             else:

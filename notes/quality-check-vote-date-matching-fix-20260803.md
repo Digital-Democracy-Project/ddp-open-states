@@ -56,8 +56,30 @@ same-date pairing, not just the one `zip()` happened to pick.
 
 Date-matching alone resolves the majority (56%) of what was flagged, and combined with the
 same-date multiset check above accounts for 74% of the original 156-bill sample as pure comparison
-artifacts — not real data problems. The remaining gap (same-date multi-vote misordering) needs one
-more disambiguation step, tracked as a follow-up in this same PR.
+artifacts — not real data problems.
+
+## Follow-up: matching same-date votes by motion text
+
+The 28 same-date-misorder bills above needed one more disambiguation step: `compare_bills()` now
+groups same-date votes by `motion_text` (e.g. `"Passed"`, `"do pass amended"`) before falling back
+to list position, since `identifier` is blank on both APIs for every jurisdiction checked so far.
+Spot-checked against real bills post-fix:
+
+- **AZ SB 1517** (the original reciprocal-swap example, committee `"do pass amended"` fail vs.
+  floor `"Passed"` pass, same day) — now matches cleanly on both.
+- **AZ SB 1206** — 6 of 8 vote dates now resolve; the 7th (2026-06-09) still shows a swap because
+  both of that date's votes share the same (or blank) motion_text, so there's nothing left to
+  disambiguate on and it falls back to positional pairing.
+- **VA HB 30** — barely improved (26 of 33 pairs still mismatched). Its 2026-06-29 votes are ~15
+  near-identical `"Adopt Governor's Recommendation  R"` amendment votes plus ~12 `"H VOTE:"`
+  votes — motion_text *did* correctly separate those into the right two buckets (a real
+  improvement over flat positional pairing across all 27), but within either bucket every vote
+  shares the exact same generic text, so there's no field in the data that identifies "amendment
+  #7 of 15" specifically. This is a genuine data-modeling limit (no natural key exists for these
+  votes in what api-v3 exposes), not a bug in the comparison logic — expect residual same-date
+  warnings on bills like this one.
+- **VA HB 973** and **MI SB 501** (the two confirmed-genuine cases) still correctly flag their
+  real discrepancies — the fix doesn't introduce false negatives.
 
 ## References
 
