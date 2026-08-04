@@ -433,6 +433,24 @@ scraper produces duplicate bill JSON files due to pagination overlap. Workaround
   harder IP-reputation problem (OPEN-19/20/22 — see `notes/mi-ip-reputation-block-confirmed-20260802.md`
   and `notes/mi-cams-headed-browser-spec-20260802.md`/`notes/scrapebot-agent-design-20260802.md`
   for the candidate next steps).
+- **ScrapeBot (the candidate next step above): Phases 1-3 shipped and live-verified 2026-08-03,
+  actually deployed 2026-08-04.** `ddp-agents`#121 (Phase 1, the CAMS cookie-mint agent itself),
+  `ddp-sync`#23 (Phase 2, dispatch wiring into the secondary-scrape fallback path), and three real
+  manual `mint_scrape_cookies` dispatches against live MI (Phase 3 — one genuine WAF block
+  correctly identified, one genuine success with real cookies captured) all landed 2026-08-03; see
+  `ddp-agents`' `scrapebot/plans/PLAN-scrapebot.md` for the full design and validation record.
+  `ddp-sync`#24 flipped `openstates_scrape.secondary.scrapebot_fallback.enabled=true` (`jurisdictions:
+  ["mi"]`) the same day. **Found 2026-08-04: merged wasn't the same as running** — the live
+  `ddp-sync` process (`com.ddp.ddp-sync` LaunchDaemon) had been running continuously since
+  2026-08-02, predating both #23 and #24, and `scheduler.py` loads `sync_schedule.yaml` exactly
+  once at startup, not per cycle — so neither the dispatch code nor the flag flip were actually in
+  memory despite both being merged. The exact same lesson OPEN-21 already recorded above
+  ("restarting `ddp-sync` to pick up the new code") recurred here two days later. Fixed by pulling
+  `ddp-sync` to current `main` and `sudo launchctl kickstart -k system/com.ddp.ddp-sync`; verified
+  directly (not just inferred) by loading the live config the same way `_scrapebot_eligible()`
+  does — `openstates_scrape.secondary.scrapebot_fallback` now resolves to `{enabled: true,
+  jurisdictions: ["mi"]}` in the running process. MI's secondary scrape only runs Sundays 02:00
+  UTC, so 2026-08-09 is the first real chance for this to actually fire against a live WAF block.
 - **Review process note:** none of `ddp-open-states`/`openstates-core`/`openstates-scrapers`/
   `ddp-sync` have CI configured — every PR's "tests pass" claim in this saga was independently
   re-run (checking out the actual branch, with its real cross-repo dependencies) before merging,
