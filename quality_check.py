@@ -330,17 +330,42 @@ def compare_bills(report, local, live, label):
         report.record(FAIL, f"{label}: local is MISSING votes vs live",
                       f"local={lv_count} live={rv_count}")
 
-    # Vote counts on first vote event present in both
-    if local_votes and live_votes:
-        lv = local_votes[0]
-        rv = live_votes[0]
-        lc = {c["option"]: c["value"] for c in (lv.get("counts") or [])}
-        rc = {c["option"]: c["value"] for c in (rv.get("counts") or [])}
-        if lc == rc:
-            report.record(PASS, f"{label}: first vote counts match ({lc})")
-        else:
-            report.record(WARN, f"{label}: first vote counts differ",
-                          f"local={lc} live={rc}")
+    # Vote tallies — match same-day votes between local and live before
+    # comparing counts. Comparing by list position (local_votes[0] vs
+    # live_votes[0]) breaks down whenever the two sides order/paginate a
+    # bill's vote events differently, which makes two unrelated roll calls
+    # look like a tally mismatch.
+    # Normalize to the calendar date (first 10 chars) rather than the full
+    # start_date string — both sides return full ISO timestamps in practice,
+    # but the two APIs aren't guaranteed to agree on time-of-day/timezone
+    # formatting, and "same day" is the granularity that actually matters here.
+    def vote_date(v):
+        return (v.get("start_date") or "")[:10]
+
+    local_by_date = defaultdict(list)
+    for v in local_votes:
+        local_by_date[vote_date(v)].append(v)
+    live_by_date = defaultdict(list)
+    for v in live_votes:
+        live_by_date[vote_date(v)].append(v)
+
+    shared_dates = sorted(d for d in local_by_date if d in live_by_date)
+    if local_votes and live_votes and not shared_dates:
+        report.record(WARN, f"{label}: no shared vote dates to compare tallies against",
+                      f"local={sorted(local_by_date)} live={sorted(live_by_date)}")
+    for date in shared_dates:
+        lvs, rvs = local_by_date[date], live_by_date[date]
+        for lv, rv in zip(lvs, rvs):
+            lc = {c["option"]: c["value"] for c in (lv.get("counts") or [])}
+            rc = {c["option"]: c["value"] for c in (rv.get("counts") or [])}
+            if lc == rc:
+                report.record(PASS, f"{label}: vote tally matches on {date} ({lc})")
+            else:
+                report.record(WARN, f"{label}: vote tally differs on {date}",
+                              f"local={lc} live={rc}")
+        if len(lvs) != len(rvs):
+            report.record(WARN, f"{label}: vote count on {date} differs",
+                          f"local={len(lvs)} live={len(rvs)}")
 
     # Sponsorship count (allow ±1 — upstream may have added one since our scrape)
     ls = len(local.get("sponsorships") or [])
