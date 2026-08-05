@@ -39,6 +39,11 @@ one of the 250 bills' shared vote dates now compares cleanly. The 18 remaining w
 the live API has) that this fix doesn't address and was never meant to — it's an event-count
 question, not a tally-comparison one.
 
+**Resolved 2026-08-05, OPEN-27**: the "local has MORE votes than live" pattern is a genuine
+local-only fix (`_FLHouseWAFSource`, flhouse.gov WAF session-cookie expiry dropping House
+committee votes past ~1hr into any long FL scrape), not duplication — see
+`notes/fl-tier2-more-votes-than-live-diagnosis-20260805.md`.
+
 ## Net
 
 Clean confirmation of the fix: the artifact it targets (0 of 250) is fully resolved, while the
