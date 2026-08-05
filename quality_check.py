@@ -314,7 +314,11 @@ def compare_bills(report, local, live, label):
                       f"local={repr(la_local[:50])} live={repr(la_live[:50])}")
 
     # Vote event count
-    # local > live is expected for UT/MI (we have fixes not yet merged upstream).
+    # local > live is expected for UT/MI (we have fixes not yet merged upstream) and for FL
+    # (openstates-scrapers PR #5 / _FLHouseWAFSource: upstream's un-patched scraper loses FL
+    # House committee votes ~1hr into any long FL scrape, when flhouse.gov's WAF session
+    # cookie expires — confirmed via direct DB + live-API diff 2026-08-05, OPEN-27; upstream
+    # contribution: https://github.com/openstates/openstates-scrapers/pull/5751).
     # live > local means we're missing votes — that's the real problem.
     local_votes = local.get("votes") or []
     live_votes  = live.get("votes") or []
