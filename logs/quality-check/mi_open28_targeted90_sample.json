@@ -1,0 +1,435 @@
+{
+  "HB 5249": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 191 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "HB 4183": {
+    "local_count": 3,
+    "live_count": 3
+  },
+  "HB 4098": {
+    "local_count": 3,
+    "live_count": 3
+  },
+  "HB 4470": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 476": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4948": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5052": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 222": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 349": {
+    "local_count": 3,
+    "live_count": 3
+  },
+  "SB 355": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 95": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 541": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4695": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4401": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4225": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4594": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4702": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4911": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 968": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5821": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 966": {
+    "local_count": 1,
+    "live_count": 3,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #288 Yeas 95 Nays 13 Excused 0 Not Voting 2"
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "ROLL CALL: ROLL CALL # 223 YEAS 22 NAYS 14 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "SB 266": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4307": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 424": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 60": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 258": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 319": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4698": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4466": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4697": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HR 91": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4162": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 964": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 977": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 105": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #302 Yeas 107 Nays 1 Excused 0 Not Voting 2"
+      }
+    ]
+  },
+  "SB 160": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 898": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HR 2": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4073": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5814": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4100": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 190 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "HB 4840": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5933": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 32": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4543": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 133": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #309 Yeas 107 Nays 1 Excused 0 Not Voting 2"
+      }
+    ]
+  },
+  "HB 5059": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 692": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4303": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 938": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 770": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4045": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4099": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 581": {
+    "local_count": 3,
+    "live_count": 3
+  },
+  "HB 4245": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4445": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4071": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 97": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 269": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4582": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4219": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 236": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5781": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5636": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5198": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4349": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5506": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 701": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 37": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 815": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4101": {
+    "local_count": 2,
+    "live_count": 3,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #312 Yeas 106 Nays 2 Excused 0 Not Voting 2"
+      }
+    ]
+  },
+  "HB 4011": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 296": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 397": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5472": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4765": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5092": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4263": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 8": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "SB 259": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 418": {
+    "local_count": 1,
+    "live_count": 3,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #300 Yeas 99 Nays 9 Excused 0 Not Voting 2"
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "ROLL CALL: ROLL CALL # 218 YEAS 34 NAYS 2 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "HB 4208": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 203 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "SB 592": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4354": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 601": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4822": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4724": {
+    "local_count": 1,
+    "live_count": 2,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 225 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "HB 5818": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 820": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5938": {
+    "local_count": 1,
+    "live_count": 1
+  }
+}

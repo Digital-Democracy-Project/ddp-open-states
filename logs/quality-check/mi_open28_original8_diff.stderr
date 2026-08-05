@@ -1,0 +1,8 @@
+HB 4023: local=1 live=2 missing=1 local_err=None live_err=None
+HB 4187: local=1 live=3 missing=2 local_err=None live_err=None
+HB 4750: local=1 live=3 missing=2 local_err=None live_err=None
+HB 5233: local=1 live=2 missing=1 local_err=None live_err=None
+HB 5249: local=1 live=2 missing=1 local_err=None live_err=None
+HB 5697: local=1 live=3 missing=2 local_err=None live_err=None
+SB 205: local=2 live=3 missing=1 local_err=None live_err=None
+SB 716: local=1 live=2 missing=1 local_err=None live_err=None
