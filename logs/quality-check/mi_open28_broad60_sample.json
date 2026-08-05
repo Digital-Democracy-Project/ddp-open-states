@@ -1,0 +1,254 @@
+{
+  "HB 5053": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5017": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 968": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 107": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5756": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5390": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4478": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 153": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5935": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 369": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4079": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4957": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5442": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 502": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 444": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 267": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 596": {
+    "local_count": 4,
+    "live_count": 4
+  },
+  "HB 4033": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 93": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HB 4361": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HR 254": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5156": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 693": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SR 135": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HR 74": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 884": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 6080": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 762": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5090": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5226": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5831": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 4187": {
+    "local_count": 1,
+    "live_count": 3,
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #329 Yeas 107 Nays 0 Excused 0 Not Voting 3"
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 205 YEAS 26 NAYS 10 EXCUSED 2 NOT VOTING 0"
+      }
+    ]
+  },
+  "SB 846": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 1047": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4798": {
+    "local_count": 2,
+    "live_count": 2
+  },
+  "HR 86": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SR 83": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4118": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "SB 327": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 769": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 855": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4087": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5229": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HR 57": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4811": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 92": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HJR J": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5463": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4296": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 963": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HR 44": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 6149": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 813": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 772": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5108": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4740": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 5923": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "HB 4651": {
+    "local_count": 0,
+    "live_count": 0
+  },
+  "SB 2": {
+    "local_count": 1,
+    "live_count": 1
+  },
+  "HB 5130": {
+    "local_count": 0,
+    "live_count": 0
+  }
+}

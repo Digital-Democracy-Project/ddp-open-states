@@ -780,3 +780,53 @@ not an isolated case. Not root-caused further.
   artifact in both the original FL writeup and this section's fix, never followed up.
 - The `notes/tier2-250-bill-post-fix-sweep-20260803` branch (10 notes docs + this plan update) is
   not yet opened as a PR.
+
+## 16. OPEN-28 root-caused, 2026-08-05 — MI's 8 vote-count gaps are a single mass-vote-day capture
+failure (2026-07-03), distinct from OPEN-19/21/22/23's staleness pattern
+
+Follow-up on §14/§15's open item. Full writeup:
+`notes/mi-open-28-missing-vote-root-cause-20260805.md`. Headline findings:
+
+- **All 8 original bills still show the identical gap, unchanged, 8 days later** — re-checked
+  directly against local api-v3 (`localhost:8002`) and live `v3.openstates.org`. Every missing vote
+  on every bill is dated **2026-07-03**.
+- **A fresh 90-bill sample of vote-bearing MI bills found 9 more (10%)** — 8 new, all also missing
+  only a 2026-07-03 vote. Combined: 17 missing-vote instances, 17/17 dated 2026-07-03, spanning
+  House Roll Calls #288–334 and Senate Roll Calls #190–225 — a single chamber-wide floor day (almost
+  certainly a pre-July-4th-recess mass passage day), not scattered independent drift.
+- **Not the same mechanism as OPEN-19/21/22/23.** Those tickets' pattern (documented starting
+  2026-08-01) is whole-bill staleness: a currently-active WAF block fails the main bill-page fetch,
+  freezing title/latest_action/votes together. This finding is narrower and older: as of the
+  original 2026-07-28 snapshot, the 8 bills' title/latest_action/sponsorship all matched live —
+  only votes were affected. (Re-checking today, those same 8 bills' `latest_action` *has* since
+  drifted stale too — the general pattern has now separately started affecting them sometime after
+  07-28, layering a second, newer problem on top of the old one.)
+- **Root cause, confirmed by code + git history + test coverage:** `scrapers/mi/bills.py`'s
+  `parse_roll_call()` (called from `scrape_votes()`) silently catches
+  `scrapelib.HTTPError`/`WafBlockDetected` on its per-vote journal-document fetch, logs a warning,
+  and returns `None` — dropping that one vote with no other signal. Unlike `scrape_bill()`'s
+  main-page fetch and `events.py`'s fetch, this catch never registers with
+  `MIWafCircuitBreakerMixin`, so it's invisible to the consecutive-block counter, `ScrapeError`
+  aborts, and OPEN-22's escalation history. Confirmed via `git log -L`: none of OPEN-17/18/19/21/22/23
+  ever touched this except-block's logic (only OPEN-23 touched the surrounding function at all, to
+  add the matched-UA parameter). Confirmed via `test_bills.py`: zero test coverage of
+  `scrape_votes`/`parse_roll_call`'s failure path.
+- A plausible (not confirmed) trigger: a general, all-jurisdiction 4-day nightly-scrape outage,
+  2026-07-04→07-08 (`notes/mi-cams-headed-browser-spec-20260802.md` §3), immediately followed
+  2026-07-03's mass vote day — but a transient outage alone doesn't explain 33+ days of permanence;
+  that's `parse_roll_call`'s silent-swallow doing the actual damage on every retry since.
+
+**Disposition:** OPEN-28 closed with this conclusion (not folded into OPEN-19/21/22/23 — genuinely
+different mechanism). [OPEN-30](https://digitaldemocracyproject.atlassian.net/browse/OPEN-30) was
+filed for the `parse_roll_call` fix itself (register with `MIWafCircuitBreakerMixin`, stop silently
+swallowing, add test coverage) — mirrors how OPEN-18's investigation spawned OPEN-21/OPEN-22 as
+separate tickets rather than bundling a fix into the investigation.
+
+**Still open after today:**
+- Everything else carried forward from §14/§15 (HD/SD dedup, `scraper-audit`, cadence wiring, MA
+  prefix re-check, VA's 2026-02-17 block-vote discrepancy, FL's "local has MORE votes" pattern, the
+  not-yet-PR'd `tier2-250-bill-post-fix-sweep-20260803` branch).
+- [OPEN-30](https://digitaldemocracyproject.atlassian.net/browse/OPEN-30) (the `parse_roll_call`
+  fix) itself — not yet implemented, just filed.
+- Whether other single-day mass-vote gaps exist elsewhere in MI's session besides 2026-07-03 — this
+  investigation's 90-bill sample only surfaced the one date.

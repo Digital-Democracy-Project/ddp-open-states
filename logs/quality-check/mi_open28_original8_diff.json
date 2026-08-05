@@ -1,0 +1,618 @@
+{
+  "HB 4023": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Property: conveyance of state property; transfer of certain state-owned property in Eaton County; provide for. Creates land transfer act.",
+    "local_latest_action": "REFERRED TO COMMITTEE ON LOCAL GOVERNMENT",
+    "local_updated_at": "2026-06-14T01:54:17.008377+00:00",
+    "live_title": "Property: conveyance of state property; transfer of certain state-owned property in Eaton County; provide for. Creates land transfer act.",
+    "live_latest_action": "assigned PA 80'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 2,
+    "local_votes": [
+      {
+        "date": "2025-06-05",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #142 Yeas 104 Nays 2 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 104,
+          "no": 2,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 210 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 2,
+          "yes": 4
+        }
+      },
+      {
+        "date": "2025-06-05",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #142 Yeas 104 Nays 2 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 2,
+          "yes": 104
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 210 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 2,
+          "yes": 4
+        }
+      }
+    ]
+  },
+  "HB 4187": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Corporate income tax: revenue distribution; distribution of corporate income tax revenue; modify. Amends secs. 623 & 695 of 1967 PA 281 (MCL 206.623 & 206.695).   TIE BAR WITH: HB 4183'25,  HB 4182'25,  HB 4181'25,  HB 4180'25,  HB 4185'25,  HB 4186'25,  HB 4184'25",
+    "local_latest_action": "REFERRED TO COMMITTEE ON APPROPRIATIONS",
+    "local_updated_at": "2026-06-14T01:53:23.698227+00:00",
+    "live_title": "Individual income tax: revenue distributions; distribution and use of renew Michigan fund and lapse of interest and earnings from the revitalization and placemaking fund to general fund; modify and provide for. Amends secs. 51, 51g & 696 of 1967 PA 281 (MCL 206.51 et seq.).  TIE BAR WITH: HB 4180'25,  HB 4181'25,  HB 4182'25,  HB 4183'25,  HB 4184'25,  HB 4185'25,  HB 4186'25",
+    "live_latest_action": "assigned PA 82'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 3,
+    "local_votes": [
+      {
+        "date": "2025-03-19",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #40 Yeas 63 Nays 45 Excused 0 Not Voting 2",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 63,
+          "no": 45,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #329 Yeas 107 Nays 0 Excused 0 Not Voting 3",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 105,
+          "no": 0,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 205 YEAS 26 NAYS 10 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "fail",
+        "counts": {
+          "yes": 4,
+          "no": 8,
+          "other": 0
+        }
+      },
+      {
+        "date": "2025-03-19",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #40 Yeas 63 Nays 45 Excused 0 Not Voting 2",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 63,
+          "no": 45,
+          "other": 0
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #329 Yeas 107 Nays 0 Excused 0 Not Voting 3",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 105,
+          "no": 0,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 205 YEAS 26 NAYS 10 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "fail",
+        "counts": {
+          "yes": 4,
+          "no": 8,
+          "other": 0
+        }
+      }
+    ]
+  },
+  "HB 4750": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Children: foster care; department to use or conserve benefits for children in foster care in the best interests of the children in foster care; provide. Amends 1994 PA 203 (MCL 722.951 - 722.960) by adding sec. 8f.",
+    "local_latest_action": "REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES",
+    "local_updated_at": "2026-06-14T01:53:46.760614+00:00",
+    "live_title": "Children: foster care; conditions on the use of certain benefits for a child in foster care; provide. Amends 1994 PA 203 (MCL 722.951 - 722.960) by adding sec. 8f.",
+    "live_latest_action": "assigned PA 51'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 3,
+    "local_votes": [
+      {
+        "date": "2025-09-10",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #204 Yeas 60 Nays 45 Excused 0 Not Voting 5",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 60,
+          "no": 45,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 197 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #323 Yeas 106 Nays 1 Excused 0 Not Voting 3",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 104,
+          "no": 1,
+          "other": 0
+        }
+      },
+      {
+        "date": "2025-09-10",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #204 Yeas 60 Nays 45 Excused 0 Not Voting 5",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 60,
+          "no": 45,
+          "other": 0
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 197 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #323 Yeas 106 Nays 1 Excused 0 Not Voting 3",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 104,
+          "no": 1,
+          "other": 0
+        }
+      }
+    ]
+  },
+  "HB 5233": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Labor: leave; paid military leave for certain members of a fire department or law enforcement agency; provide. Creates new act.",
+    "local_latest_action": "REFERRED TO COMMITTEE OF THE WHOLE",
+    "local_updated_at": "2026-06-14T01:53:15.480490+00:00",
+    "live_title": "Labor: leave; paid military leave for certain members of a fire department or law enforcement agency; provide. Creates new act.",
+    "live_latest_action": "assigned PA 58'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 2,
+    "local_votes": [
+      {
+        "date": "2026-03-05",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #75 Yeas 101 Nays 8 Excused 0 Not Voting 1",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 101,
+          "no": 8,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 204 YEAS 33 NAYS 3 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 0,
+          "yes": 38
+        }
+      },
+      {
+        "date": "2026-03-05",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #75 Yeas 101 Nays 8 Excused 0 Not Voting 1",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 8,
+          "yes": 101
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 204 YEAS 33 NAYS 3 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 0,
+          "yes": 38
+        }
+      }
+    ]
+  },
+  "HB 5249": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Health: emergency services; ambulance operation adaptive care license; create. Amends sec. 20920 of 1978 PA 368 (MCL 333.20920).",
+    "local_latest_action": "REFERRED TO COMMITTEE ON HEALTH POLICY",
+    "local_updated_at": "2026-06-14T01:53:17.414948+00:00",
+    "live_title": "Health: emergency services; ambulance operation adaptive care license; create. Amends sec. 20920 of 1978 PA 368 (MCL 333.20920).",
+    "live_latest_action": "assigned PA 90'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 2,
+    "local_votes": [
+      {
+        "date": "2026-03-12",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #90 Yeas 103 Nays 1 Excused 0 Not Voting 6",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 103,
+          "no": 1,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 191 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "fail",
+        "counts": {
+          "other": 0,
+          "no": 0,
+          "yes": 0
+        }
+      },
+      {
+        "date": "2026-03-12",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #90 Yeas 103 Nays 1 Excused 0 Not Voting 6",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 1,
+          "yes": 103
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 191 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "fail",
+        "counts": {
+          "other": 0,
+          "no": 0,
+          "yes": 0
+        }
+      }
+    ]
+  },
+  "HB 5697": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Education: teachers and administrators; completion of certain training for K-5 teachers; require. Amends 1976 PA 451 (MCL 380.1 - 380.1852) by adding sec. 1531k.",
+    "local_latest_action": "REFERRED TO COMMITTEE ON APPROPRIATIONS",
+    "local_updated_at": "2026-06-28T01:04:42.014801+00:00",
+    "live_title": "Education: teachers and administrators; completion of certain training for K-5 teachers; require. Amends 1976 PA 451 (MCL 380.1 - 380.1852) by adding sec. 1531k.",
+    "live_latest_action": "assigned PA 26'26 with immediate effect",
+    "local_vote_count": 1,
+    "live_vote_count": 3,
+    "local_votes": [
+      {
+        "date": "2026-06-18",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #231 Yeas 104 Nays 2 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 104,
+          "no": 2,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-06-18",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #231 Yeas 104 Nays 2 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 104,
+          "no": 2,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #334 Yeas 103 Nays 3 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 195,
+          "no": 27,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 208 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "roll call Roll Call #334 Yeas 103 Nays 3 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 195,
+          "no": 27,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "PASSED; GIVEN IMMEDIATE EFFECT ROLL CALL # 208 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      }
+    ]
+  },
+  "SB 205": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Health: anatomical gifts; certain private practice offices and urgent care clinics to provide information on the donor registry and donating bone marrow; allow. Amends 1978 PA 368 (MCL 333.1101 - 333.25211) by adding sec. 10401.",
+    "local_latest_action": "transmitted",
+    "local_updated_at": "2026-06-28T01:03:49.571022+00:00",
+    "live_title": "Health: anatomical gifts; certain private practice offices and urgent care centers to provide information on the donor registry and donating bone marrow; allow. Amends 1978 PA 368 (MCL 333.1101 - 333.25211) by adding sec. 10401.",
+    "live_latest_action": "ASSIGNED PA 0050'26 WITH IMMEDIATE EFFECT",
+    "local_vote_count": 2,
+    "live_vote_count": 3,
+    "local_votes": [
+      {
+        "date": "2026-04-22",
+        "chamber": "upper",
+        "motion_text": "PASSED ROLL CALL # 59 YEAS 35 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 35,
+          "no": 0,
+          "other": 2
+        }
+      },
+      {
+        "date": "2026-06-23",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #246 Yeas 103 Nays 3 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 103,
+          "no": 3,
+          "other": 0
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "ROLL CALL: ROLL CALL # 216 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-06-23",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #246 Yeas 103 Nays 3 Excused 0 Not Voting 4",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 103,
+          "no": 3,
+          "other": 0
+        }
+      },
+      {
+        "date": "2026-04-22",
+        "chamber": "upper",
+        "motion_text": "PASSED ROLL CALL # 59 YEAS 35 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 35,
+          "no": 0,
+          "other": 2
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "upper",
+        "motion_text": "ROLL CALL: ROLL CALL # 216 YEAS 36 NAYS 0 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 4,
+          "no": 2,
+          "other": 0
+        }
+      }
+    ]
+  },
+  "SB 716": {
+    "local_error": null,
+    "live_error": null,
+    "local_title": "Controlled substances: schedules; scheduling of certain controlled substances; modify. Amends sec. 7204 of 1978 PA 368 (MCL 333.7204).",
+    "local_latest_action": "referred to second reading",
+    "local_updated_at": "2026-06-22T20:56:31.910113+00:00",
+    "live_title": "Controlled substances: schedules; scheduling of certain controlled substances; modify. Amends sec. 7204 of 1978 PA 368 (MCL 333.7204).",
+    "live_latest_action": "ASSIGNED PA 0048'26 WITH IMMEDIATE EFFECT",
+    "local_vote_count": 1,
+    "live_vote_count": 2,
+    "local_votes": [
+      {
+        "date": "2026-03-11",
+        "chamber": "upper",
+        "motion_text": "PASSED ROLL CALL # 29 YEAS 34 NAYS 1 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "yes": 34,
+          "no": 1,
+          "other": 2
+        }
+      }
+    ],
+    "live_votes": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #303 Yeas 102 Nays 6 Excused 0 Not Voting 2",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 4,
+          "yes": 100
+        }
+      },
+      {
+        "date": "2026-03-11",
+        "chamber": "upper",
+        "motion_text": "PASSED ROLL CALL # 29 YEAS 34 NAYS 1 EXCUSED 2 NOT VOTING 0",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 2,
+          "no": 1,
+          "yes": 34
+        }
+      }
+    ],
+    "missing_from_local": [
+      {
+        "date": "2026-07-03",
+        "chamber": "lower",
+        "motion_text": "passed; given immediate effect Roll Call #303 Yeas 102 Nays 6 Excused 0 Not Voting 2",
+        "classification": null,
+        "result": "pass",
+        "counts": {
+          "other": 0,
+          "no": 4,
+          "yes": 100
+        }
+      }
+    ]
+  }
+}
