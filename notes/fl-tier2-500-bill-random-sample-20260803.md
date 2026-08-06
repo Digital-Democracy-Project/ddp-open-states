@@ -31,7 +31,9 @@ Part of a sweep covering every tracked jurisdiction except Michigan — see
   new: either FL has a similar unmerged local fix nobody's documented yet, or this is a local-side
   vote-duplication artifact distinct from UT/MI's known case. Examples: FL HB 559 (local=4,
   live=2), FL HB 1175 (local=6, live=3), FL HB 1137 (local=6, live=2). Not resolved here — flagging
-  for follow-up, not diagnosed.
+  for follow-up, not diagnosed. **Resolved 2026-08-05, OPEN-27**: genuine local-only fix
+  (`_FLHouseWAFSource`, flhouse.gov WAF session-cookie expiry), not duplication — see
+  `notes/fl-tier2-more-votes-than-live-diagnosis-20260805.md`.
 - **87 warnings — "first vote counts differ":** very likely a downstream artifact of the two
   count-mismatch patterns above — when local's and live's vote lists are different lengths (either
   direction), comparing "first vote" by list index compares two different actual roll calls.
