@@ -278,8 +278,97 @@ def normalize(s):
     return (s or "").strip().lower()
 
 
-def compare_bills(report, local, live, label):
-    """Diff local vs live bill on key fields."""
+def diff_voters(lv, rv):
+    """Diff two paired vote events' per-voter votes[] lists (not just their aggregate
+    counts[] tally) -- returns the (voter_name, option) tuples present on only one side
+    as (local_only, live_only) sets. Pure/DB-free: this is the decisive check OPEN-26 and
+    OPEN-28 both had to do by hand, diffing raw votes[] instead of just counts[]."""
+    local_voters = {(v.get("voter_name"), v.get("option")) for v in (lv.get("votes") or [])}
+    live_voters = {(v.get("voter_name"), v.get("option")) for v in (rv.get("votes") or [])}
+    return local_voters - live_voters, live_voters - local_voters
+
+
+def describe_voter_diff(local_only, live_only):
+    """Format diff_voters()'s output into the specific "who and what" a tally mismatch
+    hides behind its aggregate counts -- e.g. "Elizabeth B. Bennett-Parker (yes): local
+    only" (the exact OPEN-26 finding). Multiple diffs are joined with "; ". A tally
+    mismatch with no per-voter diff at all is itself informative (e.g. the same option
+    labeled differently on each side) rather than a silent no-op, so it gets its own
+    message instead of an empty string."""
+    parts = [f"{name} ({option}): local only" for name, option in sorted(local_only)]
+    parts += [f"{name} ({option}): live only" for name, option in sorted(live_only)]
+    if not parts:
+        return "no per-voter difference found (tally differs for another reason)"
+    return "; ".join(parts)
+
+
+def count_shared_date_signature(conn, jurisdiction_code, session, date, voter_signature,
+                                 exclude_identifier, cache=None):
+    """Given one bill's mismatched-vote date and its voter-diff signature (the
+    (voter_name, option) tuples diff_voters() found), count how many OTHER local bills in
+    the same jurisdiction/session share at least one of those same (voter_name, option)
+    pairs on that date -- automates the full-corpus scan both OPEN-26 (266 bills) and
+    OPEN-28 did by hand. Local-DB-only, matching AC #2's "checks other local bills"
+    wording exactly -- costs zero live-API budget, unlike a live re-verification would.
+    Reuses the same us/state: jurisdiction split already used by
+    fetch_all_local_identifiers()/sample_local_bills_for_session() rather than adding a
+    third copy of that branch. `cache`, if supplied, memoizes by
+    (jurisdiction_code, session, date, frozenset(voter_signature)) so an identical
+    signature repeating across many bills in one run (OPEN-26's was 266) queries once."""
+    voter_signature = frozenset(voter_signature)
+    if not voter_signature:
+        # An empty IN (...) clause is invalid SQL, and an empty signature means the
+        # tally differed for a reason other than a voter-presence diff -- nothing to size.
+        return 0
+
+    cache_key = (jurisdiction_code, session, date, voter_signature)
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
+
+    cur = conn.cursor()
+    if jurisdiction_code == "us":
+        cur.execute("""
+            SELECT COUNT(DISTINCT b.id) FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            JOIN opencivicdata_voteevent ve ON ve.bill_id = b.id
+            JOIN opencivicdata_personvote pv ON pv.vote_event_id = ve.id
+            WHERE j.id = 'ocd-jurisdiction/country:us/government' AND ls.identifier = %s
+              AND LEFT(ve.start_date, 10) = %s
+              AND (pv.voter_name, pv.option) IN %s
+              AND b.identifier != %s
+        """, (session, date, tuple(voter_signature), exclude_identifier))
+    else:
+        cur.execute("""
+            SELECT COUNT(DISTINCT b.id) FROM opencivicdata_bill b
+            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+            JOIN opencivicdata_voteevent ve ON ve.bill_id = b.id
+            JOIN opencivicdata_personvote pv ON pv.vote_event_id = ve.id
+            WHERE j.id LIKE %s AND ls.identifier = %s
+              AND LEFT(ve.start_date, 10) = %s
+              AND (pv.voter_name, pv.option) IN %s
+              AND b.identifier != %s
+        """, (f"%/state:{jurisdiction_code}/%", session, date, tuple(voter_signature),
+              exclude_identifier))
+
+    count = cur.fetchone()[0]
+    if cache is not None:
+        cache[cache_key] = count
+    return count
+
+
+def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None, session=None,
+                   blast_radius_cache=None):
+    """Diff local vs live bill on key fields.
+
+    conn/jurisdiction_code/session/blast_radius_cache are optional and additive: when all
+    three of conn/jurisdiction_code/session are supplied and a vote-tally mismatch has a
+    non-empty per-voter diff, the same-date blast radius is sized via
+    count_shared_date_signature() and folded into the existing WARN. Callers that omit
+    them (or pass conn=None) get the per-voter diff detail with no blast-radius sizing --
+    fully backward compatible with any caller that doesn't pass them.
+    """
 
     if local is None and live is None:
         report.record(SKIP, f"{label}: not found in either API")
@@ -400,8 +489,19 @@ def compare_bills(report, local, live, label):
             if lc == rc:
                 report.record(PASS, f"{label}: vote tally matches on {date} ({lc})")
             else:
-                report.record(WARN, f"{label}: vote tally differs on {date}",
-                              f"local={lc} live={rc}")
+                local_only, live_only = diff_voters(lv, rv)
+                detail = f"local={lc} live={rc} | {describe_voter_diff(local_only, live_only)}"
+                signature = local_only | live_only
+                if signature and conn is not None and jurisdiction_code is not None \
+                        and session is not None:
+                    shared_count = count_shared_date_signature(
+                        conn, jurisdiction_code, session, date, signature,
+                        exclude_identifier=local.get("identifier"),
+                        cache=blast_radius_cache,
+                    )
+                    detail += (f" | {shared_count} other local bill(s) share this "
+                               f"signature on {date}")
+                report.record(WARN, f"{label}: vote tally differs on {date}", detail)
         if len(lvs) != len(rvs):
             report.record(WARN, f"{label}: vote count on {date} differs",
                           f"local={len(lvs)} live={len(rvs)}")
@@ -461,13 +561,15 @@ def compare_people(report, local, live, label):
 # ── Coverage & completeness (PLAN-coverage-completeness-check.md) ─────────────
 
 def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit=None,
-                        tier2_random=False):
+                        tier2_random=False, blast_radius_cache=None):
     """
     Tier 1: full identifier-set diff (public vs local) for a jurisdiction+session --
     catches bills we never scraped at all, not just bills that differ once scraped.
     Tier 2: compare_bills() over every identifier present in BOTH sets, reusing the
     existing WARN/FAIL split (local>live votes = our unmerged fix; live>local = real gap).
     """
+    if blast_radius_cache is None:
+        blast_radius_cache = {}
     print(f"\n{'═'*60}")
     print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session}")
     print(f"{'═'*60}")
@@ -509,7 +611,9 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
         label = f"{jurisdiction.upper()} {identifier} ({session})"
         local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
         live = fetch_bill(LIVE_API, api_key, jurisdiction, session, identifier)
-        compare_bills(report, local, live, label)
+        compare_bills(report, local, live, label,
+                      conn=conn, jurisdiction_code=jurisdiction, session=session,
+                      blast_radius_cache=blast_radius_cache)
         if i % 25 == 0:
             print(f"    ...{i}/{len(tier2_ids)}")
         time.sleep(0.5)  # stay under the live API's 2 req/sec limit
@@ -522,13 +626,16 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
 
 
 def run_tier2_only_check(report, conn, jurisdiction, session, api_key, tier2_limit=None,
-                          tier2_random=False):
+                          tier2_random=False, blast_radius_cache=None):
     """Tier 2 sub-record completeness, standalone -- no Tier 1 identifier diff first.
     Samples bills straight from the local DB (sample_local_bills_for_session) instead of
     from Tier 1's public/local overlap, so this never pages through live's full bill list.
     A locally-sampled bill that turns out not to exist live at all still produces a normal
     compare_bills() finding ("missing from live API") rather than being silently excluded --
     that's a real, useful signal here, just not one this mode set out looking for."""
+    if blast_radius_cache is None:
+        blast_radius_cache = {}
+
     print(f"\n{'═'*60}")
     print(f"  TIER 2 (standalone): {jurisdiction.upper()} {session}")
     print(f"{'═'*60}")
@@ -541,7 +648,9 @@ def run_tier2_only_check(report, conn, jurisdiction, session, api_key, tier2_lim
         label = f"{jurisdiction.upper()} {identifier} ({session})"
         local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
         live = fetch_bill(LIVE_API, api_key, jurisdiction, session, identifier)
-        compare_bills(report, local, live, label)
+        compare_bills(report, local, live, label,
+                      conn=conn, jurisdiction_code=jurisdiction, session=session,
+                      blast_radius_cache=blast_radius_cache)
         if i % 25 == 0:
             print(f"    ...{i}/{len(tier2_ids)}")
         time.sleep(0.5)  # stay under the live API's 2 req/sec limit
@@ -598,7 +707,8 @@ def main():
                 conn = psycopg2.connect(DB_URL)
                 run_coverage_check(report, conn, jurisdiction, session, LIVE_KEY,
                                    tier2_limit=args.tier2_limit,
-                                   tier2_random=args.tier2_random)
+                                   tier2_random=args.tier2_random,
+                                   blast_radius_cache={})
                 conn.close()
                 ok = report.summary()
             finally:
@@ -618,7 +728,8 @@ def main():
                 conn = psycopg2.connect(DB_URL)
                 run_tier2_only_check(report, conn, jurisdiction, session, LIVE_KEY,
                                       tier2_limit=args.tier2_limit,
-                                      tier2_random=args.tier2_random)
+                                      tier2_random=args.tier2_random,
+                                      blast_radius_cache={})
                 conn.close()
                 ok = report.summary()
             finally:
@@ -632,6 +743,7 @@ def main():
 
     report = Report()
     conn = psycopg2.connect(DB_URL)
+    blast_radius_cache = {}
 
     # ── Bills ──────────────────────────────────────────────────────────────
     print(f"\n{'═'*60}")
@@ -648,7 +760,9 @@ def main():
             label = f"{jcode.upper()} {identifier} ({session})"
             local = fetch_bill(LOCAL_API, LOCAL_KEY, jid, session, identifier)
             live  = fetch_bill(LIVE_API,  LIVE_KEY,  jid, session, identifier)
-            compare_bills(report, local, live, label)
+            compare_bills(report, local, live, label,
+                          conn=conn, jurisdiction_code=jcode, session=session,
+                          blast_radius_cache=blast_radius_cache)
 
     if include_us:
         rows = sample_bills_us(conn, args.bills)
@@ -658,7 +772,9 @@ def main():
                 label = f"US {identifier} ({session})"
                 local = fetch_bill(LOCAL_API, LOCAL_KEY, jid, session, identifier)
                 live  = fetch_bill(LIVE_API,  LIVE_KEY,  jid, session, identifier)
-                compare_bills(report, local, live, label)
+                compare_bills(report, local, live, label,
+                              conn=conn, jurisdiction_code="us", session=session,
+                              blast_radius_cache=blast_radius_cache)
 
     # ── People ─────────────────────────────────────────────────────────────
     if not args.no_people:
