@@ -1,0 +1,8016 @@
+{
+  "method": "Paged through the entire local api-v3 VA 2026 corpus (3,637 bills, per_page=20, 182 pages, include=votes) and checked every vote dated 2026-02-17 for Elizabeth B. Bennett-Parker's presence in the per-voter voter_name list. Local-only scan -- no live API calls (would exceed useful rate-limit budget to check all 338 individually); a separate random 8-bill sample of the newly-found bills (i.e. excluding the ~20 originally sampled) was then checked against live directly, see va_open26_sample8_live_verify.json.",
+  "total_bills_in_va_2026_corpus": 3637,
+  "bills_with_a_2026-02-17_vote": 338,
+  "of_those_with_bennett_parker_present": 266,
+  "distinct_vote_ids_with_bennett_parker": 266,
+  "non_bennett_parker_2026-02-17_votes_are_structurally_different": "all 72 non-BP bills' same-day votes are Senate floor votes (40 voters) or House committee votes (15-22 voters) -- different chamber/committee, not part of the House floor block-vote this finding is about. Sample of 10 shown below for reference.",
+  "non_bp_sample": [
+    {
+      "bill": "HB 1180",
+      "vote_id": "ocd-vote/a207874d-6f45-47bf-a7f9-a27389a806a8",
+      "motion": "Reported from Finance and Appropriations",
+      "n_voters": 15,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 13
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 2
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 541",
+      "vote_id": "ocd-vote/7068f5aa-f1f3-4976-89b1-2a57217b97d1",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 24
+        },
+        {
+          "option": "no",
+          "value": 16
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 256",
+      "vote_id": "ocd-vote/d70888dc-2de1-4c42-ae9d-802aaec53d7b",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 21
+        },
+        {
+          "option": "no",
+          "value": 19
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SJ 74",
+      "vote_id": "ocd-vote/b3430b9b-e895-4084-bb5d-ee9bf5fa008e",
+      "motion": "Concur House Amendments  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 21
+        },
+        {
+          "option": "no",
+          "value": 19
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SJ 73",
+      "vote_id": "ocd-vote/326bdb0a-6fd4-403a-bfd2-087342b9db99",
+      "motion": "Concur House Amendments  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 21
+        },
+        {
+          "option": "no",
+          "value": 19
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 799",
+      "vote_id": "ocd-vote/d0c142af-16ee-4c4e-b07a-8d11f2dd9b66",
+      "motion": "Reported from Finance and Appropriations",
+      "n_voters": 15,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 13
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 2
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 689",
+      "vote_id": "ocd-vote/a5d10242-efe5-46d2-83b8-568e2e3433d6",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 39
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 673",
+      "vote_id": "ocd-vote/393c7956-7103-47ec-9163-a85b514dd2dd",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 40
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 650",
+      "vote_id": "ocd-vote/e107c872-a664-455a-bf80-84d1358ff237",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 23
+        },
+        {
+          "option": "no",
+          "value": 17
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "SB 621",
+      "vote_id": "ocd-vote/8eed5842-d5d5-4dff-b63e-3930046e3a7b",
+      "motion": "Passage  R",
+      "n_voters": 40,
+      "has_bennett_parker": false,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 21
+        },
+        {
+          "option": "no",
+          "value": 19
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 0
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "bennett_parker_bills": [
+    {
+      "bill": "HB 1030",
+      "vote_id": "ocd-vote/6419e9b1-fd14-404e-bf97-39e3b2be573c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 319",
+      "vote_id": "ocd-vote/27b8cb67-1e8a-4c48-a7c7-0573380c6fc3",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 360",
+      "vote_id": "ocd-vote/25d23c36-1d94-4878-bf84-f66e3c105c88",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 2
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1387",
+      "vote_id": "ocd-vote/fb670c1e-2257-4450-a523-ce35d6a189f9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 193",
+      "vote_id": "ocd-vote/952a8bc4-c819-427e-a6c3-7708b8977ade",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1393",
+      "vote_id": "ocd-vote/cdd496bd-f1a4-4b3b-a3b0-921ff8ed9cba",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 66
+        },
+        {
+          "option": "no",
+          "value": 31
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 814",
+      "vote_id": "ocd-vote/526cac6b-efbe-48a5-8816-f22bb06e4200",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1019",
+      "vote_id": "ocd-vote/f7bd7671-0a91-4a65-a97d-9d7cb494bebc",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1374",
+      "vote_id": "ocd-vote/63e12099-906b-4d22-8e7f-efb97e6a472b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 69
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1185",
+      "vote_id": "ocd-vote/2ba6d7ef-56ae-4465-9b87-e1c76e986e11",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 973",
+      "vote_id": "ocd-vote/49f9a308-6525-47c3-827e-e531d9f943d4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 94
+        },
+        {
+          "option": "no",
+          "value": 2
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1365",
+      "vote_id": "ocd-vote/fccf6414-c910-4b58-9517-9132635459db",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 92
+        },
+        {
+          "option": "no",
+          "value": 4
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1385",
+      "vote_id": "ocd-vote/b367521c-5c85-4353-9b10-32002ed2529f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1070",
+      "vote_id": "ocd-vote/3234d31a-461d-4176-a3ef-946576370cc8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1403",
+      "vote_id": "ocd-vote/2a25462d-5ee3-42b3-a928-bdbc0b909447",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 2
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 564",
+      "vote_id": "ocd-vote/a898ad05-9b48-4865-b5ce-999658187297",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 80
+        },
+        {
+          "option": "no",
+          "value": 14
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1327",
+      "vote_id": "ocd-vote/4d92d481-96b6-4dfd-9d2f-e3865d322888",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1455",
+      "vote_id": "ocd-vote/e228a54a-0f61-46a4-b3f4-2130491dd629",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1510",
+      "vote_id": "ocd-vote/5e605e9c-d297-4381-98cb-325c50eb6fd0",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 593",
+      "vote_id": "ocd-vote/ca01e4df-8be7-4207-90de-5ee055721586",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 690",
+      "vote_id": "ocd-vote/386376a2-4a0d-4576-9bb2-64805f0b81a5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1233",
+      "vote_id": "ocd-vote/fb250edc-5889-4293-8b37-3ca71ec6079f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1218",
+      "vote_id": "ocd-vote/0702de2c-9d84-4fb9-b6f6-9eed951fe24c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 808",
+      "vote_id": "ocd-vote/8cb3fd4c-1059-4073-b76c-9be3a90d0227",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 936",
+      "vote_id": "ocd-vote/5d621db9-d735-4ff5-99df-279c11ae4175",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 48
+        },
+        {
+          "option": "no",
+          "value": 37
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 15
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 317",
+      "vote_id": "ocd-vote/25825757-86bf-48a3-98a2-8f7a04821f29",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1339",
+      "vote_id": "ocd-vote/6f5dc091-b025-4b85-9f90-ee867af61bbf",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 96
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 400",
+      "vote_id": "ocd-vote/50269fcb-129f-425d-9e49-1f3818d0a7ae",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 74
+        },
+        {
+          "option": "no",
+          "value": 23
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 308",
+      "vote_id": "ocd-vote/dc12fc3e-406b-480d-a04e-0d2cfc351625",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 931",
+      "vote_id": "ocd-vote/30a34e43-89c8-4a15-a837-afe94d67f2d7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 672",
+      "vote_id": "ocd-vote/ea63914d-82b7-4deb-bc61-5c4031d3f502",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1330",
+      "vote_id": "ocd-vote/130c46e4-62e8-44af-a2b5-cf91d0881b4e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 66
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 972",
+      "vote_id": "ocd-vote/7fd79088-fad1-40d7-9f48-b612f7059391",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1235",
+      "vote_id": "ocd-vote/3d2672df-e37b-445d-b7f0-2270bf78f96b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1115",
+      "vote_id": "ocd-vote/26edb523-0ecf-478e-a0be-f271b73d3a01",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1398",
+      "vote_id": "ocd-vote/87a23955-a932-4b07-847a-f5607048d5b2",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 92
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 913",
+      "vote_id": "ocd-vote/bf242925-5e1f-41ee-980d-ef3e9c6a8ee5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1465",
+      "vote_id": "ocd-vote/2677cf87-a600-457d-8a9e-7473e89e82f2",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 94
+        },
+        {
+          "option": "no",
+          "value": 2
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1373",
+      "vote_id": "ocd-vote/d729f1b4-363e-46a3-a824-1baaebe908de",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 31
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 461",
+      "vote_id": "ocd-vote/4e792152-d64f-4f66-972b-6e9f9842f339",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 69
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1280",
+      "vote_id": "ocd-vote/75e55435-a724-46a0-b66a-2f9c8c5593b5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 674",
+      "vote_id": "ocd-vote/86801246-fe69-4865-95d3-0e357f87124b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1266",
+      "vote_id": "ocd-vote/5a3681e3-9fc8-48ee-aa7a-f67f8088873b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1002",
+      "vote_id": "ocd-vote/a6e52903-7fa8-4e1c-ad7c-0e105c578341",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1391",
+      "vote_id": "ocd-vote/08573b8c-79b0-44c0-8a55-70763e05d0f7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1513",
+      "vote_id": "ocd-vote/baf54ac9-db3e-4a1a-9dfc-f8a5b2f3a09c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 998",
+      "vote_id": "ocd-vote/121ecc71-21b5-4339-a8e8-0e3ce4ec9bf7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 69
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1241",
+      "vote_id": "ocd-vote/5744c46f-315e-433b-915b-036d8c92e596",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 92
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 974",
+      "vote_id": "ocd-vote/b886b6ac-1bc1-4208-94c3-2c821249e64b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 64
+        },
+        {
+          "option": "no",
+          "value": 33
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 897",
+      "vote_id": "ocd-vote/88751640-3263-4b78-9823-7351f75077ea",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 398",
+      "vote_id": "ocd-vote/3c05577f-2af1-4a04-9b8b-5b67fe82bc5a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 88
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 7
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1016",
+      "vote_id": "ocd-vote/8c559c84-075e-4ae1-b9e0-406665d7ede4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 66
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1444",
+      "vote_id": "ocd-vote/fda2d3e1-eb4e-41a9-80ef-f7ebfea8890c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1151",
+      "vote_id": "ocd-vote/0dc64ebd-0649-4594-beda-6c7095497634",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 32
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1382",
+      "vote_id": "ocd-vote/eccf61cc-9cf4-4b5d-971a-6aaa176f7b55",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1479",
+      "vote_id": "ocd-vote/22fb00d0-9351-4598-a433-ef30354f78f0",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1249",
+      "vote_id": "ocd-vote/836e3ea3-8f21-4eed-abc8-77cb681b2b98",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 6
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1050",
+      "vote_id": "ocd-vote/da20d69f-5b85-4d11-86fd-4f02b588d49d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 605",
+      "vote_id": "ocd-vote/17105d50-8198-4acc-a3bc-98d266fa5ea9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 836",
+      "vote_id": "ocd-vote/d699a14f-0d2a-46ad-94d9-e8d20962f350",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1111",
+      "vote_id": "ocd-vote/dc5961fc-5341-443c-bfb8-65c2e8120e5a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 69
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1508",
+      "vote_id": "ocd-vote/c0dc3d68-4114-4bea-9ccd-df6218117ccf",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 548",
+      "vote_id": "ocd-vote/255685b3-d433-484c-9aa8-a094f9d16d73",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 746",
+      "vote_id": "ocd-vote/376af0d7-9c4e-42b1-a4b1-109bbd37f70a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1217",
+      "vote_id": "ocd-vote/59461a5f-5b85-4c92-b81e-ac63f4e070fd",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 87
+        },
+        {
+          "option": "no",
+          "value": 10
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1518",
+      "vote_id": "ocd-vote/bfa9bff2-b830-4920-bc07-3294c66582dd",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 642",
+      "vote_id": "ocd-vote/1f34b104-7cf4-4c5f-9d89-cfd333149d55",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 32
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 630",
+      "vote_id": "ocd-vote/e93b7ebd-ed18-43e8-8c6b-7a80bce6a8ba",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1272",
+      "vote_id": "ocd-vote/31a65ad7-aff9-4f48-b4b4-9bf67742dc59",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 52
+        },
+        {
+          "option": "no",
+          "value": 41
+        },
+        {
+          "option": "abstain",
+          "value": 2
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1272",
+      "vote_id": "ocd-vote/f38a99b4-696c-44b3-b7c1-5c9b1dda4da7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 59
+        },
+        {
+          "option": "no",
+          "value": 36
+        },
+        {
+          "option": "abstain",
+          "value": 1
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 558",
+      "vote_id": "ocd-vote/7097d114-afec-4cc0-9f3a-7060e2cd0438",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 260",
+      "vote_id": "ocd-vote/ff299946-70ed-442b-b8be-1e272d2b70c0",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 173",
+      "vote_id": "ocd-vote/ac526658-9c70-42d0-9e05-9555ec9e9de7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 31
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 884",
+      "vote_id": "ocd-vote/695ee8e5-8e33-4691-9ef8-69cd1d4d9961",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1298",
+      "vote_id": "ocd-vote/113209f6-d44d-4f1f-b6b5-e0bb067502ab",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 232",
+      "vote_id": "ocd-vote/9c2b1fc2-7e03-4775-b203-5fdf26f80493",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1337",
+      "vote_id": "ocd-vote/f67c29b3-d99c-4e21-86b3-1f127ed04bc5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 215",
+      "vote_id": "ocd-vote/c3d140dd-5b87-43b4-b839-0be3c567caf4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 862",
+      "vote_id": "ocd-vote/13d41f5a-696a-44b8-ba70-c8e8d3379e12",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 733",
+      "vote_id": "ocd-vote/b570cf56-8593-47de-b0bc-ec278d3d49bc",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1500",
+      "vote_id": "ocd-vote/bde6289a-f9bb-4d00-be8d-1dd63343b8db",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 826",
+      "vote_id": "ocd-vote/c4e0ed92-33dc-477b-aea8-2e7ecdbfa199",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1464",
+      "vote_id": "ocd-vote/529d89a6-21f9-4f10-9973-094efa9f198e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 786",
+      "vote_id": "ocd-vote/53adaafc-dbe9-484b-8e42-7b9807dca2b8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 83
+        },
+        {
+          "option": "no",
+          "value": 13
+        },
+        {
+          "option": "abstain",
+          "value": 1
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 786",
+      "vote_id": "ocd-vote/6ac634b2-a309-4f71-860d-0fc9832057e3",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 94
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1503",
+      "vote_id": "ocd-vote/ed6a7400-4376-4cfd-98b2-55701f6956d5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 6
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 648",
+      "vote_id": "ocd-vote/669a5107-61ca-4ca6-8f04-45098281fe6a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 1
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1152",
+      "vote_id": "ocd-vote/2e585d62-3c6a-44f8-82c1-bccfaf602d17",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 89
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1318",
+      "vote_id": "ocd-vote/f3d6fede-eba5-4bb6-9443-80168890570e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 90
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 787",
+      "vote_id": "ocd-vote/e397c689-5ac8-4f68-9380-55cde0cc2bfd",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 490",
+      "vote_id": "ocd-vote/01bcb4ea-1e30-4eca-af49-de99d5f8b00d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 93
+        },
+        {
+          "option": "no",
+          "value": 4
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 845",
+      "vote_id": "ocd-vote/ab3e30db-d5c5-48d2-bb6d-c885d5cf6a29",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 74
+        },
+        {
+          "option": "no",
+          "value": 23
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 736",
+      "vote_id": "ocd-vote/5d8b8a96-e5e3-4d1e-a8ee-46741a7824e4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 911",
+      "vote_id": "ocd-vote/e51b9350-a2b8-4d59-a975-08dfefc37be5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 662",
+      "vote_id": "ocd-vote/603ac7b7-c005-443b-bf3d-fb61e2865889",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 145",
+      "vote_id": "ocd-vote/74c02e35-d0e7-45c3-b9b5-bae104a187d7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 89
+        },
+        {
+          "option": "no",
+          "value": 8
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1229",
+      "vote_id": "ocd-vote/1ceaa7b7-429d-4449-9310-e11afc472934",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 90
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1243",
+      "vote_id": "ocd-vote/a5798662-be9e-42f0-b6d3-1dcaa8640faf",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1224",
+      "vote_id": "ocd-vote/6ce3767b-e54d-42bd-be28-114bc6a2d2fb",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 88
+        },
+        {
+          "option": "no",
+          "value": 9
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 901",
+      "vote_id": "ocd-vote/f1757be5-8190-4043-96e3-5ccfbdd8cf03",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 684",
+      "vote_id": "ocd-vote/8b6f5fc3-1a0e-40b0-b941-e2c3731c8b5c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 56
+        },
+        {
+          "option": "no",
+          "value": 39
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 523",
+      "vote_id": "ocd-vote/2922527f-b494-4792-b179-399776eeae69",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 150",
+      "vote_id": "ocd-vote/acaae8c1-71e1-4ddf-8d11-83ef75df7622",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 253",
+      "vote_id": "ocd-vote/6e5249e3-debe-4c8a-891f-c03e062d5197",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 971",
+      "vote_id": "ocd-vote/b42b7b35-a56e-4e38-aecc-dd7250c5b786",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 93
+        },
+        {
+          "option": "no",
+          "value": 3
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 938",
+      "vote_id": "ocd-vote/fb02cd75-4f87-422b-809a-b85369f717c6",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 88
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 200",
+      "vote_id": "ocd-vote/85b0b97c-d25a-4f43-a312-84305584d0f8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 728",
+      "vote_id": "ocd-vote/34dda1f9-3430-4940-b028-89966d13f34f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 82
+        },
+        {
+          "option": "no",
+          "value": 14
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 393",
+      "vote_id": "ocd-vote/082ab077-d75e-4745-96df-e9e2525c5e6c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1361",
+      "vote_id": "ocd-vote/407d466b-14a7-42f5-85a7-fcaffa5dabf9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 79
+        },
+        {
+          "option": "no",
+          "value": 18
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 527",
+      "vote_id": "ocd-vote/b01f4b4a-bf5e-4d62-89a3-bf604b99218c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 64
+        },
+        {
+          "option": "no",
+          "value": 33
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 792",
+      "vote_id": "ocd-vote/31906428-63de-4e1d-ab2f-34d0ed9b4e1f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1182",
+      "vote_id": "ocd-vote/65b3ba13-c4d9-4396-81f2-7e74304cc810",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 320",
+      "vote_id": "ocd-vote/4778218a-54d8-4d94-bb74-75a4e54255fb",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1006",
+      "vote_id": "ocd-vote/eda64fc3-5ca4-49e1-a608-dbfbc15d3986",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 250",
+      "vote_id": "ocd-vote/1e533f86-f4af-4279-8fd7-fa3d4b38edcf",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 82",
+      "vote_id": "ocd-vote/ef4db6fa-5438-452f-9110-24cfb41c1433",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 299",
+      "vote_id": "ocd-vote/4fae9edd-6bc2-4236-b44c-ec9978c64ec6",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 86
+        },
+        {
+          "option": "no",
+          "value": 11
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 969",
+      "vote_id": "ocd-vote/bc3537b4-80be-422e-8991-80aa8d9935be",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1313",
+      "vote_id": "ocd-vote/82bbf905-30e4-4036-a898-4ed8ce8bee46",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1273",
+      "vote_id": "ocd-vote/0685f9ad-04b7-45e8-9903-e0111bdd3c61",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 6
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 487",
+      "vote_id": "ocd-vote/c11f20e5-8125-447d-88dd-fcf03f1db9ac",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 686",
+      "vote_id": "ocd-vote/35295b82-0370-4983-be73-eedf7546770a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 85
+        },
+        {
+          "option": "no",
+          "value": 11
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 944",
+      "vote_id": "ocd-vote/f7043213-dfb5-419a-a7fd-ba45e660fcd8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1219",
+      "vote_id": "ocd-vote/54045717-4355-468c-a92b-0e9c4c0339f9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1524",
+      "vote_id": "ocd-vote/ccd59fa0-4f50-435d-9ebf-db0ec47692af",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 54
+        },
+        {
+          "option": "no",
+          "value": 41
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 954",
+      "vote_id": "ocd-vote/d8daea10-d588-4eda-9fe7-effa0e77441b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 441",
+      "vote_id": "ocd-vote/4007681a-2a07-4c9f-bcc8-76673ec245d8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 502",
+      "vote_id": "ocd-vote/9410d103-9b5a-41d0-b59a-ba68a28c43d4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 590",
+      "vote_id": "ocd-vote/6db4b7c6-bbcd-47f6-ba11-bff8deb57e91",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 717",
+      "vote_id": "ocd-vote/de165c63-4046-493e-a9b3-87b977a9626c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1411",
+      "vote_id": "ocd-vote/1348d3d1-1c34-4ac3-be07-06f6796c38ad",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1140",
+      "vote_id": "ocd-vote/30ca3420-8fa5-47d6-9b2d-e7d82d11b725",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 124",
+      "vote_id": "ocd-vote/13ade955-4889-472b-b13a-6fbc1d48b0e0",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 830",
+      "vote_id": "ocd-vote/5da35dd5-76ed-46f4-b0a5-0d02d02eb4e1",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 896",
+      "vote_id": "ocd-vote/01abe597-2551-47cd-8496-1fde28da1088",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1149",
+      "vote_id": "ocd-vote/a801c826-e97f-4489-ab5e-7ebfe494e430",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 444",
+      "vote_id": "ocd-vote/3d624554-a4b6-4667-a875-0705c0cf4db7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 76
+        },
+        {
+          "option": "no",
+          "value": 21
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1421",
+      "vote_id": "ocd-vote/ac0259e9-2db5-4cc7-b52a-4c2090736f66",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 31
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 410",
+      "vote_id": "ocd-vote/9fff3773-a9b3-4e46-a5c5-82d2910cfc83",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 88
+        },
+        {
+          "option": "no",
+          "value": 8
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 161",
+      "vote_id": "ocd-vote/29c26db4-5dc4-4097-bf17-3ae246eabe22",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 161",
+      "vote_id": "ocd-vote/fe9b0fc8-c40e-48d8-bccc-c27bb64d553b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 46
+        },
+        {
+          "option": "no",
+          "value": 49
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1276",
+      "vote_id": "ocd-vote/204d50e4-494c-4d2f-a027-bb99b6278d2a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1307",
+      "vote_id": "ocd-vote/f866b4bb-81fc-487e-8bde-5cf60f4e56a5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1418",
+      "vote_id": "ocd-vote/435c99a2-3a99-40d9-b481-cd21d3afb88a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 93
+        },
+        {
+          "option": "no",
+          "value": 2
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1516",
+      "vote_id": "ocd-vote/a25ff8cd-90f7-4789-ab6c-e765547151c1",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1345",
+      "vote_id": "ocd-vote/fb6cbc43-6bf3-42fa-b332-5252142f6f0a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 284",
+      "vote_id": "ocd-vote/a508c49f-043d-4459-84d6-845b516c60de",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 614",
+      "vote_id": "ocd-vote/d0ad3c22-8d72-41e8-aa64-0850be08a7b9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 111",
+      "vote_id": "ocd-vote/83e34831-cfe7-4bb7-8cff-9c7dfd932077",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1092",
+      "vote_id": "ocd-vote/2527a522-6d67-4336-9e10-dd2f930bf0dd",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 438",
+      "vote_id": "ocd-vote/852b10f5-3ccf-4e88-8cda-235b4a34c9bc",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 33
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 358",
+      "vote_id": "ocd-vote/d8e40cfe-1ea9-4f95-8675-899b99f30de9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1475",
+      "vote_id": "ocd-vote/fc8fbde6-50d1-4fb4-add5-0e4a6ec607b5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 31
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 747",
+      "vote_id": "ocd-vote/fe9dd98d-ed98-4913-b116-e0dfa3210045",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 26",
+      "vote_id": "ocd-vote/38b66e12-0d87-43bd-9502-e0402c588a3a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 496",
+      "vote_id": "ocd-vote/9f9113f7-44d1-43ce-801f-c649690cd88b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 74
+        },
+        {
+          "option": "no",
+          "value": 23
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 894",
+      "vote_id": "ocd-vote/667227af-05b6-4ec0-9173-24d15df1f3ac",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 73
+        },
+        {
+          "option": "no",
+          "value": 24
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1446",
+      "vote_id": "ocd-vote/9819e2eb-ff46-4561-86ac-d1031d2104be",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1439",
+      "vote_id": "ocd-vote/d1de235b-88f7-46d2-b5a4-866d1c8c4731",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1383",
+      "vote_id": "ocd-vote/15b34ff6-dc99-4bd3-8888-0281492a6e01",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 430",
+      "vote_id": "ocd-vote/33429b9e-7171-403e-b93b-3d17eda2fc8d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 92
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1238",
+      "vote_id": "ocd-vote/7e5cfd3a-f7a6-4a15-a685-5b478415c14d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 58
+        },
+        {
+          "option": "no",
+          "value": 36
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 838",
+      "vote_id": "ocd-vote/29e55701-2691-49d7-9d2e-e581a85341aa",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1386",
+      "vote_id": "ocd-vote/56a5cf7f-68ff-498f-8d6a-dbbfd4eb1d15",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1406",
+      "vote_id": "ocd-vote/ffe0a657-9a63-4144-bcb2-0ecb7c1016eb",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1352",
+      "vote_id": "ocd-vote/a469c1a6-0977-40b3-8b3c-144cf47cfe97",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1292",
+      "vote_id": "ocd-vote/22471959-b0af-41be-a196-6f1cacdcdab7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 903",
+      "vote_id": "ocd-vote/1aa8e61a-f517-4936-844f-f7da89e45d8e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1015",
+      "vote_id": "ocd-vote/4ed5fdaa-b890-4dba-a9b4-2d4698aa550e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1502",
+      "vote_id": "ocd-vote/cd09f3fd-9e3e-44ab-85b1-98a89d96e1c5",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 75",
+      "vote_id": "ocd-vote/8476d619-3aef-42c4-819e-9155d67fe304",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 507",
+      "vote_id": "ocd-vote/67be7d08-2652-4f4a-9533-26246b08a133",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 707",
+      "vote_id": "ocd-vote/82d94d3b-1372-4eb7-b955-8764253a95be",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 54
+        },
+        {
+          "option": "no",
+          "value": 43
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 675",
+      "vote_id": "ocd-vote/d8edf7fc-b6e8-43bf-aa74-18076d90fa33",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 36
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1334",
+      "vote_id": "ocd-vote/e858a1f9-2649-41e6-b689-a6d28a68b23e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1320",
+      "vote_id": "ocd-vote/35f985de-3872-4663-8d55-9ed0b6c13973",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 560",
+      "vote_id": "ocd-vote/6f50c6c3-10f6-443e-b623-051afed83ade",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 86
+        },
+        {
+          "option": "no",
+          "value": 11
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 246",
+      "vote_id": "ocd-vote/ace875d9-3572-4e3b-a6fe-976fc33e1859",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 56
+        },
+        {
+          "option": "no",
+          "value": 39
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 404",
+      "vote_id": "ocd-vote/896d3c4b-da9c-4776-a8a8-d39bd4068693",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 27
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 497",
+      "vote_id": "ocd-vote/71b2f81a-1f5f-419c-a83f-50e6599b2e23",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 71
+        },
+        {
+          "option": "no",
+          "value": 26
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 294",
+      "vote_id": "ocd-vote/a1a027e9-3874-4ec7-a0e3-06394bfe33e8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 88
+        },
+        {
+          "option": "no",
+          "value": 8
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 934",
+      "vote_id": "ocd-vote/044cc403-cd27-4968-a155-398a072a0d8e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 4
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1103",
+      "vote_id": "ocd-vote/c92ad5ba-bd35-4008-be9b-0b8f39552808",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1301",
+      "vote_id": "ocd-vote/52737cca-bdd4-499b-a26b-f28a94c1265e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 489",
+      "vote_id": "ocd-vote/ad2aceb9-44f7-49df-bd1a-3488367d138a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 36
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 790",
+      "vote_id": "ocd-vote/1ff8759f-cfda-4d09-adc0-21d6727d2e13",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 735",
+      "vote_id": "ocd-vote/d9b76dc4-0db2-4681-b81c-19520e4eb7fc",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 87
+        },
+        {
+          "option": "no",
+          "value": 8
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 86",
+      "vote_id": "ocd-vote/c14987ef-ebfc-41b9-92b6-be7d94f953b9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1413",
+      "vote_id": "ocd-vote/15429d88-42c1-466e-9858-2c899cc3d2b2",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 285",
+      "vote_id": "ocd-vote/b73e5075-511d-4d90-8c22-fc7c85f610b7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 305",
+      "vote_id": "ocd-vote/0eaf6151-08b5-4831-9e6f-56810637a4ce",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1046",
+      "vote_id": "ocd-vote/39d10b45-7690-42d8-bf07-8ee0cf193843",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1426",
+      "vote_id": "ocd-vote/284a06fb-0471-4617-a2d3-0b7b776ea37a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 613",
+      "vote_id": "ocd-vote/3ba17610-70a5-43c7-9d03-3fe35a9ad121",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 597",
+      "vote_id": "ocd-vote/7b4ce0d6-e6d7-4dc6-89f3-369a1a544c6f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 32
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1041",
+      "vote_id": "ocd-vote/9ce0e676-c9f5-400d-b57f-5965230d255a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1220",
+      "vote_id": "ocd-vote/bb3298ec-814f-4bf1-8c47-1f7508d90a5a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 29
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1283",
+      "vote_id": "ocd-vote/ff3a55cf-d2f8-40fb-bdc3-22d27f4af811",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 96
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1231",
+      "vote_id": "ocd-vote/9b1d36c2-7418-46b7-b1cf-27c4a8c85387",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 298",
+      "vote_id": "ocd-vote/72b0edf6-923c-4d62-979f-75f4e4f88fd4",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 495",
+      "vote_id": "ocd-vote/951bc090-79be-4460-8a67-589b107a0577",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 456",
+      "vote_id": "ocd-vote/81d11329-eb7b-437d-9376-a2a36404d03a",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1309",
+      "vote_id": "ocd-vote/02087726-f31a-4a50-b501-3ba8640f6f3e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1186",
+      "vote_id": "ocd-vote/442a3db0-5076-411a-8d93-381f7c200e31",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1304",
+      "vote_id": "ocd-vote/c752d2bd-3d3d-4547-8df2-f2e5d3e3bd0f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1452",
+      "vote_id": "ocd-vote/7fe4bfe6-7458-4a96-aa17-738c47f1767b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1401",
+      "vote_id": "ocd-vote/676cc9e3-1c1e-4302-8b0c-43cebb9f971f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 93
+        },
+        {
+          "option": "no",
+          "value": 4
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1075",
+      "vote_id": "ocd-vote/e57177f0-2166-4792-8482-e81836f3a44e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 85
+        },
+        {
+          "option": "no",
+          "value": 12
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 361",
+      "vote_id": "ocd-vote/8cd7110f-aece-4dbc-b600-c012178537e6",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 69
+        },
+        {
+          "option": "no",
+          "value": 27
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1256",
+      "vote_id": "ocd-vote/36eb45d2-8901-438a-8464-63d740fc6b8e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1400",
+      "vote_id": "ocd-vote/21ddc20a-e44c-4cca-abdc-984e2ea5d387",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 66
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1189",
+      "vote_id": "ocd-vote/7518dc31-5921-4877-b7af-4204f8a66ea1",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1344",
+      "vote_id": "ocd-vote/70f2ea98-6b86-4947-a074-8bf8b3334166",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1363",
+      "vote_id": "ocd-vote/93f3e51a-2316-4e3d-a0d6-8d87a92e1a64",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 87
+        },
+        {
+          "option": "no",
+          "value": 10
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 602",
+      "vote_id": "ocd-vote/19f44af8-4ac6-4885-9ad8-4ce5e1a1ba4e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 79
+        },
+        {
+          "option": "no",
+          "value": 17
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 952",
+      "vote_id": "ocd-vote/512d8dbb-501c-46d8-a7f2-4fe79ae95f14",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1173",
+      "vote_id": "ocd-vote/75ae52db-0d64-44cf-a9d6-26658c93adba",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 765",
+      "vote_id": "ocd-vote/78b2fadf-2843-4295-a095-60a69c641375",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 73
+        },
+        {
+          "option": "no",
+          "value": 22
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1443",
+      "vote_id": "ocd-vote/a1e80bad-8c5c-49c3-860c-a106534f6c62",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 29
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1366",
+      "vote_id": "ocd-vote/86f8b414-cf65-4493-9db8-1bdfab9fcf87",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 6
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 178",
+      "vote_id": "ocd-vote/52a7020d-a498-46bb-92f4-067cb4cba12d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 840",
+      "vote_id": "ocd-vote/1abb7e19-7ecb-4fa3-8287-06fbbba6f4dd",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 677",
+      "vote_id": "ocd-vote/5cad02f4-726e-4c90-ae95-c138804d1212",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1263",
+      "vote_id": "ocd-vote/e76885b2-869f-4e59-ba84-9bbecbdc04e7",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1450",
+      "vote_id": "ocd-vote/3384333a-83a5-44c2-a53e-cda8e71c3992",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 92",
+      "vote_id": "ocd-vote/ccc7756a-3d6d-4367-9fc7-891e54f8c72c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 94
+        },
+        {
+          "option": "no",
+          "value": 3
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1333",
+      "vote_id": "ocd-vote/848a1830-c915-494f-884f-4957b24487fa",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 629",
+      "vote_id": "ocd-vote/c7216b2d-cf49-48ed-8810-e62920f7f116",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 318",
+      "vote_id": "ocd-vote/7fc7d3e1-5f89-4ae5-b504-99d56a41ce44",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 29
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 561",
+      "vote_id": "ocd-vote/644db901-d423-40f2-af8a-80ef5252ca0b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1529",
+      "vote_id": "ocd-vote/53d4cfca-869b-4c63-8324-b1b5fb30f54d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1483",
+      "vote_id": "ocd-vote/5b9a3b1d-d6d6-47bc-a829-215d642880aa",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 32
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 569",
+      "vote_id": "ocd-vote/39055aeb-2c80-4bf8-b8fa-bcf0322cad26",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1490",
+      "vote_id": "ocd-vote/741b887e-8ac3-4abe-97c4-77be176a61ba",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 89
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1067",
+      "vote_id": "ocd-vote/3ff0d7c5-2022-4437-a59c-952f00e48eed",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 976",
+      "vote_id": "ocd-vote/31bae2bb-d01b-4e77-989b-fa93c3d6a099",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 994",
+      "vote_id": "ocd-vote/7ba32ebd-e592-4014-a2b7-80715f399eab",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 59
+        },
+        {
+          "option": "no",
+          "value": 38
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 271",
+      "vote_id": "ocd-vote/1e1e0d36-72a7-4535-ad9b-957cd44d28de",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 90
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1396",
+      "vote_id": "ocd-vote/8af51372-59c4-4a9b-a5d9-0dec2997e76b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 55
+        },
+        {
+          "option": "no",
+          "value": 39
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1504",
+      "vote_id": "ocd-vote/344eecd7-3d99-4a45-b479-4fe05c4fc59b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 895",
+      "vote_id": "ocd-vote/f7576c7d-e67d-4912-9ba7-2cb2e74ae416",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 65
+        },
+        {
+          "option": "no",
+          "value": 32
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1022",
+      "vote_id": "ocd-vote/d2dac78a-7436-4918-93dd-259d0540fed9",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 4
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1414",
+      "vote_id": "ocd-vote/2343c947-68c9-464e-adc4-dba18dd1c10c",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 91
+        },
+        {
+          "option": "no",
+          "value": 5
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1072",
+      "vote_id": "ocd-vote/5de52b12-ab2c-45d2-954d-c8b4d36951bf",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 374",
+      "vote_id": "ocd-vote/ff3a477b-d586-42a1-ac5e-1ae16831dfda",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 61
+        },
+        {
+          "option": "no",
+          "value": 35
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1150",
+      "vote_id": "ocd-vote/94ba95b0-4280-4a30-8e90-c962508d1d96",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 811",
+      "vote_id": "ocd-vote/0cf6bf26-8253-4b13-aa55-41b84ed52fcc",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 61",
+      "vote_id": "ocd-vote/44618563-19f6-4477-866d-a6d13183a7c0",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 64
+        },
+        {
+          "option": "no",
+          "value": 33
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1415",
+      "vote_id": "ocd-vote/4aeb8ed7-0233-4316-a1e2-addfba31f38b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 60
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 591",
+      "vote_id": "ocd-vote/a7bea26a-4306-43ea-8891-35c5e8dc0768",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1282",
+      "vote_id": "ocd-vote/ad9b7209-3281-4ebd-9bdd-42887076a9d3",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 295",
+      "vote_id": "ocd-vote/97050bd5-5752-44c0-b821-68687a28bea6",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 87
+        },
+        {
+          "option": "no",
+          "value": 7
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 6
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 209",
+      "vote_id": "ocd-vote/6458b072-c5cf-4c74-8494-e8686b52e727",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1008",
+      "vote_id": "ocd-vote/70b13bd4-e3ac-4294-8269-e58a9ab09ed8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1378",
+      "vote_id": "ocd-vote/1bf94dd7-eb7d-43de-be06-4a621e1c3ed8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 796",
+      "vote_id": "ocd-vote/23fae248-01f1-433e-b538-ed646f31c18b",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 68
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1528",
+      "vote_id": "ocd-vote/61ea197b-6bcb-453d-a681-1e8a3afd53b8",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 328",
+      "vote_id": "ocd-vote/b750c586-55e2-4fd9-a443-14466aaef28f",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 72
+        },
+        {
+          "option": "no",
+          "value": 25
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 637",
+      "vote_id": "ocd-vote/b2ed373a-9348-48fe-b389-52d88d67b46e",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 33
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 505",
+      "vote_id": "ocd-vote/d7a5f693-00ef-4019-85f6-5b5d33696a72",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 63
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 392",
+      "vote_id": "ocd-vote/f7d740b9-fce0-452d-9a7b-fa279dcd231d",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 1207",
+      "vote_id": "ocd-vote/45d86bb7-9ce0-4f89-ac3a-9563ad60fdae",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 62
+        },
+        {
+          "option": "no",
+          "value": 34
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 417",
+      "vote_id": "ocd-vote/c34d85c7-4a5b-4b99-80c3-febec2f94746",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 97
+        },
+        {
+          "option": "no",
+          "value": 0
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 425",
+      "vote_id": "ocd-vote/8a982d6e-2bd1-482e-b252-2e9962fef237",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 95
+        },
+        {
+          "option": "no",
+          "value": 1
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "bill": "HB 524",
+      "vote_id": "ocd-vote/7ee51f8b-a248-4699-9e13-eb2c79974d17",
+      "motion": "H VOTE:",
+      "n_voters": 100,
+      "has_bennett_parker": true,
+      "counts": [
+        {
+          "option": "yes",
+          "value": 68
+        },
+        {
+          "option": "no",
+          "value": 28
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 4
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ]
+    }
+  ]
+}
