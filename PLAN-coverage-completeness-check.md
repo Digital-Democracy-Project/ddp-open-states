@@ -773,8 +773,9 @@ not an isolated case. Not root-caused further.
 - Everything carried forward from §14 (HD/SD dedup, `scraper-audit`, cadence wiring, MA prefix
   re-check, MI's 8 vote-count gaps — now possibly related to the same class of finding as VA's
   2026-02-17 block vote, worth reconciling together).
-- VA's 2026-02-17 block-vote single-vote discrepancy (~20 bills) — not root-caused; would need to
-  identify which specific member's vote differs and cross-check against VA's own record.
+- ~~VA's 2026-02-17 block-vote single-vote discrepancy (~20 bills) — not root-caused; would need
+  to identify which specific member's vote differs and cross-check against VA's own record.~~
+  **Resolved, see §17.**
 - FL's "local has MORE votes than live (our fix not merged?)" pattern (18-25 instances across
   runs) — still not diagnosed, flagged as a possible undocumented local fix or vote-duplication
   artifact in both the original FL writeup and this section's fix, never followed up.
@@ -824,9 +825,51 @@ separate tickets rather than bundling a fix into the investigation.
 
 **Still open after today:**
 - Everything else carried forward from §14/§15 (HD/SD dedup, `scraper-audit`, cadence wiring, MA
-  prefix re-check, VA's 2026-02-17 block-vote discrepancy, FL's "local has MORE votes" pattern, the
-  not-yet-PR'd `tier2-250-bill-post-fix-sweep-20260803` branch).
+  prefix re-check, ~~VA's 2026-02-17 block-vote discrepancy~~ **resolved, see §17**, FL's "local
+  has MORE votes" pattern, the not-yet-PR'd `tier2-250-bill-post-fix-sweep-20260803` branch).
 - [OPEN-30](https://digitaldemocracyproject.atlassian.net/browse/OPEN-30) (the `parse_roll_call`
   fix) itself — not yet implemented, just filed.
 - Whether other single-day mass-vote gaps exist elsewhere in MI's session besides 2026-07-03 — this
   investigation's 90-bill sample only surfaced the one date.
+
+## 17. OPEN-26 root-caused, 2026-08-05 — VA's 2026-02-17 vote gap is one legislator's House vote,
+dropped by live's own ingest, not our bug
+
+Follow-up on §15's open item ("VA's 2026-02-17 block-vote single-vote discrepancy... not
+root-caused"). Full writeup: `notes/va-open-26-bennett-parker-vote-root-cause-20260805.md`.
+Headline findings:
+
+- **One shared event, confirmed by a direct local-vs-live per-voter diff** (not just aggregate
+  `counts`) — HB 1030 and HB 973 (two independent 2026-02-17 roll calls) each show exactly one
+  voter present in local's data and absent from live's, and it's the same person both times:
+  **Elizabeth B. Bennett-Parker**. A same-day `/architect-ticket` pass in a sandbox without local
+  DB/API access had pointed at Kirk McPike instead, via a roster-comparison method that couldn't
+  distinguish "missing because dropped" from "missing because not yet seated" — McPike's own
+  `people` record postdates this vote entirely, an unrelated false lead.
+- **Local is correct; live is missing a real vote.** Bennett-Parker won a VA Senate special
+  election 2026-02-10 and was sworn in 2026-02-18 — one day *after* this vote — so she was still a
+  sitting Delegate on 2026-02-17. Checking her presence across every one of HB 1030's votes (not
+  just 2026-02-17) shows every other shared date matches exactly between local and live; **only
+  2026-02-17 disagrees** — isolated to this one date, not a general "drop transitioned members"
+  policy, consistent with a narrow ingest/snapshot-timing glitch in live's own pipeline.
+- **Blast radius: 266 of 3,637 local VA 2026 bills, not ~20.** A full-corpus scan (all 3,637
+  bills, paginated) found 338 bills with a 2026-02-17 vote, 266 sharing this exact signature; a
+  fresh random 8-bill sample of the newly-found bills confirmed the pattern directly against live.
+- **Not actionable on our end** — the gap is entirely in `v3.openstates.org`'s own data, a system
+  this project doesn't control; our scraper and import already have this correct.
+
+**Disposition:** OPEN-26 closed with this conclusion. [OPEN-32](https://digitaldemocracyproject.atlassian.net/browse/OPEN-32)
+was filed (mirroring how OPEN-28's investigation spawned OPEN-30 rather than bundling a fix into
+the diagnostic ticket) proposing extending `compare_bills()` with a per-voter diff and same-date
+blast-radius helper — this is the second "one shared date, many bills" finding this quarter (after
+OPEN-28/MI) that needed ad hoc, by-hand analysis to name the specific voter and size the blast
+radius; the tool itself still can't do either as first-class output.
+
+**Still open after today:**
+- Everything else carried forward from §14/§15/§16 (HD/SD dedup, `scraper-audit`, cadence wiring,
+  MA prefix re-check, FL's "local has MORE votes" pattern, the not-yet-PR'd
+  `tier2-250-bill-post-fix-sweep-20260803` branch, OPEN-30 itself).
+- [OPEN-32](https://digitaldemocracyproject.atlassian.net/browse/OPEN-32) (the `compare_bills()`
+  per-voter-diff/blast-radius tooling ticket) itself — not yet implemented, just filed.
+- Whether live's same ingest issue recurs for other mid-session chamber transitions — not checked
+  beyond Bennett-Parker's case.

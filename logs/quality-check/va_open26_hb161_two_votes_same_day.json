@@ -1,0 +1,107 @@
+{
+  "note": "HB 161 has two distinct votes on 2026-02-17 sharing the identical blank-disambiguator motion_text 'H VOTE:' (one pass, one fail) -- compare_bills()'s own date+motion_text+positional pairing must be respected here, not naive list-position, or the 'pass' and 'fail' votes cross-match and manufacture a spurious large discrepancy. Paired here by result (pass/fail) to disambiguate. Once correctly paired, both show the identical Bennett-Parker signature seen on every other bill.",
+  "HB 161": [
+    {
+      "result": "pass",
+      "local_counts": [
+        {
+          "option": "yes",
+          "value": 67
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ],
+      "live_counts": [
+        {
+          "option": "yes",
+          "value": 66
+        },
+        {
+          "option": "no",
+          "value": 30
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 3
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ],
+      "in_local_not_live": [
+        "Elizabeth B. Bennett-Parker (yes)"
+      ],
+      "in_live_not_local": []
+    },
+    {
+      "result": "fail",
+      "local_counts": [
+        {
+          "option": "yes",
+          "value": 46
+        },
+        {
+          "option": "no",
+          "value": 49
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ],
+      "live_counts": [
+        {
+          "option": "yes",
+          "value": 46
+        },
+        {
+          "option": "no",
+          "value": 48
+        },
+        {
+          "option": "abstain",
+          "value": 0
+        },
+        {
+          "option": "not voting",
+          "value": 5
+        },
+        {
+          "option": "other",
+          "value": 0
+        }
+      ],
+      "in_local_not_live": [
+        "Elizabeth B. Bennett-Parker (no)"
+      ],
+      "in_live_not_local": []
+    }
+  ]
+}
