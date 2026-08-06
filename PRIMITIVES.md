@@ -201,6 +201,23 @@ OCD-jurisdiction-string → short-code mapping for the 7 non-US state jurisdicti
 tracks (`fl wa mi ut al ma az`) plus `us` handled separately — if a new script needs this
 mapping, import/copy from here, don't re-derive it from the OCD URIs inline.
 
+`compare_bills()`'s vote-tally-mismatch branch (OPEN-32) already does the specific-voter and
+blast-radius diagnosis that OPEN-26 (VA, Bennett-Parker) and OPEN-28 (MI, mass-vote-day) both
+had to do by hand — **don't write a new one-off diffing/corpus-scan script for the next
+"one shared date, many bills" finding; call these instead**:
+- `diff_voters(lv, rv)` / `describe_voter_diff(local_only, live_only)` — pure functions that
+  diff two paired vote events' per-voter `votes[]` lists (not just the aggregate `counts[]`
+  tally) and format the specific differing voter(s)/option(s). Fires automatically inside
+  `compare_bills()` whenever `tally(lv) != tally(rv)`; detail is folded into that same WARN.
+- `count_shared_date_signature(conn, jurisdiction_code, session, date, voter_signature,
+  exclude_identifier, cache=None)` — one parameterized local-Postgres query (no live-API
+  budget spent) sizing how many other local bills in the same jurisdiction/session share the
+  same voter-diff signature on that date. Wired into `compare_bills()` automatically when it's
+  called with `conn=`/`jurisdiction_code=`/`session=` (all 3 optional, default `None`) — see
+  `main()`'s bill loop, `run_coverage_check()`, and `run_tier2_only_check()` for the call shape.
+  Pass a shared `blast_radius_cache={}` dict across a whole run so a repeating signature (266
+  bills in OPEN-26's case) only queries once.
+
 ## Motion classification tooling
 
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
