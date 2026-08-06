@@ -1,0 +1,111 @@
+{
+  "note": "Random 8-bill sample drawn from the 266-bill full-corpus scan (excluding the ~20 bills originally sampled by the Tier 2 sweep), checked directly against live v3.openstates.org to confirm the Bennett-Parker signature generalizes beyond the original sample. HB 161 initially looked like an outlier (67/30/3 vs 46/48/5) but that's an artifact of naive same-date pairing -- see va_open26_hb161_two_votes_same_day.json for the corrected per-vote pairing, which shows it matches the pattern too.",
+  "random_seed": 42,
+  "results": [
+    {
+      "bill": "HB 1050",
+      "local_counts": {
+        "yes": 97,
+        "no": 0,
+        "not_voting": 3
+      },
+      "live_counts": {
+        "yes": 96,
+        "no": 0,
+        "not_voting": 3
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 1385",
+      "local_counts": {
+        "yes": 62,
+        "no": 35,
+        "not_voting": 3
+      },
+      "live_counts": {
+        "yes": 61,
+        "no": 35,
+        "not_voting": 3
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 161",
+      "local_counts": "see va_open26_hb161_two_votes_same_day.json (two same-day votes, naive pairing looked like an outlier)",
+      "live_counts": "same",
+      "matches_pattern": "True, once correctly paired"
+    },
+    {
+      "bill": "HB 1524",
+      "local_counts": {
+        "yes": 54,
+        "no": 41,
+        "not_voting": 5
+      },
+      "live_counts": {
+        "yes": 53,
+        "no": 41,
+        "not_voting": 5
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 1006",
+      "local_counts": {
+        "yes": 97,
+        "no": 0,
+        "not_voting": 3
+      },
+      "live_counts": {
+        "yes": 96,
+        "no": 0,
+        "not_voting": 3
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 260",
+      "local_counts": {
+        "yes": 62,
+        "no": 35,
+        "not_voting": 3
+      },
+      "live_counts": {
+        "yes": 61,
+        "no": 35,
+        "not_voting": 3
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 1444",
+      "local_counts": {
+        "yes": 61,
+        "no": 34,
+        "not_voting": 5
+      },
+      "live_counts": {
+        "yes": 60,
+        "no": 34,
+        "not_voting": 5
+      },
+      "matches_pattern": true
+    },
+    {
+      "bill": "HB 1391",
+      "local_counts": {
+        "yes": 95,
+        "no": 0,
+        "not_voting": 5
+      },
+      "live_counts": {
+        "yes": 94,
+        "no": 0,
+        "not_voting": 5
+      },
+      "matches_pattern": true
+    }
+  ],
+  "conclusion": "8 of 8 confirm the yes(or no)+1 local/live pattern -- the 266-bill blast radius estimate holds up under direct live-API spot verification, not just the local-side voter-name scan."
+}

@@ -1,0 +1,117 @@
+{
+  "note": "Bennett-Parker's presence/absence checked across every one of HB 1030's votes, not just 2026-02-17, to determine whether live's gap is a general 'exclude a since-transitioned member's historical votes' policy or isolated to one date. Every shared date (2/12, 2/13, 3/9, 3/10, 3/11) matches exactly between local and live -- 2026-02-17 is the only date where local=True, live=False. (04-22 rows appear local-only because live's copy of this bill doesn't yet have that date's votes at all -- an unrelated, later-stage scrape-timing gap, not part of this finding.)",
+  "bill": "HB 1030",
+  "by_date": [
+    {
+      "date": "2026-02-12",
+      "motion_text": "Subcommittee recommends reporting with substitute",
+      "local": {
+        "n_voters": 7,
+        "bennett_parker_present": true
+      },
+      "live": {
+        "n_voters": 7,
+        "bennett_parker_present": true
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-02-13",
+      "motion_text": "Reported from Public Safety with substitute",
+      "local": {
+        "n_voters": 22,
+        "bennett_parker_present": true
+      },
+      "live": {
+        "n_voters": 22,
+        "bennett_parker_present": true
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-02-17",
+      "motion_text": "H VOTE:",
+      "local": {
+        "n_voters": 100,
+        "bennett_parker_present": true
+      },
+      "live": {
+        "n_voters": 99,
+        "bennett_parker_present": false
+      },
+      "matches": false
+    },
+    {
+      "date": "2026-03-06",
+      "motion_text": "Reported from Rehabilitation and Social Services with substitute",
+      "local": {
+        "n_voters": 15,
+        "bennett_parker_present": false
+      },
+      "live": {
+        "n_voters": 15,
+        "bennett_parker_present": false
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-03-09",
+      "motion_text": "Constitutional reading dispensed (on 2nd reading)",
+      "local": {
+        "n_voters": 40,
+        "bennett_parker_present": true
+      },
+      "live": {
+        "n_voters": 40,
+        "bennett_parker_present": true
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-03-10",
+      "motion_text": "Passage  R",
+      "local": {
+        "n_voters": 40,
+        "bennett_parker_present": true
+      },
+      "live": {
+        "n_voters": 40,
+        "bennett_parker_present": true
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-03-11",
+      "motion_text": "H VOTE:",
+      "local": {
+        "n_voters": 99,
+        "bennett_parker_present": false
+      },
+      "live": {
+        "n_voters": 99,
+        "bennett_parker_present": false
+      },
+      "matches": true
+    },
+    {
+      "date": "2026-04-22",
+      "motion_text": "Adopt Governor's Recommendation  R",
+      "local": {
+        "n_voters": 40,
+        "bennett_parker_present": true
+      },
+      "live": null,
+      "matches": "date_missing_on_one_side"
+    },
+    {
+      "date": "2026-04-22",
+      "motion_text": "H VOTE:",
+      "local": {
+        "n_voters": 100,
+        "bennett_parker_present": false
+      },
+      "live": null,
+      "matches": "date_missing_on_one_side"
+    }
+  ]
+}
