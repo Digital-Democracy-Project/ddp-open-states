@@ -218,6 +218,26 @@ had to do by hand — **don't write a new one-off diffing/corpus-scan script for
   Pass a shared `blast_radius_cache={}` dict across a whole run so a repeating signature (266
   bills in OPEN-26's case) only queries once.
 
+## Bill-version ordering & diff backfills (`openstates-core/openstates/cli/text_extract.py`)
+
+`archive_bill_versions()` used to walk `bill.versions.all()` directly and trust whatever order
+Postgres happened to return for `diff_from_previous_version`'s lineage — `BillVersion` has no
+`Meta.ordering` and no reliable timestamp. OPEN-34 (2026-08-06/07) audited every tracked
+jurisdiction and found that accident is inconsistent (forward for FL/MI/AZ mostly, backward for
+VA/UT/US, doesn't fit a binary model at all for WA/MI's substitute-heavy bills) — **don't assume
+DB row order is chronological for any bill-version work; use these instead**:
+- `_note_stage(note)` / `_version_sort_key(note, date)` — classify a `version_note` into a
+  content-based stage rank (never DB order), with `BillVersion.date` used as a same-stage
+  tiebreaker when it's actually populated (only reliable for US federal, ~99.4%). A note
+  matching no known stage returns `_STAGE_UNKNOWN` — the caller excludes it from any diff
+  lineage entirely rather than guessing a position. If you're adding a new jurisdiction or
+  hitting an unrecognized note shape, extend the stage table here, don't reorder query results.
+- `os-text-extract recompute-diff-order <state|all> [--dry-run|--commit]` — recomputes
+  `diff_from_previous_version` for already-archived rows from already-stored `raw_text` (no
+  re-fetching), mirroring `os-text-extract archive`'s dry-run-then-commit discipline. Use this
+  any time the stage table changes, or to correct existing wrong diffs after finding a new
+  jurisdiction-specific ordering issue — don't hand-write a one-off correction script.
+
 ## Motion classification tooling
 
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
