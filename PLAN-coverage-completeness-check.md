@@ -873,3 +873,78 @@ radius; the tool itself still can't do either as first-class output.
   per-voter-diff/blast-radius tooling ticket) itself — not yet implemented, just filed.
 - Whether live's same ingest issue recurs for other mid-session chamber transitions — not checked
   beyond Bennett-Parker's case.
+
+---
+
+## 18. OPEN-42, 2026-08-08 — HD/SD dedup finally built (generalized, not MA-only), and the
+§13 scraper-crash root cause finally fixed — both still awaiting a live re-run
+
+**Ticket:** [OPEN-42](https://digitaldemocracyproject.atlassian.net/browse/OPEN-42), scoped by
+`OPEN-42-architecture-assessment-20260808.md` (this repo) as Approach C: fix the two
+already-diagnosed defects blocking AC1-AC3 (§10, §13 above), and generalize the HD/SD fix instead
+of hand-coding a MA-only branch — rather than re-running the backfill against the same unfixed
+defects a fourth time (§10's fix was flagged but not built; §11 and §14 both re-confirmed it was
+still open).
+
+**1. `openstates-scrapers/scrapers/ma/bills.py` — §13's root cause fixed.** `scrape_senate_vote`'s
+`self.urlretrieve(vurl)`, `get_as_ajax`'s `s.get(url)`, and (found during implementation, same
+unguarded-`urlretrieve` shape, not previously flagged by §13's specific log lines but confirmed by
+direct code read) `get_house_pdf`'s `self.urlretrieve(vurl)` now all catch
+`requests.exceptions.RequestException`, log a warning, and signal failure (`None`/`False`) to their
+callers instead of letting the exception propagate up through `do_scrape()` and killing the entire
+multi-hour run — mirroring `scrape_bill`'s existing skip-and-continue pattern two hundred lines
+above them in the same file. Every caller (`scrape_cosponsors`, `get_action_page`/`scrape_actions`,
+the Senate/House roll-call branches in `scrape_action_page`, `scrape_house_vote`) now checks for
+that sentinel and skips the one affected vote/cosponsor/action-page record rather than crashing or
+yielding malformed data. New tests: `openstates-scrapers/tests/test_ma_bills.py` (13 cases,
+confirmed to fail against the pre-fix code and pass against the fix).
+
+**2. `quality_check.py` — §10's methodology gap fixed, generalized rather than MA-only.** Added
+`DOCKET_PREFIX_MAP` (a plain dict next to the existing `OCD_TO_CODE`, currently `{"ma": {
+"docket_prefixes": ("HD", "SD")}}`) plus `split_missing_by_docket_prefix()`, which
+`run_coverage_check()` now calls on the raw Tier 1 `missing` set before deciding pass/fail: an
+identifier under a jurisdiction's registered docket prefixes is reported as an informational
+`docket_duplicate` (WARN) rather than folded into the FAIL headline. `breakdown_by_prefix()` prints
+the same kind of H/S/HD/SD table §10 built by hand, generically, for any jurisdiction's Tier 1
+output going forward — not just MA's. Jurisdictions absent from `DOCKET_PREFIX_MAP` (the other 6:
+FL, WA, MI, UT, AL, AZ, plus US) get byte-identical `missing`/pass-fail behavior to before this
+change — confirmed by the new tests treating "unmapped jurisdiction" as an explicit case, not just
+an assumption. New tests: 5 cases added to `test_quality_check.py` (22 total in the file now,
+all passing), covering the MA-shaped split, the unmapped-jurisdiction passthrough, an
+unrecognized-identifier-shape edge case, and the prefix-breakdown helper directly.
+
+**What this does and doesn't close:** both fixes are merged-to-branch code, verified with unit
+tests run in an ad hoc local venv (this workspace has no Postgres/live-API access) — they remove
+the *causes* §10 and §13 diagnosed, but neither one is the same thing as AC1/AC2/AC3 actually being
+satisfied against production data. Per the architecture assessment's own Prerequisites section,
+still explicitly open, not done here, and not to be read as done by a future skim of this doc:
+
+- **AC1 (full MA backfill completes) / AC2 (162-bill gap closed, `quality_check.py --coverage ma
+  194th` re-run):** requires running the actual multi-hour backfill against the production
+  checkout's live Postgres + MA's live government API, which this workspace cannot do. The
+  scraper fix removes the specific crash cause §13 found in the 2026-07-30/07-31 failures, but
+  §13's *other*, still-unreconciled finding — the one clean 2026-08-01 run only captured 1,597
+  bills, >5x short of the ~8,828 live `H`/`S` figure, for a reason that isn't network failure or
+  chunking — is **not** explained or fixed by this ticket's changes. A fresh backfill's bill count
+  needs to be checked against that ~8,828 figure directly, not just against a clean exit code.
+- **AC3 (identifier anomaly broken out by prefix, explained or fixed):** the mechanism is now
+  built and durable (won't need re-litigating a fourth time the way §10→§11→§14 did), but the
+  actual current numbers still need a live `--coverage ma 194th` run to print the real, current
+  `missing_by_prefix` breakdown — today's fix has only been verified against synthetic test data,
+  not a live MA diff.
+- **AC4 (215/348 org/person numbers refreshed):** unchanged by this ticket; requires the fresh
+  full import from AC1 before there's anything new to count.
+- **AC5 (plan docs updated):** this section closes the part of AC5 that's actually in this repo.
+  The other half — `ddp-infra/PLAN-open-states.md` §8.1a and
+  `ddp-infra/PLAN-local-openstates-migration.md` §1.4 — lives in a different repo (moved
+  2026-08-07; this repo's own `PLAN-open-states.md` is now a stub pointing there) and needs its
+  own PR against `ddp-infra`, not a change bundled into this one.
+
+**Still open after today:**
+- Both items above (AC1/AC2's actual execution, AC3's live re-run) — operational actions against
+  the production checkout, next.
+- §13's unreconciled 1,597-bill mystery — still not root-caused; flagged again here so it isn't
+  lost between this doc update and whoever runs the next backfill.
+- The `ddp-infra` doc update (AC5's other half).
+- Everything else already carried forward from §14/§15/§16/§17 that this ticket didn't touch
+  (`scraper-audit`, cadence wiring, FL's "local has MORE votes" pattern, OPEN-30/32, etc.).
