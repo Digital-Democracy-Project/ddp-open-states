@@ -17,6 +17,7 @@ Environment:
 """
 
 import os
+import re
 import sys
 import json
 import time
@@ -53,6 +54,51 @@ OCD_TO_CODE = {
     "ocd-jurisdiction/country:us/state:az/government": "az",
     "ocd-jurisdiction/country:us/government":          "us",
 }
+
+# Jurisdictions where a bill has two permanent, separate upstream identifiers over
+# its life (a docket number assigned at filing, a bill number assigned once read
+# in) and our own scraper deliberately keeps only one -- see
+# PLAN-coverage-completeness-check.md §10 (MA: HD/SD docket numbers vs. H/S bill
+# numbers). A naive Tier 1 identifier-set diff overstates the real gap for any
+# jurisdiction with this shape by counting live's permanent docket-stage record as
+# "missing" even though the bill is fully present locally under its bill number.
+# Absent here == unaffected: run_coverage_check()'s behavior is unchanged for any
+# jurisdiction not in this map.
+DOCKET_PREFIX_MAP = {
+    "ma": {"docket_prefixes": ("HD", "SD")},
+}
+
+
+def split_missing_by_docket_prefix(missing, jurisdiction):
+    """Split a Tier 1 `missing` set into "real" (bills genuinely absent locally)
+    and "docket_duplicate" (live's permanent docket-stage record of a bill we
+    already have under its bill number -- not a real gap, see DOCKET_PREFIX_MAP
+    above). Jurisdictions absent from DOCKET_PREFIX_MAP get `missing` back
+    unchanged as "real" with an empty docket_duplicate set."""
+    config = DOCKET_PREFIX_MAP.get(jurisdiction)
+    if not config:
+        return {"real": set(missing), "docket_duplicate": set()}
+
+    docket_prefixes = tuple(config["docket_prefixes"])
+    real, docket_duplicate = set(), set()
+    for identifier in missing:
+        if identifier.startswith(docket_prefixes):
+            docket_duplicate.add(identifier)
+        else:
+            real.add(identifier)
+    return {"real": real, "docket_duplicate": docket_duplicate}
+
+
+def breakdown_by_prefix(identifiers):
+    """Count identifiers by their leading alphabetic prefix, e.g. {'H': 61, 'S':
+    101, 'HD': 4765, 'SD': 2656} -- informational only, generalizes the by-hand
+    prefix table PLAN-coverage-completeness-check.md §10 built for MA to any
+    jurisdiction's Tier 1 output."""
+    counts = defaultdict(int)
+    for identifier in identifiers:
+        match = re.match(r"^[A-Za-z]+", identifier)
+        counts[match.group(0) if match else identifier] += 1
+    return dict(counts)
 
 # ── Output helpers ─────────────────────────────────────────────────────────────
 
@@ -582,15 +628,31 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
     extra = local_ids - public_ids     # informational only, not a failure -- see plan §4
     both = public_ids & local_ids
 
+    # Normalize away docket/bill-number duplication (DOCKET_PREFIX_MAP) before
+    # deciding pass/fail -- a no-op for jurisdictions not in that map, so
+    # real_missing == missing and docket_duplicate is empty there.
+    split = split_missing_by_docket_prefix(missing, jurisdiction)
+    real_missing = split["real"]
+    docket_duplicate = split["docket_duplicate"]
+
     print(f"  live={len(public_ids)}  local={len(local_ids)}  "
           f"missing={len(missing)}  extra={len(extra)}  both={len(both)}")
+    if docket_duplicate:
+        print(f"  ...of which {len(docket_duplicate)} are docket-stage duplicates, "
+              f"not a real gap (see PLAN-coverage-completeness-check.md §10) -- "
+              f"real gap: {len(real_missing)}")
+        print(f"  missing by prefix: {breakdown_by_prefix(missing)}")
 
-    if missing:
+    if real_missing:
         report.record(FAIL, f"{jurisdiction.upper()} {session}: Tier 1 coverage — "
-                             f"{len(missing)} bills exist live but not locally at all")
+                             f"{len(real_missing)} bills exist live but not locally at all")
     else:
         report.record(PASS, f"{jurisdiction.upper()} {session}: Tier 1 coverage — "
                              f"no missing bills ({len(local_ids)} local == {len(public_ids)} live)")
+    if docket_duplicate:
+        report.record(WARN, f"{jurisdiction.upper()} {session}: {len(docket_duplicate)} "
+                             f"docket-stage duplicates in the raw diff, not a real gap "
+                             f"(see PLAN-coverage-completeness-check.md §10)")
     if extra:
         report.record(WARN, f"{jurisdiction.upper()} {session}: {len(extra)} bills local-only "
                              f"(not automatically a failure -- see plan §4)")
@@ -621,6 +683,9 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
     return {
         "live": len(public_ids), "local": len(local_ids),
         "missing": sorted(missing), "extra": sorted(extra),
+        "missing_real": sorted(real_missing),
+        "missing_docket_duplicate": sorted(docket_duplicate),
+        "missing_by_prefix": breakdown_by_prefix(missing),
         "tier2_checked": len(tier2_ids),
     }
 

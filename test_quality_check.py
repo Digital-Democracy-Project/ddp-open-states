@@ -13,6 +13,8 @@ from quality_check import (
     describe_voter_diff,
     count_shared_date_signature,
     compare_bills,
+    split_missing_by_docket_prefix,
+    breakdown_by_prefix,
     Report,
     PASS,
     WARN,
@@ -272,3 +274,50 @@ def test_count_shared_date_signature_different_signature_not_cached():
                                  cache=cache)
 
     assert len(conn._cursor.executed) == 2
+
+
+# ── OPEN-42: docket/bill-number normalization ───────────────────────────────────
+# MA gives every bill two permanent, separate upstream identifiers over its life
+# (docket number at filing, bill number once read in); our scraper deliberately
+# keeps only the bill number, so a naive Tier 1 diff overstates the real gap by
+# counting live's permanent docket-stage record as "missing." See
+# PLAN-coverage-completeness-check.md §10.
+
+def test_split_missing_by_docket_prefix_splits_ma_shaped_input():
+    missing = {"H3444", "S1200", "HD2050", "HD9999", "SD1111"}
+
+    result = split_missing_by_docket_prefix(missing, "ma")
+
+    assert result["real"] == {"H3444", "S1200"}
+    assert result["docket_duplicate"] == {"HD2050", "HD9999", "SD1111"}
+
+
+def test_split_missing_by_docket_prefix_unmapped_jurisdiction_passes_through_unchanged():
+    missing = {"HB30", "SB12", "HD2050"}  # HD-shaped identifier, but fl has no docket lifecycle
+
+    result = split_missing_by_docket_prefix(missing, "fl")
+
+    assert result["real"] == missing
+    assert result["docket_duplicate"] == set()
+
+
+def test_split_missing_by_docket_prefix_unrecognized_identifier_shape_stays_real():
+    # A malformed/unexpected identifier for a mapped jurisdiction must not be
+    # silently dropped -- anything that isn't a registered docket prefix counts
+    # as a real gap by default.
+    missing = {"HD2050", "XYZ123", ""}
+
+    result = split_missing_by_docket_prefix(missing, "ma")
+
+    assert result["real"] == {"XYZ123", ""}
+    assert result["docket_duplicate"] == {"HD2050"}
+
+
+def test_breakdown_by_prefix_counts_by_leading_alpha_chars():
+    identifiers = ["H1", "H2", "S1", "HD1", "HD2", "HD3", "SD1"]
+
+    assert breakdown_by_prefix(identifiers) == {"H": 2, "S": 1, "HD": 3, "SD": 1}
+
+
+def test_breakdown_by_prefix_handles_no_alpha_prefix():
+    assert breakdown_by_prefix(["123", ""]) == {"123": 1, "": 1}
