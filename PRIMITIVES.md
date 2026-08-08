@@ -66,7 +66,11 @@ should reuse rather than reimplement:
   from `ddp-agents/.env` (`SLACK_BOT_TOKEN`), fired via `trap 'on_failure' ERR`. Fails open (no
   token found → just skips the post, never blocks the scrape). **Reused verbatim in
   `backup-openstates-db.sh`** (`slack_fail()`, same token-read line, different channel message).
-  If a third script needs this, extract it rather than copy-pasting a fourth time.
+  **Update 2026-08-08 (OPEN-40):** the copy count reached five (`run-scrape.sh`,
+  `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`, `check-scrape-staleness.sh`)
+  — extraction into a shared sourced helper is now tracked as **OPEN-43**; don't add a sixth
+  copy, wait for (or do) that ticket instead. The watchdog may deliberately remain a copy even
+  after extraction (monitoring shouldn't share code with what it monitors).
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
@@ -118,6 +122,25 @@ should reuse rather than reimplement:
   production WireGuard tunnel reads from — never silently drifts behind community data; `ddp` is
   purely a staging remote for pushing a local fix branch and opening a PR back upstream, never a
   pull source. See `PLAN-fork-management.md` §1 for the full reasoning.
+
+## `check-scrape-staleness.sh` — scraper staleness watchdog (repo root, OPEN-40)
+
+Read-only consumer of the `logs/last-run/<key>.ts` marker primitive: compares each watched
+marker's mtime age against a **hardcoded key→threshold allowlist** (48h daily / 228h weekly;
+missing marker = maximally stale, alerts) and alerts Slack `#automation-errors` + CAMS
+`/api/v1/failures` once per staleness episode, de-duped via `logs/last-run/<key>.stale-alerted`
+sentinel files (cleared on recovery, with a recovery post). Designed to be invoked every 5
+minutes by the `com.ddp.health-monitor` LaunchDaemon via a one-line hook in `ddp-agents`'s
+`health-check-slack.sh` — **that hook has not been added yet (verified 2026-08-08); until it
+is, this script is not called by anything.** Placement is deliberately outside ddp-sync and the
+scrape scripts, so once wired up it
+survives the failure modes it exists to catch (including the scheduler daemon itself dying).
+Deliberately **self-contained** — sources nothing, copies the Slack/CAMS pattern (see the
+extraction note under `run-scrape.sh` above). The allowlist is the thing to touch when the
+ddp-sync schedule changes (keep in sync with `sync_schedule.yaml`); backfill markers
+(`fl_session_2023`…, `usa_session_118_*`) must never be added to it. `STALE_*` env vars are
+test seams only — `test-check-scrape-staleness.sh` runs the whole lifecycle against a mktemp
+fixture dir with no network. Full operator doc: `RUNBOOK.md` → "Scraper staleness watchdog".
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)
 
