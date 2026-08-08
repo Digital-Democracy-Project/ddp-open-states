@@ -57,6 +57,7 @@ GROUP BY j.name ORDER BY j.name;"
 | openstates-postgres | 5433 | container `restart:unless-stopped` (same compose) | dedicated DB (volume `os_pg_data`) |
 | db backup | — | **system LaunchDaemon** `com.ddp.openstates-db-backup` (07:00 local) | `backup-openstates-db.sh` (nightly pg_dump, keep-7) |
 | Scraper | 8001 | ddp-sync APScheduler — **system LaunchDaemon** `com.ddp.ddp-sync` (not a GUI agent) | `run-scrape.sh` (per jurisdiction) |
+| Staleness watchdog | — | **system LaunchDaemon** `com.ddp.health-monitor` (ddp-agents, every 5 min) — **hook not yet added, see below** | `check-scrape-staleness.sh` via one-line hook in `ddp-agents/deployment/scripts/health-check-slack.sh` |
 
 **api-v3 deployment (containerized 2026-06-24, per `PLAN-production-hardening.md`):** api-v3
 runs as the `ddp-openstates` Docker compose project — container `ddp-openstates-api-1` on
@@ -137,6 +138,72 @@ tail -f logs/scraper.log
 # Tail api-v3 log
 tail -f logs/os-api.log
 ```
+
+---
+
+## Scraper staleness watchdog (`check-scrape-staleness.sh`, OPEN-40)
+
+Detects jurisdictions that **silently stop scraping** — the failure mode every in-run alert
+path (`run-scrape.sh`'s `ERR` trap / `on_failure`) can't see, and how MA ran wrong for six
+weeks unnoticed. It compares the age of each watched `logs/last-run/<key>.ts` marker against
+that job's cadence and alerts once per staleness episode.
+
+**Status: not yet wired up.** The script and its alert logic are complete and tested
+(`test-check-scrape-staleness.sh`), but nothing calls it yet — the companion one-line hook in
+`ddp-agents/deployment/scripts/health-check-slack.sh` has not been added (verified 2026-08-08).
+Until that lands, this watchdog is inert: no schedule invokes it, so it will not alert on a real
+staleness episode. Track that hook as its own follow-up (this repo's `project.toml` scopes work
+to this checkout only, so it can't be added from here); don't treat OPEN-40 as fully deployed
+until it's confirmed running.
+
+**How it runs (once the hook lands):** the existing `com.ddp.health-monitor` system LaunchDaemon
+(ddp-agents) calls it every 5 minutes via a one-line `bash …/check-scrape-staleness.sh || true`
+hook in `ddp-agents/deployment/scripts/health-check-slack.sh`. That placement is deliberate — the
+watchdog lives **outside** ddp-sync and the scrape scripts, so it still fires when the
+scheduler daemon itself is dead (which happened 2026-07-04→08 with zero alerts). The `|| true`
+means a watchdog bug can never break CAMS/os-api monitoring. Note: the §11.3 design originally
+said to append this to `run-all-scrapes.sh` under `com.ddp.openstates-scraper` — that launchd
+job was deleted 2026-06-24, and a watchdog inside the pipeline can't see "the pipeline never
+started" anyway; the canonical `ddp-infra/PLAN-open-states.md` §11.3 records the correction.
+
+**Watched keys and thresholds** (hardcoded allowlist in the script — backfill markers like
+`fl_session_2023`…`2025C` / `usa_session_118_*` must never be watched, so no globbing):
+
+| Threshold | Keys | Basis |
+|---|---|---|
+| 48h | `wa`, `usa_session_119_chamber_lower`, `usa_session_119_chamber_upper` | daily jobs |
+| 228h | `fl_session_2026`, `fl_session_2026D`, `fl_session_2026E`, `fl_session_2026F` | **weekly while `primary.fl.sync_day: sunday`** (out-of-session since 2026-07-16) — move to 48h when FL reverts to daily for the 2027 session |
+| 228h | `va`, `mi`, `ut`, `az`, `ma` | Sunday secondaries. Bare `ma`, not `ma_session_194th` — ddp-sync passes no session arg (OPEN-24), so the live marker is `ma.ts` |
+
+A **missing** `.ts` marker is treated as maximally stale (alerts, never skips). This map is
+the thing to update when the ddp-sync schedule changes — keep it in sync with
+`ddp-sync/config/sync_schedule.yaml`.
+
+**Alert lifecycle:** first detection posts to Slack `#automation-errors` **and** CAMS
+`/api/v1/failures` (`error_type=ScrapeStalenessDetected`, so it reaches Agent Smith triage),
+then writes a `logs/last-run/<key>.stale-alerted` sentinel — subsequent 5-minute runs stay
+silent. When the marker freshens, the sentinel is removed and a recovery message posts.
+Sentinels are written by the root-owned daemon so they land root-owned; `logs/last-run/` is
+agentsmith-owned, so `rm` still works without sudo.
+
+```bash
+# See current staleness state (who has alerted and when)
+ls -la logs/last-run/*.stale-alerted 2>/dev/null; cat logs/last-run/*.stale-alerted 2>/dev/null
+
+# Watchdog's own activity log (quiet runs log nothing)
+tail logs/staleness-check.log
+
+# Silence a known/expected staleness episode without fixing it yet
+# (it will NOT re-alert — the sentinel is the de-dupe; remove it to re-arm)
+date -u +%Y-%m-%dT%H:%M:%S > logs/last-run/<key>.stale-alerted
+
+# Run the fixture tests (no network, no production paths)
+bash test-check-scrape-staleness.sh
+```
+
+Alert copies the `run-scrape.sh` Slack/CAMS pattern (fifth copy in this repo — extraction
+tracked as OPEN-43; this script may deliberately stay a copy since monitoring shouldn't share
+code with what it monitors).
 
 ---
 
