@@ -81,6 +81,42 @@ Residuals in all three are the same small class: a handful of rows with no `arch
 at all (the document was never successfully fetched in the first place) — not something a
 disk-only reprocess can fix without a live re-scrape, and out of scope for this ticket.
 
+## Follow-up, same day: `diff_from_previous_version` backfill (OPEN-34's tool, not new code)
+
+The `reextract` backfill above deliberately never touches `diff_from_previous_version` — same
+choice OPEN-33 made, since diff computation depends on version *ordering* (OPEN-34's own,
+separately-solved concern), not just text availability. That left a real gap: thousands of
+documents gained real text today, but many sit next to *other* newly-fixed versions of the same
+bill with no diff between them yet, even though one could now be computed.
+
+`recompute_diff_order <state> --dry-run|--commit` (already shipped, OPEN-34, merged
+2026-08-06) is exactly the right tool — it recomputes diffs from whatever `raw_text` is already
+stored, using `_version_sort_key()`'s correct chronological ordering, no re-fetching. No new code
+needed; just re-running an existing command now that far more real text exists to diff.
+
+**Validated on a hand-picked sample first** (3 bills per jurisdiction with 3+ real-text
+versions, via the pure `recompute_bill_diff_order()` function — no writes): all produced real,
+correctly-ordered, forward-reading diffs. Spot-read actual diff content (not just counts) —
+e.g. MI `HB 4420`'s substitute-to-substitute section renumbering, WA `HB 1710`'s real substitute
+text, UT `HB 44`'s real amended provisions. No corruption, no backward diffs.
+
+**Then ran the full `--commit` for all three jurisdictions:**
+
+| Jurisdiction | Bills checked | Corrected | Nulled |
+|---|---|---|---|
+| Michigan | 3,910 | 4,130 | 0 |
+| Washington | 3,411 | 4,540 | 0 |
+| Utah | 1,021 | 2,079 | 0 |
+
+Verified independently against Postgres (documents with a non-null `diff_from_previous_version`,
+among documents with real text): Michigan 1,161 → 4,130, Washington 2,270 → 4,540, Utah 5,249 →
+7,328 — matches the script's own printed counts almost exactly. Random post-commit spot-check
+(8 real rows, outside the original hand-picked sample) found real, sensible diff content
+throughout, including one legitimate zero-length diff (MI `SB 735`'s "Substitute (S-1)" and
+"Substitute (S-1) - 2" are byte-identical, 10,332 characters each — Michigan's site sometimes
+republishes the same substitute text under two slightly different version labels; an empty diff
+between genuinely identical text is `difflib` working correctly, not a defect).
+
 ## Disposition
 
 - **OPEN-49: done.** Extractor fix + `reextract` command in `openstates-core` PR
@@ -90,6 +126,8 @@ disk-only reprocess can fix without a live re-scrape, and out of scope for this 
   is an operational action, not a code change" convention; merging the PR makes future
   nightly archiver runs benefit from the fix going forward too, which the backfill alone
   doesn't cover for brand-new documents).
+- **Diff-order follow-up: done**, using already-shipped OPEN-34 tooling — no new PR needed for
+  this half.
 - Also closes the loop from `notes/mi-archive-waf-resilience-streak-20260808.md`'s own
   follow-up note about MI's real fill rate.
 
@@ -97,8 +135,12 @@ disk-only reprocess can fix without a live re-scrape, and out of scope for this 
 
 * [OPEN-33](https://digitaldemocracyproject.atlassian.net/browse/OPEN-33) — the VA backfill
   precedent this generalizes
+* [OPEN-34](https://digitaldemocracyproject.atlassian.net/browse/OPEN-34) — the diff-ordering
+  fix + `recompute_diff_order` command used for the same-day diff backfill above
 * `openstates-core` PR [#13](https://github.com/Digital-Democracy-Project/openstates-core/pull/13)
 * `notes/mi-archive-waf-resilience-streak-20260808.md` — where this was first noticed
 * `openstates-core/openstates/fulltext/__init__.py`, `ut.py` — the actual fixes
 * `openstates-core/openstates/cli/text_extract.py` `reextract`/`_reextract_document` — the
   generalized backfill mechanism
+* `openstates-core/openstates/cli/text_extract.py` `recompute_diff_order` — the already-shipped
+  diff backfill command reused here, no new code
