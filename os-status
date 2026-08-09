@@ -2,15 +2,69 @@
 # os-status — status of active OpenStates scrapers and bill archivers.
 #
 # Invoked as `os status` (see the os() function in ~/.zshrc). Read-only:
-# inspects ps, logs/scraper.log in the production checkout, and file mtimes
-# on DDP-HOT. Estimates are rough by design and labeled as such:
-#   - archiver backlog comes from the last completed run's own summary line
-#     (fetched + fetch_errors), minus files landed this run
+# inspects ps, logs/scraper.log in the production checkout, file mtimes on
+# DDP-HOT, and (for the archiver backlog specifically) a direct Postgres
+# count. Estimates are rough by design and labeled as such:
+#   - archiver backlog is a real count from Postgres (see db_backlog()) of
+#     ddp_bill_version_document rows never created + rows with is_error=true
+#     for the jurisdiction, not a guess from log text. Falls back to the old
+#     last-summary-line heuristic if the DB is unreachable.
 #   - throughput comes from files created on DDP-HOT in the last 15 minutes
 #   - scraper ETA is just "how long the previous completed run took"
+#
+# Found 2026-08-09 (OPEN-55): the old log-derived "est. remaining" estimate
+# used the *previous* run's own fetched+fetch_errors total as a stand-in for
+# "backlog," which is really just "how much volume last run processed" — it
+# has nothing to do with how much unprocessed work actually exists. A fresh
+# MI archiver run showed "~6688 docs to upload" moments after starting, which
+# read like a huge pending-upload queue; the real Postgres count told a
+# different (and more useful) story: only 2 documents were actually
+# S3-unverified, but 7,291 had is_error=true (almost entirely MI's
+# application/pdf extractor gap, OPEN-49) plus 275 links never even attempted.
+# That's the number worth seeing at a glance — a real backlog, not a rate
+# projection.
 
 LOG=/Users/agentsmith/Developer/repos/ddp-open-states/logs/scraper.log
 RAW=/Volumes/DDP-HOT/Bills/raw
+DB_CONTAINER=ddp-openstates-postgres-1
+DB_USER=openstates
+DB_NAME=openstates
+
+# Real backlog for $1=jurisdiction abbr (mi, wa, va, us, ...), straight from
+# Postgres: version links with no ddp_bill_version_document row at all
+# (never attempted) + document rows with is_error=true (attempted, failed).
+# Prints "never_attempted|errored" on success, nothing on any failure (DB
+# down, container not running, query error) so callers can fall back cleanly.
+#
+# No timeout wrapper: neither `timeout` nor `gtimeout` is installed on this
+# machine (no GNU coreutils), and both `docker exec` against a stopped/missing
+# container and `psql` against a refused connection already fail fast and
+# cleanly on their own (verified directly, 2026-08-09) — an artificial
+# timeout isn't needed for the realistic failure modes here.
+db_backlog() {
+    local juris=$1 jid
+    if [ "$juris" = "us" ]; then
+        jid="ocd-jurisdiction/country:us/government"
+    else
+        jid="ocd-jurisdiction/country:us/state:${juris}/government"
+    fi
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -F'|' -c "
+        SELECT
+          (SELECT count(*) FROM opencivicdata_billversionlink l
+             JOIN opencivicdata_billversion v ON v.id = l.version_id
+             JOIN opencivicdata_bill b ON b.id = v.bill_id
+             JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+             WHERE ls.jurisdiction_id = '$jid') -
+          (SELECT count(*) FROM ddp_bill_version_document d
+             JOIN opencivicdata_bill b ON b.id = d.bill_id
+             JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+             WHERE ls.jurisdiction_id = '$jid') AS never_attempted,
+          (SELECT count(*) FROM ddp_bill_version_document d
+             JOIN opencivicdata_bill b ON b.id = d.bill_id
+             JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+             WHERE ls.jurisdiction_id = '$jid' AND d.is_error) AS errored;
+    " 2>/dev/null
+}
 
 now_human=$(date '+%Y-%m-%d %H:%M:%S %Z')
 found_any=0
@@ -63,25 +117,37 @@ print_job() {  # $1=kind $2=jurisdiction $3=pid
         [ "$rate15" -gt 0 ] && rate_disp="~$((rate15 / 15)).$(((rate15 * 10 / 15) % 10))/min"
         printf '  archived this run: %s docs on DDP-HOT (last 15m: %s)\n' "$done" "$rate_disp"
 
-        # Backlog ≈ last completed summary's fetched + fetch_errors, minus every
-        # file landed SINCE that summary (which may span runs the summary doesn't
-        # know about). fetch_errors includes permanently-dead URLs, so this is an
-        # upper bound.
-        local summary fetched errors backlog remaining summary_ts done_since
-        summary=$(grep -E "^$juris: [0-9]+ bills checked" "$LOG" | tail -1)
-        if [ -n "$summary" ]; then
-            fetched=$(echo "$summary" | sed -E 's/.*fetched=([0-9]+).*/\1/')
-            errors=$(echo "$summary" | sed -E 's/.*fetch_errors=([0-9]+).*/\1/')
-            backlog=$((fetched + errors))
-            summary_ts=$(last_log_ts "Archiving done: $juris")
-            done_since=$done
-            [ -n "$summary_ts" ] && done_since=$(find "$RAW/$juris" -type f ! -name '.DS_Store' -newermt "$summary_ts" 2>/dev/null | wc -l | tr -d ' ')
-            remaining=$((backlog - done_since)); [ "$remaining" -lt 0 ] && remaining=0
-            if [ "$rate15" -gt 0 ] && [ "$remaining" -gt 0 ]; then
-                printf '  est. remaining:    ≤%s docs → ~%s at current rate (rough; backlog from last summary)\n' \
-                    "$remaining" "$(humanize_min $((remaining * 15 / rate15)))"
+        # Real backlog: bills we've scraped (version links exist) that we haven't
+        # successfully archived yet (no document row at all, or a document row
+        # that errored) — a direct Postgres count, not a guess from log text.
+        local db_result never_attempted errored not_archived
+        db_result=$(db_backlog "$juris")
+        if [ -n "$db_result" ]; then
+            never_attempted=$(echo "$db_result" | cut -d'|' -f1)
+            errored=$(echo "$db_result" | cut -d'|' -f2)
+            not_archived=$((never_attempted + errored))
+            if [ "$rate15" -gt 0 ] && [ "$not_archived" -gt 0 ]; then
+                printf '  not yet archived:   %s docs (%s never attempted + %s failed) → ~%s at current rate\n' \
+                    "$not_archived" "$never_attempted" "$errored" "$(humanize_min $((not_archived * 15 / rate15)))"
             else
-                printf '  est. remaining:    ≤%s docs (rough; backlog from last summary)\n' "$remaining"
+                printf '  not yet archived:   %s docs (%s never attempted + %s failed)\n' \
+                    "$not_archived" "$never_attempted" "$errored"
+            fi
+        else
+            # DB unreachable (container down, timeout, etc.) — fall back to the
+            # old rough estimate rather than showing nothing.
+            local summary fetched errors backlog remaining summary_ts done_since
+            summary=$(grep -E "^$juris: [0-9]+ bills checked" "$LOG" | tail -1)
+            if [ -n "$summary" ]; then
+                fetched=$(echo "$summary" | sed -E 's/.*fetched=([0-9]+).*/\1/')
+                errors=$(echo "$summary" | sed -E 's/.*fetch_errors=([0-9]+).*/\1/')
+                backlog=$((fetched + errors))
+                summary_ts=$(last_log_ts "Archiving done: $juris")
+                done_since=$done
+                [ -n "$summary_ts" ] && done_since=$(find "$RAW/$juris" -type f ! -name '.DS_Store' -newermt "$summary_ts" 2>/dev/null | wc -l | tr -d ' ')
+                remaining=$((backlog - done_since)); [ "$remaining" -lt 0 ] && remaining=0
+                printf '  est. remaining:    ≤%s docs (rough; backlog from last summary — DB unreachable for a real count)\n' \
+                    "$remaining"
             fi
         fi
         local prev
