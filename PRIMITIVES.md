@@ -131,9 +131,9 @@ missing marker = maximally stale, alerts) and alerts Slack `#automation-errors` 
 `/api/v1/failures` once per staleness episode, de-duped via `logs/last-run/<key>.stale-alerted`
 sentinel files (cleared on recovery, with a recovery post). Designed to be invoked every 5
 minutes by the `com.ddp.health-monitor` LaunchDaemon via a one-line hook in `ddp-agents`'s
-`health-check-slack.sh` — **that hook has not been added yet (verified 2026-08-08); until it
-is, this script is not called by anything.** Placement is deliberately outside ddp-sync and the
-scrape scripts, so once wired up it
+`health-check-slack.sh` — **live as of 2026-08-08**, confirmed by a real first-run alert in
+`logs/staleness-check.log` (MI, the expected true positive) and its sentinel file. Placement is
+deliberately outside ddp-sync and the scrape scripts, so it
 survives the failure modes it exists to catch (including the scheduler daemon itself dying).
 Deliberately **self-contained** — sources nothing, copies the Slack/CAMS pattern (see the
 extraction note under `run-scrape.sh` above). The allowlist is the thing to touch when the
