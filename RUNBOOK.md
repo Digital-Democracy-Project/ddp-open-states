@@ -57,7 +57,7 @@ GROUP BY j.name ORDER BY j.name;"
 | openstates-postgres | 5433 | container `restart:unless-stopped` (same compose) | dedicated DB (volume `os_pg_data`) |
 | db backup | — | **system LaunchDaemon** `com.ddp.openstates-db-backup` (07:00 local) | `backup-openstates-db.sh` (nightly pg_dump, keep-7) |
 | Scraper | 8001 | ddp-sync APScheduler — **system LaunchDaemon** `com.ddp.ddp-sync` (not a GUI agent) | `run-scrape.sh` (per jurisdiction) |
-| Staleness watchdog | — | **system LaunchDaemon** `com.ddp.health-monitor` (ddp-agents, every 5 min) — **hook not yet added, see below** | `check-scrape-staleness.sh` via one-line hook in `ddp-agents/deployment/scripts/health-check-slack.sh` |
+| Staleness watchdog | — | **system LaunchDaemon** `com.ddp.health-monitor` (ddp-agents, every 5 min) — **live, see below** | `check-scrape-staleness.sh` via one-line hook in `ddp-agents/deployment/scripts/health-check-slack.sh` |
 
 **api-v3 deployment (containerized 2026-06-24, per `PLAN-production-hardening.md`):** api-v3
 runs as the `ddp-openstates` Docker compose project — container `ddp-openstates-api-1` on
@@ -148,15 +148,15 @@ path (`run-scrape.sh`'s `ERR` trap / `on_failure`) can't see, and how MA ran wro
 weeks unnoticed. It compares the age of each watched `logs/last-run/<key>.ts` marker against
 that job's cadence and alerts once per staleness episode.
 
-**Status: not yet wired up.** The script and its alert logic are complete and tested
-(`test-check-scrape-staleness.sh`), but nothing calls it yet — the companion one-line hook in
-`ddp-agents/deployment/scripts/health-check-slack.sh` has not been added (verified 2026-08-08).
-Until that lands, this watchdog is inert: no schedule invokes it, so it will not alert on a real
-staleness episode. Track that hook as its own follow-up (this repo's `project.toml` scopes work
-to this checkout only, so it can't be added from here); don't treat OPEN-40 as fully deployed
-until it's confirmed running.
+**Status: live.** The companion hook in `ddp-agents/deployment/scripts/health-check-slack.sh`
+merged and reached production the same day (2026-08-08), and this script itself landed in the
+production checkout shortly after ([ddp-open-states#98](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/98)).
+Confirmed actually running, not just deployed: `logs/staleness-check.log` shows a real first-run
+alert (`STALE: mi last-run age 333h exceeds 228h threshold — alerting`, 2026-08-08 19:57:29 —
+the expected MI true-positive called out when this was built), and the matching
+`logs/last-run/mi.stale-alerted` sentinel exists, root-owned (written by the LaunchDaemon).
 
-**How it runs (once the hook lands):** the existing `com.ddp.health-monitor` system LaunchDaemon
+**How it runs:** the existing `com.ddp.health-monitor` system LaunchDaemon
 (ddp-agents) calls it every 5 minutes via a one-line `bash …/check-scrape-staleness.sh || true`
 hook in `ddp-agents/deployment/scripts/health-check-slack.sh`. That placement is deliberate — the
 watchdog lives **outside** ddp-sync and the scrape scripts, so it still fires when the
