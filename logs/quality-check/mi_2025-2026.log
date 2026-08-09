@@ -1,0 +1,428 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: MI 2025-2026
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+    ...page 50/196, 1000 identifiers so far
+    ...page 51 failed (ReadTimeout), retry 1/3 in 1s
+    ...page 51 failed (ReadTimeout), retry 2/3 in 2s
+    ...page 51 failed (ReadTimeout), retry 3/3 in 4s
+    ...page 100/196, 2000 identifiers so far
+    ...page 150/196, 3000 identifiers so far
+    ...page 196 failed (ReadTimeout), retry 1/3 in 1s
+  live=3910  local=3910  missing=0  extra=0  both=3910
+  [32m✓[0m  MI 2025-2026: Tier 1 coverage — no missing bills (3910 local == 3910 live)
+  Running Tier 2 sub-record checks on 100 of 3910 bills present in both...
+  [32m✓[0m  MI HB 4110 (2025-2026): title matches
+  [32m✓[0m  MI HB 4110 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4110 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4110 (2025-2026): sponsorship count matches (6)
+    ...0/100
+  [32m✓[0m  MI HB 4149 (2025-2026): title matches
+  [32m✓[0m  MI HB 4149 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4149 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 4149 (2025-2026): vote tally matches on 2025-03-20 ({'yes': 86, 'no': 19, 'other': 0})
+  [32m✓[0m  MI HB 4149 (2025-2026): sponsorship count matches (12)
+  [32m✓[0m  MI HB 4190 (2025-2026): title matches
+  [32m✓[0m  MI HB 4190 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4190 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4190 (2025-2026): sponsorship count matches (14)
+  [32m✓[0m  MI HB 4197 (2025-2026): title matches
+  [32m✓[0m  MI HB 4197 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4197 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4197 (2025-2026): sponsorship count matches (10)
+  [32m✓[0m  MI HB 4209 (2025-2026): title matches
+  [32m✓[0m  MI HB 4209 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4209 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4209 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 4323 (2025-2026): title matches
+  [32m✓[0m  MI HB 4323 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4323 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4323 (2025-2026): sponsorship count matches (18)
+  [32m✓[0m  MI HB 4378 (2025-2026): title matches
+  [32m✓[0m  MI HB 4378 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4378 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4378 (2025-2026): sponsorship count matches (8)
+  [32m✓[0m  MI HB 4409 (2025-2026): title matches
+  [32m✓[0m  MI HB 4409 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4409 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4409 (2025-2026): sponsorship count matches (39)
+  [32m✓[0m  MI HB 4417 (2025-2026): title matches
+  [32m✓[0m  MI HB 4417 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4417 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 4417 (2025-2026): vote tally matches on 2025-06-26 ({'yes': 100, 'no': 4, 'other': 0})
+  [32m✓[0m  MI HB 4417 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 4549 (2025-2026): title matches
+  [32m✓[0m  MI HB 4549 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4549 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 4549 (2025-2026): vote tally matches on 2025-09-09 ({'yes': 100, 'no': 4, 'other': 0})
+  [32m✓[0m  MI HB 4549 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 4582 (2025-2026): title matches
+  [32m✓[0m  MI HB 4582 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4582 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 4582 (2025-2026): vote tally matches on 2026-03-11 ({'yes': 58, 'no': 48, 'other': 0})
+  [32m✓[0m  MI HB 4582 (2025-2026): sponsorship count matches (9)
+  [32m✓[0m  MI HB 4633 (2025-2026): title matches
+  [32m✓[0m  MI HB 4633 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4633 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4633 (2025-2026): sponsorship count matches (29)
+  [32m✓[0m  MI HB 4685 (2025-2026): title matches
+  [32m✓[0m  MI HB 4685 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4685 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4685 (2025-2026): sponsorship count matches (8)
+  [32m✓[0m  MI HB 4700 (2025-2026): title matches
+  [32m✓[0m  MI HB 4700 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4700 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 4700 (2025-2026): vote tally matches on 2025-09-17 ({'yes': 94, 'no': 3, 'other': 0})
+  [32m✓[0m  MI HB 4700 (2025-2026): sponsorship count matches (6)
+  [32m✓[0m  MI HB 4705 (2025-2026): title matches
+  [32m✓[0m  MI HB 4705 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4705 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4705 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 4788 (2025-2026): title matches
+  [32m✓[0m  MI HB 4788 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4788 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4788 (2025-2026): sponsorship count matches (4)
+  [32m✓[0m  MI HB 4844 (2025-2026): title matches
+  [32m✓[0m  MI HB 4844 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4844 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4844 (2025-2026): sponsorship count matches (8)
+  [32m✓[0m  MI HB 4872 (2025-2026): title matches
+  [32m✓[0m  MI HB 4872 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4872 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4872 (2025-2026): sponsorship count matches (24)
+  [32m✓[0m  MI HB 4886 (2025-2026): title matches
+  [32m✓[0m  MI HB 4886 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 4886 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 4886 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI HB 5039 (2025-2026): title matches
+  [32m✓[0m  MI HB 5039 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5039 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 5039 (2025-2026): vote tally matches on 2026-02-18 ({'yes': 88, 'no': 21, 'other': 0})
+  [32m✓[0m  MI HB 5039 (2025-2026): sponsorship count matches (10)
+  [32m✓[0m  MI HB 5060 (2025-2026): title matches
+  [32m✓[0m  MI HB 5060 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5060 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5060 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI HB 5067 (2025-2026): title matches
+  [32m✓[0m  MI HB 5067 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5067 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5067 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5091 (2025-2026): title matches
+  [32m✓[0m  MI HB 5091 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5091 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5091 (2025-2026): sponsorship count matches (4)
+  [32m✓[0m  MI HB 5112 (2025-2026): title matches
+  [32m✓[0m  MI HB 5112 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5112 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5112 (2025-2026): sponsorship count matches (3)
+  [32m✓[0m  MI HB 5148 (2025-2026): title matches
+  [32m✓[0m  MI HB 5148 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5148 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5148 (2025-2026): sponsorship count matches (27)
+  [32m✓[0m  MI HB 5159 (2025-2026): title matches
+  [32m✓[0m  MI HB 5159 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5159 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5159 (2025-2026): sponsorship count matches (3)
+    ...25/100
+  [32m✓[0m  MI HB 5201 (2025-2026): title matches
+  [32m✓[0m  MI HB 5201 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5201 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5201 (2025-2026): sponsorship count matches (22)
+  [32m✓[0m  MI HB 5209 (2025-2026): title matches
+  [32m✓[0m  MI HB 5209 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5209 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5209 (2025-2026): sponsorship count matches (15)
+  [32m✓[0m  MI HB 5246 (2025-2026): title matches
+  [32m✓[0m  MI HB 5246 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5246 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5246 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5439 (2025-2026): title matches
+  [32m✓[0m  MI HB 5439 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5439 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5439 (2025-2026): sponsorship count matches (15)
+  [32m✓[0m  MI HB 5467 (2025-2026): title matches
+  [32m✓[0m  MI HB 5467 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5467 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 5467 (2025-2026): vote tally matches on 2026-03-03 ({'yes': 60, 'no': 46, 'other': 0})
+  [32m✓[0m  MI HB 5467 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5479 (2025-2026): title matches
+  [32m✓[0m  MI HB 5479 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5479 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5479 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5502 (2025-2026): title matches
+  [33m~[0m  MI HB 5502 (2025-2026): latest_action differs  [local='transmitted' live='referred to committee on natural resources and agr']
+  [32m✓[0m  MI HB 5502 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI HB 5502 (2025-2026): vote tally matches on 2026-06-24 ({'yes': 58, 'no': 49, 'other': 0})
+  [32m✓[0m  MI HB 5502 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI HB 5516 (2025-2026): title matches
+  [32m✓[0m  MI HB 5516 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5516 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5516 (2025-2026): sponsorship count matches (11)
+  [32m✓[0m  MI HB 5597 (2025-2026): title matches
+  [32m✓[0m  MI HB 5597 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5597 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5597 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI HB 5621 (2025-2026): title matches
+  [32m✓[0m  MI HB 5621 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5621 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5621 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5657 (2025-2026): title matches
+  [32m✓[0m  MI HB 5657 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5657 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5657 (2025-2026): sponsorship count matches (28)
+  [32m✓[0m  MI HB 5723 (2025-2026): title matches
+  [32m✓[0m  MI HB 5723 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5723 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5723 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI HB 5733 (2025-2026): title matches
+  [32m✓[0m  MI HB 5733 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5733 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5733 (2025-2026): sponsorship count matches (3)
+  [32m✓[0m  MI HB 5785 (2025-2026): title matches
+  [32m✓[0m  MI HB 5785 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5785 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5785 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5786 (2025-2026): title matches
+  [32m✓[0m  MI HB 5786 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5786 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5786 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5958 (2025-2026): title matches
+  [32m✓[0m  MI HB 5958 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5958 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5958 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 5990 (2025-2026): title matches
+  [32m✓[0m  MI HB 5990 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5990 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5990 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI HB 5993 (2025-2026): title matches
+  [32m✓[0m  MI HB 5993 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 5993 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 5993 (2025-2026): sponsorship count matches (2)
+  [33m~[0m  MI HB 6043 (2025-2026): title differs  [local='Children: child care; tri-share child ca' live='Children: child care; tri-share child ca']
+  [33m~[0m  MI HB 6043 (2025-2026): latest_action differs  [local='transmitted' live="assigned pa 33'26 with immediate effect"]
+  [31m✗[0m  MI HB 6043 (2025-2026): local is MISSING votes vs live  [local=1 live=3]
+  [32m✓[0m  MI HB 6043 (2025-2026): vote tally matches on 2026-06-25 ({'yes': 95, 'no': 10, 'other': 0})
+  [32m✓[0m  MI HB 6043 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 6126 (2025-2026): title matches
+  [33m~[0m  MI HB 6126 (2025-2026): latest_action differs  [local='bill electronically reproduced 06/24/2026' live='referred to committee on appropriations']
+  [31m✗[0m  MI HB 6126 (2025-2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  MI HB 6126 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI HB 6145 (2025-2026): title matches
+  [32m✓[0m  MI HB 6145 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 6145 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 6145 (2025-2026): sponsorship count matches (17)
+  [32m✓[0m  MI HB 6193 (2025-2026): title matches
+  [32m✓[0m  MI HB 6193 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 6193 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 6193 (2025-2026): sponsorship count matches (4)
+  [32m✓[0m  MI HB 6198 (2025-2026): title matches
+  [32m✓[0m  MI HB 6198 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 6198 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 6198 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI HB 6227 (2025-2026): title matches
+  [32m✓[0m  MI HB 6227 (2025-2026): latest_action matches
+  [32m✓[0m  MI HB 6227 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HB 6227 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI HJR Z (2025-2026): title matches
+  [32m✓[0m  MI HJR Z (2025-2026): latest_action matches
+  [32m✓[0m  MI HJR Z (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HJR Z (2025-2026): sponsorship count matches (8)
+    ...50/100
+  [32m✓[0m  MI HR 123 (2025-2026): title matches
+  [32m✓[0m  MI HR 123 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 123 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 123 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI HR 134 (2025-2026): title matches
+  [32m✓[0m  MI HR 134 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 134 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 134 (2025-2026): sponsorship count matches (11)
+  [32m✓[0m  MI HR 218 (2025-2026): title matches
+  [32m✓[0m  MI HR 218 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 218 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 218 (2025-2026): sponsorship count matches (46)
+  [32m✓[0m  MI HR 23 (2025-2026): title matches
+  [32m✓[0m  MI HR 23 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 23 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 23 (2025-2026): sponsorship count matches (35)
+  [32m✓[0m  MI HR 266 (2025-2026): title matches
+  [32m✓[0m  MI HR 266 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 266 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 266 (2025-2026): sponsorship count matches (20)
+  [32m✓[0m  MI HR 271 (2025-2026): title matches
+  [32m✓[0m  MI HR 271 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 271 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 271 (2025-2026): sponsorship count matches (8)
+  [32m✓[0m  MI HR 279 (2025-2026): title matches
+  [32m✓[0m  MI HR 279 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 279 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 279 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI HR 301 (2025-2026): title matches
+  [32m✓[0m  MI HR 301 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 301 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 301 (2025-2026): sponsorship count matches (17)
+  [32m✓[0m  MI HR 32 (2025-2026): title matches
+  [32m✓[0m  MI HR 32 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 32 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 32 (2025-2026): sponsorship count matches (10)
+  [32m✓[0m  MI HR 35 (2025-2026): title matches
+  [32m✓[0m  MI HR 35 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 35 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 35 (2025-2026): sponsorship count matches (10)
+  [32m✓[0m  MI HR 59 (2025-2026): title matches
+  [32m✓[0m  MI HR 59 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 59 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 59 (2025-2026): sponsorship count matches (36)
+  [32m✓[0m  MI HR 93 (2025-2026): title matches
+  [32m✓[0m  MI HR 93 (2025-2026): latest_action matches
+  [32m✓[0m  MI HR 93 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI HR 93 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI SB 1051 (2025-2026): title matches
+  [33m~[0m  MI SB 1051 (2025-2026): latest_action differs  [local='referred to committee on energy and environment' live='senate co-sponsor(s) named: sean mccann']
+  [32m✓[0m  MI SB 1051 (2025-2026): vote event count matches (0)
+  [33m~[0m  MI SB 1051 (2025-2026): sponsorship count off by 1  [local=6 live=7]
+  [32m✓[0m  MI SB 146 (2025-2026): title matches
+  [32m✓[0m  MI SB 146 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 146 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 146 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 15 (2025-2026): title matches
+  [32m✓[0m  MI SB 15 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 15 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 15 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 183 (2025-2026): title matches
+  [32m✓[0m  MI SB 183 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 183 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 183 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 237 (2025-2026): title matches
+  [32m✓[0m  MI SB 237 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 237 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 237 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 258 (2025-2026): title matches
+  [32m✓[0m  MI SB 258 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 258 (2025-2026): vote event count matches (1)
+  [33m~[0m  MI SB 258 (2025-2026): vote tally differs on 2025-05-20  [local={'yes': 25, 'no': 9, 'other': 3} live={'other': 0, 'no': 8, 'yes': 4} | Albert (no): local only; Anthony (yes): local only; Bayer (yes): local only; Bellino (no): local only; Brinks (yes): local only; Camilleri (yes): local only; Cavanagh (yes): local only; Chang (yes): local only; Cherry (yes): local only; Daley (no): local only; Damoose (yes): local only; Geiss (yes): local only; Hauck (no): local only; Hertel (yes): local only; Hoitenga (no): local only; Huizenga (yes): local only; Irwin (yes): local only; Johnson (other): local only; Klinefelt (yes): local only; Lauwers (no): local only; Lindsey (other): local only; McBroom (no): local only; McCann (yes): local only; McMorrow (yes): local only; Moss (yes): local only; Nesbitt (yes): local only; Outman (other): local only; Polehanki (yes): local only; Runestad (yes): local only; Santana (yes): local only; Shink (yes): local only; Singh (yes): local only; Theis (no): local only; Victory (yes): local only; Webber (yes): local only; Wojno (yes): local only; Albert Bellino (no): live only; Daley Hauck (no): live only; Hoitenga Lauwers (no): live only; Johnson (no): live only; Lindsey (no): live only; McBroom Theis (no): live only; Outman (no): live only | 8 other local bill(s) share this signature on 2025-05-20]
+  [32m✓[0m  MI SB 258 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI SB 27 (2025-2026): title matches
+  [32m✓[0m  MI SB 27 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 27 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 27 (2025-2026): vote tally matches on 2025-02-25 ({'yes': 32, 'no': 0, 'other': 5})
+  [32m✓[0m  MI SB 27 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 271 (2025-2026): title matches
+  [32m✓[0m  MI SB 271 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 271 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 271 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 275 (2025-2026): title matches
+  [32m✓[0m  MI SB 275 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 275 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 275 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 291 (2025-2026): title matches
+  [32m✓[0m  MI SB 291 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 291 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 291 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI SB 295 (2025-2026): title matches
+  [32m✓[0m  MI SB 295 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 295 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 295 (2025-2026): sponsorship count matches (10)
+  [32m✓[0m  MI SB 349 (2025-2026): title matches
+  [32m✓[0m  MI SB 349 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 349 (2025-2026): vote event count matches (3)
+  [32m✓[0m  MI SB 349 (2025-2026): vote tally matches on 2025-08-13 ({'yes': 33, 'no': 0, 'other': 4})
+  [32m✓[0m  MI SB 349 (2025-2026): vote tally matches on 2025-12-11 ({'yes': 101, 'no': 0, 'other': 0})
+  [33m~[0m  MI SB 349 (2025-2026): vote tally differs on 2025-12-16  [local={'yes': 35, 'no': 0, 'other': 2} live={'yes': 4, 'no': 2, 'other': 0} | Albert (yes): local only; Anthony (yes): local only; Bayer (yes): local only; Bellino (yes): local only; Brinks (yes): local only; Bumstead (yes): local only; Camilleri (yes): local only; Cavanagh (yes): local only; Chang (yes): local only; Cherry (yes): local only; Daley (yes): local only; Damoose (yes): local only; Geiss (other): local only; Hauck (yes): local only; Hertel (yes): local only; Hoitenga (yes): local only; Huizenga (yes): local only; Irwin (yes): local only; Johnson (yes): local only; Klinefelt (yes): local only; Lauwers (yes): local only; Lindsey (yes): local only; McBroom (yes): local only; McCann (yes): local only; McMorrow (yes): local only; Moss (yes): local only; Nesbitt (yes): local only; Outman (yes): local only; Polehanki (yes): local only; Runestad (yes): local only; Santana (other): local only; Shink (yes): local only; Singh (yes): local only; Theis (yes): local only; Victory (yes): local only; Webber (yes): local only; Wojno (yes): local only; Geiss (no): live only; Santana (no): live only | 28 other local bill(s) share this signature on 2025-12-16]
+  [32m✓[0m  MI SB 349 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI SB 400 (2025-2026): title matches
+  [32m✓[0m  MI SB 400 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 400 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 400 (2025-2026): vote tally matches on 2025-07-01 ({'yes': 36, 'no': 0, 'other': 1})
+  [32m✓[0m  MI SB 400 (2025-2026): sponsorship count matches (2)
+    ...75/100
+  [32m✓[0m  MI SB 419 (2025-2026): title matches
+  [32m✓[0m  MI SB 419 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 419 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 419 (2025-2026): vote tally matches on 2025-09-25 ({'yes': 36, 'no': 0, 'other': 1})
+  [32m✓[0m  MI SB 419 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI SB 426 (2025-2026): title matches
+  [32m✓[0m  MI SB 426 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 426 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 426 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 442 (2025-2026): title matches
+  [32m✓[0m  MI SB 442 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 442 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 442 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI SB 45 (2025-2026): title matches
+  [32m✓[0m  MI SB 45 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 45 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 45 (2025-2026): sponsorship count matches (8)
+  [32m✓[0m  MI SB 507 (2025-2026): title matches
+  [32m✓[0m  MI SB 507 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 507 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 507 (2025-2026): vote tally matches on 2025-12-09 ({'yes': 35, 'no': 0, 'other': 2})
+  [32m✓[0m  MI SB 507 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 533 (2025-2026): title matches
+  [32m✓[0m  MI SB 533 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 533 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 533 (2025-2026): vote tally matches on 2025-09-17 ({'yes': 19, 'no': 14, 'other': 4})
+  [32m✓[0m  MI SB 533 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI SB 560 (2025-2026): title matches
+  [32m✓[0m  MI SB 560 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 560 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 560 (2025-2026): sponsorship count matches (3)
+  [31m✗[0m  MI SB 562 (2025-2026): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [32m✓[0m  MI SB 582 (2025-2026): title matches
+  [32m✓[0m  MI SB 582 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 582 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 582 (2025-2026): sponsorship count matches (1)
+  [31m✗[0m  MI SB 598 (2025-2026): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  MI SB 645 (2025-2026): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  MI SB 695 (2025-2026): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  MI SB 72 (2025-2026): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [32m✓[0m  MI SB 736 (2025-2026): title matches
+  [32m✓[0m  MI SB 736 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 736 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 736 (2025-2026): sponsorship count matches (2)
+  [32m✓[0m  MI SB 764 (2025-2026): title matches
+  [32m✓[0m  MI SB 764 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 764 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 764 (2025-2026): sponsorship count matches (5)
+  [32m✓[0m  MI SB 80 (2025-2026): title matches
+  [32m✓[0m  MI SB 80 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 80 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 80 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 822 (2025-2026): title matches
+  [32m✓[0m  MI SB 822 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 822 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 822 (2025-2026): sponsorship count matches (4)
+  [32m✓[0m  MI SB 893 (2025-2026): title matches
+  [32m✓[0m  MI SB 893 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 893 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 893 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 912 (2025-2026): title matches
+  [32m✓[0m  MI SB 912 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 912 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 912 (2025-2026): vote tally matches on 2026-04-30 ({'yes': 37, 'no': 0, 'other': 0})
+  [32m✓[0m  MI SB 912 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 913 (2025-2026): title matches
+  [33m~[0m  MI SB 913 (2025-2026): latest_action differs  [local='referred to committee on appropriations' live='per rule 40 referred to committee on government op']
+  [32m✓[0m  MI SB 913 (2025-2026): vote event count matches (1)
+  [32m✓[0m  MI SB 913 (2025-2026): vote tally matches on 2026-06-25 ({'yes': 20, 'no': 12, 'other': 6})
+  [32m✓[0m  MI SB 913 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SB 925 (2025-2026): title matches
+  [32m✓[0m  MI SB 925 (2025-2026): latest_action matches
+  [32m✓[0m  MI SB 925 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SB 925 (2025-2026): sponsorship count matches (3)
+  [32m✓[0m  MI SB 947 (2025-2026): title matches
+  [33m~[0m  MI SB 947 (2025-2026): latest_action differs  [local='referred to committee of the whole with substitute' live='referred to committee on natural resources and tou']
+  [31m✗[0m  MI SB 947 (2025-2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  MI SB 947 (2025-2026): sponsorship count matches (7)
+  [32m✓[0m  MI SCR 3 (2025-2026): title matches
+  [32m✓[0m  MI SCR 3 (2025-2026): latest_action matches
+  [32m✓[0m  MI SCR 3 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SCR 3 (2025-2026): sponsorship count matches (1)
+  [32m✓[0m  MI SR 86 (2025-2026): title matches
+  [32m✓[0m  MI SR 86 (2025-2026): latest_action matches
+  [32m✓[0m  MI SR 86 (2025-2026): vote event count matches (0)
+  [32m✓[0m  MI SR 86 (2025-2026): sponsorship count matches (5)
+
+────────────────────────────────────────────────────────────
+  388/406 passed  |  10 warnings  |  8 failures  |  0 skipped
+────────────────────────────────────────────────────────────

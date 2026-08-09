@@ -1,0 +1,1144 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: VA 2026S1
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+  live=300  local=300  missing=0  extra=0  both=300
+  [32m✓[0m  VA 2026S1: Tier 1 coverage — no missing bills (300 local == 300 live)
+  Running Tier 2 sub-record checks on 300 of 300 bills present in both...
+  [32m✓[0m  VA HB 30 (2026S1): title matches
+  [32m✓[0m  VA HB 30 (2026S1): latest_action matches
+  [32m✓[0m  VA HB 30 (2026S1): vote event count matches (29)
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-22  [local={'yes': 23, 'no': 16, 'abstain': 0, 'not voting': 1, 'other': 0} live={'yes': 71, 'no': 22, 'abstain': 0, 'not voting': 6, 'other': 0} | Aaron R. Rouse (yes): local only; Angelia Williams Graves (yes): local only; Barbara A. Favola (yes): local only; Bill DeSteph (no): local only; Bryce E. Reeves (no): local only; Christie New Craig (no): local only; Christopher T. Head (no): local only; Danica A. Roem (yes): local only; David R. Suetterlein (no): local only; David W. Marsden (yes): local only; Elizabeth B. Bennett-Parker (yes): local only; Emily M. Jordan (no): local only; Glen H. Sturtevant, Jr. (no): local only; J.D. "Danny" Diggs (no): local only; Jennifer B. Boysko (yes): local only; Jennifer D. Carroll Foy (yes): local only; Jeremy S. McPike (yes): local only; Kannan Srinivasan (yes): local only; L. Louise Lucas (yes): local only; Lamont Bagby (yes): local only; Lashrecse D. Aird (yes): local only; Luther Cifers, III (no): local only; Mamie E. Locke (yes): local only; Mark D. Obenshain (no): local only; Mark J. Peake (not voting): local only; Michael J. Jones (yes): local only; R. Creigh Deeds (yes): local only; Richard H. Stuart (yes): local only; Russet Perry (yes): local only; Ryan T. McDougle (no): local only; Saddam Azlan Salim (yes): local only; Schuyler T. VanValkenburg (yes): local only; Scott A. Surovell (yes): local only; Stella G. Pekarsky (yes): local only; T. Travis Hackworth (no): local only; Tammy Brankley Mulchi (no): local only; Tara A. Durant (no): local only; Timmy French (no): local only; Todd E. Pillion (yes): local only; William M. Stanley, Jr. (no): local only; Adele Y. McClure (yes): live only; Alex Q. Askew (yes): live only; Alfonso H. Lopez (yes): live only; Amy J. Laufer (yes): live only; Andrew Rice (no): live only; Anne Ferrell Tata (yes): live only; Atoosa R. Reaser (yes): live only; Betsy B. Carr (yes): live only; Bill Wiley (yes): live only; Bonita G. Anthony (yes): live only; Briana D. Sewell (yes): live only; C.E. Cliff Hayes, Jr. (yes): live only; Charlie Schmidt (yes): live only; Charniele L. Herring (yes): live only; Chris S. Runion (no): live only; Dan I. Helmer (yes): live only; David A. Reid (yes): live only; Debra D. Gardner (yes): live only; Delores L. McQuinn (yes): live only; Delores Oates (no): live only; Destiny LeVere Bolling (yes): live only; Don Scott (yes): live only; Elizabeth R. Guzman (yes): live only; Ellen H. McLaughlin (not voting): live only; Eric Phillips (yes): live only; Eric R. Zehr (no): live only; Garrett McGuire (yes): live only; Gretchen M. Bulova (yes): live only; H. Otto Wachsmann, Jr. (no): live only; Hillary Pugh Kent (no): live only; Holly M. Seibold (yes): live only; Hyland F. "Buddy" Fowler, Jr. (not voting): live only; Irene Shin (yes): live only; Israel D. O'Quinn (no): live only; JJ Singh (yes): live only; Jackie H. Glass (yes): live only; James A. "Jay" Leftwich (no): live only; James W. Morefield (yes): live only; Jason S. Ballard (not voting): live only; Jeion A. Ward (yes): live only; Jessica L. Anderson (yes): live only; John Chilton McAuliff (yes): live only; Joseph P. McNamara (no): live only; Joshua E. Thomas (yes): live only; Joshua G. Cole (yes): live only; Justin Pence (no): live only; Karen Hamilton (no): live only; Karen Keys-Gamarra (yes): live only; Karen R. "Kacey" Carnegie (yes): live only; Karrie K. Delaney (not voting): live only; Kathy K.L. Tran (yes): live only; Katrina Callsen (yes): live only; Kelly K. Convirs-Fowler (yes): live only; Kimberly Pope Adams (yes): live only; Kirk McPike (yes): live only; Laura Jane Cohen (yes): live only; Leslie Chambers Mehta (yes): live only; Lily V. Franklin (yes): live only; Lindsey Dougherty (yes): live only; Luke E. Torian (yes): live only; M. Keith Hodges (yes): live only; Madison Whittle (yes): live only; Marcia S. "Cia" Price (yes): live only; Marcus B. Simon (yes): live only; Margaret A. Franklin (yes): live only; Mark C. Downey (yes): live only; Marty Martinez (yes): live only; May Nivar (yes): live only; Michael B. Feggans (yes): live only; Michael J. Webert (no): live only; Mike A. Cherry (no): live only; Mitchell Cornett (no): live only; Nadarius E. Clark (not voting): live only; Nicole Cole (yes): live only; Patrick A. Hope (yes): live only; Paul E. Krizek (yes): live only; Phil M. Hernandez (yes): live only; Phillip A. Scott (no): live only; R. Lee Ware (no): live only; Rae Cousins (yes): live only; Richard C. "Rip" Sullivan, Jr. (yes): live only; Robert S. Bloxom, Jr. (yes): live only; Rodney T. Willett (yes): live only; Rozia A. Henson, Jr. (yes): live only; Sam Rasoul (yes): live only; Scott A. Wyatt (yes): live only; Shelly A. Simonds (yes): live only; Stacey Annie Carroll (yes): live only; Terry G. Kilgore (no): live only; Terry L. Austin (yes): live only; Thomas A. Garrett, Jr. (not voting): live only; Thomas C. Wright, Jr. (no): live only; Timothy P. Griffin (no): live only; Tony O. Wilt (yes): live only; Virgil Thornton (yes): live only; Vivian E. Watts (yes): live only; Wendell S. Walker (no): live only; Will Davis (no): live only; Wren M. Williams (no): live only | 0 other local bill(s) share this signature on 2026-06-22]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-22  [local={'yes': 71, 'no': 22, 'abstain': 0, 'not voting': 6, 'other': 0} live={'yes': 23, 'no': 16, 'abstain': 0, 'not voting': 1, 'other': 0} | Adele Y. McClure (yes): local only; Alex Q. Askew (yes): local only; Alfonso H. Lopez (yes): local only; Amy J. Laufer (yes): local only; Andrew Rice (no): local only; Anne Ferrell Tata (yes): local only; Atoosa R. Reaser (yes): local only; Betsy B. Carr (yes): local only; Bill Wiley (yes): local only; Bonita G. Anthony (yes): local only; Briana D. Sewell (yes): local only; C.E. Cliff Hayes, Jr. (yes): local only; Charlie Schmidt (yes): local only; Charniele L. Herring (yes): local only; Chris S. Runion (no): local only; Dan I. Helmer (yes): local only; David A. Reid (yes): local only; Debra D. Gardner (yes): local only; Delores L. McQuinn (yes): local only; Delores Oates (no): local only; Destiny LeVere Bolling (yes): local only; Don Scott (yes): local only; Elizabeth R. Guzman (yes): local only; Ellen H. McLaughlin (not voting): local only; Eric Phillips (yes): local only; Eric R. Zehr (no): local only; Garrett McGuire (yes): local only; Gretchen M. Bulova (yes): local only; H. Otto Wachsmann, Jr. (no): local only; Hillary Pugh Kent (no): local only; Holly M. Seibold (yes): local only; Hyland F. "Buddy" Fowler, Jr. (not voting): local only; Irene Shin (yes): local only; Israel D. O'Quinn (no): local only; JJ Singh (yes): local only; Jackie H. Glass (yes): local only; James A. "Jay" Leftwich (no): local only; James W. Morefield (yes): local only; Jason S. Ballard (not voting): local only; Jeion A. Ward (yes): local only; Jessica L. Anderson (yes): local only; John Chilton McAuliff (yes): local only; Joseph P. McNamara (no): local only; Joshua E. Thomas (yes): local only; Joshua G. Cole (yes): local only; Justin Pence (no): local only; Karen Hamilton (no): local only; Karen Keys-Gamarra (yes): local only; Karen R. "Kacey" Carnegie (yes): local only; Karrie K. Delaney (not voting): local only; Kathy K.L. Tran (yes): local only; Katrina Callsen (yes): local only; Kelly K. Convirs-Fowler (yes): local only; Kimberly Pope Adams (yes): local only; Kirk McPike (yes): local only; Laura Jane Cohen (yes): local only; Leslie Chambers Mehta (yes): local only; Lily V. Franklin (yes): local only; Lindsey Dougherty (yes): local only; Luke E. Torian (yes): local only; M. Keith Hodges (yes): local only; Madison Whittle (yes): local only; Marcia S. "Cia" Price (yes): local only; Marcus B. Simon (yes): local only; Margaret A. Franklin (yes): local only; Mark C. Downey (yes): local only; Marty Martinez (yes): local only; May Nivar (yes): local only; Michael B. Feggans (yes): local only; Michael J. Webert (no): local only; Mike A. Cherry (no): local only; Mitchell Cornett (no): local only; Nadarius E. Clark (not voting): local only; Nicole Cole (yes): local only; Patrick A. Hope (yes): local only; Paul E. Krizek (yes): local only; Phil M. Hernandez (yes): local only; Phillip A. Scott (no): local only; R. Lee Ware (no): local only; Rae Cousins (yes): local only; Richard C. "Rip" Sullivan, Jr. (yes): local only; Robert S. Bloxom, Jr. (yes): local only; Rodney T. Willett (yes): local only; Rozia A. Henson, Jr. (yes): local only; Sam Rasoul (yes): local only; Scott A. Wyatt (yes): local only; Shelly A. Simonds (yes): local only; Stacey Annie Carroll (yes): local only; Terry G. Kilgore (no): local only; Terry L. Austin (yes): local only; Thomas A. Garrett, Jr. (not voting): local only; Thomas C. Wright, Jr. (no): local only; Timothy P. Griffin (no): local only; Tony O. Wilt (yes): local only; Virgil Thornton (yes): local only; Vivian E. Watts (yes): local only; Wendell S. Walker (no): local only; Will Davis (no): local only; Wren M. Williams (no): local only; Aaron R. Rouse (yes): live only; Angelia Williams Graves (yes): live only; Barbara A. Favola (yes): live only; Bill DeSteph (no): live only; Bryce E. Reeves (no): live only; Christie New Craig (no): live only; Christopher T. Head (no): live only; Danica A. Roem (yes): live only; David R. Suetterlein (no): live only; David W. Marsden (yes): live only; Elizabeth B. Bennett-Parker (yes): live only; Emily M. Jordan (no): live only; Glen H. Sturtevant, Jr. (no): live only; J.D. "Danny" Diggs (no): live only; Jennifer B. Boysko (yes): live only; Jennifer D. Carroll Foy (yes): live only; Jeremy S. McPike (yes): live only; Kannan Srinivasan (yes): live only; L. Louise Lucas (yes): live only; Lamont Bagby (yes): live only; Lashrecse D. Aird (yes): live only; Luther Cifers, III (no): live only; Mamie E. Locke (yes): live only; Mark D. Obenshain (no): live only; Mark J. Peake (not voting): live only; Michael J. Jones (yes): live only; R. Creigh Deeds (yes): live only; Richard H. Stuart (yes): live only; Russet Perry (yes): live only; Ryan T. McDougle (no): live only; Saddam Azlan Salim (yes): live only; Schuyler T. VanValkenburg (yes): live only; Scott A. Surovell (yes): live only; Stella G. Pekarsky (yes): live only; T. Travis Hackworth (no): live only; Tammy Brankley Mulchi (no): live only; Tara A. Durant (no): live only; Timmy French (no): live only; Todd E. Pillion (yes): live only; William M. Stanley, Jr. (no): live only | 0 other local bill(s) share this signature on 2026-06-22]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 63, 'no': 24, 'abstain': 0, 'not voting': 12, 'other': 0} live={'yes': 62, 'no': 28, 'abstain': 0, 'not voting': 9, 'other': 0} | Ellen H. McLaughlin (yes): local only; Joshua G. Cole (not voting): local only; Phillip A. Scott (not voting): local only; Timothy P. Griffin (not voting): local only; Wendell S. Walker (yes): local only; Ellen H. McLaughlin (no): live only; Joshua G. Cole (yes): live only; Phillip A. Scott (no): live only; Timothy P. Griffin (no): live only; Wendell S. Walker (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 62, 'no': 28, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 57, 'no': 33, 'abstain': 0, 'not voting': 9, 'other': 0} | Ellen H. McLaughlin (yes): local only; H. Otto Wachsmann, Jr. (yes): local only; M. Keith Hodges (yes): local only; Mike A. Cherry (yes): local only; Robert S. Bloxom, Jr. (yes): local only; Ellen H. McLaughlin (no): live only; H. Otto Wachsmann, Jr. (no): live only; M. Keith Hodges (no): live only; Mike A. Cherry (no): live only; Robert S. Bloxom, Jr. (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 74, 'no': 14, 'abstain': 0, 'not voting': 11, 'other': 0} live={'yes': 90, 'no': 0, 'abstain': 0, 'not voting': 9, 'other': 0} | Delores Oates (no): local only; Eric Phillips (no): local only; Eric R. Zehr (no): local only; Israel D. O'Quinn (no): local only; James A. "Jay" Leftwich (no): local only; Jason S. Ballard (no): local only; Joseph P. McNamara (not voting): local only; Karen Hamilton (no): local only; M. Keith Hodges (no): local only; Madison Whittle (no): local only; Mitchell Cornett (no): local only; Phillip A. Scott (not voting): local only; Thomas A. Garrett, Jr. (no): local only; Thomas C. Wright, Jr. (no): local only; Timothy P. Griffin (no): local only; Will Davis (no): local only; Delores Oates (yes): live only; Eric Phillips (yes): live only; Eric R. Zehr (yes): live only; Israel D. O'Quinn (yes): live only; James A. "Jay" Leftwich (yes): live only; Jason S. Ballard (yes): live only; Joseph P. McNamara (yes): live only; Karen Hamilton (yes): live only; M. Keith Hodges (yes): live only; Madison Whittle (yes): live only; Mitchell Cornett (yes): live only; Phillip A. Scott (yes): live only; Thomas A. Garrett, Jr. (yes): live only; Thomas C. Wright, Jr. (yes): live only; Timothy P. Griffin (yes): live only; Will Davis (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 65, 'no': 25, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 57, 'no': 33, 'abstain': 0, 'not voting': 9, 'other': 0} | Andrew Rice (yes): local only; Chris S. Runion (yes): local only; Hyland F. "Buddy" Fowler, Jr. (yes): local only; James A. "Jay" Leftwich (yes): local only; M. Keith Hodges (yes): local only; Mike A. Cherry (yes): local only; Robert S. Bloxom, Jr. (yes): local only; Wendell S. Walker (yes): local only; Andrew Rice (no): live only; Chris S. Runion (no): live only; Hyland F. "Buddy" Fowler, Jr. (no): live only; James A. "Jay" Leftwich (no): live only; M. Keith Hodges (no): live only; Mike A. Cherry (no): live only; Robert S. Bloxom, Jr. (no): live only; Wendell S. Walker (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 88, 'no': 0, 'abstain': 0, 'not voting': 11, 'other': 0} live={'yes': 65, 'no': 23, 'abstain': 0, 'not voting': 11, 'other': 0} | Bill Wiley (yes): local only; Delores Oates (yes): local only; Eric Phillips (yes): local only; Eric R. Zehr (yes): local only; H. Otto Wachsmann, Jr. (yes): local only; Hyland F. "Buddy" Fowler, Jr. (yes): local only; Israel D. O'Quinn (yes): local only; James A. "Jay" Leftwich (yes): local only; James W. Morefield (yes): local only; Jason S. Ballard (yes): local only; Joseph P. McNamara (yes): local only; Justin Pence (yes): local only; Karen Hamilton (yes): local only; Madison Whittle (not voting): local only; Michael J. Webert (yes): local only; Mitchell Cornett (yes): local only; Phillip A. Scott (not voting): local only; Scott A. Wyatt (yes): local only; Terry G. Kilgore (yes): local only; Terry L. Austin (yes): local only; Thomas A. Garrett, Jr. (yes): local only; Thomas C. Wright, Jr. (yes): local only; Timothy P. Griffin (yes): local only; Tony O. Wilt (yes): local only; Wendell S. Walker (yes): local only; Will Davis (yes): local only; Bill Wiley (no): live only; Delores Oates (no): live only; Eric Phillips (no): live only; Eric R. Zehr (no): live only; H. Otto Wachsmann, Jr. (no): live only; Hyland F. "Buddy" Fowler, Jr. (no): live only; Israel D. O'Quinn (no): live only; James A. "Jay" Leftwich (no): live only; James W. Morefield (no): live only; Jason S. Ballard (no): live only; Joseph P. McNamara (no): live only; Justin Pence (no): live only; Karen Hamilton (no): live only; Madison Whittle (yes): live only; Michael J. Webert (not voting): live only; Mitchell Cornett (no): live only; Phillip A. Scott (no): live only; Scott A. Wyatt (no): live only; Terry G. Kilgore (no): live only; Terry L. Austin (no): live only; Thomas A. Garrett, Jr. (no): live only; Thomas C. Wright, Jr. (no): live only; Timothy P. Griffin (not voting): live only; Tony O. Wilt (no): live only; Wendell S. Walker (no): live only; Will Davis (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 57, 'no': 33, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 56, 'no': 34, 'abstain': 0, 'not voting': 9, 'other': 0} | Jessica L. Anderson (yes): local only; Jessica L. Anderson (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 57, 'no': 33, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 63, 'no': 24, 'abstain': 0, 'not voting': 12, 'other': 0} | Andrew Rice (no): local only; Ellen H. McLaughlin (no): local only; James A. "Jay" Leftwich (no): local only; Joshua G. Cole (yes): local only; M. Keith Hodges (no): local only; Phillip A. Scott (no): local only; Robert S. Bloxom, Jr. (no): local only; Terry G. Kilgore (no): local only; Timothy P. Griffin (no): local only; Wendell S. Walker (no): local only; Andrew Rice (yes): live only; Ellen H. McLaughlin (yes): live only; James A. "Jay" Leftwich (yes): live only; Joshua G. Cole (not voting): live only; M. Keith Hodges (yes): live only; Phillip A. Scott (not voting): live only; Robert S. Bloxom, Jr. (yes): live only; Terry G. Kilgore (yes): live only; Timothy P. Griffin (not voting): live only; Wendell S. Walker (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 90, 'no': 0, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 62, 'no': 28, 'abstain': 0, 'not voting': 9, 'other': 0} | Andrew Rice (yes): local only; Bill Wiley (yes): local only; Chris S. Runion (yes): local only; Delores Oates (yes): local only; Eric Phillips (yes): local only; Eric R. Zehr (yes): local only; Hillary Pugh Kent (yes): local only; Hyland F. "Buddy" Fowler, Jr. (yes): local only; Israel D. O'Quinn (yes): local only; James A. "Jay" Leftwich (yes): local only; James W. Morefield (yes): local only; Jason S. Ballard (yes): local only; Joseph P. McNamara (yes): local only; Justin Pence (yes): local only; Karen Hamilton (yes): local only; Madison Whittle (yes): local only; Michael J. Webert (yes): local only; Mitchell Cornett (yes): local only; Phillip A. Scott (yes): local only; Scott A. Wyatt (yes): local only; Terry G. Kilgore (yes): local only; Terry L. Austin (yes): local only; Thomas A. Garrett, Jr. (yes): local only; Thomas C. Wright, Jr. (yes): local only; Timothy P. Griffin (yes): local only; Tony O. Wilt (yes): local only; Wendell S. Walker (yes): local only; Will Davis (yes): local only; Andrew Rice (no): live only; Bill Wiley (no): live only; Chris S. Runion (no): live only; Delores Oates (no): live only; Eric Phillips (no): live only; Eric R. Zehr (no): live only; Hillary Pugh Kent (no): live only; Hyland F. "Buddy" Fowler, Jr. (no): live only; Israel D. O'Quinn (no): live only; James A. "Jay" Leftwich (no): live only; James W. Morefield (no): live only; Jason S. Ballard (no): live only; Joseph P. McNamara (no): live only; Justin Pence (no): live only; Karen Hamilton (no): live only; Madison Whittle (no): live only; Michael J. Webert (no): live only; Mitchell Cornett (no): live only; Phillip A. Scott (no): live only; Scott A. Wyatt (no): live only; Terry G. Kilgore (no): live only; Terry L. Austin (no): live only; Thomas A. Garrett, Jr. (no): live only; Thomas C. Wright, Jr. (no): live only; Timothy P. Griffin (no): live only; Tony O. Wilt (no): live only; Wendell S. Walker (no): live only; Will Davis (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 62, 'no': 28, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 65, 'no': 25, 'abstain': 0, 'not voting': 9, 'other': 0} | Chris S. Runion (no): local only; Hyland F. "Buddy" Fowler, Jr. (no): local only; Mike A. Cherry (no): local only; Terry G. Kilgore (yes): local only; Wendell S. Walker (no): local only; Chris S. Runion (yes): live only; Hyland F. "Buddy" Fowler, Jr. (yes): live only; Mike A. Cherry (yes): live only; Terry G. Kilgore (no): live only; Wendell S. Walker (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 65, 'no': 23, 'abstain': 0, 'not voting': 11, 'other': 0} live={'yes': 88, 'no': 0, 'abstain': 0, 'not voting': 11, 'other': 0} | Bill Wiley (no): local only; Delores Oates (no): local only; Eric Phillips (no): local only; Eric R. Zehr (no): local only; H. Otto Wachsmann, Jr. (no): local only; Hyland F. "Buddy" Fowler, Jr. (no): local only; Israel D. O'Quinn (no): local only; James A. "Jay" Leftwich (no): local only; James W. Morefield (no): local only; Jason S. Ballard (no): local only; Joseph P. McNamara (no): local only; Justin Pence (no): local only; Karen Hamilton (no): local only; Madison Whittle (yes): local only; Michael J. Webert (not voting): local only; Mitchell Cornett (no): local only; Phillip A. Scott (no): local only; Scott A. Wyatt (no): local only; Terry G. Kilgore (no): local only; Terry L. Austin (no): local only; Thomas A. Garrett, Jr. (no): local only; Thomas C. Wright, Jr. (no): local only; Timothy P. Griffin (not voting): local only; Tony O. Wilt (no): local only; Wendell S. Walker (no): local only; Will Davis (no): local only; Bill Wiley (yes): live only; Delores Oates (yes): live only; Eric Phillips (yes): live only; Eric R. Zehr (yes): live only; H. Otto Wachsmann, Jr. (yes): live only; Hyland F. "Buddy" Fowler, Jr. (yes): live only; Israel D. O'Quinn (yes): live only; James A. "Jay" Leftwich (yes): live only; James W. Morefield (yes): live only; Jason S. Ballard (yes): live only; Joseph P. McNamara (yes): live only; Justin Pence (yes): live only; Karen Hamilton (yes): live only; Madison Whittle (not voting): live only; Michael J. Webert (yes): live only; Mitchell Cornett (yes): live only; Phillip A. Scott (not voting): live only; Scott A. Wyatt (yes): live only; Terry G. Kilgore (yes): live only; Terry L. Austin (yes): live only; Thomas A. Garrett, Jr. (yes): live only; Thomas C. Wright, Jr. (yes): live only; Timothy P. Griffin (yes): live only; Tony O. Wilt (yes): live only; Wendell S. Walker (yes): live only; Will Davis (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [32m✓[0m  VA HB 30 (2026S1): vote tally matches on 2026-06-29 ({'yes': 76, 'no': 9, 'abstain': 0, 'not voting': 14, 'other': 0})
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 56, 'no': 34, 'abstain': 0, 'not voting': 9, 'other': 0} live={'yes': 74, 'no': 14, 'abstain': 0, 'not voting': 11, 'other': 0} | Andrew Rice (no): local only; Bill Wiley (no): local only; Chris S. Runion (no): local only; Ellen H. McLaughlin (no): local only; H. Otto Wachsmann, Jr. (no): local only; Hillary Pugh Kent (no): local only; Hyland F. "Buddy" Fowler, Jr. (no): local only; James W. Morefield (no): local only; Jessica L. Anderson (no): local only; Joseph P. McNamara (no): local only; Justin Pence (no): local only; Michael J. Webert (no): local only; Mike A. Cherry (no): local only; Phillip A. Scott (no): local only; Robert S. Bloxom, Jr. (no): local only; Scott A. Wyatt (no): local only; Terry G. Kilgore (no): local only; Terry L. Austin (no): local only; Tony O. Wilt (no): local only; Wendell S. Walker (no): local only; Andrew Rice (yes): live only; Bill Wiley (yes): live only; Chris S. Runion (yes): live only; Ellen H. McLaughlin (yes): live only; H. Otto Wachsmann, Jr. (yes): live only; Hillary Pugh Kent (yes): live only; Hyland F. "Buddy" Fowler, Jr. (yes): live only; James W. Morefield (yes): live only; Jessica L. Anderson (yes): live only; Joseph P. McNamara (not voting): live only; Justin Pence (yes): live only; Michael J. Webert (yes): live only; Mike A. Cherry (yes): live only; Phillip A. Scott (not voting): live only; Robert S. Bloxom, Jr. (yes): live only; Scott A. Wyatt (yes): live only; Terry G. Kilgore (yes): live only; Terry L. Austin (yes): live only; Tony O. Wilt (yes): live only; Wendell S. Walker (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 19, 'no': 17, 'abstain': 0, 'not voting': 4, 'other': 0} live={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} | Bryce E. Reeves (not voting): local only; Lashrecse D. Aird (not voting): local only; Bryce E. Reeves (no): live only; Lashrecse D. Aird (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 31, 'no': 7, 'abstain': 0, 'not voting': 2, 'other': 0} | Bill DeSteph (no): local only; Bryce E. Reeves (no): local only; Christie New Craig (no): local only; Emily M. Jordan (no): local only; Glen H. Sturtevant, Jr. (no): local only; J.D. "Danny" Diggs (no): local only; L. Louise Lucas (yes): local only; Luther Cifers, III (no): local only; Mark J. Peake (no): local only; Richard H. Stuart (no): local only; Tammy Brankley Mulchi (no): local only; Tara A. Durant (no): local only; Timmy French (no): local only; Bill DeSteph (yes): live only; Bryce E. Reeves (yes): live only; Christie New Craig (yes): live only; Emily M. Jordan (yes): live only; Glen H. Sturtevant, Jr. (yes): live only; J.D. "Danny" Diggs (yes): live only; L. Louise Lucas (no): live only; Luther Cifers, III (yes): live only; Mark J. Peake (yes): live only; Richard H. Stuart (yes): live only; Tammy Brankley Mulchi (yes): live only; Tara A. Durant (yes): live only; Timmy French (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 21, 'no': 17, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 28, 'no': 10, 'abstain': 0, 'not voting': 2, 'other': 0} | Bill DeSteph (no): local only; Bryce E. Reeves (no): local only; Christie New Craig (no): local only; Christopher T. Head (no): local only; Danica A. Roem (yes): local only; Emily M. Jordan (no): local only; L. Louise Lucas (yes): local only; Luther Cifers, III (no): local only; Mamie E. Locke (yes): local only; Russet Perry (yes): local only; T. Travis Hackworth (no): local only; Tammy Brankley Mulchi (no): local only; Timmy French (no): local only; Todd E. Pillion (no): local only; William M. Stanley, Jr. (no): local only; Bill DeSteph (yes): live only; Bryce E. Reeves (yes): live only; Christie New Craig (yes): live only; Christopher T. Head (yes): live only; Danica A. Roem (no): live only; Emily M. Jordan (yes): live only; L. Louise Lucas (no): live only; Luther Cifers, III (yes): live only; Mamie E. Locke (no): live only; Russet Perry (no): live only; T. Travis Hackworth (yes): live only; Tammy Brankley Mulchi (yes): live only; Timmy French (yes): live only; Todd E. Pillion (yes): live only; William M. Stanley, Jr. (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 38, 'no': 0, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 37, 'no': 0, 'abstain': 0, 'not voting': 3, 'other': 0} | David R. Suetterlein (yes): local only; David R. Suetterlein (not voting): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 21, 'no': 17, 'abstain': 0, 'not voting': 2, 'other': 0} | J.D. "Danny" Diggs (no): local only; J.D. "Danny" Diggs (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 25, 'no': 12, 'abstain': 0, 'not voting': 3, 'other': 0} | Christopher T. Head (no): local only; David R. Suetterlein (no): local only; Emily M. Jordan (no): local only; Luther Cifers, III (no): local only; Mark J. Peake (no): local only; Tammy Brankley Mulchi (no): local only; Christopher T. Head (yes): live only; David R. Suetterlein (not voting): live only; Emily M. Jordan (yes): live only; Luther Cifers, III (yes): live only; Mark J. Peake (yes): live only; Tammy Brankley Mulchi (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 25, 'no': 12, 'abstain': 0, 'not voting': 3, 'other': 0} live={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} | Christopher T. Head (yes): local only; David R. Suetterlein (not voting): local only; Emily M. Jordan (yes): local only; Luther Cifers, III (yes): local only; Mark J. Peake (yes): local only; Tammy Brankley Mulchi (yes): local only; Christopher T. Head (no): live only; David R. Suetterlein (no): live only; Emily M. Jordan (no): live only; Luther Cifers, III (no): live only; Mark J. Peake (no): live only; Tammy Brankley Mulchi (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 31, 'no': 7, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 19, 'no': 17, 'abstain': 0, 'not voting': 4, 'other': 0} | Bill DeSteph (yes): local only; Bryce E. Reeves (yes): local only; Christie New Craig (yes): local only; Emily M. Jordan (yes): local only; Glen H. Sturtevant, Jr. (yes): local only; J.D. "Danny" Diggs (yes): local only; L. Louise Lucas (no): local only; Lashrecse D. Aird (yes): local only; Luther Cifers, III (yes): local only; Mark J. Peake (yes): local only; Richard H. Stuart (yes): local only; Tammy Brankley Mulchi (yes): local only; Tara A. Durant (yes): local only; Timmy French (yes): local only; Bill DeSteph (no): live only; Bryce E. Reeves (not voting): live only; Christie New Craig (no): live only; Emily M. Jordan (no): live only; Glen H. Sturtevant, Jr. (no): live only; J.D. "Danny" Diggs (no): live only; L. Louise Lucas (yes): live only; Lashrecse D. Aird (not voting): live only; Luther Cifers, III (no): live only; Mark J. Peake (no): live only; Richard H. Stuart (no): live only; Tammy Brankley Mulchi (no): live only; Tara A. Durant (no): live only; Timmy French (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 37, 'no': 0, 'abstain': 0, 'not voting': 3, 'other': 0} live={'yes': 38, 'no': 0, 'abstain': 0, 'not voting': 2, 'other': 0} | David R. Suetterlein (not voting): local only; David R. Suetterlein (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [32m✓[0m  VA HB 30 (2026S1): vote tally matches on 2026-06-29 ({'yes': 38, 'no': 0, 'abstain': 0, 'not voting': 2, 'other': 0})
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 36, 'no': 2, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 26, 'no': 12, 'abstain': 0, 'not voting': 2, 'other': 0} | Bryce E. Reeves (yes): local only; David R. Suetterlein (yes): local only; J.D. "Danny" Diggs (yes): local only; Richard H. Stuart (yes): local only; Ryan T. McDougle (yes): local only; T. Travis Hackworth (yes): local only; Tammy Brankley Mulchi (yes): local only; Timmy French (yes): local only; Todd E. Pillion (yes): local only; William M. Stanley, Jr. (yes): local only; Bryce E. Reeves (no): live only; David R. Suetterlein (no): live only; J.D. "Danny" Diggs (no): live only; Richard H. Stuart (no): live only; Ryan T. McDougle (no): live only; T. Travis Hackworth (no): live only; Tammy Brankley Mulchi (no): live only; Timmy French (no): live only; Todd E. Pillion (no): live only; William M. Stanley, Jr. (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 28, 'no': 10, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 38, 'no': 0, 'abstain': 0, 'not voting': 2, 'other': 0} | Danica A. Roem (no): local only; David R. Suetterlein (no): local only; Glen H. Sturtevant, Jr. (no): local only; L. Louise Lucas (no): local only; Mamie E. Locke (no): local only; Mark J. Peake (no): local only; Richard H. Stuart (no): local only; Russet Perry (no): local only; Ryan T. McDougle (no): local only; Tara A. Durant (no): local only; Danica A. Roem (yes): live only; David R. Suetterlein (yes): live only; Glen H. Sturtevant, Jr. (yes): live only; L. Louise Lucas (yes): live only; Mamie E. Locke (yes): live only; Mark J. Peake (yes): live only; Richard H. Stuart (yes): live only; Russet Perry (yes): live only; Ryan T. McDougle (yes): live only; Tara A. Durant (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 26, 'no': 12, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 36, 'no': 2, 'abstain': 0, 'not voting': 2, 'other': 0} | Bryce E. Reeves (no): local only; David R. Suetterlein (no): local only; J.D. "Danny" Diggs (no): local only; Richard H. Stuart (no): local only; Ryan T. McDougle (no): local only; T. Travis Hackworth (no): local only; Tammy Brankley Mulchi (no): local only; Timmy French (no): local only; Todd E. Pillion (no): local only; William M. Stanley, Jr. (no): local only; Bryce E. Reeves (yes): live only; David R. Suetterlein (yes): live only; J.D. "Danny" Diggs (yes): live only; Richard H. Stuart (yes): live only; Ryan T. McDougle (yes): live only; T. Travis Hackworth (yes): live only; Tammy Brankley Mulchi (yes): live only; Timmy French (yes): live only; Todd E. Pillion (yes): live only; William M. Stanley, Jr. (yes): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [32m✓[0m  VA HB 30 (2026S1): vote tally matches on 2026-06-29 ({'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0})
+  [33m~[0m  VA HB 30 (2026S1): vote tally differs on 2026-06-29  [local={'yes': 38, 'no': 0, 'abstain': 0, 'not voting': 2, 'other': 0} live={'yes': 20, 'no': 18, 'abstain': 0, 'not voting': 2, 'other': 0} | Bill DeSteph (yes): local only; Bryce E. Reeves (yes): local only; Christie New Craig (yes): local only; Christopher T. Head (yes): local only; David R. Suetterlein (yes): local only; Emily M. Jordan (yes): local only; Glen H. Sturtevant, Jr. (yes): local only; J.D. "Danny" Diggs (yes): local only; Luther Cifers, III (yes): local only; Mark J. Peake (yes): local only; Richard H. Stuart (yes): local only; Ryan T. McDougle (yes): local only; T. Travis Hackworth (yes): local only; Tammy Brankley Mulchi (yes): local only; Tara A. Durant (yes): local only; Timmy French (yes): local only; Todd E. Pillion (yes): local only; William M. Stanley, Jr. (yes): local only; Bill DeSteph (no): live only; Bryce E. Reeves (no): live only; Christie New Craig (no): live only; Christopher T. Head (no): live only; David R. Suetterlein (no): live only; Emily M. Jordan (no): live only; Glen H. Sturtevant, Jr. (no): live only; J.D. "Danny" Diggs (no): live only; Luther Cifers, III (no): live only; Mark J. Peake (no): live only; Richard H. Stuart (no): live only; Ryan T. McDougle (no): live only; T. Travis Hackworth (no): live only; Tammy Brankley Mulchi (no): live only; Tara A. Durant (no): live only; Timmy French (no): live only; Todd E. Pillion (no): live only; William M. Stanley, Jr. (no): live only | 0 other local bill(s) share this signature on 2026-06-29]
+  [32m✓[0m  VA HB 30 (2026S1): sponsorship count matches (1)
+    ...0/300
+  [32m✓[0m  VA HJ 4001 (2026S1): title matches
+  [32m✓[0m  VA HJ 4001 (2026S1): latest_action matches
+  [32m✓[0m  VA HJ 4001 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HJ 4001 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2001 (2026S1): title matches
+  [32m✓[0m  VA HR 2001 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2001 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2001 (2026S1): sponsorship count matches (43)
+  [32m✓[0m  VA HR 2002 (2026S1): title matches
+  [32m✓[0m  VA HR 2002 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2002 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2002 (2026S1): sponsorship count matches (89)
+  [32m✓[0m  VA HR 2003 (2026S1): title matches
+  [32m✓[0m  VA HR 2003 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2003 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2003 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2004 (2026S1): title matches
+  [32m✓[0m  VA HR 2004 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2004 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2004 (2026S1): sponsorship count matches (28)
+  [32m✓[0m  VA HR 2005 (2026S1): title matches
+  [32m✓[0m  VA HR 2005 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2005 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2005 (2026S1): sponsorship count matches (28)
+  [32m✓[0m  VA HR 2006 (2026S1): title matches
+  [32m✓[0m  VA HR 2006 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2006 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2006 (2026S1): sponsorship count matches (29)
+  [32m✓[0m  VA HR 2007 (2026S1): title matches
+  [32m✓[0m  VA HR 2007 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2007 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2007 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2008 (2026S1): title matches
+  [32m✓[0m  VA HR 2008 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2008 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2008 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2009 (2026S1): title matches
+  [32m✓[0m  VA HR 2009 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2009 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2009 (2026S1): sponsorship count matches (18)
+  [32m✓[0m  VA HR 2010 (2026S1): title matches
+  [32m✓[0m  VA HR 2010 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2010 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2010 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2011 (2026S1): title matches
+  [32m✓[0m  VA HR 2011 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2011 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2011 (2026S1): sponsorship count matches (63)
+  [32m✓[0m  VA HR 2012 (2026S1): title matches
+  [32m✓[0m  VA HR 2012 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2012 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2012 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2013 (2026S1): title matches
+  [32m✓[0m  VA HR 2013 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2013 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2013 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2014 (2026S1): title matches
+  [32m✓[0m  VA HR 2014 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2014 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2014 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2015 (2026S1): title matches
+  [32m✓[0m  VA HR 2015 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2015 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2015 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2016 (2026S1): title matches
+  [32m✓[0m  VA HR 2016 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2016 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2016 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2017 (2026S1): title matches
+  [32m✓[0m  VA HR 2017 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2017 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2017 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2018 (2026S1): title matches
+  [32m✓[0m  VA HR 2018 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2018 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2018 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2019 (2026S1): title matches
+  [32m✓[0m  VA HR 2019 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2019 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2019 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2020 (2026S1): title matches
+  [32m✓[0m  VA HR 2020 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2020 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2020 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2021 (2026S1): title matches
+  [32m✓[0m  VA HR 2021 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2021 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2021 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2022 (2026S1): title matches
+  [32m✓[0m  VA HR 2022 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2022 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2022 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2023 (2026S1): title matches
+  [32m✓[0m  VA HR 2023 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2023 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2023 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2024 (2026S1): title matches
+  [32m✓[0m  VA HR 2024 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2024 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2024 (2026S1): sponsorship count matches (1)
+    ...25/300
+  [32m✓[0m  VA HR 2025 (2026S1): title matches
+  [32m✓[0m  VA HR 2025 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2025 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2025 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2026 (2026S1): title matches
+  [32m✓[0m  VA HR 2026 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2026 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2026 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2027 (2026S1): title matches
+  [32m✓[0m  VA HR 2027 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2027 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2027 (2026S1): sponsorship count matches (15)
+  [32m✓[0m  VA HR 2028 (2026S1): title matches
+  [32m✓[0m  VA HR 2028 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2028 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2028 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2029 (2026S1): title matches
+  [32m✓[0m  VA HR 2029 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2029 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2029 (2026S1): sponsorship count matches (12)
+  [32m✓[0m  VA HR 2030 (2026S1): title matches
+  [32m✓[0m  VA HR 2030 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2030 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2030 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2031 (2026S1): title matches
+  [32m✓[0m  VA HR 2031 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2031 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2031 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2032 (2026S1): title matches
+  [32m✓[0m  VA HR 2032 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2032 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2032 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2033 (2026S1): title matches
+  [32m✓[0m  VA HR 2033 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2033 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2033 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2034 (2026S1): title matches
+  [32m✓[0m  VA HR 2034 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2034 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2034 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2035 (2026S1): title matches
+  [32m✓[0m  VA HR 2035 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2035 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2035 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2036 (2026S1): title matches
+  [32m✓[0m  VA HR 2036 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2036 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2036 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2037 (2026S1): title matches
+  [32m✓[0m  VA HR 2037 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2037 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2037 (2026S1): sponsorship count matches (81)
+  [32m✓[0m  VA HR 2038 (2026S1): title matches
+  [32m✓[0m  VA HR 2038 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2038 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2038 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2039 (2026S1): title matches
+  [32m✓[0m  VA HR 2039 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2039 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2039 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2040 (2026S1): title matches
+  [32m✓[0m  VA HR 2040 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2040 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2040 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2041 (2026S1): title matches
+  [32m✓[0m  VA HR 2041 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2041 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2041 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2042 (2026S1): title matches
+  [32m✓[0m  VA HR 2042 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2042 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2042 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2043 (2026S1): title matches
+  [32m✓[0m  VA HR 2043 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2043 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2043 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2044 (2026S1): title matches
+  [32m✓[0m  VA HR 2044 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2044 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2044 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2045 (2026S1): title matches
+  [32m✓[0m  VA HR 2045 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2045 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2045 (2026S1): sponsorship count matches (75)
+  [32m✓[0m  VA HR 2046 (2026S1): title matches
+  [32m✓[0m  VA HR 2046 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2046 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2046 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2047 (2026S1): title matches
+  [32m✓[0m  VA HR 2047 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2047 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2047 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2048 (2026S1): title matches
+  [32m✓[0m  VA HR 2048 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2048 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2048 (2026S1): sponsorship count matches (7)
+  [32m✓[0m  VA HR 2049 (2026S1): title matches
+  [32m✓[0m  VA HR 2049 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2049 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2049 (2026S1): sponsorship count matches (6)
+    ...50/300
+  [32m✓[0m  VA HR 2050 (2026S1): title matches
+  [32m✓[0m  VA HR 2050 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2050 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2050 (2026S1): sponsorship count matches (9)
+  [32m✓[0m  VA HR 2051 (2026S1): title matches
+  [32m✓[0m  VA HR 2051 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2051 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2051 (2026S1): sponsorship count matches (9)
+  [32m✓[0m  VA HR 2052 (2026S1): title matches
+  [32m✓[0m  VA HR 2052 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2052 (2026S1): vote event count matches (1)
+  [32m✓[0m  VA HR 2052 (2026S1): vote tally matches on 2026-04-23 ({'yes': 90, 'no': 0, 'abstain': 0, 'not voting': 10, 'other': 0})
+  [32m✓[0m  VA HR 2052 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2053 (2026S1): title matches
+  [32m✓[0m  VA HR 2053 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2053 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2053 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2054 (2026S1): title matches
+  [32m✓[0m  VA HR 2054 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2054 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2054 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2055 (2026S1): title matches
+  [32m✓[0m  VA HR 2055 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2055 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2055 (2026S1): sponsorship count matches (15)
+  [32m✓[0m  VA HR 2056 (2026S1): title matches
+  [32m✓[0m  VA HR 2056 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2056 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2056 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2057 (2026S1): title matches
+  [32m✓[0m  VA HR 2057 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2057 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2057 (2026S1): sponsorship count matches (10)
+  [32m✓[0m  VA HR 2058 (2026S1): title matches
+  [32m✓[0m  VA HR 2058 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2058 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2058 (2026S1): sponsorship count matches (40)
+  [32m✓[0m  VA HR 2059 (2026S1): title matches
+  [32m✓[0m  VA HR 2059 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2059 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2059 (2026S1): sponsorship count matches (38)
+  [32m✓[0m  VA HR 2060 (2026S1): title matches
+  [32m✓[0m  VA HR 2060 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2060 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2060 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2061 (2026S1): title matches
+  [32m✓[0m  VA HR 2061 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2061 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2061 (2026S1): sponsorship count matches (1)
+  [31m✗[0m  VA HR 2062 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2062&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2063 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2063&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2064 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2064&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2065 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2065&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2066 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2066&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2067 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2067&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2068 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2068&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2069 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2069&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2070 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2070&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  VA HR 2071 (2026S1): title matches
+  [32m✓[0m  VA HR 2071 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2071 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2071 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2072 (2026S1): title matches
+  [32m✓[0m  VA HR 2072 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2072 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2072 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2073 (2026S1): title matches
+  [32m✓[0m  VA HR 2073 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2073 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2073 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2074 (2026S1): title matches
+  [32m✓[0m  VA HR 2074 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2074 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2074 (2026S1): sponsorship count matches (59)
+    ...75/300
+  [32m✓[0m  VA HR 2075 (2026S1): title matches
+  [32m✓[0m  VA HR 2075 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2075 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2075 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2076 (2026S1): title matches
+  [32m✓[0m  VA HR 2076 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2076 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2076 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2077 (2026S1): title matches
+  [32m✓[0m  VA HR 2077 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2077 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2077 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2078 (2026S1): title matches
+  [32m✓[0m  VA HR 2078 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2078 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2078 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2079 (2026S1): title matches
+  [32m✓[0m  VA HR 2079 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2079 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2079 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2080 (2026S1): title matches
+  [32m✓[0m  VA HR 2080 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2080 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2080 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2081 (2026S1): title matches
+  [32m✓[0m  VA HR 2081 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2081 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2081 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2082 (2026S1): title matches
+  [32m✓[0m  VA HR 2082 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2082 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2082 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2083 (2026S1): title matches
+  [32m✓[0m  VA HR 2083 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2083 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2083 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2084 (2026S1): title matches
+  [32m✓[0m  VA HR 2084 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2084 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2084 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2085 (2026S1): title matches
+  [32m✓[0m  VA HR 2085 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2085 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2085 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2086 (2026S1): title matches
+  [32m✓[0m  VA HR 2086 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2086 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2086 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2087 (2026S1): title matches
+  [32m✓[0m  VA HR 2087 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2087 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2087 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2088 (2026S1): title matches
+  [32m✓[0m  VA HR 2088 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2088 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2088 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2089 (2026S1): title matches
+  [32m✓[0m  VA HR 2089 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2089 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2089 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2090 (2026S1): title matches
+  [32m✓[0m  VA HR 2090 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2090 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2090 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2091 (2026S1): title matches
+  [32m✓[0m  VA HR 2091 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2091 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2091 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2092 (2026S1): title matches
+  [32m✓[0m  VA HR 2092 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2092 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2092 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2093 (2026S1): title matches
+  [32m✓[0m  VA HR 2093 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2093 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2093 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2094 (2026S1): title matches
+  [32m✓[0m  VA HR 2094 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2094 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2094 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2095 (2026S1): title matches
+  [32m✓[0m  VA HR 2095 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2095 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2095 (2026S1): sponsorship count matches (5)
+  [32m✓[0m  VA HR 2096 (2026S1): title matches
+  [32m✓[0m  VA HR 2096 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2096 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2096 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2097 (2026S1): title matches
+  [32m✓[0m  VA HR 2097 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2097 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2097 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2098 (2026S1): title matches
+  [32m✓[0m  VA HR 2098 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2098 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2098 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2099 (2026S1): title matches
+  [32m✓[0m  VA HR 2099 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2099 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2099 (2026S1): sponsorship count matches (1)
+    ...100/300
+  [32m✓[0m  VA HR 2100 (2026S1): title matches
+  [32m✓[0m  VA HR 2100 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2100 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2100 (2026S1): sponsorship count matches (80)
+  [32m✓[0m  VA HR 2101 (2026S1): title matches
+  [32m✓[0m  VA HR 2101 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2101 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2101 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2102 (2026S1): title matches
+  [32m✓[0m  VA HR 2102 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2102 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2102 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2103 (2026S1): title matches
+  [32m✓[0m  VA HR 2103 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2103 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2103 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2104 (2026S1): title matches
+  [32m✓[0m  VA HR 2104 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2104 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2104 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2105 (2026S1): title matches
+  [32m✓[0m  VA HR 2105 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2105 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2105 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2106 (2026S1): title matches
+  [32m✓[0m  VA HR 2106 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2106 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2106 (2026S1): sponsorship count matches (13)
+  [32m✓[0m  VA HR 2107 (2026S1): title matches
+  [32m✓[0m  VA HR 2107 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2107 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2107 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2108 (2026S1): title matches
+  [32m✓[0m  VA HR 2108 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2108 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2108 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2109 (2026S1): title matches
+  [32m✓[0m  VA HR 2109 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2109 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2109 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2110 (2026S1): title matches
+  [32m✓[0m  VA HR 2110 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2110 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2110 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2111 (2026S1): title matches
+  [32m✓[0m  VA HR 2111 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2111 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2111 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2112 (2026S1): title matches
+  [32m✓[0m  VA HR 2112 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2112 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2112 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2113 (2026S1): title matches
+  [32m✓[0m  VA HR 2113 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2113 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2113 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2114 (2026S1): title matches
+  [32m✓[0m  VA HR 2114 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2114 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2114 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2115 (2026S1): title matches
+  [32m✓[0m  VA HR 2115 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2115 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2115 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2116 (2026S1): title matches
+  [32m✓[0m  VA HR 2116 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2116 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2116 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2117 (2026S1): title matches
+  [32m✓[0m  VA HR 2117 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2117 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2117 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2118 (2026S1): title matches
+  [32m✓[0m  VA HR 2118 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2118 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2118 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2119 (2026S1): title matches
+  [32m✓[0m  VA HR 2119 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2119 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2119 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2120 (2026S1): title matches
+  [32m✓[0m  VA HR 2120 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2120 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2120 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2121 (2026S1): title matches
+  [32m✓[0m  VA HR 2121 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2121 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2121 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2122 (2026S1): title matches
+  [32m✓[0m  VA HR 2122 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2122 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2122 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2123 (2026S1): title matches
+  [32m✓[0m  VA HR 2123 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2123 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2123 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2124 (2026S1): title matches
+  [32m✓[0m  VA HR 2124 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2124 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2124 (2026S1): sponsorship count matches (2)
+    ...125/300
+  [32m✓[0m  VA HR 2125 (2026S1): title matches
+  [32m✓[0m  VA HR 2125 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2125 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2125 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2126 (2026S1): title matches
+  [32m✓[0m  VA HR 2126 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2126 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2126 (2026S1): sponsorship count matches (27)
+  [32m✓[0m  VA HR 2127 (2026S1): title matches
+  [32m✓[0m  VA HR 2127 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2127 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2127 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2128 (2026S1): title matches
+  [32m✓[0m  VA HR 2128 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2128 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2128 (2026S1): sponsorship count matches (26)
+  [32m✓[0m  VA HR 2129 (2026S1): title matches
+  [32m✓[0m  VA HR 2129 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2129 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2129 (2026S1): sponsorship count matches (31)
+  [32m✓[0m  VA HR 2130 (2026S1): title matches
+  [32m✓[0m  VA HR 2130 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2130 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2130 (2026S1): sponsorship count matches (23)
+  [32m✓[0m  VA HR 2131 (2026S1): title matches
+  [32m✓[0m  VA HR 2131 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2131 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2131 (2026S1): sponsorship count matches (25)
+  [32m✓[0m  VA HR 2132 (2026S1): title matches
+  [32m✓[0m  VA HR 2132 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2132 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2132 (2026S1): sponsorship count matches (24)
+  [32m✓[0m  VA HR 2133 (2026S1): title matches
+  [32m✓[0m  VA HR 2133 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2133 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2133 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2134 (2026S1): title matches
+  [32m✓[0m  VA HR 2134 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2134 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2134 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2135 (2026S1): title matches
+  [32m✓[0m  VA HR 2135 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2135 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2135 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2136 (2026S1): title matches
+  [32m✓[0m  VA HR 2136 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2136 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2136 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2137 (2026S1): title matches
+  [32m✓[0m  VA HR 2137 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2137 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2137 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2138 (2026S1): title matches
+  [32m✓[0m  VA HR 2138 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2138 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2138 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2139 (2026S1): title matches
+  [32m✓[0m  VA HR 2139 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2139 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2139 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2140 (2026S1): title matches
+  [32m✓[0m  VA HR 2140 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2140 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2140 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2141 (2026S1): title matches
+  [32m✓[0m  VA HR 2141 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2141 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2141 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2142 (2026S1): title matches
+  [32m✓[0m  VA HR 2142 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2142 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2142 (2026S1): sponsorship count matches (41)
+  [32m✓[0m  VA HR 2143 (2026S1): title matches
+  [32m✓[0m  VA HR 2143 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2143 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2143 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2144 (2026S1): title matches
+  [32m✓[0m  VA HR 2144 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2144 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2144 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2145 (2026S1): title matches
+  [32m✓[0m  VA HR 2145 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2145 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2145 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2146 (2026S1): title matches
+  [32m✓[0m  VA HR 2146 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2146 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2146 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2147 (2026S1): title matches
+  [32m✓[0m  VA HR 2147 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2147 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2147 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2148 (2026S1): title matches
+  [32m✓[0m  VA HR 2148 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2148 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2148 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2149 (2026S1): title matches
+  [32m✓[0m  VA HR 2149 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2149 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2149 (2026S1): sponsorship count matches (13)
+    ...150/300
+  [32m✓[0m  VA HR 2150 (2026S1): title matches
+  [32m✓[0m  VA HR 2150 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2150 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2150 (2026S1): sponsorship count matches (8)
+  [31m✗[0m  VA HR 2151 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2151&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2152 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2152&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2153 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2153&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2154 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2154&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2155 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2155&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2156 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2156&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2157 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2157&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2158 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2158&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2159 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2159&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA HR 2160 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2160&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  VA HR 2161 (2026S1): title matches
+  [32m✓[0m  VA HR 2161 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2161 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2161 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2162 (2026S1): title matches
+  [32m✓[0m  VA HR 2162 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2162 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2162 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2163 (2026S1): title matches
+  [32m✓[0m  VA HR 2163 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2163 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2163 (2026S1): sponsorship count matches (2)
+  [31m✗[0m  VA HR 2164 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  VA HR 2165 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  VA HR 2166 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  VA HR 2167 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  VA HR 2168 (2026S1): live API error  [502 Server Error: Bad Gateway for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=HR+2168&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  VA HR 2169 (2026S1): title matches
+  [32m✓[0m  VA HR 2169 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2169 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2169 (2026S1): sponsorship count matches (1)
+  [31m✗[0m  VA HR 2170 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  VA HR 2171 (2026S1): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [32m✓[0m  VA HR 2172 (2026S1): title matches
+  [32m✓[0m  VA HR 2172 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2172 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2172 (2026S1): sponsorship count matches (66)
+  [32m✓[0m  VA HR 2173 (2026S1): title matches
+  [32m✓[0m  VA HR 2173 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2173 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2173 (2026S1): sponsorship count matches (13)
+  [32m✓[0m  VA HR 2174 (2026S1): title matches
+  [32m✓[0m  VA HR 2174 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2174 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2174 (2026S1): sponsorship count matches (6)
+    ...175/300
+  [32m✓[0m  VA HR 2175 (2026S1): title matches
+  [32m✓[0m  VA HR 2175 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2175 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2175 (2026S1): sponsorship count matches (6)
+  [32m✓[0m  VA HR 2176 (2026S1): title matches
+  [32m✓[0m  VA HR 2176 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2176 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2176 (2026S1): sponsorship count matches (6)
+  [32m✓[0m  VA HR 2177 (2026S1): title matches
+  [32m✓[0m  VA HR 2177 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2177 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2177 (2026S1): sponsorship count matches (6)
+  [32m✓[0m  VA HR 2178 (2026S1): title matches
+  [32m✓[0m  VA HR 2178 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2178 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2178 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2179 (2026S1): title matches
+  [32m✓[0m  VA HR 2179 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2179 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2179 (2026S1): sponsorship count matches (25)
+  [32m✓[0m  VA HR 2180 (2026S1): title matches
+  [32m✓[0m  VA HR 2180 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2180 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2180 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2181 (2026S1): title matches
+  [32m✓[0m  VA HR 2181 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2181 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2181 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2182 (2026S1): title matches
+  [32m✓[0m  VA HR 2182 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2182 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2182 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2183 (2026S1): title matches
+  [32m✓[0m  VA HR 2183 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2183 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2183 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2184 (2026S1): title matches
+  [32m✓[0m  VA HR 2184 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2184 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2184 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2185 (2026S1): title matches
+  [32m✓[0m  VA HR 2185 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2185 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2185 (2026S1): sponsorship count matches (38)
+  [32m✓[0m  VA HR 2186 (2026S1): title matches
+  [32m✓[0m  VA HR 2186 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2186 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2186 (2026S1): sponsorship count matches (31)
+  [32m✓[0m  VA HR 2187 (2026S1): title matches
+  [32m✓[0m  VA HR 2187 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2187 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2187 (2026S1): sponsorship count matches (15)
+  [32m✓[0m  VA HR 2188 (2026S1): title matches
+  [32m✓[0m  VA HR 2188 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2188 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2188 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2189 (2026S1): title matches
+  [32m✓[0m  VA HR 2189 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2189 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2189 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2190 (2026S1): title matches
+  [32m✓[0m  VA HR 2190 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2190 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2190 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2191 (2026S1): title matches
+  [32m✓[0m  VA HR 2191 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2191 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2191 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2192 (2026S1): title matches
+  [32m✓[0m  VA HR 2192 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2192 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2192 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA HR 2193 (2026S1): title matches
+  [32m✓[0m  VA HR 2193 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2193 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2193 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2194 (2026S1): title matches
+  [32m✓[0m  VA HR 2194 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2194 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2194 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2195 (2026S1): title matches
+  [32m✓[0m  VA HR 2195 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2195 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2195 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2196 (2026S1): title matches
+  [32m✓[0m  VA HR 2196 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2196 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2196 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2197 (2026S1): title matches
+  [32m✓[0m  VA HR 2197 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2197 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2197 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2198 (2026S1): title matches
+  [32m✓[0m  VA HR 2198 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2198 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2198 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2199 (2026S1): title matches
+  [32m✓[0m  VA HR 2199 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2199 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2199 (2026S1): sponsorship count matches (1)
+    ...200/300
+  [32m✓[0m  VA HR 2200 (2026S1): title matches
+  [32m✓[0m  VA HR 2200 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2200 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2200 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA HR 2201 (2026S1): title matches
+  [32m✓[0m  VA HR 2201 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2201 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2201 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2202 (2026S1): title matches
+  [32m✓[0m  VA HR 2202 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2202 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2202 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2203 (2026S1): title matches
+  [32m✓[0m  VA HR 2203 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2203 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2203 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2204 (2026S1): title matches
+  [32m✓[0m  VA HR 2204 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2204 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2204 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA HR 2205 (2026S1): title matches
+  [32m✓[0m  VA HR 2205 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2205 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2205 (2026S1): sponsorship count matches (5)
+  [32m✓[0m  VA HR 2206 (2026S1): title matches
+  [32m✓[0m  VA HR 2206 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2206 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2206 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA HR 2207 (2026S1): title matches
+  [32m✓[0m  VA HR 2207 (2026S1): latest_action matches
+  [32m✓[0m  VA HR 2207 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA HR 2207 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2001 (2026S1): title matches
+  [32m✓[0m  VA SR 2001 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2001 (2026S1): vote event count matches (2)
+  [32m✓[0m  VA SR 2001 (2026S1): vote tally matches on 2026-04-23 ({'yes': 36, 'no': 0, 'abstain': 0, 'not voting': 4, 'other': 0})
+  [32m✓[0m  VA SR 2001 (2026S1): vote tally matches on 2026-04-23 ({'yes': 36, 'no': 0, 'abstain': 0, 'not voting': 4, 'other': 0})
+  [32m✓[0m  VA SR 2001 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2002 (2026S1): title matches
+  [32m✓[0m  VA SR 2002 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2002 (2026S1): vote event count matches (1)
+  [32m✓[0m  VA SR 2002 (2026S1): vote tally matches on 2026-04-23 ({'yes': 36, 'no': 0, 'abstain': 0, 'not voting': 4, 'other': 0})
+  [32m✓[0m  VA SR 2002 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2003 (2026S1): title matches
+  [32m✓[0m  VA SR 2003 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2003 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2003 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2004 (2026S1): title matches
+  [32m✓[0m  VA SR 2004 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2004 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2004 (2026S1): sponsorship count matches (8)
+  [32m✓[0m  VA SR 2005 (2026S1): title matches
+  [32m✓[0m  VA SR 2005 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2005 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2005 (2026S1): sponsorship count matches (37)
+  [32m✓[0m  VA SR 2006 (2026S1): title matches
+  [32m✓[0m  VA SR 2006 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2006 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2006 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2007 (2026S1): title matches
+  [32m✓[0m  VA SR 2007 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2007 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2007 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2008 (2026S1): title matches
+  [32m✓[0m  VA SR 2008 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2008 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2008 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2009 (2026S1): title matches
+  [32m✓[0m  VA SR 2009 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2009 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2009 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2010 (2026S1): title matches
+  [32m✓[0m  VA SR 2010 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2010 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2010 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2011 (2026S1): title matches
+  [32m✓[0m  VA SR 2011 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2011 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2011 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2012 (2026S1): title matches
+  [32m✓[0m  VA SR 2012 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2012 (2026S1): vote event count matches (1)
+  [32m✓[0m  VA SR 2012 (2026S1): vote tally matches on 2026-04-23 ({'yes': 37, 'no': 0, 'abstain': 0, 'not voting': 3, 'other': 0})
+  [32m✓[0m  VA SR 2012 (2026S1): sponsorship count matches (6)
+  [32m✓[0m  VA SR 2013 (2026S1): title matches
+  [32m✓[0m  VA SR 2013 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2013 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2013 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2014 (2026S1): title matches
+  [32m✓[0m  VA SR 2014 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2014 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2014 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2015 (2026S1): title matches
+  [32m✓[0m  VA SR 2015 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2015 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2015 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA SR 2016 (2026S1): title matches
+  [32m✓[0m  VA SR 2016 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2016 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2016 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2017 (2026S1): title matches
+  [32m✓[0m  VA SR 2017 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2017 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2017 (2026S1): sponsorship count matches (1)
+    ...225/300
+  [32m✓[0m  VA SR 2018 (2026S1): title matches
+  [32m✓[0m  VA SR 2018 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2018 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2018 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2019 (2026S1): title matches
+  [32m✓[0m  VA SR 2019 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2019 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2019 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2020 (2026S1): title matches
+  [32m✓[0m  VA SR 2020 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2020 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2020 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2021 (2026S1): title matches
+  [32m✓[0m  VA SR 2021 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2021 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2021 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2022 (2026S1): title matches
+  [32m✓[0m  VA SR 2022 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2022 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2022 (2026S1): sponsorship count matches (11)
+  [32m✓[0m  VA SR 2023 (2026S1): title matches
+  [32m✓[0m  VA SR 2023 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2023 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2023 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2024 (2026S1): title matches
+  [32m✓[0m  VA SR 2024 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2024 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2024 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2025 (2026S1): title matches
+  [32m✓[0m  VA SR 2025 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2025 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2025 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2026 (2026S1): title matches
+  [32m✓[0m  VA SR 2026 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2026 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2026 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2027 (2026S1): title matches
+  [32m✓[0m  VA SR 2027 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2027 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2027 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2028 (2026S1): title matches
+  [32m✓[0m  VA SR 2028 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2028 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2028 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2029 (2026S1): title matches
+  [32m✓[0m  VA SR 2029 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2029 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2029 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2030 (2026S1): title matches
+  [32m✓[0m  VA SR 2030 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2030 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2030 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2031 (2026S1): title matches
+  [32m✓[0m  VA SR 2031 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2031 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2031 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2032 (2026S1): title matches
+  [32m✓[0m  VA SR 2032 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2032 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2032 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2033 (2026S1): title matches
+  [32m✓[0m  VA SR 2033 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2033 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2033 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2034 (2026S1): title matches
+  [32m✓[0m  VA SR 2034 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2034 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2034 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2035 (2026S1): title matches
+  [32m✓[0m  VA SR 2035 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2035 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2035 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2036 (2026S1): title matches
+  [32m✓[0m  VA SR 2036 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2036 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2036 (2026S1): sponsorship count matches (15)
+  [32m✓[0m  VA SR 2037 (2026S1): title matches
+  [32m✓[0m  VA SR 2037 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2037 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2037 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2038 (2026S1): title matches
+  [32m✓[0m  VA SR 2038 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2038 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2038 (2026S1): sponsorship count matches (12)
+  [32m✓[0m  VA SR 2039 (2026S1): title matches
+  [32m✓[0m  VA SR 2039 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2039 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2039 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2040 (2026S1): title matches
+  [32m✓[0m  VA SR 2040 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2040 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2040 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2041 (2026S1): title matches
+  [32m✓[0m  VA SR 2041 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2041 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2041 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2042 (2026S1): title matches
+  [32m✓[0m  VA SR 2042 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2042 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2042 (2026S1): sponsorship count matches (1)
+    ...250/300
+  [32m✓[0m  VA SR 2043 (2026S1): title matches
+  [32m✓[0m  VA SR 2043 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2043 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2043 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2044 (2026S1): title matches
+  [32m✓[0m  VA SR 2044 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2044 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2044 (2026S1): sponsorship count matches (21)
+  [32m✓[0m  VA SR 2045 (2026S1): title matches
+  [32m✓[0m  VA SR 2045 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2045 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2045 (2026S1): sponsorship count matches (3)
+  [32m✓[0m  VA SR 2046 (2026S1): title matches
+  [32m✓[0m  VA SR 2046 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2046 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2046 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2047 (2026S1): title matches
+  [32m✓[0m  VA SR 2047 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2047 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2047 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2048 (2026S1): title matches
+  [32m✓[0m  VA SR 2048 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2048 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2048 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2049 (2026S1): title matches
+  [32m✓[0m  VA SR 2049 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2049 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2049 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2050 (2026S1): title matches
+  [32m✓[0m  VA SR 2050 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2050 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2050 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2051 (2026S1): title matches
+  [32m✓[0m  VA SR 2051 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2051 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2051 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2052 (2026S1): title matches
+  [32m✓[0m  VA SR 2052 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2052 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2052 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2053 (2026S1): title matches
+  [32m✓[0m  VA SR 2053 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2053 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2053 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2054 (2026S1): title matches
+  [32m✓[0m  VA SR 2054 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2054 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2054 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2055 (2026S1): title matches
+  [32m✓[0m  VA SR 2055 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2055 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2055 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2056 (2026S1): title matches
+  [32m✓[0m  VA SR 2056 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2056 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2056 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2057 (2026S1): title matches
+  [32m✓[0m  VA SR 2057 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2057 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2057 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2058 (2026S1): title matches
+  [32m✓[0m  VA SR 2058 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2058 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2058 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2059 (2026S1): title matches
+  [32m✓[0m  VA SR 2059 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2059 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2059 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2060 (2026S1): title matches
+  [32m✓[0m  VA SR 2060 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2060 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2060 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2061 (2026S1): title matches
+  [32m✓[0m  VA SR 2061 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2061 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2061 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2062 (2026S1): title matches
+  [32m✓[0m  VA SR 2062 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2062 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2062 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2063 (2026S1): title matches
+  [32m✓[0m  VA SR 2063 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2063 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2063 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2064 (2026S1): title matches
+  [32m✓[0m  VA SR 2064 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2064 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2064 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2065 (2026S1): title matches
+  [32m✓[0m  VA SR 2065 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2065 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2065 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2066 (2026S1): title matches
+  [32m✓[0m  VA SR 2066 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2066 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2066 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2067 (2026S1): title matches
+  [32m✓[0m  VA SR 2067 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2067 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2067 (2026S1): sponsorship count matches (1)
+    ...275/300
+  [31m✗[0m  VA SR 2068 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2068&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2069 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2069&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2070 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2070&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2071 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2071&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2072 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2072&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2073 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2073&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2074 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2074&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2075 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2075&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2076 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2076&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2077 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2077&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2078 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2078&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  VA SR 2079 (2026S1): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=va&session=2026S1&identifier=SR+2079&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  VA SR 2080 (2026S1): title matches
+  [32m✓[0m  VA SR 2080 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2080 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2080 (2026S1): sponsorship count matches (4)
+  [32m✓[0m  VA SR 2081 (2026S1): title matches
+  [32m✓[0m  VA SR 2081 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2081 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2081 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2082 (2026S1): title matches
+  [32m✓[0m  VA SR 2082 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2082 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2082 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2083 (2026S1): title matches
+  [32m✓[0m  VA SR 2083 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2083 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2083 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2084 (2026S1): title matches
+  [32m✓[0m  VA SR 2084 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2084 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2084 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2085 (2026S1): title matches
+  [32m✓[0m  VA SR 2085 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2085 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2085 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2086 (2026S1): title matches
+  [32m✓[0m  VA SR 2086 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2086 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2086 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2087 (2026S1): title matches
+  [32m✓[0m  VA SR 2087 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2087 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2087 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2088 (2026S1): title matches
+  [32m✓[0m  VA SR 2088 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2088 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2088 (2026S1): sponsorship count matches (2)
+  [32m✓[0m  VA SR 2089 (2026S1): title matches
+  [32m✓[0m  VA SR 2089 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2089 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2089 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2090 (2026S1): title matches
+  [32m✓[0m  VA SR 2090 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2090 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2090 (2026S1): sponsorship count matches (1)
+  [32m✓[0m  VA SR 2091 (2026S1): title matches
+  [32m✓[0m  VA SR 2091 (2026S1): latest_action matches
+  [32m✓[0m  VA SR 2091 (2026S1): vote event count matches (0)
+  [32m✓[0m  VA SR 2091 (2026S1): sponsorship count matches (4)
+
+────────────────────────────────────────────────────────────
+  1057/1121 passed  |  26 warnings  |  38 failures  |  0 skipped
+────────────────────────────────────────────────────────────

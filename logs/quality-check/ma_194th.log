@@ -1,0 +1,410 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: MA 194th
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+    ...page 50/932, 1000 identifiers so far
+    ...page 100/932, 2000 identifiers so far
+    ...page 150/932, 3000 identifiers so far
+    ...page 200/932, 4000 identifiers so far
+    ...page 250/932, 5000 identifiers so far
+    ...page 300/932, 6000 identifiers so far
+    ...page 350/932, 7000 identifiers so far
+    ...page 400/932, 8000 identifiers so far
+    ...page 408 failed (HTTPError), retry 1/3 in 1s
+    ...page 408 failed (HTTPError), retry 2/3 in 2s
+    ...page 450/932, 9000 identifiers so far
+    ...page 500/932, 10000 identifiers so far
+    ...page 550/932, 11000 identifiers so far
+    ...page 600/932, 12000 identifiers so far
+    ...page 650/932, 13000 identifiers so far
+    ...page 700/932, 14000 identifiers so far
+    ...page 721 failed (HTTPError), retry 1/3 in 1s
+    ...page 750/932, 15000 identifiers so far
+    ...page 800/932, 16000 identifiers so far
+    ...page 850/932, 17000 identifiers so far
+    ...page 900/932, 18000 identifiers so far
+  live=18629  local=11108  missing=7521  extra=0  both=11108
+  ...of which 7397 are docket-stage duplicates, not a real gap (see PLAN-coverage-completeness-check.md §10) -- real gap: 124
+  missing by prefix: {'HD': 4734, 'S': 113, 'SD': 2663, 'H': 11}
+  [31m✗[0m  MA 194th: Tier 1 coverage — 124 bills exist live but not locally at all
+  [33m~[0m  MA 194th: 7397 docket-stage duplicates in the raw diff, not a real gap (see PLAN-coverage-completeness-check.md §10)
+  Running Tier 2 sub-record checks on 100 of 11108 bills present in both...
+  [32m✓[0m  MA H 1 (194th): title matches
+  [32m✓[0m  MA H 1 (194th): latest_action matches
+  [32m✓[0m  MA H 1 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1 (194th): sponsorship count matches (1)
+    ...0/100
+  [32m✓[0m  MA H 1076 (194th): title matches
+  [32m✓[0m  MA H 1076 (194th): latest_action matches
+  [32m✓[0m  MA H 1076 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1076 (194th): sponsorship count matches (7)
+  [32m✓[0m  MA H 1102 (194th): title matches
+  [32m✓[0m  MA H 1102 (194th): latest_action matches
+  [32m✓[0m  MA H 1102 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1102 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 1141 (194th): title matches
+  [32m✓[0m  MA H 1141 (194th): latest_action matches
+  [32m✓[0m  MA H 1141 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1141 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 1288 (194th): title matches
+  [32m✓[0m  MA H 1288 (194th): latest_action matches
+  [32m✓[0m  MA H 1288 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1288 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 1343 (194th): title matches
+  [32m✓[0m  MA H 1343 (194th): latest_action matches
+  [32m✓[0m  MA H 1343 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1343 (194th): sponsorship count matches (19)
+  [32m✓[0m  MA H 1589 (194th): title matches
+  [32m✓[0m  MA H 1589 (194th): latest_action matches
+  [32m✓[0m  MA H 1589 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1589 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 1602 (194th): title matches
+  [32m✓[0m  MA H 1602 (194th): latest_action matches
+  [32m✓[0m  MA H 1602 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1602 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 17 (194th): title matches
+  [32m✓[0m  MA H 17 (194th): latest_action matches
+  [32m✓[0m  MA H 17 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 17 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 1719 (194th): title matches
+  [32m✓[0m  MA H 1719 (194th): latest_action matches
+  [32m✓[0m  MA H 1719 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 1719 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 2012 (194th): title matches
+  [32m✓[0m  MA H 2012 (194th): latest_action matches
+  [32m✓[0m  MA H 2012 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2012 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 2067 (194th): title matches
+  [32m✓[0m  MA H 2067 (194th): latest_action matches
+  [32m✓[0m  MA H 2067 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2067 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 2283 (194th): title matches
+  [32m✓[0m  MA H 2283 (194th): latest_action matches
+  [32m✓[0m  MA H 2283 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2283 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 2459 (194th): title matches
+  [32m✓[0m  MA H 2459 (194th): latest_action matches
+  [32m✓[0m  MA H 2459 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2459 (194th): sponsorship count matches (7)
+  [32m✓[0m  MA H 2716 (194th): title matches
+  [32m✓[0m  MA H 2716 (194th): latest_action matches
+  [32m✓[0m  MA H 2716 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2716 (194th): sponsorship count matches (3)
+  [32m✓[0m  MA H 2756 (194th): title matches
+  [32m✓[0m  MA H 2756 (194th): latest_action matches
+  [32m✓[0m  MA H 2756 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2756 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 2883 (194th): title matches
+  [32m✓[0m  MA H 2883 (194th): latest_action matches
+  [32m✓[0m  MA H 2883 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 2883 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 3033 (194th): title matches
+  [32m✓[0m  MA H 3033 (194th): latest_action matches
+  [32m✓[0m  MA H 3033 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3033 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3113 (194th): title matches
+  [32m✓[0m  MA H 3113 (194th): latest_action matches
+  [32m✓[0m  MA H 3113 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3113 (194th): sponsorship count matches (3)
+  [32m✓[0m  MA H 3223 (194th): title matches
+  [32m✓[0m  MA H 3223 (194th): latest_action matches
+  [32m✓[0m  MA H 3223 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3223 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3253 (194th): title matches
+  [32m✓[0m  MA H 3253 (194th): latest_action matches
+  [32m✓[0m  MA H 3253 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3253 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3393 (194th): title matches
+  [32m✓[0m  MA H 3393 (194th): latest_action matches
+  [32m✓[0m  MA H 3393 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3393 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3503 (194th): title matches
+  [32m✓[0m  MA H 3503 (194th): latest_action matches
+  [32m✓[0m  MA H 3503 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3503 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 3520 (194th): title matches
+  [32m✓[0m  MA H 3520 (194th): latest_action matches
+  [32m✓[0m  MA H 3520 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3520 (194th): sponsorship count matches (13)
+  [32m✓[0m  MA H 3637 (194th): title matches
+  [32m✓[0m  MA H 3637 (194th): latest_action matches
+  [32m✓[0m  MA H 3637 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3637 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3659 (194th): title matches
+  [32m✓[0m  MA H 3659 (194th): latest_action matches
+  [32m✓[0m  MA H 3659 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3659 (194th): sponsorship count matches (1)
+    ...25/100
+  [32m✓[0m  MA H 3805 (194th): title matches
+  [32m✓[0m  MA H 3805 (194th): latest_action matches
+  [32m✓[0m  MA H 3805 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3805 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 3817 (194th): title matches
+  [32m✓[0m  MA H 3817 (194th): latest_action matches
+  [32m✓[0m  MA H 3817 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 3817 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4041 (194th): title matches
+  [32m✓[0m  MA H 4041 (194th): latest_action matches
+  [32m✓[0m  MA H 4041 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4041 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 4190 (194th): title matches
+  [32m✓[0m  MA H 4190 (194th): latest_action matches
+  [32m✓[0m  MA H 4190 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4190 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 424 (194th): title matches
+  [32m✓[0m  MA H 424 (194th): latest_action matches
+  [32m✓[0m  MA H 424 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 424 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4350 (194th): title matches
+  [32m✓[0m  MA H 4350 (194th): latest_action matches
+  [32m✓[0m  MA H 4350 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4350 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4381 (194th): title matches
+  [32m✓[0m  MA H 4381 (194th): latest_action matches
+  [32m✓[0m  MA H 4381 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4381 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 4469 (194th): title matches
+  [32m✓[0m  MA H 4469 (194th): latest_action matches
+  [32m✓[0m  MA H 4469 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4469 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4560 (194th): title matches
+  [32m✓[0m  MA H 4560 (194th): latest_action matches
+  [32m✓[0m  MA H 4560 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4560 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4590 (194th): title matches
+  [32m✓[0m  MA H 4590 (194th): latest_action matches
+  [32m✓[0m  MA H 4590 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4590 (194th): sponsorship count matches (49)
+  [32m✓[0m  MA H 46 (194th): title matches
+  [32m✓[0m  MA H 46 (194th): latest_action matches
+  [32m✓[0m  MA H 46 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 46 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 461 (194th): title matches
+  [32m✓[0m  MA H 461 (194th): latest_action matches
+  [32m✓[0m  MA H 461 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 461 (194th): sponsorship count matches (4)
+  [32m✓[0m  MA H 4637 (194th): title matches
+  [32m✓[0m  MA H 4637 (194th): latest_action matches
+  [32m✓[0m  MA H 4637 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4637 (194th): sponsorship count matches (4)
+  [32m✓[0m  MA H 4780 (194th): title matches
+  [32m✓[0m  MA H 4780 (194th): latest_action matches
+  [32m✓[0m  MA H 4780 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4780 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 484 (194th): title matches
+  [32m✓[0m  MA H 484 (194th): latest_action matches
+  [32m✓[0m  MA H 484 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 484 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 4921 (194th): title matches
+  [32m✓[0m  MA H 4921 (194th): latest_action matches
+  [32m✓[0m  MA H 4921 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 4921 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 5226 (194th): title matches
+  [32m✓[0m  MA H 5226 (194th): latest_action matches
+  [32m✓[0m  MA H 5226 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 5226 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 5233 (194th): title matches
+  [32m✓[0m  MA H 5233 (194th): latest_action matches
+  [32m✓[0m  MA H 5233 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 5233 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 5474 (194th): title matches
+  [32m✓[0m  MA H 5474 (194th): latest_action matches
+  [32m✓[0m  MA H 5474 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 5474 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 602 (194th): title matches
+  [32m✓[0m  MA H 602 (194th): latest_action matches
+  [32m✓[0m  MA H 602 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 602 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 671 (194th): title matches
+  [32m✓[0m  MA H 671 (194th): latest_action matches
+  [32m✓[0m  MA H 671 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 671 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 776 (194th): title matches
+  [32m✓[0m  MA H 776 (194th): latest_action matches
+  [32m✓[0m  MA H 776 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 776 (194th): sponsorship count matches (4)
+  [32m✓[0m  MA H 812 (194th): title matches
+  [32m✓[0m  MA H 812 (194th): latest_action matches
+  [32m✓[0m  MA H 812 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 812 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 840 (194th): title matches
+  [32m✓[0m  MA H 840 (194th): latest_action matches
+  [32m✓[0m  MA H 840 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 840 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA H 888 (194th): title matches
+  [32m✓[0m  MA H 888 (194th): latest_action matches
+  [32m✓[0m  MA H 888 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 888 (194th): sponsorship count matches (1)
+    ...50/100
+  [32m✓[0m  MA H 968 (194th): title matches
+  [32m✓[0m  MA H 968 (194th): latest_action matches
+  [32m✓[0m  MA H 968 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 968 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA H 991 (194th): title matches
+  [32m✓[0m  MA H 991 (194th): latest_action matches
+  [32m✓[0m  MA H 991 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 991 (194th): sponsorship count matches (22)
+  [32m✓[0m  MA H 996 (194th): title matches
+  [32m✓[0m  MA H 996 (194th): latest_action matches
+  [32m✓[0m  MA H 996 (194th): vote event count matches (0)
+  [32m✓[0m  MA H 996 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA HD 4428 (194th): title matches
+  [32m✓[0m  MA HD 4428 (194th): latest_action matches
+  [32m✓[0m  MA HD 4428 (194th): vote event count matches (0)
+  [32m✓[0m  MA HD 4428 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA HD 4740 (194th): title matches
+  [33m~[0m  MA HD 4740 (194th): latest_action differs  [local='referred to the committee on house rules' live='reported, referred to the committee on joint rules']
+  [32m✓[0m  MA HD 4740 (194th): vote event count matches (0)
+  [32m✓[0m  MA HD 4740 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA HD 5007 (194th): title matches
+  [32m✓[0m  MA HD 5007 (194th): latest_action matches
+  [32m✓[0m  MA HD 5007 (194th): vote event count matches (0)
+  [32m✓[0m  MA HD 5007 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA HD 5170 (194th): title matches
+  [32m✓[0m  MA HD 5170 (194th): latest_action matches
+  [32m✓[0m  MA HD 5170 (194th): vote event count matches (0)
+  [32m✓[0m  MA HD 5170 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA HD 5319 (194th): title matches
+  [32m✓[0m  MA HD 5319 (194th): latest_action matches
+  [32m✓[0m  MA HD 5319 (194th): vote event count matches (0)
+  [32m✓[0m  MA HD 5319 (194th): sponsorship count matches (1)
+  [31m✗[0m  MA HD 5491 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=HD+5491&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA HD 5669 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=HD+5669&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA HD 6038 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=HD+6038&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA HD 6124 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=HD+6124&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA S 119 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=S+119&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA S 1210 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=S+1210&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA S 1306 (194th): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=ma&session=194th&identifier=S+1306&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  MA S 14 (194th): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  MA S 1511 (194th): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [31m✗[0m  MA S 1708 (194th): live API error  [HTTPSConnectionPool(host='v3.openstates.org', port=443): Read timed out. (read timeout=15)]
+  [32m✓[0m  MA S 1747 (194th): title matches
+  [32m✓[0m  MA S 1747 (194th): latest_action matches
+  [32m✓[0m  MA S 1747 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 1747 (194th): sponsorship count matches (21)
+  [32m✓[0m  MA S 2328 (194th): title matches
+  [32m✓[0m  MA S 2328 (194th): latest_action matches
+  [32m✓[0m  MA S 2328 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2328 (194th): sponsorship count matches (21)
+  [32m✓[0m  MA S 2448 (194th): title matches
+  [32m✓[0m  MA S 2448 (194th): latest_action matches
+  [32m✓[0m  MA S 2448 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2448 (194th): sponsorship count matches (3)
+  [32m✓[0m  MA S 2590 (194th): title matches
+  [32m✓[0m  MA S 2590 (194th): latest_action matches
+  [32m✓[0m  MA S 2590 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2590 (194th): sponsorship count matches (15)
+  [32m✓[0m  MA S 2660 (194th): title matches
+  [32m✓[0m  MA S 2660 (194th): latest_action matches
+  [32m✓[0m  MA S 2660 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2660 (194th): sponsorship count matches (20)
+  [32m✓[0m  MA S 2689 (194th): title matches
+  [32m✓[0m  MA S 2689 (194th): latest_action matches
+  [32m✓[0m  MA S 2689 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2689 (194th): sponsorship count matches (9)
+  [32m✓[0m  MA S 2891 (194th): title matches
+  [32m✓[0m  MA S 2891 (194th): latest_action matches
+  [32m✓[0m  MA S 2891 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2891 (194th): sponsorship count matches (1)
+    ...75/100
+  [32m✓[0m  MA S 2950 (194th): title matches
+  [32m✓[0m  MA S 2950 (194th): latest_action matches
+  [32m✓[0m  MA S 2950 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 2950 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA S 3054 (194th): title matches
+  [32m✓[0m  MA S 3054 (194th): latest_action matches
+  [32m✓[0m  MA S 3054 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 3054 (194th): sponsorship count matches (0)
+  [32m✓[0m  MA S 306 (194th): title matches
+  [32m✓[0m  MA S 306 (194th): latest_action matches
+  [32m✓[0m  MA S 306 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 306 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA S 330 (194th): title matches
+  [32m✓[0m  MA S 330 (194th): latest_action matches
+  [32m✓[0m  MA S 330 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 330 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA S 369 (194th): title matches
+  [32m✓[0m  MA S 369 (194th): latest_action matches
+  [32m✓[0m  MA S 369 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 369 (194th): sponsorship count matches (14)
+  [32m✓[0m  MA S 375 (194th): title matches
+  [32m✓[0m  MA S 375 (194th): latest_action matches
+  [32m✓[0m  MA S 375 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 375 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA S 502 (194th): title matches
+  [32m✓[0m  MA S 502 (194th): latest_action matches
+  [32m✓[0m  MA S 502 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 502 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA S 576 (194th): title matches
+  [32m✓[0m  MA S 576 (194th): latest_action matches
+  [32m✓[0m  MA S 576 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 576 (194th): sponsorship count matches (6)
+  [32m✓[0m  MA S 817 (194th): title matches
+  [32m✓[0m  MA S 817 (194th): latest_action matches
+  [32m✓[0m  MA S 817 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 817 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA S 838 (194th): title matches
+  [32m✓[0m  MA S 838 (194th): latest_action matches
+  [32m✓[0m  MA S 838 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 838 (194th): sponsorship count matches (2)
+  [32m✓[0m  MA S 848 (194th): title matches
+  [32m✓[0m  MA S 848 (194th): latest_action matches
+  [32m✓[0m  MA S 848 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 848 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA S 906 (194th): title matches
+  [32m✓[0m  MA S 906 (194th): latest_action matches
+  [32m✓[0m  MA S 906 (194th): vote event count matches (0)
+  [32m✓[0m  MA S 906 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 2648 (194th): title matches
+  [32m✓[0m  MA SD 2648 (194th): latest_action matches
+  [32m✓[0m  MA SD 2648 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 2648 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 2706 (194th): title matches
+  [32m✓[0m  MA SD 2706 (194th): latest_action matches
+  [32m✓[0m  MA SD 2706 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 2706 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 2980 (194th): title matches
+  [32m✓[0m  MA SD 2980 (194th): latest_action matches
+  [32m✓[0m  MA SD 2980 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 2980 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 2982 (194th): title matches
+  [32m✓[0m  MA SD 2982 (194th): latest_action matches
+  [32m✓[0m  MA SD 2982 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 2982 (194th): sponsorship count matches (4)
+  [32m✓[0m  MA SD 3075 (194th): title matches
+  [32m✓[0m  MA SD 3075 (194th): latest_action matches
+  [32m✓[0m  MA SD 3075 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3075 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3122 (194th): title matches
+  [32m✓[0m  MA SD 3122 (194th): latest_action matches
+  [32m✓[0m  MA SD 3122 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3122 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3141 (194th): title matches
+  [32m✓[0m  MA SD 3141 (194th): latest_action matches
+  [32m✓[0m  MA SD 3141 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3141 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3239 (194th): title matches
+  [32m✓[0m  MA SD 3239 (194th): latest_action matches
+  [32m✓[0m  MA SD 3239 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3239 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3457 (194th): title matches
+  [32m✓[0m  MA SD 3457 (194th): latest_action matches
+  [32m✓[0m  MA SD 3457 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3457 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3811 (194th): title matches
+  [32m✓[0m  MA SD 3811 (194th): latest_action matches
+  [32m✓[0m  MA SD 3811 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3811 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 3824 (194th): title matches
+  [32m✓[0m  MA SD 3824 (194th): latest_action matches
+  [32m✓[0m  MA SD 3824 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 3824 (194th): sponsorship count matches (1)
+  [32m✓[0m  MA SD 611 (194th): title matches
+  [32m✓[0m  MA SD 611 (194th): latest_action matches
+  [32m✓[0m  MA SD 611 (194th): vote event count matches (0)
+  [32m✓[0m  MA SD 611 (194th): sponsorship count matches (1)
+
+────────────────────────────────────────────────────────────
+  359/372 passed  |  2 warnings  |  11 failures  |  0 skipped
+────────────────────────────────────────────────────────────

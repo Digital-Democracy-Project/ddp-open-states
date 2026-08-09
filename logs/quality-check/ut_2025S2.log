@@ -1,0 +1,43 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: UT 2025S2
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+  live=5  local=5  missing=0  extra=0  both=5
+  [32m✓[0m  UT 2025S2: Tier 1 coverage — no missing bills (5 local == 5 live)
+  Running Tier 2 sub-record checks on 5 of 5 bills present in both...
+  [32m✓[0m  UT HB 2001 (2025S2): title matches
+  [32m✓[0m  UT HB 2001 (2025S2): latest_action matches
+  [32m✓[0m  UT HB 2001 (2025S2): vote event count matches (2)
+  [32m✓[0m  UT HB 2001 (2025S2): vote tally matches on 2025-12-10 ({'yes': 60, 'no': 9, 'other': 6})
+  [32m✓[0m  UT HB 2001 (2025S2): vote tally matches on 2025-12-10 ({'yes': 26, 'no': 1, 'other': 2})
+  [32m✓[0m  UT HB 2001 (2025S2): sponsorship count matches (2)
+    ...0/5
+  [32m✓[0m  UT HJR 201 (2025S2): title matches
+  [32m✓[0m  UT HJR 201 (2025S2): latest_action matches
+  [32m✓[0m  UT HJR 201 (2025S2): vote event count matches (2)
+  [32m✓[0m  UT HJR 201 (2025S2): vote tally matches on 2025-12-10 ({'yes': 54, 'no': 16, 'other': 5})
+  [32m✓[0m  UT HJR 201 (2025S2): vote tally matches on 2025-12-10 ({'yes': 19, 'no': 7, 'other': 3})
+  [32m✓[0m  UT HJR 201 (2025S2): sponsorship count matches (2)
+  [32m✓[0m  UT SB 2001 (2025S2): title matches
+  [32m✓[0m  UT SB 2001 (2025S2): latest_action matches
+  [32m✓[0m  UT SB 2001 (2025S2): vote event count matches (2)
+  [32m✓[0m  UT SB 2001 (2025S2): vote tally matches on 2025-12-10 ({'yes': 22, 'no': 7, 'other': 0})
+  [32m✓[0m  UT SB 2001 (2025S2): vote tally matches on 2025-12-10 ({'yes': 56, 'no': 13, 'other': 6})
+  [32m✓[0m  UT SB 2001 (2025S2): sponsorship count matches (2)
+  [32m✓[0m  UT SB 2002 (2025S2): title matches
+  [32m✓[0m  UT SB 2002 (2025S2): latest_action matches
+  [32m✓[0m  UT SB 2002 (2025S2): vote event count matches (2)
+  [32m✓[0m  UT SB 2002 (2025S2): vote tally matches on 2025-12-10 ({'yes': 22, 'no': 7, 'other': 0})
+  [32m✓[0m  UT SB 2002 (2025S2): vote tally matches on 2025-12-10 ({'yes': 57, 'no': 12, 'other': 6})
+  [32m✓[0m  UT SB 2002 (2025S2): sponsorship count matches (2)
+  [32m✓[0m  UT SJR 201 (2025S2): title matches
+  [32m✓[0m  UT SJR 201 (2025S2): latest_action matches
+  [32m✓[0m  UT SJR 201 (2025S2): vote event count matches (2)
+  [32m✓[0m  UT SJR 201 (2025S2): vote tally matches on 2025-12-10 ({'yes': 22, 'no': 7, 'other': 0})
+  [32m✓[0m  UT SJR 201 (2025S2): vote tally matches on 2025-12-10 ({'yes': 58, 'no': 12, 'other': 5})
+  [32m✓[0m  UT SJR 201 (2025S2): sponsorship count matches (2)
+
+────────────────────────────────────────────────────────────
+  31/31 passed  |  0 warnings  |  0 failures  |  0 skipped
+────────────────────────────────────────────────────────────

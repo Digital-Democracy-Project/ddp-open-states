@@ -1,0 +1,2398 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: FL 2026
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+    ...page 50/97, 1000 identifiers so far
+  live=1931  local=1897  missing=34  extra=0  both=1897
+  [31m✗[0m  FL 2026: Tier 1 coverage — 34 bills exist live but not locally at all
+  Running Tier 2 sub-record checks on 500 of 1897 bills present in both...
+  [32m✓[0m  FL HB 1005 (2026): title matches
+  [32m✓[0m  FL HB 1005 (2026): latest_action matches
+  [32m✓[0m  FL HB 1005 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1005 (2026): sponsorship count matches (1)
+    ...0/500
+  [32m✓[0m  FL HB 1013 (2026): title matches
+  [32m✓[0m  FL HB 1013 (2026): latest_action matches
+  [33m~[0m  FL HB 1013 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=1]
+  [32m✓[0m  FL HB 1013 (2026): vote tally matches on 2026-02-25 ({'yes': 115, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1013 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1027 (2026): title matches
+  [32m✓[0m  FL HB 1027 (2026): latest_action matches
+  [32m✓[0m  FL HB 1027 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1027 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1029 (2026): title matches
+  [32m✓[0m  FL HB 1029 (2026): latest_action matches
+  [32m✓[0m  FL HB 1029 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1029 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1031 (2026): title matches
+  [32m✓[0m  FL HB 1031 (2026): latest_action matches
+  [33m~[0m  FL HB 1031 (2026): local has MORE votes than live (our fix not merged?)  [local=6 live=3]
+  [32m✓[0m  FL HB 1031 (2026): vote tally matches on 2026-02-25 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1031 (2026): vote tally matches on 2026-03-10 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 1031 (2026): vote tally matches on 2026-03-12 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL HB 1031 (2026): sponsorship count matches (15)
+  [32m✓[0m  FL HB 1039 (2026): title matches
+  [32m✓[0m  FL HB 1039 (2026): latest_action matches
+  [32m✓[0m  FL HB 1039 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 1039 (2026): vote tally matches on 2026-02-11 ({'yes': 18, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 1039 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 2, 'not voting': 2})
+  [32m✓[0m  FL HB 1039 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 1045 (2026): title matches
+  [32m✓[0m  FL HB 1045 (2026): latest_action matches
+  [32m✓[0m  FL HB 1045 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1045 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 105 (2026): title matches
+  [32m✓[0m  FL HB 105 (2026): latest_action matches
+  [32m✓[0m  FL HB 105 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 105 (2026): vote tally matches on 2026-02-25 ({'yes': 104, 'no': 5, 'not voting': 8})
+  [32m✓[0m  FL HB 105 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 1053 (2026): title matches
+  [32m✓[0m  FL HB 1053 (2026): latest_action matches
+  [32m✓[0m  FL HB 1053 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1053 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1059 (2026): title matches
+  [32m✓[0m  FL HB 1059 (2026): latest_action matches
+  [32m✓[0m  FL HB 1059 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 1059 (2026): vote tally matches on 2026-02-11 ({'yes': 14, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1059 (2026): vote tally matches on 2026-02-26 ({'yes': 19, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1059 (2026): sponsorship count matches (23)
+  [32m✓[0m  FL HB 1061 (2026): title matches
+  [32m✓[0m  FL HB 1061 (2026): latest_action matches
+  [32m✓[0m  FL HB 1061 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1061 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1067 (2026): title matches
+  [32m✓[0m  FL HB 1067 (2026): latest_action matches
+  [32m✓[0m  FL HB 1067 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1067 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1069 (2026): title matches
+  [32m✓[0m  FL HB 1069 (2026): latest_action matches
+  [32m✓[0m  FL HB 1069 (2026): vote event count matches (4)
+  [32m✓[0m  FL HB 1069 (2026): vote tally matches on 2026-02-03 ({'yes': 25, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 1069 (2026): vote tally matches on 2026-02-26 ({'yes': 19, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1069 (2026): vote tally matches on 2026-03-03 ({'yes': 104, 'no': 0, 'not voting': 13})
+  [32m✓[0m  FL HB 1069 (2026): vote tally matches on 2026-03-09 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1069 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 1081 (2026): title matches
+  [32m✓[0m  FL HB 1081 (2026): latest_action matches
+  [32m✓[0m  FL HB 1081 (2026): vote event count matches (5)
+  [32m✓[0m  FL HB 1081 (2026): vote tally matches on 2026-01-20 ({'yes': 15, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1081 (2026): vote tally matches on 2026-01-27 ({'yes': 29, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 1081 (2026): vote tally matches on 2026-02-17 ({'yes': 19, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1081 (2026): vote tally matches on 2026-02-25 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 1081 (2026): vote tally matches on 2026-03-10 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 1081 (2026): sponsorship count matches (6)
+  [31m✗[0m  FL HB 1099 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1099&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 11 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+11&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1101 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1101&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 111 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+111&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1113 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1113&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1119 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1119&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1121 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1121&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1123 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1123&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1127 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1127&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1129 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1129&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 113 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+113&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 1135 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1135&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+    ...25/500
+  [31m✗[0m  FL HB 1145 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+1145&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL HB 1149 (2026): title matches
+  [32m✓[0m  FL HB 1149 (2026): latest_action matches
+  [32m✓[0m  FL HB 1149 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1149 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 115 (2026): title matches
+  [32m✓[0m  FL HB 115 (2026): latest_action matches
+  [32m✓[0m  FL HB 115 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 115 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1153 (2026): title matches
+  [32m✓[0m  FL HB 1153 (2026): latest_action matches
+  [33m~[0m  FL HB 1153 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 1153 (2026): vote tally matches on 2026-03-03 ({'yes': 108, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL HB 1153 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 1153 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL HB 1157 (2026): title matches
+  [32m✓[0m  FL HB 1157 (2026): latest_action matches
+  [32m✓[0m  FL HB 1157 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1157 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1167 (2026): title matches
+  [32m✓[0m  FL HB 1167 (2026): latest_action matches
+  [32m✓[0m  FL HB 1167 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1167 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1171 (2026): title matches
+  [32m✓[0m  FL HB 1171 (2026): latest_action matches
+  [32m✓[0m  FL HB 1171 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1171 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 1175 (2026): title matches
+  [32m✓[0m  FL HB 1175 (2026): latest_action matches
+  [33m~[0m  FL HB 1175 (2026): local has MORE votes than live (our fix not merged?)  [local=6 live=3]
+  [32m✓[0m  FL HB 1175 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 1175 (2026): vote tally matches on 2026-03-03 ({'yes': 21, 'no': 0, 'other': 3})
+  [32m✓[0m  FL HB 1175 (2026): vote tally matches on 2026-03-10 ({'yes': 37, 'no': 1, 'not voting': 1})
+  [32m✓[0m  FL HB 1175 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1181 (2026): title matches
+  [32m✓[0m  FL HB 1181 (2026): latest_action matches
+  [32m✓[0m  FL HB 1181 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1181 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1191 (2026): title matches
+  [32m✓[0m  FL HB 1191 (2026): latest_action matches
+  [32m✓[0m  FL HB 1191 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1191 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 1199 (2026): title matches
+  [32m✓[0m  FL HB 1199 (2026): latest_action matches
+  [32m✓[0m  FL HB 1199 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1199 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1201 (2026): title matches
+  [32m✓[0m  FL HB 1201 (2026): latest_action matches
+  [33m~[0m  FL HB 1201 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 1201 (2026): vote tally matches on 2026-02-25 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 1201 (2026): vote tally matches on 2026-03-04 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1201 (2026): sponsorship count matches (13)
+  [32m✓[0m  FL HB 1205 (2026): title matches
+  [32m✓[0m  FL HB 1205 (2026): latest_action matches
+  [32m✓[0m  FL HB 1205 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 1205 (2026): vote tally matches on 2026-02-12 ({'yes': 17, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 1205 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1221 (2026): title matches
+  [32m✓[0m  FL HB 1221 (2026): latest_action matches
+  [32m✓[0m  FL HB 1221 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 1221 (2026): vote tally matches on 2026-02-03 ({'yes': 15, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1221 (2026): vote tally matches on 2026-02-12 ({'yes': 11, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1221 (2026): vote tally matches on 2026-02-26 ({'yes': 24, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 1221 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 1239 (2026): title matches
+  [32m✓[0m  FL HB 1239 (2026): latest_action matches
+  [32m✓[0m  FL HB 1239 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1239 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1243 (2026): title matches
+  [32m✓[0m  FL HB 1243 (2026): latest_action matches
+  [32m✓[0m  FL HB 1243 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1243 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 125 (2026): title matches
+  [32m✓[0m  FL HB 125 (2026): latest_action matches
+  [32m✓[0m  FL HB 125 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 125 (2026): vote tally matches on 2026-02-25 ({'yes': 82, 'no': 31, 'not voting': 4})
+  [32m✓[0m  FL HB 125 (2026): sponsorship count matches (42)
+  [32m✓[0m  FL HB 1257 (2026): title matches
+  [32m✓[0m  FL HB 1257 (2026): latest_action matches
+  [32m✓[0m  FL HB 1257 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1257 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1261 (2026): title matches
+  [32m✓[0m  FL HB 1261 (2026): latest_action matches
+  [32m✓[0m  FL HB 1261 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1261 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1271 (2026): title matches
+  [32m✓[0m  FL HB 1271 (2026): latest_action matches
+  [32m✓[0m  FL HB 1271 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1271 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1287 (2026): title matches
+  [32m✓[0m  FL HB 1287 (2026): latest_action matches
+  [32m✓[0m  FL HB 1287 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1287 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1303 (2026): title matches
+  [32m✓[0m  FL HB 1303 (2026): latest_action matches
+  [32m✓[0m  FL HB 1303 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1303 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1305 (2026): title matches
+  [32m✓[0m  FL HB 1305 (2026): latest_action matches
+  [32m✓[0m  FL HB 1305 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1305 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1307 (2026): title matches
+  [32m✓[0m  FL HB 1307 (2026): latest_action matches
+  [31m✗[0m  FL HB 1307 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HB 1307 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 1309 (2026): title matches
+  [32m✓[0m  FL HB 1309 (2026): latest_action matches
+  [32m✓[0m  FL HB 1309 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 1309 (2026): vote tally matches on 2026-02-25 ({'yes': 92, 'no': 22, 'not voting': 3})
+  [32m✓[0m  FL HB 1309 (2026): sponsorship count matches (3)
+    ...50/500
+  [32m✓[0m  FL HB 1313 (2026): title matches
+  [32m✓[0m  FL HB 1313 (2026): latest_action matches
+  [32m✓[0m  FL HB 1313 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1313 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1321 (2026): title matches
+  [32m✓[0m  FL HB 1321 (2026): latest_action matches
+  [32m✓[0m  FL HB 1321 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1321 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1335 (2026): title matches
+  [32m✓[0m  FL HB 1335 (2026): latest_action matches
+  [32m✓[0m  FL HB 1335 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1335 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1363 (2026): title matches
+  [32m✓[0m  FL HB 1363 (2026): latest_action matches
+  [32m✓[0m  FL HB 1363 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1363 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1377 (2026): title matches
+  [32m✓[0m  FL HB 1377 (2026): latest_action matches
+  [32m✓[0m  FL HB 1377 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1377 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1383 (2026): title matches
+  [32m✓[0m  FL HB 1383 (2026): latest_action matches
+  [32m✓[0m  FL HB 1383 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1383 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1385 (2026): title matches
+  [32m✓[0m  FL HB 1385 (2026): latest_action matches
+  [32m✓[0m  FL HB 1385 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1385 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1387 (2026): title matches
+  [32m✓[0m  FL HB 1387 (2026): latest_action matches
+  [31m✗[0m  FL HB 1387 (2026): local is MISSING votes vs live  [local=0 live=3]
+  [32m✓[0m  FL HB 1387 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1389 (2026): title matches
+  [32m✓[0m  FL HB 1389 (2026): latest_action matches
+  [31m✗[0m  FL HB 1389 (2026): local is MISSING votes vs live  [local=4 live=7]
+  [32m✓[0m  FL HB 1389 (2026): vote tally matches on 2026-03-04 ({'yes': 76, 'no': 29, 'not voting': 12})
+  [32m✓[0m  FL HB 1389 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 1389 (2026): vote tally matches on 2026-03-12 ({'yes': 98, 'no': 4, 'not voting': 15})
+  [32m✓[0m  FL HB 1389 (2026): vote tally matches on 2026-03-13 ({'yes': 35, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 1389 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 1391 (2026): title matches
+  [32m✓[0m  FL HB 1391 (2026): latest_action matches
+  [32m✓[0m  FL HB 1391 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1391 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1395 (2026): title matches
+  [32m✓[0m  FL HB 1395 (2026): latest_action matches
+  [32m✓[0m  FL HB 1395 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1395 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1407 (2026): title matches
+  [32m✓[0m  FL HB 1407 (2026): latest_action matches
+  [31m✗[0m  FL HB 1407 (2026): local is MISSING votes vs live  [local=2 live=4]
+  [32m✓[0m  FL HB 1407 (2026): vote tally matches on 2026-02-17 ({'yes': 108, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL HB 1407 (2026): vote tally matches on 2026-03-09 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1407 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1415 (2026): title matches
+  [32m✓[0m  FL HB 1415 (2026): latest_action matches
+  [31m✗[0m  FL HB 1415 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 1415 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 1419 (2026): title matches
+  [32m✓[0m  FL HB 1419 (2026): latest_action matches
+  [32m✓[0m  FL HB 1419 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1419 (2026): sponsorship count matches (9)
+  [32m✓[0m  FL HB 1429 (2026): title matches
+  [32m✓[0m  FL HB 1429 (2026): latest_action matches
+  [32m✓[0m  FL HB 1429 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1429 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1433 (2026): title matches
+  [32m✓[0m  FL HB 1433 (2026): latest_action matches
+  [32m✓[0m  FL HB 1433 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1433 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1435 (2026): title matches
+  [32m✓[0m  FL HB 1435 (2026): latest_action matches
+  [32m✓[0m  FL HB 1435 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1435 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1437 (2026): title matches
+  [32m✓[0m  FL HB 1437 (2026): latest_action matches
+  [31m✗[0m  FL HB 1437 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 1437 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 1439 (2026): title matches
+  [32m✓[0m  FL HB 1439 (2026): latest_action matches
+  [32m✓[0m  FL HB 1439 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1439 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1441 (2026): title matches
+  [32m✓[0m  FL HB 1441 (2026): latest_action matches
+  [32m✓[0m  FL HB 1441 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1441 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1447 (2026): title matches
+  [32m✓[0m  FL HB 1447 (2026): latest_action matches
+  [32m✓[0m  FL HB 1447 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1447 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1469 (2026): title matches
+  [32m✓[0m  FL HB 1469 (2026): latest_action matches
+  [32m✓[0m  FL HB 1469 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1469 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1473 (2026): title matches
+  [32m✓[0m  FL HB 1473 (2026): latest_action matches
+  [32m✓[0m  FL HB 1473 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 1473 (2026): vote tally matches on 2026-03-03 ({'yes': 81, 'no': 26, 'not voting': 10})
+  [32m✓[0m  FL HB 1473 (2026): vote tally matches on 2026-03-05 ({'yes': 26, 'no': 8, 'not voting': 5})
+  [32m✓[0m  FL HB 1473 (2026): vote tally matches on 2026-03-12 ({'yes': 80, 'no': 26, 'not voting': 11})
+  [32m✓[0m  FL HB 1473 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 1477 (2026): title matches
+  [32m✓[0m  FL HB 1477 (2026): latest_action matches
+  [32m✓[0m  FL HB 1477 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1477 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1481 (2026): title matches
+  [32m✓[0m  FL HB 1481 (2026): latest_action matches
+  [31m✗[0m  FL HB 1481 (2026): local is MISSING votes vs live  [local=0 live=3]
+  [32m✓[0m  FL HB 1481 (2026): sponsorship count matches (14)
+    ...75/500
+  [32m✓[0m  FL HB 1483 (2026): title matches
+  [32m✓[0m  FL HB 1483 (2026): latest_action matches
+  [31m✗[0m  FL HB 1483 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 1483 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1487 (2026): title matches
+  [32m✓[0m  FL HB 1487 (2026): latest_action matches
+  [32m✓[0m  FL HB 1487 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1487 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1489 (2026): title matches
+  [32m✓[0m  FL HB 1489 (2026): latest_action matches
+  [32m✓[0m  FL HB 1489 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1489 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 149 (2026): title matches
+  [32m✓[0m  FL HB 149 (2026): latest_action matches
+  [32m✓[0m  FL HB 149 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 149 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1497 (2026): title matches
+  [32m✓[0m  FL HB 1497 (2026): latest_action matches
+  [31m✗[0m  FL HB 1497 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HB 1497 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1501 (2026): title matches
+  [32m✓[0m  FL HB 1501 (2026): latest_action matches
+  [32m✓[0m  FL HB 1501 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1501 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1503 (2026): title matches
+  [32m✓[0m  FL HB 1503 (2026): latest_action matches
+  [31m✗[0m  FL HB 1503 (2026): local is MISSING votes vs live  [local=3 live=5]
+  [32m✓[0m  FL HB 1503 (2026): vote tally matches on 2026-02-25 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 1503 (2026): vote tally matches on 2026-03-06 ({'yes': 33, 'no': 0, 'not voting': 6})
+  [32m✓[0m  FL HB 1503 (2026): vote tally matches on 2026-03-12 ({'yes': 105, 'no': 0, 'not voting': 12})
+  [32m✓[0m  FL HB 1503 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 1507 (2026): title matches
+  [32m✓[0m  FL HB 1507 (2026): latest_action matches
+  [32m✓[0m  FL HB 1507 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1507 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1509 (2026): title matches
+  [32m✓[0m  FL HB 1509 (2026): latest_action matches
+  [32m✓[0m  FL HB 1509 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 1509 (2026): vote tally matches on 2026-02-11 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 1509 (2026): vote tally matches on 2026-03-10 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 1509 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 1519 (2026): title matches
+  [32m✓[0m  FL HB 1519 (2026): latest_action matches
+  [32m✓[0m  FL HB 1519 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1519 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1521 (2026): title matches
+  [32m✓[0m  FL HB 1521 (2026): latest_action matches
+  [31m✗[0m  FL HB 1521 (2026): local is MISSING votes vs live  [local=0 live=3]
+  [32m✓[0m  FL HB 1521 (2026): sponsorship count matches (12)
+  [32m✓[0m  FL HB 1523 (2026): title matches
+  [32m✓[0m  FL HB 1523 (2026): latest_action matches
+  [32m✓[0m  FL HB 1523 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1523 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 1529 (2026): title matches
+  [32m✓[0m  FL HB 1529 (2026): latest_action matches
+  [32m✓[0m  FL HB 1529 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1529 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 153 (2026): title matches
+  [32m✓[0m  FL HB 153 (2026): latest_action matches
+  [32m✓[0m  FL HB 153 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 153 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1531 (2026): title matches
+  [32m✓[0m  FL HB 1531 (2026): latest_action matches
+  [32m✓[0m  FL HB 1531 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1531 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1537 (2026): title matches
+  [32m✓[0m  FL HB 1537 (2026): latest_action matches
+  [32m✓[0m  FL HB 1537 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1537 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1547 (2026): title matches
+  [32m✓[0m  FL HB 1547 (2026): latest_action matches
+  [32m✓[0m  FL HB 1547 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1547 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 1551 (2026): title matches
+  [32m✓[0m  FL HB 1551 (2026): latest_action matches
+  [31m✗[0m  FL HB 1551 (2026): local is MISSING votes vs live  [local=1 live=3]
+  [32m✓[0m  FL HB 1551 (2026): vote tally matches on 2026-03-05 ({'yes': 75, 'no': 29, 'not voting': 13})
+  [32m✓[0m  FL HB 1551 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 1555 (2026): title matches
+  [32m✓[0m  FL HB 1555 (2026): latest_action matches
+  [32m✓[0m  FL HB 1555 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 1555 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 157 (2026): title matches
+  [32m✓[0m  FL HB 157 (2026): latest_action matches
+  [31m✗[0m  FL HB 157 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 157 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL HB 185 (2026): title matches
+  [32m✓[0m  FL HB 185 (2026): latest_action matches
+  [31m✗[0m  FL HB 185 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 185 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 191 (2026): title matches
+  [32m✓[0m  FL HB 191 (2026): latest_action matches
+  [32m✓[0m  FL HB 191 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 191 (2026): vote tally matches on 2026-02-17 ({'yes': 81, 'no': 31, 'not voting': 5})
+  [32m✓[0m  FL HB 191 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 195 (2026): title matches
+  [32m✓[0m  FL HB 195 (2026): latest_action matches
+  [32m✓[0m  FL HB 195 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 195 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 199 (2026): title matches
+  [32m✓[0m  FL HB 199 (2026): latest_action matches
+  [31m✗[0m  FL HB 199 (2026): local is MISSING votes vs live  [local=2 live=4]
+  [32m✓[0m  FL HB 199 (2026): vote tally matches on 2026-02-04 ({'yes': 110, 'no': 0, 'not voting': 7})
+  [32m✓[0m  FL HB 199 (2026): vote tally matches on 2026-02-26 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 199 (2026): sponsorship count matches (16)
+  [32m✓[0m  FL HB 219 (2026): title matches
+  [32m✓[0m  FL HB 219 (2026): latest_action matches
+  [32m✓[0m  FL HB 219 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 219 (2026): sponsorship count matches (2)
+    ...100/500
+  [32m✓[0m  FL HB 231 (2026): title matches
+  [32m✓[0m  FL HB 231 (2026): latest_action matches
+  [32m✓[0m  FL HB 231 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 231 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 233 (2026): title matches
+  [32m✓[0m  FL HB 233 (2026): latest_action matches
+  [32m✓[0m  FL HB 233 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 233 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 241 (2026): title matches
+  [32m✓[0m  FL HB 241 (2026): latest_action matches
+  [32m✓[0m  FL HB 241 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 241 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 243 (2026): title matches
+  [32m✓[0m  FL HB 243 (2026): latest_action matches
+  [31m✗[0m  FL HB 243 (2026): local is MISSING votes vs live  [local=0 live=3]
+  [32m✓[0m  FL HB 243 (2026): sponsorship count matches (22)
+  [32m✓[0m  FL HB 253 (2026): title matches
+  [32m✓[0m  FL HB 253 (2026): latest_action matches
+  [31m✗[0m  FL HB 253 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 253 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 253 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 253 (2026): sponsorship count matches (16)
+  [32m✓[0m  FL HB 257 (2026): title matches
+  [32m✓[0m  FL HB 257 (2026): latest_action matches
+  [32m✓[0m  FL HB 257 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 257 (2026): sponsorship count matches (1)
+  [31m✗[0m  FL HB 275 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+275&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 281 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+281&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 287 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+287&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 291 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+291&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 293 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+293&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL HB 305 (2026): title matches
+  [32m✓[0m  FL HB 305 (2026): latest_action matches
+  [32m✓[0m  FL HB 305 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 305 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 309 (2026): title matches
+  [32m✓[0m  FL HB 309 (2026): latest_action matches
+  [31m✗[0m  FL HB 309 (2026): local is MISSING votes vs live  [local=0 live=3]
+  [32m✓[0m  FL HB 309 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL HB 311 (2026): title matches
+  [32m✓[0m  FL HB 311 (2026): latest_action matches
+  [31m✗[0m  FL HB 311 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 311 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 323 (2026): title matches
+  [32m✓[0m  FL HB 323 (2026): latest_action matches
+  [32m✓[0m  FL HB 323 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 323 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 335 (2026): title matches
+  [32m✓[0m  FL HB 335 (2026): latest_action matches
+  [31m✗[0m  FL HB 335 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HB 335 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 343 (2026): title matches
+  [32m✓[0m  FL HB 343 (2026): latest_action matches
+  [32m✓[0m  FL HB 343 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 343 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 345 (2026): title matches
+  [32m✓[0m  FL HB 345 (2026): latest_action matches
+  [32m✓[0m  FL HB 345 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 345 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 347 (2026): title matches
+  [32m✓[0m  FL HB 347 (2026): latest_action matches
+  [32m✓[0m  FL HB 347 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 347 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 353 (2026): title matches
+  [32m✓[0m  FL HB 353 (2026): latest_action matches
+  [31m✗[0m  FL HB 353 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 353 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 355 (2026): title matches
+  [32m✓[0m  FL HB 355 (2026): latest_action matches
+  [32m✓[0m  FL HB 355 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 355 (2026): vote tally matches on 2026-01-15 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL HB 355 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 355 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 361 (2026): title matches
+  [32m✓[0m  FL HB 361 (2026): latest_action matches
+  [32m✓[0m  FL HB 361 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 361 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 363 (2026): title matches
+  [32m✓[0m  FL HB 363 (2026): latest_action matches
+  [32m✓[0m  FL HB 363 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 363 (2026): vote tally matches on 2026-02-04 ({'yes': 80, 'no': 29, 'not voting': 8})
+  [32m✓[0m  FL HB 363 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 371 (2026): title matches
+  [32m✓[0m  FL HB 371 (2026): latest_action matches
+  [31m✗[0m  FL HB 371 (2026): local is MISSING votes vs live  [local=0 live=2]
+  [32m✓[0m  FL HB 371 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 397 (2026): title matches
+  [32m✓[0m  FL HB 397 (2026): latest_action matches
+  [31m✗[0m  FL HB 397 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 397 (2026): vote tally matches on 2026-02-17 ({'yes': 101, 'no': 8, 'not voting': 8})
+  [32m✓[0m  FL HB 397 (2026): vote tally matches on 2026-02-26 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 397 (2026): sponsorship count matches (3)
+    ...125/500
+  [32m✓[0m  FL HB 4007 (2026): title matches
+  [32m✓[0m  FL HB 4007 (2026): latest_action matches
+  [31m✗[0m  FL HB 4007 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4007 (2026): vote tally matches on 2026-02-11 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4007 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4007 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4025 (2026): title matches
+  [32m✓[0m  FL HB 4025 (2026): latest_action matches
+  [31m✗[0m  FL HB 4025 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4025 (2026): vote tally matches on 2026-02-11 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4025 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4025 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4027 (2026): title matches
+  [32m✓[0m  FL HB 4027 (2026): latest_action matches
+  [31m✗[0m  FL HB 4027 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4027 (2026): vote tally matches on 2026-02-11 ({'yes': 86, 'no': 26, 'not voting': 5})
+  [32m✓[0m  FL HB 4027 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4027 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4039 (2026): title matches
+  [32m✓[0m  FL HB 4039 (2026): latest_action matches
+  [31m✗[0m  FL HB 4039 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4039 (2026): vote tally matches on 2026-02-25 ({'yes': 115, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 4039 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4039 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 4041 (2026): title matches
+  [32m✓[0m  FL HB 4041 (2026): latest_action matches
+  [31m✗[0m  FL HB 4041 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4041 (2026): vote tally matches on 2026-02-11 ({'yes': 112, 'no': 1, 'not voting': 4})
+  [32m✓[0m  FL HB 4041 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4041 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4043 (2026): title matches
+  [32m✓[0m  FL HB 4043 (2026): latest_action matches
+  [31m✗[0m  FL HB 4043 (2026): local is MISSING votes vs live  [local=2 live=5]
+  [32m✓[0m  FL HB 4043 (2026): vote tally matches on 2026-02-11 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 4043 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4043 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 405 (2026): title matches
+  [32m✓[0m  FL HB 405 (2026): latest_action matches
+  [31m✗[0m  FL HB 405 (2026): local is MISSING votes vs live  [local=1 live=4]
+  [32m✓[0m  FL HB 405 (2026): vote tally matches on 2026-02-25 ({'yes': 113, 'no': 2, 'not voting': 2})
+  [32m✓[0m  FL HB 405 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 4051 (2026): title matches
+  [32m✓[0m  FL HB 4051 (2026): latest_action matches
+  [33m~[0m  FL HB 4051 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4051 (2026): vote tally matches on 2026-03-03 ({'yes': 84, 'no': 25, 'not voting': 8})
+  [32m✓[0m  FL HB 4051 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4051 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 4055 (2026): title matches
+  [32m✓[0m  FL HB 4055 (2026): latest_action matches
+  [33m~[0m  FL HB 4055 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4055 (2026): vote tally matches on 2026-02-11 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4055 (2026): vote tally matches on 2026-03-11 ({'yes': 35, 'no': 1, 'not voting': 3})
+  [32m✓[0m  FL HB 4055 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 4057 (2026): title matches
+  [32m✓[0m  FL HB 4057 (2026): latest_action matches
+  [33m~[0m  FL HB 4057 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4057 (2026): vote tally matches on 2026-02-25 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 4057 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4057 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 4063 (2026): title matches
+  [32m✓[0m  FL HB 4063 (2026): latest_action matches
+  [33m~[0m  FL HB 4063 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4063 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 4063 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4063 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4073 (2026): title matches
+  [32m✓[0m  FL HB 4073 (2026): latest_action matches
+  [32m✓[0m  FL HB 4073 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 4073 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4085 (2026): title matches
+  [32m✓[0m  FL HB 4085 (2026): latest_action matches
+  [33m~[0m  FL HB 4085 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4085 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 4085 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4085 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 4087 (2026): title matches
+  [32m✓[0m  FL HB 4087 (2026): latest_action matches
+  [33m~[0m  FL HB 4087 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 4087 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 4087 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4087 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 4093 (2026): title matches
+  [32m✓[0m  FL HB 4093 (2026): latest_action matches
+  [33m~[0m  FL HB 4093 (2026): local has MORE votes than live (our fix not merged?)  [local=4 live=2]
+  [32m✓[0m  FL HB 4093 (2026): vote tally matches on 2026-03-03 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL HB 4093 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4093 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 41 (2026): title matches
+  [32m✓[0m  FL HB 41 (2026): latest_action matches
+  [32m✓[0m  FL HB 41 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 41 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 4103 (2026): title matches
+  [32m✓[0m  FL HB 4103 (2026): latest_action matches
+  [33m~[0m  FL HB 4103 (2026): local has MORE votes than live (our fix not merged?)  [local=4 live=2]
+  [32m✓[0m  FL HB 4103 (2026): vote tally matches on 2026-03-03 ({'yes': 107, 'no': 0, 'not voting': 10})
+  [32m✓[0m  FL HB 4103 (2026): vote tally matches on 2026-03-11 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 4103 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 411 (2026): title matches
+  [32m✓[0m  FL HB 411 (2026): latest_action matches
+  [32m✓[0m  FL HB 411 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 411 (2026): vote tally matches on 2026-02-12 ({'yes': 14, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 411 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 415 (2026): title matches
+  [32m✓[0m  FL HB 415 (2026): latest_action matches
+  [32m✓[0m  FL HB 415 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 415 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 421 (2026): title matches
+  [32m✓[0m  FL HB 421 (2026): latest_action matches
+  [32m✓[0m  FL HB 421 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 421 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 431 (2026): title matches
+  [32m✓[0m  FL HB 431 (2026): latest_action matches
+  [32m✓[0m  FL HB 431 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 431 (2026): vote tally matches on 2026-02-25 ({'yes': 97, 'no': 16, 'not voting': 4})
+  [32m✓[0m  FL HB 431 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 447 (2026): title matches
+  [32m✓[0m  FL HB 447 (2026): latest_action matches
+  [32m✓[0m  FL HB 447 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 447 (2026): vote tally matches on 2026-03-04 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 447 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 449 (2026): title matches
+  [32m✓[0m  FL HB 449 (2026): latest_action matches
+  [32m✓[0m  FL HB 449 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 449 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 463 (2026): title matches
+  [32m✓[0m  FL HB 463 (2026): latest_action matches
+  [32m✓[0m  FL HB 463 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 463 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 465 (2026): title matches
+  [32m✓[0m  FL HB 465 (2026): latest_action matches
+  [32m✓[0m  FL HB 465 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 465 (2026): vote tally matches on 2026-01-13 ({'yes': 16, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 465 (2026): vote tally matches on 2026-02-10 ({'yes': 21, 'no': 3, 'not voting': 2})
+  [32m✓[0m  FL HB 465 (2026): sponsorship count matches (6)
+    ...150/500
+  [32m✓[0m  FL HB 469 (2026): title matches
+  [32m✓[0m  FL HB 469 (2026): latest_action matches
+  [32m✓[0m  FL HB 469 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 469 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 471 (2026): title matches
+  [32m✓[0m  FL HB 471 (2026): latest_action matches
+  [32m✓[0m  FL HB 471 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 471 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 477 (2026): title matches
+  [32m✓[0m  FL HB 477 (2026): latest_action matches
+  [31m✗[0m  FL HB 477 (2026): local is MISSING votes vs live  [local=2 live=4]
+  [32m✓[0m  FL HB 477 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 477 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 477 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL HB 489 (2026): title matches
+  [32m✓[0m  FL HB 489 (2026): latest_action matches
+  [32m✓[0m  FL HB 489 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 489 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 491 (2026): title matches
+  [32m✓[0m  FL HB 491 (2026): latest_action matches
+  [32m✓[0m  FL HB 491 (2026): vote event count matches (5)
+  [32m✓[0m  FL HB 491 (2026): vote tally matches on 2026-01-13 ({'yes': 17, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 491 (2026): vote tally matches on 2026-01-22 ({'yes': 21, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 491 (2026): vote tally matches on 2026-02-03 ({'yes': 24, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 491 (2026): vote tally matches on 2026-03-03 ({'yes': 107, 'no': 2, 'not voting': 8})
+  [32m✓[0m  FL HB 491 (2026): vote tally matches on 2026-03-06 ({'yes': 33, 'no': 1, 'not voting': 5})
+  [32m✓[0m  FL HB 491 (2026): sponsorship count matches (15)
+  [32m✓[0m  FL HB 495 (2026): title matches
+  [32m✓[0m  FL HB 495 (2026): latest_action matches
+  [32m✓[0m  FL HB 495 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 495 (2026): vote tally matches on 2026-01-29 ({'yes': 15, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 495 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 497 (2026): title matches
+  [32m✓[0m  FL HB 497 (2026): latest_action matches
+  [32m✓[0m  FL HB 497 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 497 (2026): vote tally matches on 2026-02-11 ({'yes': 14, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 497 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 5203 (2026): title matches
+  [32m✓[0m  FL HB 5203 (2026): latest_action matches
+  [33m~[0m  FL HB 5203 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=2]
+  [32m✓[0m  FL HB 5203 (2026): vote tally matches on 2026-02-19 ({'yes': 104, 'no': 2, 'not voting': 11})
+  [32m✓[0m  FL HB 5203 (2026): vote tally matches on 2026-03-02 ({'yes': 16, 'no': 0, 'other': 2})
+  [32m✓[0m  FL HB 5203 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 5205 (2026): title matches
+  [32m✓[0m  FL HB 5205 (2026): latest_action matches
+  [33m~[0m  FL HB 5205 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=2]
+  [32m✓[0m  FL HB 5205 (2026): vote tally matches on 2026-02-19 ({'yes': 103, 'no': 0, 'not voting': 14})
+  [32m✓[0m  FL HB 5205 (2026): vote tally matches on 2026-02-20 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 5205 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 527 (2026): title matches
+  [32m✓[0m  FL HB 527 (2026): latest_action matches
+  [33m~[0m  FL HB 527 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=1]
+  [32m✓[0m  FL HB 527 (2026): vote tally matches on 2026-03-05 ({'yes': 108, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL HB 527 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL HB 53 (2026): title matches
+  [32m✓[0m  FL HB 53 (2026): latest_action matches
+  [31m✗[0m  FL HB 53 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HB 53 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 541 (2026): title matches
+  [32m✓[0m  FL HB 541 (2026): latest_action matches
+  [32m✓[0m  FL HB 541 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 541 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 553 (2026): title matches
+  [32m✓[0m  FL HB 553 (2026): latest_action matches
+  [32m✓[0m  FL HB 553 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 553 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 557 (2026): title matches
+  [32m✓[0m  FL HB 557 (2026): latest_action matches
+  [32m✓[0m  FL HB 557 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 557 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 563 (2026): title matches
+  [32m✓[0m  FL HB 563 (2026): latest_action matches
+  [32m✓[0m  FL HB 563 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 563 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 569 (2026): title matches
+  [32m✓[0m  FL HB 569 (2026): latest_action matches
+  [33m~[0m  FL HB 569 (2026): local has MORE votes than live (our fix not merged?)  [local=5 live=2]
+  [32m✓[0m  FL HB 569 (2026): vote tally matches on 2026-02-17 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL HB 569 (2026): vote tally matches on 2026-03-04 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 569 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 585 (2026): title matches
+  [32m✓[0m  FL HB 585 (2026): latest_action matches
+  [32m✓[0m  FL HB 585 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 585 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 593 (2026): title matches
+  [32m✓[0m  FL HB 593 (2026): latest_action matches
+  [32m✓[0m  FL HB 593 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 593 (2026): vote tally matches on 2026-01-29 ({'yes': 15, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 593 (2026): vote tally matches on 2026-02-17 ({'yes': 21, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL HB 593 (2026): vote tally matches on 2026-02-25 ({'yes': 116, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 593 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 595 (2026): title matches
+  [32m✓[0m  FL HB 595 (2026): latest_action matches
+  [32m✓[0m  FL HB 595 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 595 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 6019 (2026): title matches
+  [32m✓[0m  FL HB 6019 (2026): latest_action matches
+  [32m✓[0m  FL HB 6019 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6019 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 6023 (2026): title matches
+  [32m✓[0m  FL HB 6023 (2026): latest_action matches
+  [32m✓[0m  FL HB 6023 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6023 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 607 (2026): title matches
+  [32m✓[0m  FL HB 607 (2026): latest_action matches
+  [32m✓[0m  FL HB 607 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 607 (2026): vote tally matches on 2025-12-11 ({'yes': 9, 'no': 6, 'not voting': 2})
+  [32m✓[0m  FL HB 607 (2026): vote tally matches on 2026-01-14 ({'yes': 10, 'no': 2, 'not voting': 1})
+  [32m✓[0m  FL HB 607 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 631 (2026): title matches
+  [32m✓[0m  FL HB 631 (2026): latest_action matches
+  [32m✓[0m  FL HB 631 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 631 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 633 (2026): title matches
+  [32m✓[0m  FL HB 633 (2026): latest_action matches
+  [32m✓[0m  FL HB 633 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 633 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 6505 (2026): title matches
+  [32m✓[0m  FL HB 6505 (2026): latest_action matches
+  [32m✓[0m  FL HB 6505 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6505 (2026): sponsorship count matches (1)
+    ...175/500
+  [32m✓[0m  FL HB 6519 (2026): title matches
+  [32m✓[0m  FL HB 6519 (2026): latest_action matches
+  [32m✓[0m  FL HB 6519 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6519 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 6525 (2026): title matches
+  [32m✓[0m  FL HB 6525 (2026): latest_action matches
+  [32m✓[0m  FL HB 6525 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6525 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 6527 (2026): title matches
+  [32m✓[0m  FL HB 6527 (2026): latest_action matches
+  [33m~[0m  FL HB 6527 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=1]
+  [32m✓[0m  FL HB 6527 (2026): vote tally matches on 2026-02-25 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 6527 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 6529 (2026): title matches
+  [32m✓[0m  FL HB 6529 (2026): latest_action matches
+  [32m✓[0m  FL HB 6529 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 6529 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 661 (2026): title matches
+  [32m✓[0m  FL HB 661 (2026): latest_action matches
+  [32m✓[0m  FL HB 661 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 661 (2026): vote tally matches on 2026-01-14 ({'yes': 16, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 661 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 663 (2026): title matches
+  [32m✓[0m  FL HB 663 (2026): latest_action matches
+  [32m✓[0m  FL HB 663 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 663 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 669 (2026): title matches
+  [32m✓[0m  FL HB 669 (2026): latest_action matches
+  [32m✓[0m  FL HB 669 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 669 (2026): vote tally matches on 2026-02-12 ({'yes': 16, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 669 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 675 (2026): title matches
+  [32m✓[0m  FL HB 675 (2026): latest_action matches
+  [32m✓[0m  FL HB 675 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 675 (2026): vote tally matches on 2026-01-29 ({'yes': 15, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 675 (2026): sponsorship count matches (20)
+  [32m✓[0m  FL HB 683 (2026): title matches
+  [32m✓[0m  FL HB 683 (2026): latest_action matches
+  [32m✓[0m  FL HB 683 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 683 (2026): vote tally matches on 2026-02-11 ({'yes': 15, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 683 (2026): vote tally matches on 2026-02-18 ({'yes': 24, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 683 (2026): vote tally matches on 2026-02-25 ({'yes': 112, 'no': 4, 'not voting': 1})
+  [32m✓[0m  FL HB 683 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 7001 (2026): title matches
+  [32m✓[0m  FL HB 7001 (2026): latest_action matches
+  [32m✓[0m  FL HB 7001 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 7001 (2026): vote tally matches on 2025-11-04 ({'yes': 14, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 7001 (2026): vote tally matches on 2025-12-02 ({'yes': 16, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 7001 (2026): vote tally matches on 2026-01-22 ({'yes': 23, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 7001 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 7013 (2026): title matches
+  [32m✓[0m  FL HB 7013 (2026): latest_action matches
+  [32m✓[0m  FL HB 7013 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 7013 (2026): vote tally matches on 2025-12-10 ({'yes': 13, 'no': 0, 'not voting': 6})
+  [32m✓[0m  FL HB 7013 (2026): vote tally matches on 2026-01-20 ({'yes': 17, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 7013 (2026): vote tally matches on 2026-01-27 ({'yes': 24, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 7013 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 7017 (2026): title matches
+  [32m✓[0m  FL HB 7017 (2026): latest_action matches
+  [32m✓[0m  FL HB 7017 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 7017 (2026): vote tally matches on 2026-01-13 ({'yes': 18, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 7017 (2026): vote tally matches on 2026-01-27 ({'yes': 23, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 7017 (2026): vote tally matches on 2026-02-03 ({'yes': 23, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 7017 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 7027 (2026): title matches
+  [32m✓[0m  FL HB 7027 (2026): latest_action matches
+  [32m✓[0m  FL HB 7027 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 7027 (2026): vote tally matches on 2026-01-29 ({'yes': 16, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 7027 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 703 (2026): title matches
+  [32m✓[0m  FL HB 703 (2026): latest_action matches
+  [32m✓[0m  FL HB 703 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 703 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 723 (2026): title matches
+  [32m✓[0m  FL HB 723 (2026): latest_action matches
+  [32m✓[0m  FL HB 723 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 723 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 735 (2026): title matches
+  [32m✓[0m  FL HB 735 (2026): latest_action matches
+  [32m✓[0m  FL HB 735 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 735 (2026): sponsorship count matches (1)
+  [31m✗[0m  FL HB 741 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+741&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 745 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+745&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 75 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+75&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL HB 751 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=HB+751&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL HB 759 (2026): title matches
+  [32m✓[0m  FL HB 759 (2026): latest_action matches
+  [33m~[0m  FL HB 759 (2026): local has MORE votes than live (our fix not merged?)  [local=4 live=1]
+  [32m✓[0m  FL HB 759 (2026): vote tally matches on 2026-02-25 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 759 (2026): sponsorship count matches (10)
+  [32m✓[0m  FL HB 779 (2026): title matches
+  [32m✓[0m  FL HB 779 (2026): latest_action matches
+  [32m✓[0m  FL HB 779 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 779 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 803 (2026): title matches
+  [32m✓[0m  FL HB 803 (2026): latest_action matches
+  [32m✓[0m  FL HB 803 (2026): vote event count matches (6)
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-01-20 ({'yes': 14, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-02-05 ({'yes': 14, 'no': 1, 'not voting': 2})
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-02-18 ({'yes': 22, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-02-25 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-03-05 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 803 (2026): vote tally matches on 2026-03-12 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL HB 803 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL HB 81 (2026): title matches
+  [32m✓[0m  FL HB 81 (2026): latest_action matches
+  [32m✓[0m  FL HB 81 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 81 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 815 (2026): title matches
+  [32m✓[0m  FL HB 815 (2026): latest_action matches
+  [32m✓[0m  FL HB 815 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 815 (2026): sponsorship count matches (3)
+    ...200/500
+  [32m✓[0m  FL HB 829 (2026): title matches
+  [32m✓[0m  FL HB 829 (2026): latest_action matches
+  [32m✓[0m  FL HB 829 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 829 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 83 (2026): title matches
+  [32m✓[0m  FL HB 83 (2026): latest_action matches
+  [31m✗[0m  FL HB 83 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HB 83 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 831 (2026): title matches
+  [32m✓[0m  FL HB 831 (2026): latest_action matches
+  [32m✓[0m  FL HB 831 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 831 (2026): vote tally matches on 2026-01-20 ({'yes': 16, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 831 (2026): vote tally matches on 2026-01-27 ({'yes': 20, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 831 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 839 (2026): title matches
+  [32m✓[0m  FL HB 839 (2026): latest_action matches
+  [32m✓[0m  FL HB 839 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 839 (2026): vote tally matches on 2026-02-12 ({'yes': 17, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 839 (2026): vote tally matches on 2026-02-24 ({'yes': 23, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 839 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 841 (2026): title matches
+  [32m✓[0m  FL HB 841 (2026): latest_action matches
+  [33m~[0m  FL HB 841 (2026): local has MORE votes than live (our fix not merged?)  [local=3 live=1]
+  [32m✓[0m  FL HB 841 (2026): vote tally matches on 2026-02-25 ({'yes': 93, 'no': 17, 'not voting': 7})
+  [32m✓[0m  FL HB 841 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL HB 853 (2026): title matches
+  [32m✓[0m  FL HB 853 (2026): latest_action matches
+  [32m✓[0m  FL HB 853 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 853 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 857 (2026): title matches
+  [32m✓[0m  FL HB 857 (2026): latest_action matches
+  [32m✓[0m  FL HB 857 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 857 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 861 (2026): title matches
+  [32m✓[0m  FL HB 861 (2026): latest_action matches
+  [32m✓[0m  FL HB 861 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 861 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 863 (2026): title matches
+  [32m✓[0m  FL HB 863 (2026): latest_action matches
+  [32m✓[0m  FL HB 863 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 863 (2026): vote tally matches on 2026-01-14 ({'yes': 17, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 863 (2026): vote tally matches on 2026-01-21 ({'yes': 17, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL HB 863 (2026): vote tally matches on 2026-02-04 ({'yes': 105, 'no': 3, 'not voting': 9})
+  [32m✓[0m  FL HB 863 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 865 (2026): title matches
+  [32m✓[0m  FL HB 865 (2026): latest_action matches
+  [32m✓[0m  FL HB 865 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 865 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 881 (2026): title matches
+  [32m✓[0m  FL HB 881 (2026): latest_action matches
+  [32m✓[0m  FL HB 881 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 881 (2026): vote tally matches on 2026-01-14 ({'yes': 10, 'no': 5, 'not voting': 3})
+  [32m✓[0m  FL HB 881 (2026): vote tally matches on 2026-02-03 ({'yes': 15, 'no': 9, 'not voting': 2})
+  [32m✓[0m  FL HB 881 (2026): vote tally matches on 2026-02-11 ({'yes': 77, 'no': 34, 'not voting': 6})
+  [32m✓[0m  FL HB 881 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 887 (2026): title matches
+  [32m✓[0m  FL HB 887 (2026): latest_action matches
+  [32m✓[0m  FL HB 887 (2026): vote event count matches (4)
+  [32m✓[0m  FL HB 887 (2026): vote tally matches on 2026-01-29 ({'yes': 18, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 887 (2026): vote tally matches on 2026-02-05 ({'yes': 13, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL HB 887 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 887 (2026): vote tally matches on 2026-03-04 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL HB 887 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL HB 89 (2026): title matches
+  [32m✓[0m  FL HB 89 (2026): latest_action matches
+  [31m✗[0m  FL HB 89 (2026): local is MISSING votes vs live  [local=2 live=4]
+  [32m✓[0m  FL HB 89 (2026): vote tally matches on 2026-02-11 ({'yes': 114, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 89 (2026): vote tally matches on 2026-02-19 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL HB 89 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 905 (2026): title matches
+  [32m✓[0m  FL HB 905 (2026): latest_action matches
+  [33m~[0m  FL HB 905 (2026): local has MORE votes than live (our fix not merged?)  [local=6 live=3]
+  [32m✓[0m  FL HB 905 (2026): vote tally matches on 2026-03-03 ({'yes': 86, 'no': 20, 'not voting': 11})
+  [32m✓[0m  FL HB 905 (2026): vote tally matches on 2026-03-12 ({'yes': 28, 'no': 11, 'not voting': 0})
+  [32m✓[0m  FL HB 905 (2026): vote tally matches on 2026-03-13 ({'yes': 83, 'no': 17, 'not voting': 17})
+  [32m✓[0m  FL HB 905 (2026): sponsorship count matches (15)
+  [32m✓[0m  FL HB 907 (2026): title matches
+  [32m✓[0m  FL HB 907 (2026): latest_action matches
+  [32m✓[0m  FL HB 907 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 907 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 911 (2026): title matches
+  [32m✓[0m  FL HB 911 (2026): latest_action matches
+  [32m✓[0m  FL HB 911 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 911 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HB 917 (2026): title matches
+  [32m✓[0m  FL HB 917 (2026): latest_action matches
+  [32m✓[0m  FL HB 917 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 917 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 919 (2026): title matches
+  [32m✓[0m  FL HB 919 (2026): latest_action matches
+  [32m✓[0m  FL HB 919 (2026): vote event count matches (4)
+  [32m✓[0m  FL HB 919 (2026): vote tally matches on 2026-01-28 ({'yes': 12, 'no': 3, 'not voting': 2})
+  [32m✓[0m  FL HB 919 (2026): vote tally matches on 2026-02-03 ({'yes': 16, 'no': 6, 'not voting': 4})
+  [32m✓[0m  FL HB 919 (2026): vote tally matches on 2026-02-17 ({'yes': 81, 'no': 30, 'not voting': 6})
+  [32m✓[0m  FL HB 919 (2026): vote tally matches on 2026-02-19 ({'yes': 25, 'no': 11, 'not voting': 3})
+  [32m✓[0m  FL HB 919 (2026): sponsorship count matches (44)
+  [32m✓[0m  FL HB 927 (2026): title matches
+  [32m✓[0m  FL HB 927 (2026): latest_action matches
+  [32m✓[0m  FL HB 927 (2026): vote event count matches (5)
+  [32m✓[0m  FL HB 927 (2026): vote tally matches on 2026-02-05 ({'yes': 13, 'no': 1, 'not voting': 3})
+  [32m✓[0m  FL HB 927 (2026): vote tally matches on 2026-02-18 ({'yes': 17, 'no': 3, 'not voting': 6})
+  [32m✓[0m  FL HB 927 (2026): vote tally matches on 2026-02-24 ({'yes': 23, 'no': 2, 'not voting': 1})
+  [32m✓[0m  FL HB 927 (2026): vote tally matches on 2026-03-05 ({'yes': 110, 'no': 0, 'not voting': 7})
+  [32m✓[0m  FL HB 927 (2026): vote tally matches on 2026-03-05 ({'yes': 33, 'no': 0, 'not voting': 6})
+  [32m✓[0m  FL HB 927 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL HB 931 (2026): title matches
+  [32m✓[0m  FL HB 931 (2026): latest_action matches
+  [32m✓[0m  FL HB 931 (2026): vote event count matches (2)
+  [32m✓[0m  FL HB 931 (2026): vote tally matches on 2026-01-28 ({'yes': 17, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 931 (2026): vote tally matches on 2026-02-10 ({'yes': 18, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL HB 931 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HB 973 (2026): title matches
+  [32m✓[0m  FL HB 973 (2026): latest_action matches
+  [32m✓[0m  FL HB 973 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 973 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HB 975 (2026): title matches
+  [32m✓[0m  FL HB 975 (2026): latest_action matches
+  [32m✓[0m  FL HB 975 (2026): vote event count matches (4)
+  [32m✓[0m  FL HB 975 (2026): vote tally matches on 2026-02-11 ({'yes': 18, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL HB 975 (2026): vote tally matches on 2026-02-23 ({'yes': 13, 'no': 1, 'not voting': 1})
+  [32m✓[0m  FL HB 975 (2026): vote tally matches on 2026-02-26 ({'yes': 22, 'no': 4, 'not voting': 1})
+  [32m✓[0m  FL HB 975 (2026): vote tally matches on 2026-03-04 ({'yes': 89, 'no': 22, 'not voting': 6})
+  [32m✓[0m  FL HB 975 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 979 (2026): title matches
+  [32m✓[0m  FL HB 979 (2026): latest_action matches
+  [32m✓[0m  FL HB 979 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 979 (2026): vote tally matches on 2026-02-05 ({'yes': 12, 'no': 2, 'not voting': 3})
+  [32m✓[0m  FL HB 979 (2026): vote tally matches on 2026-02-18 ({'yes': 17, 'no': 3, 'not voting': 6})
+  [32m✓[0m  FL HB 979 (2026): vote tally matches on 2026-02-24 ({'yes': 20, 'no': 3, 'not voting': 3})
+  [32m✓[0m  FL HB 979 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HB 995 (2026): title matches
+  [32m✓[0m  FL HB 995 (2026): latest_action matches
+  [32m✓[0m  FL HB 995 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 995 (2026): vote tally matches on 2026-01-29 ({'yes': 12, 'no': 5, 'not voting': 2})
+  [32m✓[0m  FL HB 995 (2026): vote tally matches on 2026-02-05 ({'yes': 8, 'no': 4, 'not voting': 2})
+  [32m✓[0m  FL HB 995 (2026): vote tally matches on 2026-02-26 ({'yes': 17, 'no': 8, 'not voting': 2})
+  [32m✓[0m  FL HB 995 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL HB 997 (2026): title matches
+  [32m✓[0m  FL HB 997 (2026): latest_action matches
+  [32m✓[0m  FL HB 997 (2026): vote event count matches (0)
+  [32m✓[0m  FL HB 997 (2026): sponsorship count matches (1)
+    ...225/500
+  [32m✓[0m  FL HB 999 (2026): title matches
+  [32m✓[0m  FL HB 999 (2026): latest_action matches
+  [32m✓[0m  FL HB 999 (2026): vote event count matches (1)
+  [32m✓[0m  FL HB 999 (2026): vote tally matches on 2026-02-05 ({'yes': 12, 'no': 1, 'not voting': 4})
+  [32m✓[0m  FL HB 999 (2026): sponsorship count matches (9)
+  [32m✓[0m  FL HCR 383 (2026): title matches
+  [32m✓[0m  FL HCR 383 (2026): latest_action matches
+  [32m✓[0m  FL HCR 383 (2026): vote event count matches (0)
+  [32m✓[0m  FL HCR 383 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HJR 1527 (2026): title matches
+  [32m✓[0m  FL HJR 1527 (2026): latest_action matches
+  [32m✓[0m  FL HJR 1527 (2026): vote event count matches (0)
+  [32m✓[0m  FL HJR 1527 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HJR 203 (2026): title matches
+  [32m✓[0m  FL HJR 203 (2026): latest_action matches
+  [32m✓[0m  FL HJR 203 (2026): vote event count matches (2)
+  [32m✓[0m  FL HJR 203 (2026): vote tally matches on 2026-02-19 ({'yes': 31, 'no': 76, 'not voting': 10})
+  [32m✓[0m  FL HJR 203 (2026): vote tally matches on 2026-02-19 ({'yes': 80, 'no': 30, 'not voting': 7})
+  [32m✓[0m  FL HJR 203 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HJR 27 (2026): title matches
+  [32m✓[0m  FL HJR 27 (2026): latest_action matches
+  [32m✓[0m  FL HJR 27 (2026): vote event count matches (0)
+  [32m✓[0m  FL HJR 27 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HJR 583 (2026): title matches
+  [32m✓[0m  FL HJR 583 (2026): latest_action matches
+  [32m✓[0m  FL HJR 583 (2026): vote event count matches (3)
+  [32m✓[0m  FL HJR 583 (2026): vote tally matches on 2026-01-14 ({'yes': 17, 'no': 1, 'not voting': 0})
+  [32m✓[0m  FL HJR 583 (2026): vote tally matches on 2026-01-22 ({'yes': 18, 'no': 1, 'not voting': 2})
+  [32m✓[0m  FL HJR 583 (2026): vote tally matches on 2026-02-04 ({'yes': 93, 'no': 17, 'not voting': 7})
+  [32m✓[0m  FL HJR 583 (2026): sponsorship count matches (14)
+  [32m✓[0m  FL HJR 619 (2026): title matches
+  [32m✓[0m  FL HJR 619 (2026): latest_action matches
+  [32m✓[0m  FL HJR 619 (2026): vote event count matches (0)
+  [32m✓[0m  FL HJR 619 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL HM 4009 (2026): title matches
+  [32m✓[0m  FL HM 4009 (2026): latest_action matches
+  [31m✗[0m  FL HM 4009 (2026): local is MISSING votes vs live  [local=0 live=1]
+  [32m✓[0m  FL HM 4009 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HM 4031 (2026): title matches
+  [32m✓[0m  FL HM 4031 (2026): latest_action matches
+  [32m✓[0m  FL HM 4031 (2026): vote event count matches (0)
+  [32m✓[0m  FL HM 4031 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL HR 8005 (2026): title matches
+  [32m✓[0m  FL HR 8005 (2026): latest_action matches
+  [32m✓[0m  FL HR 8005 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8005 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8013 (2026): title matches
+  [33m~[0m  FL HR 8013 (2026): latest_action differs  [local='adopted by publication' live='adopted by publication; companion bill(s) passed, ']
+  [32m✓[0m  FL HR 8013 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8013 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8015 (2026): title matches
+  [32m✓[0m  FL HR 8015 (2026): latest_action matches
+  [32m✓[0m  FL HR 8015 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8015 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8019 (2026): title matches
+  [33m~[0m  FL HR 8019 (2026): latest_action differs  [local='adopted by publication' live='adopted by publication; companion bill(s) passed, ']
+  [32m✓[0m  FL HR 8019 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8019 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8021 (2026): title matches
+  [32m✓[0m  FL HR 8021 (2026): latest_action matches
+  [32m✓[0m  FL HR 8021 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8021 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8023 (2026): title matches
+  [32m✓[0m  FL HR 8023 (2026): latest_action matches
+  [32m✓[0m  FL HR 8023 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8023 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8053 (2026): title matches
+  [32m✓[0m  FL HR 8053 (2026): latest_action matches
+  [32m✓[0m  FL HR 8053 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8053 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8061 (2026): title matches
+  [32m✓[0m  FL HR 8061 (2026): latest_action matches
+  [32m✓[0m  FL HR 8061 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8061 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8067 (2026): title matches
+  [32m✓[0m  FL HR 8067 (2026): latest_action matches
+  [32m✓[0m  FL HR 8067 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8067 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8077 (2026): title matches
+  [32m✓[0m  FL HR 8077 (2026): latest_action matches
+  [32m✓[0m  FL HR 8077 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8077 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8087 (2026): title matches
+  [33m~[0m  FL HR 8087 (2026): latest_action differs  [local='adopted by publication' live='adopted by publication; companion bill(s) passed, ']
+  [32m✓[0m  FL HR 8087 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8087 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8103 (2026): title matches
+  [32m✓[0m  FL HR 8103 (2026): latest_action matches
+  [32m✓[0m  FL HR 8103 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8103 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL HR 8105 (2026): title matches
+  [32m✓[0m  FL HR 8105 (2026): latest_action matches
+  [32m✓[0m  FL HR 8105 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8105 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8117 (2026): title matches
+  [32m✓[0m  FL HR 8117 (2026): latest_action matches
+  [32m✓[0m  FL HR 8117 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8117 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL HR 8127 (2026): title matches
+  [32m✓[0m  FL HR 8127 (2026): latest_action matches
+  [32m✓[0m  FL HR 8127 (2026): vote event count matches (0)
+  [32m✓[0m  FL HR 8127 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1008 (2026): title matches
+  [32m✓[0m  FL SB 1008 (2026): latest_action matches
+  [32m✓[0m  FL SB 1008 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1008 (2026): sponsorship count matches (1)
+    ...250/500
+  [32m✓[0m  FL SB 1012 (2026): title matches
+  [32m✓[0m  FL SB 1012 (2026): latest_action matches
+  [32m✓[0m  FL SB 1012 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1012 (2026): vote tally matches on 2026-02-02 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1012 (2026): vote tally matches on 2026-02-12 ({'yes': 5, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1012 (2026): vote tally matches on 2026-03-02 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1012 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 102 (2026): title matches
+  [32m✓[0m  FL SB 102 (2026): latest_action matches
+  [32m✓[0m  FL SB 102 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 102 (2026): vote tally matches on 2026-01-15 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 102 (2026): vote tally matches on 2026-01-22 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 102 (2026): vote tally matches on 2026-03-09 ({'yes': 107, 'no': 0, 'not voting': 10})
+  [32m✓[0m  FL SB 102 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1020 (2026): title matches
+  [32m✓[0m  FL SB 1020 (2026): latest_action matches
+  [32m✓[0m  FL SB 1020 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1020 (2026): vote tally matches on 2026-01-27 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1020 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1022 (2026): title matches
+  [32m✓[0m  FL SB 1022 (2026): latest_action matches
+  [32m✓[0m  FL SB 1022 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 1022 (2026): vote tally matches on 2026-02-03 ({'yes': 4, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1022 (2026): vote tally matches on 2026-02-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1022 (2026): vote tally matches on 2026-02-18 ({'yes': 19, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1022 (2026): vote tally matches on 2026-02-26 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 1022 (2026): vote tally matches on 2026-03-11 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL SB 1022 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1024 (2026): title matches
+  [32m✓[0m  FL SB 1024 (2026): latest_action matches
+  [32m✓[0m  FL SB 1024 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1024 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1066 (2026): title matches
+  [32m✓[0m  FL SB 1066 (2026): latest_action matches
+  [32m✓[0m  FL SB 1066 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1066 (2026): vote tally matches on 2026-01-20 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1066 (2026): vote tally matches on 2026-02-04 ({'yes': 10, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 1066 (2026): vote tally matches on 2026-02-12 ({'yes': 17, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 1066 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 1086 (2026): title matches
+  [32m✓[0m  FL SB 1086 (2026): latest_action matches
+  [32m✓[0m  FL SB 1086 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1086 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1088 (2026): title matches
+  [32m✓[0m  FL SB 1088 (2026): latest_action matches
+  [32m✓[0m  FL SB 1088 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1088 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 110 (2026): title matches
+  [32m✓[0m  FL SB 110 (2026): latest_action matches
+  [32m✓[0m  FL SB 110 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 110 (2026): vote tally matches on 2026-01-28 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 110 (2026): vote tally matches on 2026-02-05 ({'yes': 16, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 110 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 110 (2026): vote tally matches on 2026-02-19 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 110 (2026): vote tally matches on 2026-03-09 ({'yes': 108, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL SB 110 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1108 (2026): title matches
+  [32m✓[0m  FL SB 1108 (2026): latest_action matches
+  [32m✓[0m  FL SB 1108 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1108 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1116 (2026): title matches
+  [32m✓[0m  FL SB 1116 (2026): latest_action matches
+  [32m✓[0m  FL SB 1116 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1116 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1118 (2026): title matches
+  [32m✓[0m  FL SB 1118 (2026): latest_action matches
+  [32m✓[0m  FL SB 1118 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1118 (2026): vote tally matches on 2026-01-20 ({'yes': 7, 'no': 1, 'other': 1})
+  [32m✓[0m  FL SB 1118 (2026): vote tally matches on 2026-02-03 ({'yes': 7, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 1118 (2026): vote tally matches on 2026-02-17 ({'yes': 16, 'no': 8, 'other': 0})
+  [32m✓[0m  FL SB 1118 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1130 (2026): title matches
+  [32m✓[0m  FL SB 1130 (2026): latest_action matches
+  [32m✓[0m  FL SB 1130 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1130 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1140 (2026): title matches
+  [32m✓[0m  FL SB 1140 (2026): latest_action matches
+  [32m✓[0m  FL SB 1140 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1140 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1144 (2026): title matches
+  [32m✓[0m  FL SB 1144 (2026): latest_action matches
+  [32m✓[0m  FL SB 1144 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1144 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1152 (2026): title matches
+  [32m✓[0m  FL SB 1152 (2026): latest_action matches
+  [32m✓[0m  FL SB 1152 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1152 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1154 (2026): title matches
+  [32m✓[0m  FL SB 1154 (2026): latest_action matches
+  [32m✓[0m  FL SB 1154 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1154 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1162 (2026): title matches
+  [32m✓[0m  FL SB 1162 (2026): latest_action matches
+  [32m✓[0m  FL SB 1162 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1162 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1164 (2026): title matches
+  [32m✓[0m  FL SB 1164 (2026): latest_action matches
+  [32m✓[0m  FL SB 1164 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1164 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1174 (2026): title matches
+  [32m✓[0m  FL SB 1174 (2026): latest_action matches
+  [32m✓[0m  FL SB 1174 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1174 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 118 (2026): title matches
+  [32m✓[0m  FL SB 118 (2026): latest_action matches
+  [32m✓[0m  FL SB 118 (2026): vote event count matches (6)
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2025-11-18 ({'yes': 5, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2026-02-12 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2026-02-24 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2026-02-26 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2026-03-10 ({'yes': 111, 'no': 1, 'not voting': 5})
+  [32m✓[0m  FL SB 118 (2026): vote tally matches on 2026-03-12 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 118 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1180 (2026): title matches
+  [32m✓[0m  FL SB 1180 (2026): latest_action matches
+  [32m✓[0m  FL SB 1180 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 1180 (2026): vote tally matches on 2026-01-27 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1180 (2026): vote tally matches on 2026-02-04 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1180 (2026): vote tally matches on 2026-02-24 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1180 (2026): vote tally matches on 2026-02-26 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 1180 (2026): vote tally matches on 2026-03-10 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1180 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1190 (2026): title matches
+  [32m✓[0m  FL SB 1190 (2026): latest_action matches
+  [32m✓[0m  FL SB 1190 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1190 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 12 (2026): title matches
+  [32m✓[0m  FL SB 12 (2026): latest_action matches
+  [32m✓[0m  FL SB 12 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 12 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 120 (2026): title matches
+  [32m✓[0m  FL SB 120 (2026): latest_action matches
+  [32m✓[0m  FL SB 120 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 120 (2026): sponsorship count matches (2)
+    ...275/500
+  [31m✗[0m  FL SB 1204 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+1204&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 1208 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+1208&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 1216 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+1216&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 1218 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+1218&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 1222 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+1222&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL SB 1224 (2026): title matches
+  [32m✓[0m  FL SB 1224 (2026): latest_action matches
+  [32m✓[0m  FL SB 1224 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1224 (2026): vote tally matches on 2026-01-27 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1224 (2026): vote tally matches on 2026-02-11 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1224 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1224 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1226 (2026): title matches
+  [32m✓[0m  FL SB 1226 (2026): latest_action matches
+  [32m✓[0m  FL SB 1226 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1226 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1228 (2026): title matches
+  [32m✓[0m  FL SB 1228 (2026): latest_action matches
+  [32m✓[0m  FL SB 1228 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1228 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1236 (2026): title matches
+  [32m✓[0m  FL SB 1236 (2026): latest_action matches
+  [32m✓[0m  FL SB 1236 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1236 (2026): vote tally matches on 2026-02-04 ({'yes': 6, 'no': 3, 'other': 1})
+  [32m✓[0m  FL SB 1236 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 124 (2026): title matches
+  [32m✓[0m  FL SB 124 (2026): latest_action matches
+  [32m✓[0m  FL SB 124 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 124 (2026): vote tally matches on 2025-12-09 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 124 (2026): vote tally matches on 2026-01-28 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 124 (2026): vote tally matches on 2026-02-05 ({'yes': 15, 'no': 0, 'other': 5})
+  [32m✓[0m  FL SB 124 (2026): vote tally matches on 2026-02-11 ({'yes': 39, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL SB 124 (2026): vote tally matches on 2026-03-11 ({'yes': 110, 'no': 2, 'not voting': 5})
+  [32m✓[0m  FL SB 124 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1240 (2026): title matches
+  [32m✓[0m  FL SB 1240 (2026): latest_action matches
+  [32m✓[0m  FL SB 1240 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1240 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1242 (2026): title matches
+  [32m✓[0m  FL SB 1242 (2026): latest_action matches
+  [32m✓[0m  FL SB 1242 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1242 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 126 (2026): title matches
+  [32m✓[0m  FL SB 126 (2026): latest_action matches
+  [32m✓[0m  FL SB 126 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 126 (2026): vote tally matches on 2025-12-09 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 126 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1268 (2026): title matches
+  [32m✓[0m  FL SB 1268 (2026): latest_action matches
+  [32m✓[0m  FL SB 1268 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1268 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1282 (2026): title matches
+  [32m✓[0m  FL SB 1282 (2026): latest_action matches
+  [32m✓[0m  FL SB 1282 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1282 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1294 (2026): title matches
+  [32m✓[0m  FL SB 1294 (2026): latest_action matches
+  [32m✓[0m  FL SB 1294 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1294 (2026): vote tally matches on 2026-01-27 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1294 (2026): vote tally matches on 2026-02-12 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1294 (2026): vote tally matches on 2026-02-24 ({'yes': 19, 'no': 0, 'other': 5})
+  [32m✓[0m  FL SB 1294 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 1316 (2026): title matches
+  [32m✓[0m  FL SB 1316 (2026): latest_action matches
+  [32m✓[0m  FL SB 1316 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1316 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1318 (2026): title matches
+  [32m✓[0m  FL SB 1318 (2026): latest_action matches
+  [32m✓[0m  FL SB 1318 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 1318 (2026): vote tally matches on 2026-02-10 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1318 (2026): vote tally matches on 2026-02-25 ({'yes': 8, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1318 (2026): vote tally matches on 2026-03-02 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1318 (2026): vote tally matches on 2026-03-05 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 1318 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 132 (2026): title matches
+  [32m✓[0m  FL SB 132 (2026): latest_action matches
+  [32m✓[0m  FL SB 132 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 132 (2026): vote tally matches on 2026-01-26 ({'yes': 7, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 132 (2026): vote tally matches on 2026-02-04 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 132 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1340 (2026): title matches
+  [32m✓[0m  FL SB 1340 (2026): latest_action matches
+  [32m✓[0m  FL SB 1340 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 1340 (2026): vote tally matches on 2026-01-27 ({'yes': 5, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1340 (2026): vote tally matches on 2026-02-18 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1340 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1340 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1340 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1348 (2026): title matches
+  [32m✓[0m  FL SB 1348 (2026): latest_action matches
+  [32m✓[0m  FL SB 1348 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1348 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 136 (2026): title matches
+  [32m✓[0m  FL SB 136 (2026): latest_action matches
+  [32m✓[0m  FL SB 136 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 136 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1376 (2026): title matches
+  [32m✓[0m  FL SB 1376 (2026): latest_action matches
+  [32m✓[0m  FL SB 1376 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1376 (2026): vote tally matches on 2026-01-28 ({'yes': 5, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1376 (2026): vote tally matches on 2026-02-25 ({'yes': 5, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1376 (2026): vote tally matches on 2026-03-02 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1376 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 1386 (2026): title matches
+  [32m✓[0m  FL SB 1386 (2026): latest_action matches
+  [32m✓[0m  FL SB 1386 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1386 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1394 (2026): title matches
+  [32m✓[0m  FL SB 1394 (2026): latest_action matches
+  [32m✓[0m  FL SB 1394 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1394 (2026): sponsorship count matches (1)
+    ...300/500
+  [32m✓[0m  FL SB 1408 (2026): title matches
+  [32m✓[0m  FL SB 1408 (2026): latest_action matches
+  [32m✓[0m  FL SB 1408 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1408 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1416 (2026): title matches
+  [32m✓[0m  FL SB 1416 (2026): latest_action matches
+  [32m✓[0m  FL SB 1416 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1416 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1418 (2026): title matches
+  [32m✓[0m  FL SB 1418 (2026): latest_action matches
+  [32m✓[0m  FL SB 1418 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1418 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1420 (2026): title matches
+  [32m✓[0m  FL SB 1420 (2026): latest_action matches
+  [32m✓[0m  FL SB 1420 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1420 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1426 (2026): title matches
+  [32m✓[0m  FL SB 1426 (2026): latest_action matches
+  [32m✓[0m  FL SB 1426 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1426 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1428 (2026): title matches
+  [32m✓[0m  FL SB 1428 (2026): latest_action matches
+  [32m✓[0m  FL SB 1428 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1428 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1430 (2026): title matches
+  [32m✓[0m  FL SB 1430 (2026): latest_action matches
+  [32m✓[0m  FL SB 1430 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1430 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1448 (2026): title matches
+  [32m✓[0m  FL SB 1448 (2026): latest_action matches
+  [32m✓[0m  FL SB 1448 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1448 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1454 (2026): title matches
+  [32m✓[0m  FL SB 1454 (2026): latest_action matches
+  [32m✓[0m  FL SB 1454 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1454 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 146 (2026): title matches
+  [32m✓[0m  FL SB 146 (2026): latest_action matches
+  [32m✓[0m  FL SB 146 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 146 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1470 (2026): title matches
+  [32m✓[0m  FL SB 1470 (2026): latest_action matches
+  [32m✓[0m  FL SB 1470 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1470 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 148 (2026): title matches
+  [32m✓[0m  FL SB 148 (2026): latest_action matches
+  [32m✓[0m  FL SB 148 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 148 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1480 (2026): title matches
+  [32m✓[0m  FL SB 1480 (2026): latest_action matches
+  [32m✓[0m  FL SB 1480 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1480 (2026): vote tally matches on 2026-01-26 ({'yes': 9, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1480 (2026): vote tally matches on 2026-02-04 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1480 (2026): vote tally matches on 2026-02-17 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1480 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1498 (2026): title matches
+  [32m✓[0m  FL SB 1498 (2026): latest_action matches
+  [32m✓[0m  FL SB 1498 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1498 (2026): vote tally matches on 2026-02-03 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1498 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 150 (2026): title matches
+  [32m✓[0m  FL SB 150 (2026): latest_action matches
+  [32m✓[0m  FL SB 150 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 150 (2026): vote tally matches on 2025-11-04 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 150 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1504 (2026): title matches
+  [32m✓[0m  FL SB 1504 (2026): latest_action matches
+  [32m✓[0m  FL SB 1504 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1504 (2026): vote tally matches on 2026-01-28 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1504 (2026): vote tally matches on 2026-02-12 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1504 (2026): vote tally matches on 2026-02-24 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1504 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1506 (2026): title matches
+  [32m✓[0m  FL SB 1506 (2026): latest_action matches
+  [32m✓[0m  FL SB 1506 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 1506 (2026): vote tally matches on 2026-02-10 ({'yes': 8, 'no': 3, 'other': 0})
+  [32m✓[0m  FL SB 1506 (2026): vote tally matches on 2026-02-17 ({'yes': 11, 'no': 13, 'other': 0})
+  [32m✓[0m  FL SB 1506 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1512 (2026): title matches
+  [32m✓[0m  FL SB 1512 (2026): latest_action matches
+  [32m✓[0m  FL SB 1512 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1512 (2026): vote tally matches on 2026-01-26 ({'yes': 4, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1512 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1514 (2026): title matches
+  [32m✓[0m  FL SB 1514 (2026): latest_action matches
+  [32m✓[0m  FL SB 1514 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1514 (2026): vote tally matches on 2026-02-02 ({'yes': 5, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1514 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1520 (2026): title matches
+  [32m✓[0m  FL SB 1520 (2026): latest_action matches
+  [32m✓[0m  FL SB 1520 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1520 (2026): vote tally matches on 2026-02-12 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1520 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1526 (2026): title matches
+  [32m✓[0m  FL SB 1526 (2026): latest_action matches
+  [32m✓[0m  FL SB 1526 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1526 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1530 (2026): title matches
+  [32m✓[0m  FL SB 1530 (2026): latest_action matches
+  [32m✓[0m  FL SB 1530 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1530 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1532 (2026): title matches
+  [32m✓[0m  FL SB 1532 (2026): latest_action matches
+  [32m✓[0m  FL SB 1532 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1532 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1536 (2026): title matches
+  [32m✓[0m  FL SB 1536 (2026): latest_action matches
+  [32m✓[0m  FL SB 1536 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 1536 (2026): vote tally matches on 2026-02-02 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1536 (2026): vote tally matches on 2026-02-12 ({'yes': 5, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1536 (2026): vote tally matches on 2026-03-03 ({'yes': 21, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1536 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1536 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 154 (2026): title matches
+  [32m✓[0m  FL SB 154 (2026): latest_action matches
+  [32m✓[0m  FL SB 154 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 154 (2026): vote tally matches on 2025-11-18 ({'yes': 8, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 154 (2026): sponsorship count matches (3)
+    ...325/500
+  [32m✓[0m  FL SB 1544 (2026): title matches
+  [32m✓[0m  FL SB 1544 (2026): latest_action matches
+  [32m✓[0m  FL SB 1544 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1544 (2026): vote tally matches on 2026-02-02 ({'yes': 6, 'no': 1, 'other': 1})
+  [32m✓[0m  FL SB 1544 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1550 (2026): title matches
+  [32m✓[0m  FL SB 1550 (2026): latest_action matches
+  [32m✓[0m  FL SB 1550 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1550 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1558 (2026): title matches
+  [32m✓[0m  FL SB 1558 (2026): latest_action matches
+  [32m✓[0m  FL SB 1558 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1558 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 156 (2026): title matches
+  [32m✓[0m  FL SB 156 (2026): latest_action matches
+  [32m✓[0m  FL SB 156 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 156 (2026): vote tally matches on 2025-12-09 ({'yes': 5, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 156 (2026): vote tally matches on 2026-01-14 ({'yes': 6, 'no': 1, 'other': 1})
+  [32m✓[0m  FL SB 156 (2026): vote tally matches on 2026-01-27 ({'yes': 19, 'no': 3, 'other': 2})
+  [32m✓[0m  FL SB 156 (2026): vote tally matches on 2026-01-29 ({'yes': 31, 'no': 4, 'not voting': 4})
+  [32m✓[0m  FL SB 156 (2026): vote tally matches on 2026-03-11 ({'yes': 103, 'no': 8, 'not voting': 6})
+  [32m✓[0m  FL SB 156 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1562 (2026): title matches
+  [32m✓[0m  FL SB 1562 (2026): latest_action matches
+  [32m✓[0m  FL SB 1562 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 1562 (2026): vote tally matches on 2026-02-10 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1562 (2026): vote tally matches on 2026-02-11 ({'yes': 9, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 1562 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1566 (2026): title matches
+  [32m✓[0m  FL SB 1566 (2026): latest_action matches
+  [32m✓[0m  FL SB 1566 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1566 (2026): vote tally matches on 2026-02-10 ({'yes': 7, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 1566 (2026): vote tally matches on 2026-02-25 ({'yes': 6, 'no': 2, 'other': 3})
+  [32m✓[0m  FL SB 1566 (2026): vote tally matches on 2026-03-03 ({'yes': 21, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1566 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 1568 (2026): title matches
+  [32m✓[0m  FL SB 1568 (2026): latest_action matches
+  [32m✓[0m  FL SB 1568 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 1568 (2026): vote tally matches on 2026-02-04 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1568 (2026): vote tally matches on 2026-02-18 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1568 (2026): vote tally matches on 2026-03-03 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1568 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1568 (2026): vote tally matches on 2026-03-11 ({'yes': 108, 'no': 3, 'not voting': 6})
+  [32m✓[0m  FL SB 1568 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1570 (2026): title matches
+  [32m✓[0m  FL SB 1570 (2026): latest_action matches
+  [32m✓[0m  FL SB 1570 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1570 (2026): vote tally matches on 2026-01-28 ({'yes': 5, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1570 (2026): vote tally matches on 2026-02-25 ({'yes': 5, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1570 (2026): vote tally matches on 2026-03-02 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1570 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1576 (2026): title matches
+  [32m✓[0m  FL SB 1576 (2026): latest_action matches
+  [32m✓[0m  FL SB 1576 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1576 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1580 (2026): title matches
+  [32m✓[0m  FL SB 1580 (2026): latest_action matches
+  [32m✓[0m  FL SB 1580 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 1580 (2026): vote tally matches on 2026-02-10 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1580 (2026): vote tally matches on 2026-02-25 ({'yes': 8, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 1580 (2026): vote tally matches on 2026-03-03 ({'yes': 21, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 1580 (2026): vote tally matches on 2026-03-06 ({'yes': 34, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1580 (2026): vote tally matches on 2026-03-11 ({'yes': 82, 'no': 31, 'not voting': 4})
+  [32m✓[0m  FL SB 1580 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1582 (2026): title matches
+  [32m✓[0m  FL SB 1582 (2026): latest_action matches
+  [32m✓[0m  FL SB 1582 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 1582 (2026): vote tally matches on 2026-01-28 ({'yes': 9, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1582 (2026): vote tally matches on 2026-02-25 ({'yes': 7, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1582 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1594 (2026): title matches
+  [32m✓[0m  FL SB 1594 (2026): latest_action matches
+  [32m✓[0m  FL SB 1594 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 1594 (2026): vote tally matches on 2026-01-27 ({'yes': 5, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1594 (2026): vote tally matches on 2026-02-11 ({'yes': 5, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1594 (2026): vote tally matches on 2026-02-18 ({'yes': 19, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1594 (2026): vote tally matches on 2026-02-25 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 1594 (2026): vote tally matches on 2026-03-09 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 1594 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1606 (2026): title matches
+  [32m✓[0m  FL SB 1606 (2026): latest_action matches
+  [32m✓[0m  FL SB 1606 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1606 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1608 (2026): title matches
+  [32m✓[0m  FL SB 1608 (2026): latest_action matches
+  [32m✓[0m  FL SB 1608 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1608 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1616 (2026): title matches
+  [32m✓[0m  FL SB 1616 (2026): latest_action matches
+  [32m✓[0m  FL SB 1616 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1616 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1618 (2026): title matches
+  [32m✓[0m  FL SB 1618 (2026): latest_action matches
+  [32m✓[0m  FL SB 1618 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1618 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1624 (2026): title matches
+  [32m✓[0m  FL SB 1624 (2026): latest_action matches
+  [32m✓[0m  FL SB 1624 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1624 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1626 (2026): title matches
+  [32m✓[0m  FL SB 1626 (2026): latest_action matches
+  [32m✓[0m  FL SB 1626 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1626 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1628 (2026): title matches
+  [32m✓[0m  FL SB 1628 (2026): latest_action matches
+  [32m✓[0m  FL SB 1628 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1628 (2026): vote tally matches on 2026-01-27 ({'yes': 5, 'no': 3, 'other': 0})
+  [32m✓[0m  FL SB 1628 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1644 (2026): title matches
+  [32m✓[0m  FL SB 1644 (2026): latest_action matches
+  [32m✓[0m  FL SB 1644 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1644 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1646 (2026): title matches
+  [32m✓[0m  FL SB 1646 (2026): latest_action matches
+  [32m✓[0m  FL SB 1646 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 1646 (2026): vote tally matches on 2026-01-27 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1646 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1652 (2026): title matches
+  [32m✓[0m  FL SB 1652 (2026): latest_action matches
+  [32m✓[0m  FL SB 1652 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1652 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1664 (2026): title matches
+  [32m✓[0m  FL SB 1664 (2026): latest_action matches
+  [32m✓[0m  FL SB 1664 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1664 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1666 (2026): title matches
+  [32m✓[0m  FL SB 1666 (2026): latest_action matches
+  [32m✓[0m  FL SB 1666 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1666 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1692 (2026): title matches
+  [32m✓[0m  FL SB 1692 (2026): latest_action matches
+  [32m✓[0m  FL SB 1692 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1692 (2026): sponsorship count matches (1)
+    ...350/500
+  [32m✓[0m  FL SB 1694 (2026): title matches
+  [32m✓[0m  FL SB 1694 (2026): latest_action matches
+  [32m✓[0m  FL SB 1694 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1694 (2026): vote tally matches on 2026-02-04 ({'yes': 6, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1694 (2026): vote tally matches on 2026-02-18 ({'yes': 7, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1694 (2026): vote tally matches on 2026-02-24 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1694 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 1706 (2026): title matches
+  [32m✓[0m  FL SB 1706 (2026): latest_action matches
+  [32m✓[0m  FL SB 1706 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 1706 (2026): vote tally matches on 2026-02-04 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1706 (2026): vote tally matches on 2026-02-10 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1706 (2026): vote tally matches on 2026-02-18 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 1706 (2026): vote tally matches on 2026-03-04 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 1706 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1726 (2026): title matches
+  [32m✓[0m  FL SB 1726 (2026): latest_action matches
+  [32m✓[0m  FL SB 1726 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1726 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1728 (2026): title matches
+  [32m✓[0m  FL SB 1728 (2026): latest_action matches
+  [32m✓[0m  FL SB 1728 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1728 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1736 (2026): title matches
+  [32m✓[0m  FL SB 1736 (2026): latest_action matches
+  [32m✓[0m  FL SB 1736 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1736 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1740 (2026): title matches
+  [32m✓[0m  FL SB 1740 (2026): latest_action matches
+  [32m✓[0m  FL SB 1740 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1740 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 1750 (2026): title matches
+  [32m✓[0m  FL SB 1750 (2026): latest_action matches
+  [32m✓[0m  FL SB 1750 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 1750 (2026): vote tally matches on 2026-02-02 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1750 (2026): vote tally matches on 2026-02-25 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 1750 (2026): vote tally matches on 2026-03-02 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 1750 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 1754 (2026): title matches
+  [32m✓[0m  FL SB 1754 (2026): latest_action matches
+  [32m✓[0m  FL SB 1754 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 1754 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 18 (2026): title matches
+  [32m✓[0m  FL SB 18 (2026): latest_action matches
+  [32m✓[0m  FL SB 18 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 18 (2026): vote tally matches on 2026-02-03 ({'yes': 10, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 18 (2026): vote tally matches on 2026-02-10 ({'yes': 6, 'no': 2, 'other': 0})
+  [32m✓[0m  FL SB 18 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 186 (2026): title matches
+  [32m✓[0m  FL SB 186 (2026): latest_action matches
+  [32m✓[0m  FL SB 186 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 186 (2026): vote tally matches on 2026-02-11 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 186 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 186 (2026): sponsorship count matches (3)
+  [31m✗[0m  FL SB 196 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+196&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 198 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+198&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 20 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+20&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 204 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+204&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 214 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+214&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 216 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+216&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 222 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+222&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL SB 226 (2026): title matches
+  [32m✓[0m  FL SB 226 (2026): latest_action matches
+  [32m✓[0m  FL SB 226 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 226 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 244 (2026): title matches
+  [32m✓[0m  FL SB 244 (2026): latest_action matches
+  [32m✓[0m  FL SB 244 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 244 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 2506 (2026): title matches
+  [32m✓[0m  FL SB 2506 (2026): latest_action matches
+  [32m✓[0m  FL SB 2506 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 2506 (2026): vote tally matches on 2026-02-18 ({'yes': 17, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 2506 (2026): vote tally matches on 2026-02-20 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 2506 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 2518 (2026): title matches
+  [32m✓[0m  FL SB 2518 (2026): latest_action matches
+  [32m✓[0m  FL SB 2518 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 2518 (2026): vote tally matches on 2026-02-18 ({'yes': 18, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 2518 (2026): vote tally matches on 2026-02-20 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 2518 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 256 (2026): title matches
+  [32m✓[0m  FL SB 256 (2026): latest_action matches
+  [32m✓[0m  FL SB 256 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 256 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 258 (2026): title matches
+  [32m✓[0m  FL SB 258 (2026): latest_action matches
+  [32m✓[0m  FL SB 258 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 258 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 260 (2026): title matches
+  [32m✓[0m  FL SB 260 (2026): latest_action matches
+  [32m✓[0m  FL SB 260 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 260 (2026): vote tally matches on 2026-02-03 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 260 (2026): vote tally matches on 2026-02-10 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 260 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 260 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 268 (2026): title matches
+  [32m✓[0m  FL SB 268 (2026): latest_action matches
+  [32m✓[0m  FL SB 268 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 268 (2026): vote tally matches on 2026-02-02 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 268 (2026): sponsorship count matches (3)
+    ...375/500
+  [32m✓[0m  FL SB 288 (2026): title matches
+  [32m✓[0m  FL SB 288 (2026): latest_action matches
+  [32m✓[0m  FL SB 288 (2026): vote event count matches (6)
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2025-12-09 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2026-01-20 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2026-01-27 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2026-01-29 ({'yes': 35, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2026-03-11 ({'yes': 106, 'no': 1, 'not voting': 10})
+  [32m✓[0m  FL SB 288 (2026): vote tally matches on 2026-03-12 ({'yes': 39, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL SB 288 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 306 (2026): title matches
+  [32m✓[0m  FL SB 306 (2026): latest_action matches
+  [32m✓[0m  FL SB 306 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 306 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 316 (2026): title matches
+  [32m✓[0m  FL SB 316 (2026): latest_action matches
+  [32m✓[0m  FL SB 316 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 316 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 318 (2026): title matches
+  [32m✓[0m  FL SB 318 (2026): latest_action matches
+  [32m✓[0m  FL SB 318 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 318 (2026): vote tally matches on 2025-12-10 ({'yes': 16, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 318 (2026): vote tally matches on 2026-01-14 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 318 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL SB 320 (2026): title matches
+  [32m✓[0m  FL SB 320 (2026): latest_action matches
+  [32m✓[0m  FL SB 320 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 320 (2026): vote tally matches on 2025-12-09 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 320 (2026): vote tally matches on 2026-01-14 ({'yes': 20, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 320 (2026): vote tally matches on 2026-01-22 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 320 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 334 (2026): title matches
+  [32m✓[0m  FL SB 334 (2026): latest_action matches
+  [32m✓[0m  FL SB 334 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 334 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 348 (2026): title matches
+  [32m✓[0m  FL SB 348 (2026): latest_action matches
+  [32m✓[0m  FL SB 348 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 348 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 352 (2026): title matches
+  [32m✓[0m  FL SB 352 (2026): latest_action matches
+  [32m✓[0m  FL SB 352 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 352 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 36 (2026): title matches
+  [32m✓[0m  FL SB 36 (2026): latest_action matches
+  [32m✓[0m  FL SB 36 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 36 (2026): vote tally matches on 2026-02-02 ({'yes': 9, 'no': 2, 'other': 0})
+  [32m✓[0m  FL SB 36 (2026): vote tally matches on 2026-02-12 ({'yes': 8, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 36 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL SB 360 (2026): title matches
+  [32m✓[0m  FL SB 360 (2026): latest_action matches
+  [32m✓[0m  FL SB 360 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 360 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 364 (2026): title matches
+  [32m✓[0m  FL SB 364 (2026): latest_action matches
+  [32m✓[0m  FL SB 364 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 364 (2026): vote tally matches on 2025-12-09 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 364 (2026): vote tally matches on 2026-01-27 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 364 (2026): vote tally matches on 2026-01-29 ({'yes': 35, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL SB 364 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 366 (2026): title matches
+  [32m✓[0m  FL SB 366 (2026): latest_action matches
+  [32m✓[0m  FL SB 366 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 366 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 372 (2026): title matches
+  [32m✓[0m  FL SB 372 (2026): latest_action matches
+  [32m✓[0m  FL SB 372 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 372 (2026): vote tally matches on 2026-01-13 ({'yes': 6, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 372 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 38 (2026): title matches
+  [32m✓[0m  FL SB 38 (2026): latest_action matches
+  [32m✓[0m  FL SB 38 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 38 (2026): sponsorship count matches (5)
+  [32m✓[0m  FL SB 392 (2026): title matches
+  [32m✓[0m  FL SB 392 (2026): latest_action matches
+  [32m✓[0m  FL SB 392 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 392 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 40 (2026): title matches
+  [32m✓[0m  FL SB 40 (2026): latest_action matches
+  [32m✓[0m  FL SB 40 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 40 (2026): vote tally matches on 2025-11-18 ({'yes': 8, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 40 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL SB 402 (2026): title matches
+  [32m✓[0m  FL SB 402 (2026): latest_action matches
+  [32m✓[0m  FL SB 402 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 402 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 428 (2026): title matches
+  [32m✓[0m  FL SB 428 (2026): latest_action matches
+  [32m✓[0m  FL SB 428 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 428 (2026): vote tally matches on 2026-01-20 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 428 (2026): vote tally matches on 2026-02-04 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 428 (2026): vote tally matches on 2026-02-12 ({'yes': 19, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 428 (2026): vote tally matches on 2026-02-25 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 428 (2026): vote tally matches on 2026-03-09 ({'yes': 108, 'no': 0, 'not voting': 9})
+  [32m✓[0m  FL SB 428 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL SB 430 (2026): title matches
+  [32m✓[0m  FL SB 430 (2026): latest_action matches
+  [32m✓[0m  FL SB 430 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 430 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 448 (2026): title matches
+  [32m✓[0m  FL SB 448 (2026): latest_action matches
+  [32m✓[0m  FL SB 448 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 448 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 46 (2026): title matches
+  [32m✓[0m  FL SB 46 (2026): latest_action matches
+  [32m✓[0m  FL SB 46 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 46 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 460 (2026): title matches
+  [32m✓[0m  FL SB 460 (2026): latest_action matches
+  [32m✓[0m  FL SB 460 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 460 (2026): vote tally matches on 2026-02-04 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 460 (2026): vote tally matches on 2026-02-10 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 460 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 466 (2026): title matches
+  [32m✓[0m  FL SB 466 (2026): latest_action matches
+  [32m✓[0m  FL SB 466 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 466 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 468 (2026): title matches
+  [32m✓[0m  FL SB 468 (2026): latest_action matches
+  [32m✓[0m  FL SB 468 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 468 (2026): vote tally matches on 2026-02-10 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 468 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 470 (2026): title matches
+  [32m✓[0m  FL SB 470 (2026): latest_action matches
+  [32m✓[0m  FL SB 470 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 470 (2026): vote tally matches on 2026-01-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 470 (2026): vote tally matches on 2026-01-21 ({'yes': 14, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 470 (2026): sponsorship count matches (1)
+    ...400/500
+  [32m✓[0m  FL SB 476 (2026): title matches
+  [32m✓[0m  FL SB 476 (2026): latest_action matches
+  [32m✓[0m  FL SB 476 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 476 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 48 (2026): title matches
+  [32m✓[0m  FL SB 48 (2026): latest_action matches
+  [32m✓[0m  FL SB 48 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 48 (2026): vote tally matches on 2025-11-04 ({'yes': 7, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 48 (2026): vote tally matches on 2026-01-14 ({'yes': 13, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 48 (2026): vote tally matches on 2026-01-27 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 48 (2026): vote tally matches on 2026-02-04 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 48 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL SB 490 (2026): title matches
+  [32m✓[0m  FL SB 490 (2026): latest_action matches
+  [32m✓[0m  FL SB 490 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 490 (2026): vote tally matches on 2026-01-12 ({'yes': 8, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 490 (2026): vote tally matches on 2026-01-21 ({'yes': 14, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 490 (2026): vote tally matches on 2026-02-05 ({'yes': 14, 'no': 1, 'other': 5})
+  [32m✓[0m  FL SB 490 (2026): vote tally matches on 2026-02-19 ({'yes': 36, 'no': 2, 'not voting': 1})
+  [32m✓[0m  FL SB 490 (2026): vote tally matches on 2026-03-09 ({'yes': 110, 'no': 0, 'not voting': 7})
+  [32m✓[0m  FL SB 490 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 512 (2026): title matches
+  [32m✓[0m  FL SB 512 (2026): latest_action matches
+  [32m✓[0m  FL SB 512 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 512 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 514 (2026): title matches
+  [32m✓[0m  FL SB 514 (2026): latest_action matches
+  [32m✓[0m  FL SB 514 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 514 (2026): vote tally matches on 2026-02-02 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 514 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 52 (2026): title matches
+  [32m✓[0m  FL SB 52 (2026): latest_action matches
+  [32m✓[0m  FL SB 52 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 52 (2026): vote tally matches on 2026-01-12 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 52 (2026): vote tally matches on 2026-01-20 ({'yes': 9, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 52 (2026): vote tally matches on 2026-02-03 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 52 (2026): vote tally matches on 2026-02-11 ({'yes': 39, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL SB 52 (2026): vote tally matches on 2026-03-11 ({'yes': 111, 'no': 1, 'not voting': 5})
+  [32m✓[0m  FL SB 52 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 520 (2026): title matches
+  [32m✓[0m  FL SB 520 (2026): latest_action matches
+  [32m✓[0m  FL SB 520 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 520 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 522 (2026): title matches
+  [32m✓[0m  FL SB 522 (2026): latest_action matches
+  [32m✓[0m  FL SB 522 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 522 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 54 (2026): title matches
+  [32m✓[0m  FL SB 54 (2026): latest_action matches
+  [32m✓[0m  FL SB 54 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 54 (2026): vote tally matches on 2025-12-09 ({'yes': 5, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 54 (2026): vote tally matches on 2026-01-14 ({'yes': 6, 'no': 1, 'other': 1})
+  [32m✓[0m  FL SB 54 (2026): vote tally matches on 2026-02-10 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 54 (2026): vote tally matches on 2026-02-19 ({'yes': 37, 'no': 1, 'not voting': 1})
+  [32m✓[0m  FL SB 54 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL SB 540 (2026): title matches
+  [32m✓[0m  FL SB 540 (2026): latest_action matches
+  [32m✓[0m  FL SB 540 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 540 (2026): vote tally matches on 2026-01-13 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 540 (2026): vote tally matches on 2026-02-12 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 540 (2026): vote tally matches on 2026-02-24 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 540 (2026): vote tally matches on 2026-02-25 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 540 (2026): sponsorship count matches (4)
+  [32m✓[0m  FL SB 556 (2026): title matches
+  [32m✓[0m  FL SB 556 (2026): latest_action matches
+  [32m✓[0m  FL SB 556 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 556 (2026): vote tally matches on 2026-01-13 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 556 (2026): vote tally matches on 2026-02-10 ({'yes': 6, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 556 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 556 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 564 (2026): title matches
+  [32m✓[0m  FL SB 564 (2026): latest_action matches
+  [32m✓[0m  FL SB 564 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 564 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 564 (2026): vote tally matches on 2026-01-27 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 564 (2026): vote tally matches on 2026-02-03 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 564 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 572 (2026): title matches
+  [32m✓[0m  FL SB 572 (2026): latest_action matches
+  [32m✓[0m  FL SB 572 (2026): vote event count matches (6)
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-01-26 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-02-03 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-02-11 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-03-10 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL SB 572 (2026): vote tally matches on 2026-03-12 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 572 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 574 (2026): title matches
+  [32m✓[0m  FL SB 574 (2026): latest_action matches
+  [32m✓[0m  FL SB 574 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 574 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 576 (2026): title matches
+  [32m✓[0m  FL SB 576 (2026): latest_action matches
+  [32m✓[0m  FL SB 576 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 576 (2026): vote tally matches on 2026-02-11 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 576 (2026): vote tally matches on 2026-02-18 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 576 (2026): vote tally matches on 2026-03-02 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 576 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 578 (2026): title matches
+  [32m✓[0m  FL SB 578 (2026): latest_action matches
+  [32m✓[0m  FL SB 578 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 578 (2026): vote tally matches on 2026-01-12 ({'yes': 6, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 578 (2026): vote tally matches on 2026-01-28 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 578 (2026): vote tally matches on 2026-02-04 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 578 (2026): vote tally matches on 2026-03-11 ({'yes': 112, 'no': 0, 'not voting': 5})
+  [32m✓[0m  FL SB 578 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 58 (2026): title matches
+  [32m✓[0m  FL SB 58 (2026): latest_action matches
+  [32m✓[0m  FL SB 58 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 58 (2026): vote tally matches on 2025-11-18 ({'yes': 5, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 58 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 580 (2026): title matches
+  [32m✓[0m  FL SB 580 (2026): latest_action matches
+  [32m✓[0m  FL SB 580 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 580 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 592 (2026): title matches
+  [32m✓[0m  FL SB 592 (2026): latest_action matches
+  [32m✓[0m  FL SB 592 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 592 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 594 (2026): title matches
+  [32m✓[0m  FL SB 594 (2026): latest_action matches
+  [32m✓[0m  FL SB 594 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 594 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 594 (2026): vote tally matches on 2026-01-21 ({'yes': 14, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 594 (2026): vote tally matches on 2026-02-03 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 594 (2026): vote tally matches on 2026-02-11 ({'yes': 39, 'no': 0, 'not voting': 0})
+  [32m✓[0m  FL SB 594 (2026): vote tally matches on 2026-03-10 ({'yes': 110, 'no': 0, 'not voting': 7})
+  [32m✓[0m  FL SB 594 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 602 (2026): title matches
+  [32m✓[0m  FL SB 602 (2026): latest_action matches
+  [32m✓[0m  FL SB 602 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 602 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 608 (2026): title matches
+  [32m✓[0m  FL SB 608 (2026): latest_action matches
+  [32m✓[0m  FL SB 608 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 608 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 616 (2026): title matches
+  [32m✓[0m  FL SB 616 (2026): latest_action matches
+  [32m✓[0m  FL SB 616 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 616 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 618 (2026): title matches
+  [32m✓[0m  FL SB 618 (2026): latest_action matches
+  [32m✓[0m  FL SB 618 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 618 (2026): vote tally matches on 2026-02-04 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 618 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 620 (2026): title matches
+  [32m✓[0m  FL SB 620 (2026): latest_action matches
+  [32m✓[0m  FL SB 620 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 620 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 620 (2026): vote tally matches on 2026-01-27 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 620 (2026): vote tally matches on 2026-03-03 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 620 (2026): vote tally matches on 2026-03-04 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 620 (2026): sponsorship count matches (2)
+    ...425/500
+  [32m✓[0m  FL SB 626 (2026): title matches
+  [32m✓[0m  FL SB 626 (2026): latest_action matches
+  [32m✓[0m  FL SB 626 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 626 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 636 (2026): title matches
+  [32m✓[0m  FL SB 636 (2026): latest_action matches
+  [32m✓[0m  FL SB 636 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 636 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 636 (2026): vote tally matches on 2026-02-04 ({'yes': 11, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 636 (2026): vote tally matches on 2026-02-12 ({'yes': 18, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 636 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 640 (2026): title matches
+  [32m✓[0m  FL SB 640 (2026): latest_action matches
+  [32m✓[0m  FL SB 640 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 640 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 652 (2026): title matches
+  [32m✓[0m  FL SB 652 (2026): latest_action matches
+  [32m✓[0m  FL SB 652 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 652 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 670 (2026): title matches
+  [32m✓[0m  FL SB 670 (2026): latest_action matches
+  [32m✓[0m  FL SB 670 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 670 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 68 (2026): title matches
+  [32m✓[0m  FL SB 68 (2026): latest_action matches
+  [32m✓[0m  FL SB 68 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 68 (2026): vote tally matches on 2025-11-18 ({'yes': 8, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 68 (2026): vote tally matches on 2026-02-04 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 68 (2026): vote tally matches on 2026-02-12 ({'yes': 19, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 68 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 680 (2026): title matches
+  [32m✓[0m  FL SB 680 (2026): latest_action matches
+  [32m✓[0m  FL SB 680 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 680 (2026): vote tally matches on 2026-01-27 ({'yes': 8, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 680 (2026): vote tally matches on 2026-02-12 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 680 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 7000 (2026): title matches
+  [32m✓[0m  FL SB 7000 (2026): latest_action matches
+  [32m✓[0m  FL SB 7000 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 7000 (2026): vote tally matches on 2025-11-04 ({'yes': 5, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7000 (2026): vote tally matches on 2026-01-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7000 (2026): vote tally matches on 2026-01-27 ({'yes': 21, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 7000 (2026): vote tally matches on 2026-01-29 ({'yes': 33, 'no': 2, 'not voting': 4})
+  [32m✓[0m  FL SB 7000 (2026): vote tally matches on 2026-03-09 ({'yes': 109, 'no': 0, 'not voting': 8})
+  [32m✓[0m  FL SB 7000 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 7002 (2026): title matches
+  [32m✓[0m  FL SB 7002 (2026): latest_action matches
+  [32m✓[0m  FL SB 7002 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 7002 (2026): vote tally matches on 2025-11-04 ({'yes': 5, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7002 (2026): vote tally matches on 2026-01-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7002 (2026): vote tally matches on 2026-01-27 ({'yes': 21, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 7002 (2026): vote tally matches on 2026-01-29 ({'yes': 32, 'no': 3, 'not voting': 4})
+  [32m✓[0m  FL SB 7002 (2026): vote tally matches on 2026-03-09 ({'yes': 105, 'no': 0, 'not voting': 12})
+  [32m✓[0m  FL SB 7002 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 7012 (2026): title matches
+  [32m✓[0m  FL SB 7012 (2026): latest_action matches
+  [32m✓[0m  FL SB 7012 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 7012 (2026): vote tally matches on 2025-12-02 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 7012 (2026): vote tally matches on 2026-01-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7012 (2026): vote tally matches on 2026-01-27 ({'yes': 21, 'no': 1, 'other': 2})
+  [32m✓[0m  FL SB 7012 (2026): vote tally matches on 2026-01-29 ({'yes': 33, 'no': 2, 'not voting': 4})
+  [32m✓[0m  FL SB 7012 (2026): vote tally matches on 2026-03-09 ({'yes': 107, 'no': 0, 'not voting': 10})
+  [32m✓[0m  FL SB 7012 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 7014 (2026): title matches
+  [32m✓[0m  FL SB 7014 (2026): latest_action matches
+  [32m✓[0m  FL SB 7014 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 7014 (2026): vote tally matches on 2025-12-10 ({'yes': 8, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 7014 (2026): vote tally matches on 2026-01-12 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 7014 (2026): vote tally matches on 2026-01-27 ({'yes': 22, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 7014 (2026): vote tally matches on 2026-01-29 ({'yes': 33, 'no': 2, 'not voting': 4})
+  [32m✓[0m  FL SB 7014 (2026): vote tally matches on 2026-03-09 ({'yes': 105, 'no': 2, 'not voting': 10})
+  [32m✓[0m  FL SB 7014 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 7040 (2026): title matches
+  [32m✓[0m  FL SB 7040 (2026): latest_action matches
+  [32m✓[0m  FL SB 7040 (2026): vote event count matches (7)
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-02-05 ({'yes': 12, 'no': 5, 'other': 1})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-02-11 ({'yes': 27, 'no': 12, 'not voting': 0})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-02-11 ({'yes': 12, 'no': 27, 'not voting': 0})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-02-11 ({'yes': 29, 'no': 7, 'not voting': 3})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-03-09 ({'yes': 82, 'no': 25, 'not voting': 10})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-03-13 ({'yes': 80, 'no': 20, 'not voting': 17})
+  [32m✓[0m  FL SB 7040 (2026): vote tally matches on 2026-03-13 ({'yes': 29, 'no': 7, 'not voting': 3})
+  [32m✓[0m  FL SB 7040 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 7048 (2026): title matches
+  [32m✓[0m  FL SB 7048 (2026): latest_action matches
+  [32m✓[0m  FL SB 7048 (2026): vote event count matches (2)
+  [32m✓[0m  FL SB 7048 (2026): vote tally matches on 2026-02-25 ({'yes': 7, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 7048 (2026): vote tally matches on 2026-03-02 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 7048 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 706 (2026): title matches
+  [32m✓[0m  FL SB 706 (2026): latest_action matches
+  [32m✓[0m  FL SB 706 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 706 (2026): vote tally matches on 2026-01-27 ({'yes': 9, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 706 (2026): vote tally matches on 2026-02-03 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 706 (2026): vote tally matches on 2026-02-17 ({'yes': 17, 'no': 6, 'other': 1})
+  [32m✓[0m  FL SB 706 (2026): sponsorship count matches (7)
+  [32m✓[0m  FL SB 72 (2026): title matches
+  [32m✓[0m  FL SB 72 (2026): latest_action matches
+  [32m✓[0m  FL SB 72 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 72 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 732 (2026): title matches
+  [32m✓[0m  FL SB 732 (2026): latest_action matches
+  [32m✓[0m  FL SB 732 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 732 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 734 (2026): title matches
+  [32m✓[0m  FL SB 734 (2026): latest_action matches
+  [32m✓[0m  FL SB 734 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 734 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 736 (2026): title matches
+  [32m✓[0m  FL SB 736 (2026): latest_action matches
+  [32m✓[0m  FL SB 736 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 736 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 738 (2026): title matches
+  [32m✓[0m  FL SB 738 (2026): latest_action matches
+  [32m✓[0m  FL SB 738 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 738 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 760 (2026): title matches
+  [32m✓[0m  FL SB 760 (2026): latest_action matches
+  [32m✓[0m  FL SB 760 (2026): vote event count matches (3)
+  [32m✓[0m  FL SB 760 (2026): vote tally matches on 2026-02-02 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 760 (2026): vote tally matches on 2026-02-12 ({'yes': 5, 'no': 0, 'other': 3})
+  [32m✓[0m  FL SB 760 (2026): vote tally matches on 2026-02-18 ({'yes': 19, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 760 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 768 (2026): title matches
+  [32m✓[0m  FL SB 768 (2026): latest_action matches
+  [32m✓[0m  FL SB 768 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 768 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 772 (2026): title matches
+  [32m✓[0m  FL SB 772 (2026): latest_action matches
+  [32m✓[0m  FL SB 772 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 772 (2026): vote tally matches on 2026-01-28 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 772 (2026): vote tally matches on 2026-02-12 ({'yes': 10, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 772 (2026): vote tally matches on 2026-02-24 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 772 (2026): vote tally matches on 2026-02-26 ({'yes': 36, 'no': 0, 'not voting': 3})
+  [32m✓[0m  FL SB 772 (2026): vote tally matches on 2026-03-10 ({'yes': 113, 'no': 0, 'not voting': 4})
+  [32m✓[0m  FL SB 772 (2026): sponsorship count matches (2)
+  [31m✗[0m  FL SB 782 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+782&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 794 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+794&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  FL SB 798 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+798&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+    ...450/500
+  [31m✗[0m  FL SB 80 (2026): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=fl&session=2026&identifier=SB+80&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [32m✓[0m  FL SB 802 (2026): title matches
+  [32m✓[0m  FL SB 802 (2026): latest_action matches
+  [32m✓[0m  FL SB 802 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 802 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 810 (2026): title matches
+  [32m✓[0m  FL SB 810 (2026): latest_action matches
+  [32m✓[0m  FL SB 810 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 810 (2026): vote tally matches on 2026-01-20 ({'yes': 7, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 810 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 814 (2026): title matches
+  [32m✓[0m  FL SB 814 (2026): latest_action matches
+  [32m✓[0m  FL SB 814 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 814 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 824 (2026): title matches
+  [32m✓[0m  FL SB 824 (2026): latest_action matches
+  [32m✓[0m  FL SB 824 (2026): vote event count matches (5)
+  [32m✓[0m  FL SB 824 (2026): vote tally matches on 2026-02-03 ({'yes': 7, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 824 (2026): vote tally matches on 2026-02-17 ({'yes': 22, 'no': 2, 'other': 0})
+  [32m✓[0m  FL SB 824 (2026): vote tally matches on 2026-02-19 ({'yes': 28, 'no': 9, 'not voting': 2})
+  [32m✓[0m  FL SB 824 (2026): vote tally matches on 2026-03-09 ({'yes': 84, 'no': 27, 'not voting': 6})
+  [32m✓[0m  FL SB 824 (2026): vote tally matches on 2026-03-11 ({'yes': 33, 'no': 4, 'not voting': 2})
+  [32m✓[0m  FL SB 824 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 830 (2026): title matches
+  [32m✓[0m  FL SB 830 (2026): latest_action matches
+  [32m✓[0m  FL SB 830 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 830 (2026): vote tally matches on 2026-01-20 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 830 (2026): vote tally matches on 2026-02-11 ({'yes': 8, 'no': 1, 'other': 0})
+  [32m✓[0m  FL SB 830 (2026): vote tally matches on 2026-02-24 ({'yes': 20, 'no': 3, 'other': 1})
+  [32m✓[0m  FL SB 830 (2026): vote tally matches on 2026-03-05 ({'yes': 31, 'no': 5, 'not voting': 3})
+  [32m✓[0m  FL SB 830 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 838 (2026): title matches
+  [32m✓[0m  FL SB 838 (2026): latest_action matches
+  [32m✓[0m  FL SB 838 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 838 (2026): vote tally matches on 2026-01-13 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 838 (2026): vote tally matches on 2026-02-04 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 838 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 838 (2026): vote tally matches on 2026-02-19 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 838 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 840 (2026): title matches
+  [32m✓[0m  FL SB 840 (2026): latest_action matches
+  [32m✓[0m  FL SB 840 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 840 (2026): vote tally matches on 2026-01-13 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 840 (2026): vote tally matches on 2026-01-20 ({'yes': 9, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 840 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 840 (2026): vote tally matches on 2026-02-19 ({'yes': 38, 'no': 0, 'not voting': 1})
+  [32m✓[0m  FL SB 840 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 846 (2026): title matches
+  [32m✓[0m  FL SB 846 (2026): latest_action matches
+  [32m✓[0m  FL SB 846 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 846 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 854 (2026): title matches
+  [32m✓[0m  FL SB 854 (2026): latest_action matches
+  [32m✓[0m  FL SB 854 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 854 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 856 (2026): title matches
+  [32m✓[0m  FL SB 856 (2026): latest_action matches
+  [32m✓[0m  FL SB 856 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 856 (2026): vote tally matches on 2026-01-28 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 856 (2026): vote tally matches on 2026-02-05 ({'yes': 17, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SB 856 (2026): vote tally matches on 2026-02-17 ({'yes': 24, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 856 (2026): vote tally matches on 2026-02-26 ({'yes': 37, 'no': 0, 'not voting': 2})
+  [32m✓[0m  FL SB 856 (2026): sponsorship count matches (8)
+  [32m✓[0m  FL SB 86 (2026): title matches
+  [32m✓[0m  FL SB 86 (2026): latest_action matches
+  [32m✓[0m  FL SB 86 (2026): vote event count matches (4)
+  [32m✓[0m  FL SB 86 (2026): vote tally matches on 2026-01-27 ({'yes': 6, 'no': 3, 'other': 0})
+  [32m✓[0m  FL SB 86 (2026): vote tally matches on 2026-02-11 ({'yes': 6, 'no': 2, 'other': 0})
+  [32m✓[0m  FL SB 86 (2026): vote tally matches on 2026-02-18 ({'yes': 13, 'no': 6, 'other': 1})
+  [32m✓[0m  FL SB 86 (2026): vote tally matches on 2026-03-06 ({'yes': 29, 'no': 5, 'not voting': 5})
+  [32m✓[0m  FL SB 86 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 866 (2026): title matches
+  [32m✓[0m  FL SB 866 (2026): latest_action matches
+  [32m✓[0m  FL SB 866 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 866 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 868 (2026): title matches
+  [32m✓[0m  FL SB 868 (2026): latest_action matches
+  [32m✓[0m  FL SB 868 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 868 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 884 (2026): title matches
+  [32m✓[0m  FL SB 884 (2026): latest_action matches
+  [32m✓[0m  FL SB 884 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 884 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 890 (2026): title matches
+  [32m✓[0m  FL SB 890 (2026): latest_action matches
+  [32m✓[0m  FL SB 890 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 890 (2026): vote tally matches on 2026-01-20 ({'yes': 8, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 890 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 900 (2026): title matches
+  [32m✓[0m  FL SB 900 (2026): latest_action matches
+  [32m✓[0m  FL SB 900 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 900 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 904 (2026): title matches
+  [32m✓[0m  FL SB 904 (2026): latest_action matches
+  [32m✓[0m  FL SB 904 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 904 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 912 (2026): title matches
+  [32m✓[0m  FL SB 912 (2026): latest_action matches
+  [32m✓[0m  FL SB 912 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 912 (2026): vote tally matches on 2026-02-03 ({'yes': 6, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 912 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 918 (2026): title matches
+  [32m✓[0m  FL SB 918 (2026): latest_action matches
+  [32m✓[0m  FL SB 918 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 918 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 930 (2026): title matches
+  [32m✓[0m  FL SB 930 (2026): latest_action matches
+  [32m✓[0m  FL SB 930 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 930 (2026): vote tally matches on 2026-01-13 ({'yes': 10, 'no': 0, 'other': 0})
+  [32m✓[0m  FL SB 930 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 94 (2026): title matches
+  [32m✓[0m  FL SB 94 (2026): latest_action matches
+  [32m✓[0m  FL SB 94 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 94 (2026): sponsorship count matches (6)
+  [32m✓[0m  FL SB 940 (2026): title matches
+  [32m✓[0m  FL SB 940 (2026): latest_action matches
+  [32m✓[0m  FL SB 940 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 940 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 946 (2026): title matches
+  [32m✓[0m  FL SB 946 (2026): latest_action matches
+  [32m✓[0m  FL SB 946 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 946 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 956 (2026): title matches
+  [32m✓[0m  FL SB 956 (2026): latest_action matches
+  [32m✓[0m  FL SB 956 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 956 (2026): sponsorship count matches (1)
+    ...475/500
+  [32m✓[0m  FL SB 966 (2026): title matches
+  [32m✓[0m  FL SB 966 (2026): latest_action matches
+  [32m✓[0m  FL SB 966 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 966 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 976 (2026): title matches
+  [32m✓[0m  FL SB 976 (2026): latest_action matches
+  [32m✓[0m  FL SB 976 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 976 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 978 (2026): title matches
+  [32m✓[0m  FL SB 978 (2026): latest_action matches
+  [32m✓[0m  FL SB 978 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 978 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SB 986 (2026): title matches
+  [32m✓[0m  FL SB 986 (2026): latest_action matches
+  [32m✓[0m  FL SB 986 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 986 (2026): vote tally matches on 2026-01-20 ({'yes': 7, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 986 (2026): sponsorship count matches (3)
+  [32m✓[0m  FL SB 994 (2026): title matches
+  [32m✓[0m  FL SB 994 (2026): latest_action matches
+  [32m✓[0m  FL SB 994 (2026): vote event count matches (0)
+  [32m✓[0m  FL SB 994 (2026): sponsorship count matches (2)
+  [32m✓[0m  FL SB 996 (2026): title matches
+  [32m✓[0m  FL SB 996 (2026): latest_action matches
+  [32m✓[0m  FL SB 996 (2026): vote event count matches (1)
+  [32m✓[0m  FL SB 996 (2026): vote tally matches on 2026-02-03 ({'yes': 4, 'no': 0, 'other': 2})
+  [32m✓[0m  FL SB 996 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SCR 338 (2026): title matches
+  [32m✓[0m  FL SCR 338 (2026): latest_action matches
+  [32m✓[0m  FL SCR 338 (2026): vote event count matches (0)
+  [32m✓[0m  FL SCR 338 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SCR 704 (2026): title matches
+  [32m✓[0m  FL SCR 704 (2026): latest_action matches
+  [32m✓[0m  FL SCR 704 (2026): vote event count matches (0)
+  [32m✓[0m  FL SCR 704 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SJR 1104 (2026): title matches
+  [32m✓[0m  FL SJR 1104 (2026): latest_action matches
+  [32m✓[0m  FL SJR 1104 (2026): vote event count matches (2)
+  [32m✓[0m  FL SJR 1104 (2026): vote tally matches on 2026-02-03 ({'yes': 5, 'no': 2, 'other': 1})
+  [32m✓[0m  FL SJR 1104 (2026): vote tally matches on 2026-02-10 ({'yes': 8, 'no': 3, 'other': 0})
+  [32m✓[0m  FL SJR 1104 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SJR 1584 (2026): title matches
+  [32m✓[0m  FL SJR 1584 (2026): latest_action matches
+  [32m✓[0m  FL SJR 1584 (2026): vote event count matches (0)
+  [32m✓[0m  FL SJR 1584 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SM 1186 (2026): title matches
+  [32m✓[0m  FL SM 1186 (2026): latest_action matches
+  [32m✓[0m  FL SM 1186 (2026): vote event count matches (2)
+  [32m✓[0m  FL SM 1186 (2026): vote tally matches on 2026-01-26 ({'yes': 4, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SM 1186 (2026): vote tally matches on 2026-02-03 ({'yes': 23, 'no': 0, 'other': 1})
+  [32m✓[0m  FL SM 1186 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SM 746 (2026): title matches
+  [32m✓[0m  FL SM 746 (2026): latest_action matches
+  [32m✓[0m  FL SM 746 (2026): vote event count matches (0)
+  [32m✓[0m  FL SM 746 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1214 (2026): title matches
+  [32m✓[0m  FL SR 1214 (2026): latest_action matches
+  [32m✓[0m  FL SR 1214 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1214 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1578 (2026): title matches
+  [32m✓[0m  FL SR 1578 (2026): latest_action matches
+  [32m✓[0m  FL SR 1578 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1578 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1764 (2026): title matches
+  [32m✓[0m  FL SR 1764 (2026): latest_action matches
+  [32m✓[0m  FL SR 1764 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1764 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1766 (2026): title matches
+  [32m✓[0m  FL SR 1766 (2026): latest_action matches
+  [32m✓[0m  FL SR 1766 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1766 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1774 (2026): title matches
+  [32m✓[0m  FL SR 1774 (2026): latest_action matches
+  [32m✓[0m  FL SR 1774 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1774 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1776 (2026): title matches
+  [32m✓[0m  FL SR 1776 (2026): latest_action matches
+  [32m✓[0m  FL SR 1776 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1776 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1778 (2026): title matches
+  [32m✓[0m  FL SR 1778 (2026): latest_action matches
+  [32m✓[0m  FL SR 1778 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1778 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1788 (2026): title matches
+  [32m✓[0m  FL SR 1788 (2026): latest_action matches
+  [32m✓[0m  FL SR 1788 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1788 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1794 (2026): title matches
+  [32m✓[0m  FL SR 1794 (2026): latest_action matches
+  [32m✓[0m  FL SR 1794 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1794 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1808 (2026): title matches
+  [32m✓[0m  FL SR 1808 (2026): latest_action matches
+  [32m✓[0m  FL SR 1808 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1808 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 1816 (2026): title matches
+  [32m✓[0m  FL SR 1816 (2026): latest_action matches
+  [32m✓[0m  FL SR 1816 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 1816 (2026): sponsorship count matches (1)
+  [32m✓[0m  FL SR 724 (2026): title matches
+  [32m✓[0m  FL SR 724 (2026): latest_action matches
+  [32m✓[0m  FL SR 724 (2026): vote event count matches (0)
+  [32m✓[0m  FL SR 724 (2026): sponsorship count matches (1)
+
+────────────────────────────────────────────────────────────
+  2268/2366 passed  |  24 warnings  |  74 failures  |  0 skipped
+────────────────────────────────────────────────────────────

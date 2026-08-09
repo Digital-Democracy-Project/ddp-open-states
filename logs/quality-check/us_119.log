@@ -1,0 +1,420 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: US 119
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+    ...page 50/917, 1000 identifiers so far
+    ...page 100/917, 2000 identifiers so far
+    ...page 141 failed (HTTPError), retry 1/3 in 1s
+    ...page 150/917, 3000 identifiers so far
+    ...page 200/917, 4000 identifiers so far
+    ...page 250/917, 5000 identifiers so far
+    ...page 300/917, 6000 identifiers so far
+    ...page 350/917, 7000 identifiers so far
+    ...page 400/917, 8000 identifiers so far
+    ...page 450/917, 9000 identifiers so far
+    ...page 500/917, 10000 identifiers so far
+    ...page 550/917, 11000 identifiers so far
+    ...page 600/917, 12000 identifiers so far
+    ...page 650/917, 13000 identifiers so far
+    ...page 700/917, 14000 identifiers so far
+    ...page 750/917, 15000 identifiers so far
+    ...page 800/917, 16000 identifiers so far
+    ...page 827 failed (HTTPError), retry 1/3 in 1s
+    ...page 829 failed (ReadTimeout), retry 1/3 in 1s
+    ...page 850/917, 17000 identifiers so far
+    ...page 900/917, 18000 identifiers so far
+  live=18335  local=18335  missing=0  extra=0  both=18335
+  [32m✓[0m  US 119: Tier 1 coverage — no missing bills (18335 local == 18335 live)
+  Running Tier 2 sub-record checks on 100 of 18335 bills present in both...
+  [32m✓[0m  US HR 10061 (119): title matches
+  [32m✓[0m  US HR 10061 (119): latest_action matches
+  [32m✓[0m  US HR 10061 (119): vote event count matches (0)
+  [32m✓[0m  US HR 10061 (119): sponsorship count matches (6)
+    ...0/100
+  [32m✓[0m  US HR 1115 (119): title matches
+  [32m✓[0m  US HR 1115 (119): latest_action matches
+  [32m✓[0m  US HR 1115 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1115 (119): sponsorship count matches (2)
+  [32m✓[0m  US HR 1214 (119): title matches
+  [32m✓[0m  US HR 1214 (119): latest_action matches
+  [32m✓[0m  US HR 1214 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1214 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 1297 (119): title matches
+  [32m✓[0m  US HR 1297 (119): latest_action matches
+  [32m✓[0m  US HR 1297 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1297 (119): sponsorship count matches (5)
+  [32m✓[0m  US HR 1355 (119): title matches
+  [32m✓[0m  US HR 1355 (119): latest_action matches
+  [32m✓[0m  US HR 1355 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1355 (119): sponsorship count matches (22)
+  [32m✓[0m  US HR 1567 (119): title matches
+  [32m✓[0m  US HR 1567 (119): latest_action matches
+  [32m✓[0m  US HR 1567 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1567 (119): sponsorship count matches (8)
+  [32m✓[0m  US HR 1709 (119): title matches
+  [32m✓[0m  US HR 1709 (119): latest_action matches
+  [32m✓[0m  US HR 1709 (119): vote event count matches (1)
+  [32m✓[0m  US HR 1709 (119): vote tally matches on 2025-07-14 ({'yes': 360, 'no': 10, 'not voting': 61, 'abstain': 0})
+  [32m✓[0m  US HR 1709 (119): sponsorship count matches (5)
+  [32m✓[0m  US HR 1721 (119): title matches
+  [32m✓[0m  US HR 1721 (119): latest_action matches
+  [32m✓[0m  US HR 1721 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1721 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 1786 (119): title matches
+  [32m✓[0m  US HR 1786 (119): latest_action matches
+  [32m✓[0m  US HR 1786 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1786 (119): sponsorship count matches (10)
+  [32m✓[0m  US HR 1957 (119): title matches
+  [32m✓[0m  US HR 1957 (119): latest_action matches
+  [32m✓[0m  US HR 1957 (119): vote event count matches (0)
+  [32m✓[0m  US HR 1957 (119): sponsorship count matches (26)
+  [32m✓[0m  US HR 2377 (119): title matches
+  [32m✓[0m  US HR 2377 (119): latest_action matches
+  [32m✓[0m  US HR 2377 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2377 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 2500 (119): title matches
+  [32m✓[0m  US HR 2500 (119): latest_action matches
+  [32m✓[0m  US HR 2500 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2500 (119): sponsorship count matches (2)
+  [32m✓[0m  US HR 2501 (119): title matches
+  [32m✓[0m  US HR 2501 (119): latest_action matches
+  [32m✓[0m  US HR 2501 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2501 (119): sponsorship count matches (39)
+  [32m✓[0m  US HR 2614 (119): title matches
+  [32m✓[0m  US HR 2614 (119): latest_action matches
+  [32m✓[0m  US HR 2614 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2614 (119): sponsorship count matches (4)
+  [32m✓[0m  US HR 2822 (119): title matches
+  [32m✓[0m  US HR 2822 (119): latest_action matches
+  [32m✓[0m  US HR 2822 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2822 (119): sponsorship count matches (8)
+  [32m✓[0m  US HR 284 (119): title matches
+  [32m✓[0m  US HR 284 (119): latest_action matches
+  [32m✓[0m  US HR 284 (119): vote event count matches (0)
+  [32m✓[0m  US HR 284 (119): sponsorship count matches (45)
+  [32m✓[0m  US HR 2957 (119): title matches
+  [32m✓[0m  US HR 2957 (119): latest_action matches
+  [32m✓[0m  US HR 2957 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2957 (119): sponsorship count matches (4)
+  [32m✓[0m  US HR 2992 (119): title matches
+  [32m✓[0m  US HR 2992 (119): latest_action matches
+  [32m✓[0m  US HR 2992 (119): vote event count matches (0)
+  [32m✓[0m  US HR 2992 (119): sponsorship count matches (11)
+  [32m✓[0m  US HR 3084 (119): title matches
+  [32m✓[0m  US HR 3084 (119): latest_action matches
+  [32m✓[0m  US HR 3084 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3084 (119): sponsorship count matches (9)
+  [32m✓[0m  US HR 3311 (119): title matches
+  [32m✓[0m  US HR 3311 (119): latest_action matches
+  [32m✓[0m  US HR 3311 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3311 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 339 (119): title matches
+  [32m✓[0m  US HR 339 (119): latest_action matches
+  [32m✓[0m  US HR 339 (119): vote event count matches (0)
+  [32m✓[0m  US HR 339 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 3465 (119): title matches
+  [32m✓[0m  US HR 3465 (119): latest_action matches
+  [32m✓[0m  US HR 3465 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3465 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 3468 (119): title matches
+  [32m✓[0m  US HR 3468 (119): latest_action matches
+  [32m✓[0m  US HR 3468 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3468 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 3738 (119): title matches
+  [32m✓[0m  US HR 3738 (119): latest_action matches
+  [32m✓[0m  US HR 3738 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3738 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 3862 (119): title matches
+  [32m✓[0m  US HR 3862 (119): latest_action matches
+  [32m✓[0m  US HR 3862 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3862 (119): sponsorship count matches (7)
+  [32m✓[0m  US HR 3930 (119): title matches
+  [32m✓[0m  US HR 3930 (119): latest_action matches
+  [32m✓[0m  US HR 3930 (119): vote event count matches (0)
+  [32m✓[0m  US HR 3930 (119): sponsorship count matches (89)
+    ...25/100
+  [32m✓[0m  US HR 4274 (119): title matches
+  [32m✓[0m  US HR 4274 (119): latest_action matches
+  [32m✓[0m  US HR 4274 (119): vote event count matches (0)
+  [32m✓[0m  US HR 4274 (119): sponsorship count matches (9)
+  [32m✓[0m  US HR 4663 (119): title matches
+  [32m✓[0m  US HR 4663 (119): latest_action matches
+  [32m✓[0m  US HR 4663 (119): vote event count matches (0)
+  [32m✓[0m  US HR 4663 (119): sponsorship count matches (13)
+  [32m✓[0m  US HR 475 (119): title matches
+  [32m✓[0m  US HR 475 (119): latest_action matches
+  [32m✓[0m  US HR 475 (119): vote event count matches (0)
+  [32m✓[0m  US HR 475 (119): sponsorship count matches (19)
+  [32m✓[0m  US HR 4849 (119): title matches
+  [32m✓[0m  US HR 4849 (119): latest_action matches
+  [32m✓[0m  US HR 4849 (119): vote event count matches (0)
+  [32m✓[0m  US HR 4849 (119): sponsorship count matches (142)
+  [32m✓[0m  US HR 5094 (119): title matches
+  [32m✓[0m  US HR 5094 (119): latest_action matches
+  [32m✓[0m  US HR 5094 (119): vote event count matches (0)
+  [32m✓[0m  US HR 5094 (119): sponsorship count matches (10)
+  [32m✓[0m  US HR 5253 (119): title matches
+  [32m✓[0m  US HR 5253 (119): latest_action matches
+  [32m✓[0m  US HR 5253 (119): vote event count matches (0)
+  [32m✓[0m  US HR 5253 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 5271 (119): title matches
+  [32m✓[0m  US HR 5271 (119): latest_action matches
+  [32m✓[0m  US HR 5271 (119): vote event count matches (0)
+  [32m✓[0m  US HR 5271 (119): sponsorship count matches (101)
+  [32m✓[0m  US HR 545 (119): title matches
+  [32m✓[0m  US HR 545 (119): latest_action matches
+  [32m✓[0m  US HR 545 (119): vote event count matches (0)
+  [32m✓[0m  US HR 545 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 567 (119): title matches
+  [32m✓[0m  US HR 567 (119): latest_action matches
+  [32m✓[0m  US HR 567 (119): vote event count matches (0)
+  [32m✓[0m  US HR 567 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 5711 (119): title matches
+  [32m✓[0m  US HR 5711 (119): latest_action matches
+  [32m✓[0m  US HR 5711 (119): vote event count matches (0)
+  [32m✓[0m  US HR 5711 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 5883 (119): title matches
+  [32m✓[0m  US HR 5883 (119): latest_action matches
+  [32m✓[0m  US HR 5883 (119): vote event count matches (0)
+  [32m✓[0m  US HR 5883 (119): sponsorship count matches (15)
+  [32m✓[0m  US HR 6031 (119): title matches
+  [32m✓[0m  US HR 6031 (119): latest_action matches
+  [32m✓[0m  US HR 6031 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6031 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 6179 (119): title matches
+  [32m✓[0m  US HR 6179 (119): latest_action matches
+  [32m✓[0m  US HR 6179 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6179 (119): sponsorship count matches (10)
+  [32m✓[0m  US HR 621 (119): title matches
+  [32m✓[0m  US HR 621 (119): latest_action matches
+  [32m✓[0m  US HR 621 (119): vote event count matches (0)
+  [32m✓[0m  US HR 621 (119): sponsorship count matches (28)
+  [32m✓[0m  US HR 6613 (119): title matches
+  [32m✓[0m  US HR 6613 (119): latest_action matches
+  [32m✓[0m  US HR 6613 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6613 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 6732 (119): title matches
+  [32m✓[0m  US HR 6732 (119): latest_action matches
+  [32m✓[0m  US HR 6732 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6732 (119): sponsorship count matches (10)
+  [32m✓[0m  US HR 6823 (119): title matches
+  [32m✓[0m  US HR 6823 (119): latest_action matches
+  [32m✓[0m  US HR 6823 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6823 (119): sponsorship count matches (6)
+  [32m✓[0m  US HR 6970 (119): title matches
+  [32m✓[0m  US HR 6970 (119): latest_action matches
+  [32m✓[0m  US HR 6970 (119): vote event count matches (0)
+  [32m✓[0m  US HR 6970 (119): sponsorship count matches (1)
+  [32m✓[0m  US HR 7171 (119): title matches
+  [32m✓[0m  US HR 7171 (119): latest_action matches
+  [32m✓[0m  US HR 7171 (119): vote event count matches (0)
+  [32m✓[0m  US HR 7171 (119): sponsorship count matches (9)
+  [32m✓[0m  US HR 7513 (119): title matches
+  [32m✓[0m  US HR 7513 (119): latest_action matches
+  [32m✓[0m  US HR 7513 (119): vote event count matches (0)
+  [32m✓[0m  US HR 7513 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 8000 (119): title matches
+  [32m✓[0m  US HR 8000 (119): latest_action matches
+  [32m✓[0m  US HR 8000 (119): vote event count matches (0)
+  [32m✓[0m  US HR 8000 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 846 (119): title matches
+  [32m✓[0m  US HR 846 (119): latest_action matches
+  [32m✓[0m  US HR 846 (119): vote event count matches (0)
+  [32m✓[0m  US HR 846 (119): sponsorship count matches (87)
+  [32m✓[0m  US HR 8689 (119): title matches
+  [32m✓[0m  US HR 8689 (119): latest_action matches
+  [32m✓[0m  US HR 8689 (119): vote event count matches (0)
+  [32m✓[0m  US HR 8689 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 8744 (119): title matches
+  [32m✓[0m  US HR 8744 (119): latest_action matches
+  [32m✓[0m  US HR 8744 (119): vote event count matches (0)
+  [32m✓[0m  US HR 8744 (119): sponsorship count matches (26)
+  [32m✓[0m  US HR 9088 (119): title matches
+  [32m✓[0m  US HR 9088 (119): latest_action matches
+  [32m✓[0m  US HR 9088 (119): vote event count matches (0)
+  [32m✓[0m  US HR 9088 (119): sponsorship count matches (1)
+    ...50/100
+  [32m✓[0m  US HR 9126 (119): title matches
+  [32m✓[0m  US HR 9126 (119): latest_action matches
+  [32m✓[0m  US HR 9126 (119): vote event count matches (0)
+  [32m✓[0m  US HR 9126 (119): sponsorship count matches (5)
+  [32m✓[0m  US HR 9333 (119): title matches
+  [32m✓[0m  US HR 9333 (119): latest_action matches
+  [32m✓[0m  US HR 9333 (119): vote event count matches (0)
+  [32m✓[0m  US HR 9333 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 9334 (119): title matches
+  [32m✓[0m  US HR 9334 (119): latest_action matches
+  [32m✓[0m  US HR 9334 (119): vote event count matches (0)
+  [32m✓[0m  US HR 9334 (119): sponsorship count matches (3)
+  [32m✓[0m  US HR 9916 (119): title matches
+  [32m✓[0m  US HR 9916 (119): latest_action matches
+  [32m✓[0m  US HR 9916 (119): vote event count matches (0)
+  [32m✓[0m  US HR 9916 (119): sponsorship count matches (1)
+  [32m✓[0m  US HRES 1285 (119): title matches
+  [32m✓[0m  US HRES 1285 (119): latest_action matches
+  [32m✓[0m  US HRES 1285 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 1285 (119): sponsorship count matches (52)
+  [32m✓[0m  US HRES 164 (119): title matches
+  [32m✓[0m  US HRES 164 (119): latest_action matches
+  [32m✓[0m  US HRES 164 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 164 (119): sponsorship count matches (4)
+  [32m✓[0m  US HRES 269 (119): title matches
+  [32m✓[0m  US HRES 269 (119): latest_action matches
+  [32m✓[0m  US HRES 269 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 269 (119): sponsorship count matches (7)
+  [32m✓[0m  US HRES 333 (119): title matches
+  [32m✓[0m  US HRES 333 (119): latest_action matches
+  [32m✓[0m  US HRES 333 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 333 (119): sponsorship count matches (1)
+  [32m✓[0m  US HRES 506 (119): title matches
+  [32m✓[0m  US HRES 506 (119): latest_action matches
+  [32m✓[0m  US HRES 506 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 506 (119): sponsorship count matches (10)
+  [32m✓[0m  US HRES 639 (119): title matches
+  [32m✓[0m  US HRES 639 (119): latest_action matches
+  [32m✓[0m  US HRES 639 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 639 (119): sponsorship count matches (4)
+  [32m✓[0m  US HRES 697 (119): title matches
+  [32m✓[0m  US HRES 697 (119): latest_action matches
+  [32m✓[0m  US HRES 697 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 697 (119): sponsorship count matches (55)
+  [32m✓[0m  US HRES 714 (119): title matches
+  [32m✓[0m  US HRES 714 (119): latest_action matches
+  [32m✓[0m  US HRES 714 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 714 (119): sponsorship count matches (15)
+  [32m✓[0m  US HRES 821 (119): title matches
+  [32m✓[0m  US HRES 821 (119): latest_action matches
+  [32m✓[0m  US HRES 821 (119): vote event count matches (0)
+  [32m✓[0m  US HRES 821 (119): sponsorship count matches (7)
+  [32m✓[0m  US S 1080 (119): title matches
+  [32m✓[0m  US S 1080 (119): latest_action matches
+  [32m✓[0m  US S 1080 (119): vote event count matches (0)
+  [32m✓[0m  US S 1080 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 1255 (119): title matches
+  [32m✓[0m  US S 1255 (119): latest_action matches
+  [32m✓[0m  US S 1255 (119): vote event count matches (0)
+  [32m✓[0m  US S 1255 (119): sponsorship count matches (5)
+  [32m✓[0m  US S 1275 (119): title matches
+  [32m✓[0m  US S 1275 (119): latest_action matches
+  [32m✓[0m  US S 1275 (119): vote event count matches (0)
+  [32m✓[0m  US S 1275 (119): sponsorship count matches (12)
+  [32m✓[0m  US S 1460 (119): title matches
+  [32m✓[0m  US S 1460 (119): latest_action matches
+  [32m✓[0m  US S 1460 (119): vote event count matches (0)
+  [32m✓[0m  US S 1460 (119): sponsorship count matches (6)
+  [32m✓[0m  US S 1729 (119): title matches
+  [32m✓[0m  US S 1729 (119): latest_action matches
+  [32m✓[0m  US S 1729 (119): vote event count matches (0)
+  [32m✓[0m  US S 1729 (119): sponsorship count matches (5)
+  [32m✓[0m  US S 1838 (119): title matches
+  [32m✓[0m  US S 1838 (119): latest_action matches
+  [32m✓[0m  US S 1838 (119): vote event count matches (0)
+  [32m✓[0m  US S 1838 (119): sponsorship count matches (10)
+  [32m✓[0m  US S 1974 (119): title matches
+  [32m✓[0m  US S 1974 (119): latest_action matches
+  [32m✓[0m  US S 1974 (119): vote event count matches (0)
+  [32m✓[0m  US S 1974 (119): sponsorship count matches (14)
+  [32m✓[0m  US S 2760 (119): title matches
+  [32m✓[0m  US S 2760 (119): latest_action matches
+  [32m✓[0m  US S 2760 (119): vote event count matches (0)
+  [32m✓[0m  US S 2760 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 2797 (119): title matches
+  [32m✓[0m  US S 2797 (119): latest_action matches
+  [32m✓[0m  US S 2797 (119): vote event count matches (0)
+  [32m✓[0m  US S 2797 (119): sponsorship count matches (1)
+  [32m✓[0m  US S 2805 (119): title matches
+  [32m✓[0m  US S 2805 (119): latest_action matches
+  [32m✓[0m  US S 2805 (119): vote event count matches (0)
+  [32m✓[0m  US S 2805 (119): sponsorship count matches (4)
+  [32m✓[0m  US S 3300 (119): title matches
+  [32m✓[0m  US S 3300 (119): latest_action matches
+  [32m✓[0m  US S 3300 (119): vote event count matches (0)
+  [32m✓[0m  US S 3300 (119): sponsorship count matches (1)
+  [32m✓[0m  US S 3411 (119): title matches
+  [32m✓[0m  US S 3411 (119): latest_action matches
+  [32m✓[0m  US S 3411 (119): vote event count matches (0)
+  [32m✓[0m  US S 3411 (119): sponsorship count matches (2)
+    ...75/100
+  [32m✓[0m  US S 3488 (119): title matches
+  [32m✓[0m  US S 3488 (119): latest_action matches
+  [32m✓[0m  US S 3488 (119): vote event count matches (0)
+  [32m✓[0m  US S 3488 (119): sponsorship count matches (1)
+  [32m✓[0m  US S 3512 (119): title matches
+  [32m✓[0m  US S 3512 (119): latest_action matches
+  [32m✓[0m  US S 3512 (119): vote event count matches (0)
+  [32m✓[0m  US S 3512 (119): sponsorship count matches (5)
+  [32m✓[0m  US S 419 (119): title matches
+  [32m✓[0m  US S 419 (119): latest_action matches
+  [32m✓[0m  US S 419 (119): vote event count matches (0)
+  [32m✓[0m  US S 419 (119): sponsorship count matches (15)
+  [32m✓[0m  US S 4446 (119): title matches
+  [32m✓[0m  US S 4446 (119): latest_action matches
+  [32m✓[0m  US S 4446 (119): vote event count matches (0)
+  [32m✓[0m  US S 4446 (119): sponsorship count matches (6)
+  [32m✓[0m  US S 4520 (119): title matches
+  [32m✓[0m  US S 4520 (119): latest_action matches
+  [32m✓[0m  US S 4520 (119): vote event count matches (0)
+  [32m✓[0m  US S 4520 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 4594 (119): title matches
+  [32m✓[0m  US S 4594 (119): latest_action matches
+  [32m✓[0m  US S 4594 (119): vote event count matches (0)
+  [32m✓[0m  US S 4594 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 4761 (119): title matches
+  [32m✓[0m  US S 4761 (119): latest_action matches
+  [32m✓[0m  US S 4761 (119): vote event count matches (0)
+  [32m✓[0m  US S 4761 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 4792 (119): title matches
+  [32m✓[0m  US S 4792 (119): latest_action matches
+  [32m✓[0m  US S 4792 (119): vote event count matches (0)
+  [32m✓[0m  US S 4792 (119): sponsorship count matches (1)
+  [32m✓[0m  US S 4990 (119): title matches
+  [32m✓[0m  US S 4990 (119): latest_action matches
+  [32m✓[0m  US S 4990 (119): vote event count matches (0)
+  [32m✓[0m  US S 4990 (119): sponsorship count matches (6)
+  [32m✓[0m  US S 5226 (119): title matches
+  [32m✓[0m  US S 5226 (119): latest_action matches
+  [32m✓[0m  US S 5226 (119): vote event count matches (0)
+  [32m✓[0m  US S 5226 (119): sponsorship count matches (1)
+  [32m✓[0m  US S 5240 (119): title matches
+  [32m✓[0m  US S 5240 (119): latest_action matches
+  [32m✓[0m  US S 5240 (119): vote event count matches (0)
+  [32m✓[0m  US S 5240 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 5254 (119): title matches
+  [32m✓[0m  US S 5254 (119): latest_action matches
+  [32m✓[0m  US S 5254 (119): vote event count matches (0)
+  [32m✓[0m  US S 5254 (119): sponsorship count matches (2)
+  [32m✓[0m  US S 545 (119): title matches
+  [32m✓[0m  US S 545 (119): latest_action matches
+  [32m✓[0m  US S 545 (119): vote event count matches (0)
+  [32m✓[0m  US S 545 (119): sponsorship count matches (36)
+  [32m✓[0m  US S 763 (119): title matches
+  [32m✓[0m  US S 763 (119): latest_action matches
+  [32m✓[0m  US S 763 (119): vote event count matches (0)
+  [32m✓[0m  US S 763 (119): sponsorship count matches (3)
+  [32m✓[0m  US S 813 (119): title matches
+  [32m✓[0m  US S 813 (119): latest_action matches
+  [32m✓[0m  US S 813 (119): vote event count matches (0)
+  [32m✓[0m  US S 813 (119): sponsorship count matches (7)
+  [32m✓[0m  US S 935 (119): title matches
+  [32m✓[0m  US S 935 (119): latest_action matches
+  [32m✓[0m  US S 935 (119): vote event count matches (0)
+  [32m✓[0m  US S 935 (119): sponsorship count matches (7)
+  [32m✓[0m  US SRES 189 (119): title matches
+  [32m✓[0m  US SRES 189 (119): latest_action matches
+  [32m✓[0m  US SRES 189 (119): vote event count matches (0)
+  [32m✓[0m  US SRES 189 (119): sponsorship count matches (10)
+  [32m✓[0m  US SRES 218 (119): title matches
+  [32m✓[0m  US SRES 218 (119): latest_action matches
+  [32m✓[0m  US SRES 218 (119): vote event count matches (0)
+  [32m✓[0m  US SRES 218 (119): sponsorship count matches (29)
+  [31m✗[0m  US SRES 241 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+241&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  US SRES 490 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+490&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  US SRES 511 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+511&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  US SRES 665 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+665&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  US SRES 727 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+727&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+  [31m✗[0m  US SRES 731 (119): live API error  [429 Client Error: Too Many Requests for url: https://v3.openstates.org/bills?jurisdiction=us&session=119&identifier=SRES+731&include=votes&include=sponsorships&include=actions&apikey=REDACTED-API-KEY]
+
+────────────────────────────────────────────────────────────
+  378/384 passed  |  0 warnings  |  6 failures  |  0 skipped
+────────────────────────────────────────────────────────────
