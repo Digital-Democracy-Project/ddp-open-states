@@ -206,6 +206,15 @@ jurisdictions the same day if needed. Cadence in §7 has room to be more aggress
 originally scoped if that's ever useful (e.g. nightly Tier 1 sweeps are now a real option, not
 just the historical-backfill/monthly cadence recommended below).
 
+**Contradicted empirically, 2026-08-09 — see §19.** A full Tier 1+2 sweep hit sustained `429`s
+and connection timeouts after roughly 2,000-2,500 total requests, nowhere near the 30,000/day
+this section says should apply, and recovered only after retries with multi-minute cooldowns.
+Either the account's limits changed since 2026-07-24, or something distinct from the daily quota
+(a burst/concurrency limiter, or contention from another process sharing the same API key) is
+being tripped. Don't plan a same-day full sweep against the assumption this section states as
+settled fact — budget hours, not minutes, until this is re-confirmed with whoever manages the
+OpenStates account.
+
 ---
 
 ## 7. Recommended Cadence
@@ -948,3 +957,49 @@ still explicitly open, not done here, and not to be read as done by a future ski
 - The `ddp-infra` doc update (AC5's other half).
 - Everything else already carried forward from §14/§15/§16/§17 that this ticket didn't touch
   (`scraper-audit`, cadence wiring, FL's "local has MORE votes" pattern, OPEN-30/32, etc.).
+
+---
+
+## 19. Full Tier 1+2 sweep across every tracked jurisdiction, 2026-08-09 — AL dropped, rate
+limits contradicted §6, MA's real gap confirmed small
+
+**What ran:** `quality_check.py --coverage <jurisdiction> <session>` against all 10 currently
+tracked jurisdiction/session pairs (AL excluded on request — nothing scrapes it), against the
+real production DB (`ddp-openstates-postgres-1`, port 5433) and the live `v3.openstates.org` API.
+Full writeup, per-jurisdiction ranking table, and raw logs:
+`notes/tier1-tier2-quality-check-all-jurisdictions-20260809.md`.
+
+**Headline results:** 7 of 10 pairs have a perfectly clean Tier 1 diff (0 real missing bills);
+the other 3 have small, specific, named gaps — WA (2 bills), MA (124 bills, after the §18
+docket-prefix correction — not the raw 7,521), and FL (34 bills, plus a 7.6% Tier 2
+vote-completeness gap on the sampled bills, reconfirming the still-open OPEN-27 WAF bug). Full
+per-jurisdiction numbers are in the notes doc, not repeated here.
+
+**Rate limits did not behave like §6 describes.** See the correction appended directly to §6
+above. First attempt (Tier 2 sample=15) hit `429` on the 4th of 10 pairs. A second attempt (Tier
+2 sample=500, per this session's direction) got through only 5 of 10 before every subsequent
+jurisdiction crashed repeatedly despite 5 retries with 90-second cooldowns. A third, more patient
+pass (7-minute cooldowns, 100-bill sample) finally got the remaining 5 through. Total elapsed
+time across all three attempts: roughly 4.5 hours, for what §6 describes as a same-day,
+comfortably-affordable sweep. This needs resolving with whoever manages the OpenStates account
+before the cadence in §7 can be trusted at face value.
+
+**New tool-accuracy finding, not yet fixed:** during Tier 2 sampling, individual per-bill live
+fetches that hit `429`/`502`/timeout get recorded by `compare_bills()` as a generic FAIL ("live
+API error"), indistinguishable at a glance from an actual content mismatch. On the jurisdictions
+hit hardest by rate limiting (VA 2026S1, FL, AZ), this inflated the raw FAIL count by 28-38
+per pair — real content failures had to be manually separated from infra noise by grepping for
+the "live API error" string and excluding those bills from both the numerator and denominator.
+Worth a tool fix: give live-API infra errors their own report symbol (or an explicit `SKIP`)
+instead of overloading `FAIL`, so a rate-limited run doesn't look like a data-quality regression
+at a glance.
+
+**Also found, unrelated to this plan, filed separately:** a stray, 46-day-stale duplicate
+`openstates` database living inside an unrelated project's Postgres container (`ddp-agents`'s
+`cams` container, port 5432) — created, best guess, by some past tool run against
+`quality_check.py`'s default `DATABASE_URL` with no explicit port, silently colliding with
+whatever else was already listening on 5432. Filed as Jira `AGENTS-5`, not acted on beyond that
+(read-only investigation only).
+
+**Not run:** `scraper-audit` (§1b/§5) — still never executed, still the one check in this plan's
+three-check model (§7) with zero real runs to date.
