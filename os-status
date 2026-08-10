@@ -29,6 +29,30 @@ RAW=/Volumes/DDP-HOT/Bills/raw
 DB_CONTAINER=ddp-openstates-postgres-1
 DB_USER=openstates
 DB_NAME=openstates
+DDP_SYNC_SCHEDULE_URL="http://localhost:8001/ddp-sync/v1/schedule"
+
+# Full name for a jurisdiction abbr, for display only. Looked up from Postgres
+# (opencivicdata_jurisdiction.name is the real source of truth DDP already
+# maintains for every tracked jurisdiction) rather than a hardcoded list here
+# that would silently go stale the next time a jurisdiction is added --
+# exactly the class of bug just found and fixed in ddp-sync's own archive
+# trigger endpoint (2026-08-10). Falls back to the abbr itself, uppercased, if
+# the DB is unreachable or the abbr isn't a real jurisdiction.
+juris_name() {
+    local juris=$1 jid name
+    if [ "$juris" = "us" ]; then
+        jid="ocd-jurisdiction/country:us/government"
+    else
+        jid="ocd-jurisdiction/country:us/state:${juris}/government"
+    fi
+    name=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
+        "SELECT name FROM opencivicdata_jurisdiction WHERE id = '$jid';" 2>/dev/null)
+    if [ -n "$name" ]; then
+        echo "$name"
+    else
+        echo "$juris" | tr '[:lower:]' '[:upper:]'
+    fi
+}
 
 # Real backlog for $1=jurisdiction abbr (mi, wa, va, us, ...), straight from
 # Postgres: version links with no ddp_bill_version_document row at all
@@ -99,15 +123,21 @@ prev_run_minutes() {
 print_job() {  # $1=kind $2=jurisdiction $3=pid
     local kind=$1 juris=$2 pid=$3
     found_any=1
-    local etime lstart start_fmt ppid orphan=""
+    local etime lstart start_fmt ppid orphan="" label name
     etime=$(ps -o etime= -p "$pid" | tr -d ' ')
     lstart=$(ps -o lstart= -p "$pid")
     ppid=$(ps -o ppid= -p "$pid" | tr -d ' ')
     [ "$ppid" = "1" ] && orphan="  (ORPHANED — parent gone; completion will not be logged/alerted)"
     start_fmt=$(date -j -f "%a %b %e %T %Y" "$lstart" '+%Y-%m-%d %H:%M:%S' 2>/dev/null)
+    name=$(juris_name "$juris")
+    if [ "$kind" = "ARCHIVER" ]; then
+        label="Bill-document archiver"
+    else
+        label="Bill scraper"
+    fi
 
-    printf '%-9s %-4s pid %-6s running %s (since %s)%s\n' \
-        "$kind" "$juris" "$pid" "$etime" "${start_fmt:-?}" "$orphan"
+    printf '%s — %s (%s), pid %s: running %s (started %s)%s\n' \
+        "$label" "$name" "$juris" "$pid" "$etime" "${start_fmt:-?}" "$orphan"
 
     if [ "$kind" = "ARCHIVER" ] && [ -d "$RAW/$juris" ] && [ -n "$start_fmt" ]; then
         local done rate15 cutoff rate_disp="stalled?"
@@ -183,4 +213,35 @@ if [ "$found_any" = "0" ]; then
     echo
     echo "Most recent completions:"
     grep -E '^\[[0-9-]+ [0-9:]+\] (Scrape done|Archiving done|No new bills)' "$LOG" | tail -5 | sed 's/^/  /'
+    echo
+fi
+
+# Scope note: this script only sees `os-update --scrape` / `os-text-extract archive`
+# as real OS processes via `ps`. ddp-sync runs a bunch of OTHER OpenStates-adjacent
+# jobs (bill_sync, legislator_sync, legislator_bio_sync, people_refresh,
+# patch_refresh, concept_statement_dispatch, ...) as quick in-process function calls
+# inside its own long-running daemon -- they never show up here even while running,
+# and most matter more for *when they'll next fire* than whether they're active right
+# now. Pull the full scheduled-job roster (all ~29 jobs, every jurisdiction's next
+# archive day included) straight from ddp-sync's own live API instead of guessing.
+schedule_json=$(curl -s --max-time 3 "$DDP_SYNC_SCHEDULE_URL" 2>/dev/null)
+if [ -n "$schedule_json" ] && command -v python3 >/dev/null 2>&1; then
+    echo "Full OpenStates-related job roster (ddp-sync, not just scraper/archiver):"
+    echo "$schedule_json" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+jobs = data.get("jobs", [])
+openstates_jobs = [j for j in jobs if "openstates" in j.get("id", "").lower()]
+for j in sorted(openstates_jobs, key=lambda j: j.get("next_run") or ""):
+    print("  {:<42} next: {}".format(j["name"], j["next_run"]))
+' 2>/dev/null
+    echo
+    echo "(full 29-job roster incl. non-OpenStates jobs: $DDP_SYNC_SCHEDULE_URL)"
+else
+    echo "ddp-sync's /schedule API wasn't reachable ($DDP_SYNC_SCHEDULE_URL) -- can't show" \
+         "the full job roster (bill sync, legislator sync, patch refresh, etc.), only what" \
+         "this script can see directly as OS processes above."
 fi
