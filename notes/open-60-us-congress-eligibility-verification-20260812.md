@@ -121,7 +121,7 @@ Breaking down all 4,897 `passage` rows:
 |---|---|
 | VA-shaped regex (`\(\d+-Y \d+-N...\)`) | **0** |
 | bare numeric tally (`\d+ *- *\d+`, no letters) | 1,297 |
-| voice vote / unanimous consent (no recorded tally at all) | 3,416 |
+| voice vote / unanimous consent (no recorded tally at all) | 3,600 |
 
 So even independent of the separate `is_passage`-reliability issue, **the tally regex itself is a
 complete miss for Congress** — it would never fire, on any bill, ever. Whatever mechanism currently
@@ -180,8 +180,8 @@ For the phase 2 `JurisdictionEligibilityConfig`/`JurisdictionEligibilityRule` mi
    on description text containing "concur" + a recorded-vote phrase ("Yea-Nay Vote", "Yeas and
    Nays") + the numeric tally pattern from (1), mirroring however the existing cloture special-case
    is implemented in ddp-broker-py (not visible from this repo — phase 2 should reuse that shape).
-4. **Do not treat `passage` classification alone as sufficient signal for a recorded vote** — 3,416
-   of 4,897 (70%) `passage` rows are voice-vote/unanimous-consent with no tally to extract at all;
+4. **Do not treat `passage` classification alone as sufficient signal for a recorded vote** — 3,600
+   of 4,897 (74%) `passage` rows are voice-vote/unanimous-consent with no tally to extract at all;
    this is expected and correct (no vote breakdown exists for those), not a bug, but phase 2's rule
    should not assume every `passage` row has a matching tally.
 
