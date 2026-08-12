@@ -1,0 +1,26 @@
+
+════════════════════════════════════════════════════════════
+  COVERAGE CHECK: FL 2026
+════════════════════════════════════════════════════════════
+  Fetching full identifier set from live API (paginated)...
+    ...page 1 failed (ReadTimeout), retry 1/3 in 1s
+    ...page 1 failed (ReadTimeout), retry 2/3 in 2s
+    ...page 50/97, 1000 identifiers so far
+  live=1931  local=1897  missing=34  extra=0  both=1897
+  ...of which 34 are docket-stage duplicates, not a real gap (see PLAN-coverage-completeness-check.md §10) -- real gap: 0
+  missing by prefix: {'SPB': 34}
+  [32m✓[0m  FL 2026: Tier 1 coverage — no missing bills (1897 local == 1931 live)
+  [33m~[0m  FL 2026: 34 docket-stage duplicates in the raw diff, not a real gap (see PLAN-coverage-completeness-check.md §10)
+  Running Tier 2 sub-record checks on 1 of 1897 bills present in both...
+  [32m✓[0m  FL HB 1001 (2026): title matches
+  [32m✓[0m  FL HB 1001 (2026): latest_action matches
+  [32m✓[0m  FL HB 1001 (2026): vote event count matches (3)
+  [32m✓[0m  FL HB 1001 (2026): vote tally matches on 2026-02-05 ({'yes': 10, 'no': 5, 'not voting': 2})
+  [32m✓[0m  FL HB 1001 (2026): vote tally matches on 2026-02-11 ({'yes': 12, 'no': 4, 'not voting': 2})
+  [32m✓[0m  FL HB 1001 (2026): vote tally matches on 2026-02-26 ({'yes': 14, 'no': 7, 'not voting': 6})
+  [32m✓[0m  FL HB 1001 (2026): sponsorship count matches (13)
+    ...0/1
+
+────────────────────────────────────────────────────────────
+  8/9 passed  |  1 warnings  |  0 failures  |  0 skipped
+────────────────────────────────────────────────────────────

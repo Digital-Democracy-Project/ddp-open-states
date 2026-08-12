@@ -292,10 +292,24 @@ def test_split_missing_by_docket_prefix_splits_ma_shaped_input():
     assert result["docket_duplicate"] == {"HD2050", "HD9999", "SD1111"}
 
 
-def test_split_missing_by_docket_prefix_unmapped_jurisdiction_passes_through_unchanged():
-    missing = {"HB30", "SB12", "HD2050"}  # HD-shaped identifier, but fl has no docket lifecycle
+def test_split_missing_by_docket_prefix_splits_fl_shaped_input():
+    # FL: SPB/HPB (Senate/House Proposed Bill, a temporary pre-filing docket
+    # number) get replaced in place by a permanent SB/HB number once formally
+    # read in -- live's API keeps the frozen SPB/HPB record permanently as its
+    # own entity even though the site itself now only shows the new number
+    # (OPEN-63; confirmed live against flsenate.gov/Session/Bill/2026/7000).
+    missing = {"SB 7000", "HB 30", "SPB 7000", "SPB 7042", "HPB 9001"}
 
     result = split_missing_by_docket_prefix(missing, "fl")
+
+    assert result["real"] == {"SB 7000", "HB 30"}
+    assert result["docket_duplicate"] == {"SPB 7000", "SPB 7042", "HPB 9001"}
+
+
+def test_split_missing_by_docket_prefix_unmapped_jurisdiction_passes_through_unchanged():
+    missing = {"HB30", "SB12", "HD2050"}  # HD-shaped identifier, but az has no docket lifecycle
+
+    result = split_missing_by_docket_prefix(missing, "az")
 
     assert result["real"] == missing
     assert result["docket_duplicate"] == set()
