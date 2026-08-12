@@ -66,6 +66,14 @@ OCD_TO_CODE = {
 # jurisdiction not in this map.
 DOCKET_PREFIX_MAP = {
     "ma": {"docket_prefixes": ("HD", "SD")},
+    # FL: a Senate/House bill is filed under a temporary SPB/HPB docket number,
+    # then replaced in place by a permanent SB/HB (or CS/SB, CS/HB) number once
+    # formally read in -- confirmed live (OPEN-63): flsenate.gov/Session/Bill/2026/7000
+    # (an SPB 7000 list entry's own URL) now renders as "CS/SB 7000", no trace of
+    # the old identifier. Live's API keeps the frozen SPB/HPB record permanently
+    # as its own entity even though the site itself has moved on -- same shape as
+    # MA's HD/SD above.
+    "fl": {"docket_prefixes": ("SPB", "HPB")},
 }
 
 
