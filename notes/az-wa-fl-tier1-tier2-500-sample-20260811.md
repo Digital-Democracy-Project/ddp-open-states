@@ -1,4 +1,4 @@
-# AZ/WA/FL Tier 1 + Tier 2 quality-check sweep (500-bill random sample) — AZ and WA both clean, FL retry in progress
+# AZ/WA/FL Tier 1 + Tier 2 quality-check sweep (500-bill random sample) — AZ and WA both clean, FL confirms two known pre-existing gaps
 
 ## Context
 
@@ -95,29 +95,79 @@ Tier 2 ever ran. Root cause is almost certainly the same 2 req/s key ceiling not
 pagination loop has no per-request sleep the way the Tier 2 loop does.
 
 **Retry launched standalone** (no concurrent jurisdiction sharing the key) at 2026-08-11 22:28
-UTC, after confirming both WA and AZ had released it. *[To be updated once the retry completes.]*
+UTC, after confirming both WA and AZ had released it. Completed 2026-08-12 02:50 UTC.
 
-## Conclusion (as of this writing — FL pending)
+**Tier 1: 34 bills missing** — 1,931 live vs. 1,897 local (1.76%). **This exact figure (34 of
+1,931) matches `notes/tier1-coverage-all-jurisdictions-20260803.md`'s finding from 2026-08-03** —
+the gap is unchanged over more than a week, i.e. pre-existing and unrepaired, not new. It is a
+different, separate gap from OPEN-41's WAF-outage vote list (already verified closed
+2026-08-08) — nobody has investigated this identifier-level gap's root cause yet.
 
-AZ and WA both show data quality strong enough to support their BROKER-16 flips (BROKER-34,
+**Tier 2 (2,322 individual field checks): 2,228 passed / 32 warnings / 62 failures.**
+
+| Category | Count | Verdict |
+|---|---|---|
+| "local has MORE votes than live" | 30 | Expected/positive — OPEN-27, DDP's own WAF fix isn't merged upstream |
+| "latest_action differs" | 2 | Cosmetic — live just appends extra text, e.g. `'adopted by publication'` vs. `'adopted by publication; companion bill(s) passed, '` |
+| "live API error" (ReadTimeout) | 45 | Infra noise, not local data |
+| local missing votes entirely | 16 | Real gap — see below |
+
+The 30 "local has MORE votes than live" warnings are the already-diagnosed, already-accepted
+OPEN-27 pattern (`notes/fl-tier2-more-votes-than-live-diagnosis-20260805.md`) — a genuine local-only
+fix (`_FLHouseWAFSource`) that public upstream hasn't merged, so local legitimately has more real
+data than live. Not a gap.
+
+**The real finding: 16/500 bills (3.2%) show local with 0 votes where live has 1-3** (e.g. HB 1295:
+local=0, live=3; HB 4023: local=0, live=1). This is comparable in shape and magnitude to
+`notes/fl-tier2-500-bill-random-sample-20260803.md`'s prior finding (14/500, 2.8%, same
+"local is MISSING votes vs live" category) — **not a new regression**, and importantly **not the
+same gap OPEN-41 verified closed**: OPEN-41 was scoped narrowly to a specific 540-bill candidate
+list from the 2026-06-25/26 WAF-outage scrape, verified via a targeted before/after count (+91%
+recovery) — it was never claimed to close every FL vote-completeness gap. `PLAN-open-states.md`'s
+own OPEN-41 resolution note already anticipated this: "failures are the separate, pre-existing
+'local missing vs live' gap — both out of scope for this item." Whether today's 16 bills overlap
+with the original 540-bill WAF list wasn't checked here (the candidate list file was ephemeral and
+no longer exists) — a genuine open question for anyone who wants to fully close this out.
+
+## Conclusion
+
+**AZ and WA both show data quality strong enough to support their BROKER-16 flips** (BROKER-34,
 BROKER-36) without a data-quality objection — the only non-cosmetic gaps found are AZ's single
 missing vote event (HR 2001) and WA's 2 missing bills, both small enough not to block given
-neither jurisdiction carries an existing gate in the rollout plan. FL's result is still pending.
+neither jurisdiction carries an existing gate in the rollout plan.
+
+**FL shows no new regression, but is meaningfully less clean than AZ/WA** — it carries two
+longstanding, unrepaired, and previously-undiagnosed-at-the-root-cause-level gaps (a 1.76% Tier 1
+identifier gap, unchanged since 2026-08-03; a ~3% Tier 2 vote-completeness gap, same order of
+magnitude as a week ago). Neither is part of BROKER-38's actual gate, which was specifically and
+narrowly the WAF-outage vote list (OPEN-41, verified closed) — so this doesn't reopen that gate —
+but it means "FL's data quality" as a whole is not fully clean the way AZ/WA's is.
 
 ## Recommendation
 
 - **AZ (BROKER-34) / WA (BROKER-36):** no data-quality objection to executing per the runbook.
 - Optional low-priority follow-up: identify WA's 2 missing-bill identifiers and confirm whether
   HR 2001's missing vote event is a scraper gap or a live-side artifact.
-- **FL (BROKER-38):** await the retry's completion before drawing the same conclusion.
+- **FL (BROKER-38):** OPEN-41's specific gate remains closed, so this doesn't block the flip on its
+  own terms — but the 34-bill Tier 1 gap and 16-bill Tier 2 vote gap are real, unexplained, and
+  static since 2026-08-03. Worth a root-cause ticket (checking whether either overlaps the original
+  540-bill WAF list, and why the Tier 1 gap hasn't moved in over a week) before treating FL as
+  "clean" the way AZ/WA now are.
 
 ## References
 
 - `ddp-infra/PLAN-open-states.md` §8.1a — the live per-jurisdiction gate tracker
 - BROKER-16 (umbrella), BROKER-34/36/38 (AZ/WA/FL flip sub-tasks)
-- `notes/fl-open-41-waf-vote-gap-verification-20260808.md` — prior documentation of the same
-  same-date vote-ordering cosmetic pattern (SB 1724)
+- `notes/fl-open-41-waf-vote-gap-verification-20260808.md` — OPEN-41's WAF-outage vote-gap
+  verification (the actual BROKER-38 gate, confirmed closed) and the same-date vote-ordering
+  cosmetic pattern (SB 1724) also seen in AZ's results above
+- `notes/tier1-coverage-all-jurisdictions-20260803.md` — the 2026-08-03 sweep that first found
+  FL's 34-bill Tier 1 gap, unchanged in this sweep
+- `notes/fl-tier2-500-bill-random-sample-20260803.md` — the 2026-08-03 sweep that first found
+  FL's vote-completeness gap (14/500 then vs. 16/500 now, same order of magnitude)
+- `notes/fl-tier2-more-votes-than-live-diagnosis-20260805.md` — OPEN-27's diagnosis of the
+  "local has MORE votes than live" pattern as an expected, unmerged local fix
 - Raw logs (this checkout): `logs/quality-check/az_57th-2nd-regular_tier1tier2_500_20260811.log`,
   `logs/quality-check/wa_2025-2026_tier1tier2_500_20260811.log`,
-  `logs/quality-check/fl_2026_tier1tier2_500_20260811.log` (crashed attempt),
-  `logs/quality-check/run_fl_retry_20260811.out` (retry, in progress)
+  `logs/quality-check/fl_2026_tier1tier2_500_20260811.log` (crashed first attempt),
+  `logs/quality-check/fl_2026_tier1tier2_500_20260811_retry.log` (completed retry)
