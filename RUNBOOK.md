@@ -826,6 +826,19 @@ before each request, so every House search starts a fresh session. The earlier `
 handling (accept the block page after a 60s sleep) only prevented a crash — it never
 recovered the votes.
 
+**Residual gap fixed in OPEN-63** (`HouseSearchPage.accept_response` in `scrapers/fl/bills.py`):
+PR #5 fixed the *systemic* case (every request rejected once the cookie goes stale past the
+~1-hour mark), but left a rarer, still-live gap — a one-off, *transient* WAF challenge or empty
+search result unrelated to cookie staleness. `accept_response` used to accept that page
+unconditionally (`return True`) on the very first try, so a single bad request permanently and
+silently zeroed that bill's House committee votes with zero retries. It now returns `False` for
+that page (up to `HOUSE_SEARCH_MAX_ATTEMPTS`, currently 3), which feeds spatula's own retry loop
+— a fresh `get_response()` call, re-triggering `_FLHouseWAFSource`'s cookie-drop — before finally
+giving up and falling back to today's accept-and-skip behavior. Bounded so it can never let
+spatula's own retry budget run out and raise `RejectedResponse` (which would crash the scrape).
+See `notes/fl-open-63-tier1-tier2-root-cause-and-fix-20260811.md` for the diagnosis and
+before/after evidence.
+
 If you see `flhouse.gov WAF rejection persists` warnings, the site behavior has changed again.
 Full technical detail (WAF vendor/cookie specifics) is in `RUNBOOK.internal.md` (not public).
 
