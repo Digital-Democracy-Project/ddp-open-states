@@ -1,1 +1,225 @@
-IyBPUEVOLTYxOiBVdGFoIGBlbGlnaWJsZV9mb3Jfc2NvcmVjYXJkYCBicmVhZHRoIHZlcmlmaWNhdGlvbgoKIyMgQ29udGV4dAoKYE1vdGlvbi5lbGlnaWJsZV9mb3Jfc2NvcmVjYXJkYCAoZGRwLWJyb2tlci1weSwgQlJPS0VSLTQ3KSBpcyBjb21wdXRlZCBmcm9tIGEgZ2xvYmFsCnRhbGx5LXBhdHRlcm4gcmVnZXggYW5kIGEgc2V0IG9mIGBERUZJTklURV9ZRVNgL2BERUZJTklURV9OT2AgYWN0aW9uLWNsYXNzaWZpY2F0aW9uIHRhZ3MgdGhhdAp3ZXJlIG9ubHkgZXZlciBjb25maXJtZWQgYWdhaW5zdCBWaXJnaW5pYSdzIG93biBhY3Rpb24gdGV4dC4gVXRhaCBjdXJyZW50bHkgaGFzIG9uZSByZWFsCnJlZ3Jlc3Npb24gY2FzZSAoYEhCMjQ3YCwgIkhvdXNlLyBjb25jdXJzIHdpdGggU2VuYXRlIGFtZW5kbWVudCIsIGBVdEhiMjQ3Q29uY3VycmVuY2VUZXN0YCkgYnV0Cm5vIGBKdXJpc2RpY3Rpb25FbGlnaWJpbGl0eUNvbmZpZ2Agcm93IGFuZCBubyBqdXJpc2RpY3Rpb24td2lkZSB2ZXJpZmljYXRpb24uIFRoaXMgaXMgUGhhc2UgMSBvZgpPUEVOLTYxIChyZXNlYXJjaCwgaW4gYGRkcC1vcGVuLXN0YXRlc2ApIC0tIHRoZSBoYW5kb2ZmIGFydGlmYWN0IGZvciBQaGFzZSAyIChjb25maWcvbWlncmF0aW9uLwp0ZXN0cywgaW4gYGRkcC1icm9rZXItcHlgLCBgZml4L0JST0tFUi00Ny1hZ2VudGAsIFBSICMyOTUpLgoKVGhyZWUgdGhpbmdzIHdlcmUgYXNrZWQsIGFsbCBhZ2FpbnN0IHJlYWwgcmVwbGljYSBkYXRhLCBubyBpbnZlbnRlZCBleGFtcGxlczoKMS4gU2FtcGxlIGBvcGVuY2l2aWNkYXRhX2JpbGxhY3Rpb25gIHJvd3MgZm9yIFV0YWgsIGdyb3VwZWQgYnkgY2xhc3NpZmljYXRpb24sIGFjcm9zcyBzZXZlcmFsCiAgIHJlYWwgYmlsbHMgKG5vdCBqdXN0IEhCMjQ3KS4KMi4gV2hldGhlciB0aGUgZ2xvYmFsIHRhbGx5LXBhdHRlcm4gcmVnZXggaG9sZHMgYnJvYWRseSBmb3IgVXRhaC4KMy4gV2hldGhlciBVdGFoIGhhcyBhIHRhZyB0aGF0IG1lYW5zIG1vcmUgdGhhbiBvbmUgdGhpbmcgZGVwZW5kaW5nIG9uIGNvbnRleHQsIHRoZSB3YXkgVmlyZ2luaWEncwogICBgYW1lbmRtZW50LXBhc3NhZ2VgIGNvdmVycyBib3RoIGEgcmVhbCBjcm9zcy1jaGFtYmVyIGNvbmN1cnJlbmNlIHZvdGUgYW5kIGEgc2FtZS1jaGFtYmVyIGZsb29yCiAgIGFtZW5kbWVudCB0aGF0IG11c3QgbmV2ZXIgc2NvcmUgLS0gc3BlY2lmaWNhbGx5IGNoZWNraW5nIHdoZXRoZXIgVXRhaCdzIG93biBgYW1lbmRtZW50LXBhc3NhZ2VgCiAgIHRhZyAoSEIyNDcncyB0YWcpIGhhcyB0aGUgc2FtZSBzaGFwZS4KCiMjIE1ldGhvZAoKUXVlcmllZCB0aGUgcHJvZHVjdGlvbiBPcGVuU3RhdGVzIFBvc3RncmVzIHJlcGxpY2EgZGlyZWN0bHkgLS0KYHBvc3RncmVzcWw6Ly9vcGVuc3RhdGVzOm9wZW5zdGF0ZXNfZGV2QGxvY2FsaG9zdDo1NDMzL29wZW5zdGF0ZXNgICh0aGUgcmVhbCByZXBsaWNhOyAqKm5vdCoqIHRoZQpgY2Ftc2AgREIgdGhlIGBwb3N0Z3Jlc2AgTUNQIHRvb2wgZGVmYXVsdHMgdG8gLS0gc2FtZSBjYXZlYXQgYXMgYGJpbGwtYWN0aW9ucy1wZXJzaXN0ZWQtCnZlcmlmaWNhdGlvbi0yMDI2MDgxMS5tZGAsIGBvcGVuLTYwLXVzLWNvbmdyZXNzLWVsaWdpYmlsaXR5LXZlcmlmaWNhdGlvbi0yMDI2MDgxMi5tZGAsIGFuZApgb3Blbi02NC12aXJnaW5pYS1lbGlnaWJpbGl0eS1icmVhZHRoLXZlcmlmaWNhdGlvbi0yMDI2MDgxMi5tZGApLiBKdXJpc2RpY3Rpb24gZmlsdGVyOgpgb3BlbmNpdmljZGF0YV9qdXJpc2RpY3Rpb24ubmFtZSA9ICdVdGFoJ2AgKGBvY2QtanVyaXNkaWN0aW9uL2NvdW50cnk6dXMvc3RhdGU6dXQvZ292ZXJubWVudGApLgoKQWxsIG51bWJlcnMgYmVsb3cgYXJlIGxpdmUgY291bnRzIGFzIG9mIDIwMjYtMDgtMTIsIHZpYSBgcHN5Y29wZzJgIGFnYWluc3QKYG9wZW5jaXZpY2RhdGFfYmlsbGFjdGlvbmAgam9pbmVkIHRocm91Z2ggYG9wZW5jaXZpY2RhdGFfYmlsbGAgLT4gYG9wZW5jaXZpY2RhdGFfbGVnaXNsYXRpdmVzZXNzaW9uYAotPiBgb3BlbmNpdmljZGF0YV9qdXJpc2RpY3Rpb25gLCBwbHVzIGBvcGVuY2l2aWNkYXRhX3ZvdGVldmVudGAgLyBgb3BlbmNpdmljZGF0YV92b3RlY291bnRgIGZvcgpyZWFsIHZvdGUgdGFsbGllcy4KCiMjIFJlc3VsdAoKIyMjIDEuIENsYXNzaWZpY2F0aW9uIGJyZWFrZG93biAoMzcsMzQwIHRvdGFsIFVUIGJpbGxhY3Rpb24gcm93cywgYm90aCBrbm93biBzZXNzaW9ucykKClV0YWggaGFzIGV4YWN0bHkgKip0d28qKiBzZXNzaW9ucyBwZXJzaXN0ZWQgbG9jYWxseTogYDIwMjVTMmAgKDUgYmlsbHMsIGEgc3BlY2lhbCBzZXNzaW9uKSBhbmQKYDIwMjZgICgxLDAxNiBiaWxscykuIFVubGlrZSBWQS9VUyBDb25ncmVzcyB0aGlzIGlzbid0IGEgc3Vic2FtcGxlIG9mIGEgbGFyZ2VyIGNvcnB1cyAtLSB0aGlzIGlzCnRoZSBjb21wbGV0ZSBzZXQgb2YgVXRhaCBhY3Rpb24gZGF0YSBhdmFpbGFibGUsIHN0YXRlZCBwbGFpbmx5IHBlciB0aGUgQUMncyAiYWNyb3NzIG1vcmUgdGhhbgpqdXN0IEhCMjQ3IiBhc2suCgp8IGNsYXNzaWZpY2F0aW9uIHwgY291bnQgfAp8LS0tfC0tLXwKfCByZWNlaXB0IHwgNCwzNjEgfAp8IHBhc3NhZ2UgfCAyLDE0NCB8CnwgY29tbWl0dGVlLXBhc3NhZ2UtZmF2b3JhYmxlIHwgMSw5MzAgfAp8IHJlZmVycmFsLWNvbW1pdHRlZSB8IDEsNDQ3IHwKfCBleGVjdXRpdmUtcmVjZWlwdCB8IDU1NCB8CnwgcmVhZGluZy0yIHwgNTUxIHwKfCBlbnJvbGxlZCB8IDU0OCB8CnwgZXhlY3V0aXZlLXNpZ25hdHVyZSB8IDUxNSB8CnwgZmlsaW5nIHwgNTA1IHwKfCAqKmFtZW5kbWVudC1wYXNzYWdlKiogfCAqKjQyNCoqIHwKfCBhbWVuZG1lbnQtaW50cm9kdWN0aW9uIHwgMjI2IHwKfCBmYWlsdXJlIHwgMTA5IHwKfCBkZWZlcnJhbCB8IDkgfAp8IGFtZW5kbWVudC1mYWlsdXJlIHwgNyB8CnwgZXhlY3V0aXZlLXZldG8gfCAyIHwKfCBleGVjdXRpdmUtdmV0by1saW5lLWl0ZW0gfCAxIHwKfCBzdWJzdGl0dXRpb24gfCAxIHwKfCBiZWNhbWUtbGF3IHwgMSB8CgojIyMgVHdvIHJlYWwgYmlsbHMnIGZ1bGwgYWN0aW9uIGxpc3RzCgoqKmBIQiAyNDdgKiogKGBvY2QtYmlsbC9iNjkyZDExYS04YmI4LTRkMGMtYThjMS05ZTY5MmRjMWI4MGJgLCAyMDI2IHNlc3Npb24sIDY2IGFjdGlvbnMpIC0tIHRoZQpleGlzdGluZyBgVXRIYjI0N0NvbmN1cnJlbmNlVGVzdGAgYmlsbC4gRnVsbCBsaXN0IG9uIGZpbGU7IGtleSByb3dzOgoKfCBvcmRlciB8IGRhdGUgfCBkZXNjcmlwdGlvbiB8IGNsYXNzaWZpY2F0aW9uIHwKfC0tLXwtLS18LS0tfC0tLXwKfCAyMiB8IDIwMjYtMDItMTcgfCBIb3VzZS8gcGFzc2VkIDNyZCByZWFkaW5nIHwgYFtwYXNzYWdlXWAgfAp8IDQ2LTQ4IHwgMjAyNi0wMy0wNiB8IFNlbmF0ZS8gMm5kICYgM3JkIHJlYWRpbmdzLyBzdXNwZW5zaW9uIC4uLiBTZW5hdGUvIHBhc3NlZCAybmQgJiAzcmQgcmVhZGluZ3MvIHN1c3BlbnNpb24gfCBgW11gIHwKfCA1MiB8IDIwMjYtMDMtMDYgfCAqKkhvdXNlLyBjb25jdXJzIHdpdGggU2VuYXRlIGFtZW5kbWVudCoqIHwgYFthbWVuZG1lbnQtcGFzc2FnZV1gIHwKfCA1NSB8IDIwMjYtMDMtMDcgfCBTZW5hdGUvIHNpZ25lZCBieSBQcmVzaWRlbnQvIHJldHVybmVkIHRvIEhvdXNlIHwgYFtwYXNzYWdlXWAgfAp8IDU4IHwgMjAyNi0wMy0wNyB8IEhvdXNlLyBzaWduZWQgYnkgU3BlYWtlci8gc2VudCBmb3IgZW5yb2xsaW5nIHwgYFtwYXNzYWdlXWAgfAp8IDY1IHwgMjAyNi0wMy0yNSB8IEdvdmVybm9yIFNpZ25lZCB8IGBbZXhlY3V0aXZlLXNpZ25hdHVyZV1gIHwKCioqYEhCIDEwMWAqKiAoYG9jZC1iaWxsLzg1ZGNmNDMwLWY0NmUtNDNiMS04MTJmLTUwMzI3NWQ5OWRmMGAsIDIwMjYgc2Vzc2lvbiwgNDUgYWN0aW9ucykgLS0KY2hvc2VuIGJlY2F1c2UgaXQgaW5kZXBlbmRlbnRseSBjb250YWlucyAqKmJvdGgqKiBgYW1lbmRtZW50LXBhc3NhZ2VgIHNoYXBlcyBpbiBvbmUgYmlsbCdzIG93bgpoaXN0b3J5LCB0aGUgc2FtZSB3YXkgVkEncyBTQjc4MyBkaWQ6Cgp8IG9yZGVyIHwgZGF0ZSB8IGRlc2NyaXB0aW9uIHwgY2xhc3NpZmljYXRpb24gfAp8LS0tfC0tLXwtLS18LS0tfAp8IDIyIHwgMjAyNi0wMi0xNyB8IFNlbmF0ZS8gY29tbSBycHQvIGFtZW5kZWQgW1NlbmF0ZSBOYXR1cmFsIFJlc291cmNlcywgQWdyaWN1bHR1cmUsIGFuZCBFbnZpcm9ubWVudCBDb21taXR0ZWVdIHwgYFthbWVuZG1lbnQtcGFzc2FnZV1gIChzYW1lLWNoYW1iZXIsIHByb2NlZHVyYWwsIG5vIHZvdGUpIHwKfCAyOCB8IDIwMjYtMDItMTkgfCBTZW5hdGUvIHRvIEhvdXNlIHdpdGggYW1lbmRtZW50cyB8IGBbXWAgfAp8IDMxIHwgMjAyNi0wMi0yMCB8ICoqSG91c2UvIGNvbmN1cnMgd2l0aCBTZW5hdGUgYW1lbmRtZW50KiogfCBgW2FtZW5kbWVudC1wYXNzYWdlXWAgKGNyb3NzLWNoYW1iZXIsIHJlYWwgdm90ZTogeWVzPTcwLCBubz0xLCBvdGhlcj00KSB8CgpgSEIgMTE1YCAoYG9jZC1iaWxsLzkxOWE2MTY2LTkwZmUtNGRkYS1iMGVkLTFkNDdiZDRlYjg3NmApIHdhcyBwdWxsZWQgYXMgYSBjb250cmFzdGluZyBiaWxsIHdob3NlCipvbmx5KiBgYW1lbmRtZW50LXBhc3NhZ2VgIGFjdGlvbiBpcyB0aGUgc2FtZS1jaGFtYmVyIGNvbW1pdHRlZSBzaGFwZSAoYEhvdXNlLyBjb21tIHJwdC8gYW1lbmRlZApbSG91c2UgUmV2ZW51ZSBhbmQgVGF4YXRpb24gQ29tbWl0dGVlXWAsIG9yZGVyIDEzKSB3aXRoIG5vIGNvbmN1cnJlbmNlIHN0ZXAgYXQgYWxsIC0tIGNvbmZpcm1zIHRoZQpjb21taXR0ZWUtb25seSBzaGFwZSBvY2N1cnMgaW5kZXBlbmRlbnRseSwgbm90IGp1c3QgYXMgYSBzYW1lLWJpbGwgY29tcGFuaW9uIHRvIGEgcmVhbCBjb25jdXJyZW5jZQp2b3RlLiBgU0IgMjAwMWAgKGBvY2QtYmlsbC81Mjc0ZWU0NC1jOGQ2LTRlZmQtYTdjNi0wYjIxMjRjNGExZDFgLCB0aGUgYDIwMjVTMmAgc3BlY2lhbCBzZXNzaW9uKSB3YXMKcHVsbGVkIGZvciBzZXNzaW9uIGRpdmVyc2l0eSAtLSBpdHMgYFNlbmF0ZS8gZmxvb3IgYW1lbmRtZW50IGZhaWxlZGAgYWN0aW9uIGlzIHRhZ2dlZApgW2FtZW5kbWVudC1mYWlsdXJlLCBmYWlsdXJlXWAsIG5vdCBgYW1lbmRtZW50LXBhc3NhZ2VgLCBjb25maXJtaW5nIFV0YWggdHJhY2tzIGZhaWxlZCBzYW1lLWNoYW1iZXIKZmxvb3IgYW1lbmRtZW50cyB1bmRlciBhICpkaWZmZXJlbnQqIHRhZyBwYWlyIGVudGlyZWx5IChubyBibGVlZCBpbnRvIGBhbWVuZG1lbnQtcGFzc2FnZWApLgoKIyMjIDIuIFRhbGx5LXBhdHRlcm4gcmVnZXgKCmBgYApcKFxzKlxkK1xzKi1ccypZXHMrXGQrXHMqLVxzKk4oPzpccytcZCtccyotXHMqQSk/XHMqXCkKYGBgCgoqKlJlYWwgbWV0aG9kb2xvZ2ljYWwgZGl2ZXJnZW5jZSBmcm9tIFZBL1VTIENvbmdyZXNzLCBzdGF0ZWQgcGxhaW5seToqKiBzY2FubmluZyBhbGwgMzcsMzQwIFVUCmBiaWxsYWN0aW9uLmRlc2NyaXB0aW9uYCByb3dzLCAqKnplcm8qKiBjb250YWluIGFuIGlubGluZSB0YWxseSBzdHJpbmcgbWF0Y2hpbmcgdGhpcyByZWdleCAoVkEgaGFkCjIsNzIwLzksMDIyIGBwYXNzYWdlYCByb3dzIG1hdGNoIGRpcmVjdGx5IGluIGRlc2NyaXB0aW9uIHRleHQpLiBVdGFoJ3MgcmF3IE9wZW5TdGF0ZXMgYWN0aW9uIHRleHQKbmV2ZXIgZW1iZWRzIHZvdGUgdGFsbGllcyAtLSB0aGUgWS9OL090aGVyIGNvdW50cyBsaXZlIGV4Y2x1c2l2ZWx5IGluIHRoZSBzZXBhcmF0ZQpgb3BlbmNpdmljZGF0YV92b3RlY291bnRgIHRhYmxlLCBqb2luZWQgdmlhIGBvcGVuY2l2aWNkYXRhX3ZvdGVldmVudGAgKGUuZy4gSEIyNDcncyBjb25jdXJyZW5jZQp2b3RlOiBgeWVzPTY3LCBubz0wLCBvdGhlcj04YDsgSEIxMDEnczogYHllcz03MCwgbm89MSwgb3RoZXI9NGApLiBUaGlzIGlzIGNvbnNpc3RlbnQgd2l0aCB0aGUKdGlja2V0J3MgcHJlbWlzZSB0aGF0IEhCMjQ3ICJhbHJlYWR5IG1hdGNoZWQgKDU2LVkgMTctTikiIC0tIHRoYXQgc3RyaW5nIGlzbid0IGluIHRoZSByYXcgT3BlblN0YXRlcwpkYXRhIGl0c2VsZiwgc28gaXQgbXVzdCBiZSBgZGRwLWJyb2tlci1weWAncyBvd24gYE1vdGlvbmAgY29uc3RydWN0aW9uIHRoYXQgZm9ybWF0cyBpdCBmcm9tCmB2b3RlY291bnRgIGJlZm9yZSB0aGUgcmVnZXggcnVucy4gVGhhdCBjb25zdHJ1Y3Rpb24gY29kZSBpc24ndCByZWFjaGFibGUgZnJvbSB0aGlzIHJlcG8sIGJ1dCB0aGUKcmVnZXgncyAqc2hhcGUtY29tcGF0aWJpbGl0eSogd2FzIHZlcmlmaWVkIGRpcmVjdGx5OiBmb3JtYXR0aW5nIGFsbCAyMTQgcmVhbCBgImNvbmN1cnMgd2l0aCJgCmNvbmN1cnJlbmNlIHZvdGVzJyBgdm90ZWNvdW50YCByb3dzIGFzIGAoPHllcz4tWSA8bm8+LU4gPG90aGVyPi1BKWAgcHJvZHVjZXMgYSBzdHJpbmcgdGhlIHJlZ2V4Cm1hdGNoZXMgKioyMTQvMjE0IHRpbWVzLCAwIGZhaWx1cmVzKiogKHNhbXBsZXM6IGBTQiAyOTJgIC0+IGAoMjQtWSAyLU4gMy1BKWAsIGBTQiA2OWAgLT4KYCgxOS1ZIDAtTiAxMC1BKWAsIGBIQiA0NzVgIC0+IGAoNTgtWSAyLU4gMTUtQSlgLCBgSEIgNTY2YCAtPiBgKDY4LVkgMS1OIDYtQSlgLCBgSEIgNTkxYCAtPgpgKDQ3LVkgMTQtTiAxNC1BKWApLiAqKk5vIGZvcm1hdCBnYXAgZm91bmQ7IHRoZSBnbG9iYWwgcmVnZXggaXMgZnVsbHkgY29tcGF0aWJsZSB3aXRoIFV0YWgncyByZWFsCnRhbGx5IGRhdGEsIHdoYXRldmVyIHRoZSBleGFjdCBzdHJpbmcgZGRwLWJyb2tlci1weSBmb3JtYXRzLioqCgojIyMgMy4gYGFtZW5kbWVudC1wYXNzYWdlYCBicmVhZHRoIC0tIFV0YWgncyBvd24gY29uY3VycmVuY2Uvc2FtZS1jaGFtYmVyIGFtYmlndWl0eSwgY29uZmlybWVkCgpVdGFoJ3MgYGFtZW5kbWVudC1wYXNzYWdlYCB0YWcgKDQyNCB0b3RhbCByb3dzKSBpcyBnZW51aW5lbHkgZHVhbC1wdXJwb3NlLCB0aGUgZXhhY3Qgc2hhcGUgdGhlCnRpY2tldCBhc2tlZCB0byBjaGVjayBmb3IgLS0gbWlycm9yaW5nIFZBJ3MgYGFtZW5kbWVudC1wYXNzYWdlYC9TQjc4MyBmaW5kaW5nOgoKKipSZWFsIGNyb3NzLWNoYW1iZXIgY29uY3VycmVuY2Ugdm90ZXMgKDIxNCByb3dzLCAxMDAlIGhhdmUgYSBtYXRjaGluZyByZWFsIGBWb3RlRXZlbnRgICsKYHZvdGVjb3VudGApOioqCi0gYCJIb3VzZS8gY29uY3VycyB3aXRoIFNlbmF0ZSBhbWVuZG1lbnQiYCBhbmQgYCJTZW5hdGUvIGNvbmN1cnMgd2l0aCBIb3VzZSBhbWVuZG1lbnQiYCAtLSB0aGUKICBvbmx5IHR3byBkaXN0aW5jdCB0ZXh0IHNoYXBlcyBpbiB0aGlzIGdyb3VwLgotIENvbmZpcm1lZCBhY3Jvc3MgbWFueSByZWFsIGJpbGxzIGJleW9uZCBIQjI0NzogSEIxMDEsIEhCMTEwLCBIQjExMSwgSEIxMTMsIEhCMTE4LCBIQjExOSwgSEIxMjksCiAgU0IyOTIsIFNCNjksIEhCNDc1LCBIQjU2NiwgSEI1OTEsIGFuZCBtb3JlLgoKKipTYW1lLWNoYW1iZXIgY29tbWl0dGVlLWxldmVsIGFtZW5kbWVudCBtYXJrZXJzICgyMTAgcm93cywgMCUgaGF2ZSBhbnkgbWF0Y2hpbmcgYFZvdGVFdmVudGAgLS0KcHVyZWx5IHByb2NlZHVyYWwsIG5vdCByZWFsIHZvdGVzKToqKgotIGAiSG91c2UvIGNvbW0gcnB0LyBhbWVuZGVkIFtDb21taXR0ZWUgTmFtZV0iYCAvIGAiU2VuYXRlLyBjb21tIHJwdC8gYW1lbmRlZCBbQ29tbWl0dGVlIE5hbWVdImAKICAtLSBjb21taXR0ZWUgcmVwb3J0cyBvdXQgYSBiaWxsIHdpdGggYW1lbmRtZW50cywgbW9zdCBjb21tb24gc2hhcGUgKGUuZy4gYEhvdXNlLyBjb21tIHJwdC8KICBhbWVuZGVkIFtIb3VzZSBFZHVjYXRpb24gQ29tbWl0dGVlXWAsIDE1IG9jY3VycmVuY2VzOyBgU2VuYXRlLyBjb21tIHJwdC8gYW1lbmRlZCBbU2VuYXRlCiAgSnVkaWNpYXJ5LCBMYXcgRW5mb3JjZW1lbnQsIGFuZCBDcmltaW5hbCBKdXN0aWNlIENvbW1pdHRlZV1gLCAxMiBvY2N1cnJlbmNlczsgZG96ZW5zIG1vcmUKICBjb21taXR0ZWUgdmFyaWFudHMpLgotIGAiSG91c2UvIGNvbW0gcnB0LyBzdWJzdGl0dXRlZC8gYW1lbmRlZCBbQ29tbWl0dGVlIE5hbWVdImAgLS0gc2FtZSBzaGFwZSB3aXRoIGEgc3Vic3RpdHV0ZS4KLSBgIlNlbmF0ZS8gY29tbSBycHQvIHNlbnQgdG8gUnVsZXMvIGFtZW5kZWQgW1NlbmF0ZSBSdWxlcyBDb21taXR0ZWVdImAsIGAiQmlsbCBhbWVuZGVkIGluIFNlbmF0ZQogIFJ1bGVzIENvbW1pdHRlZSBbU2VuYXRlIFJ1bGVzIENvbW1pdHRlZV0iYCwgYCJTZW5hdGUvIGFtZW5kZWQgaW4gUnVsZXMiYCAtLSBSdWxlcyBDb21taXR0ZWUKICBwcm9jZWR1cmFsIHZhcmlhbnRzLgotIGAiQmlsbCBhbWVuZGVkIGJ5IENvbmZlcmVuY2UgQ29tbWl0dGVlIFtDb25mZXJlbmNlIENvbW1pdHRlZV0iYCAtLSBjb25mZXJlbmNlIGNvbW1pdHRlZQogIHByb2NlZHVyYWwgbWFya2VyLgoKTm9uZSBvZiB0aGUgMjEwIHNhbWUtY2hhbWJlciByb3dzIGhhdmUgYSBtYXRjaGluZyBgb3BlbmNpdmljZGF0YV92b3RlZXZlbnRgIHJvdyAoam9pbmVkIG9uCmBiaWxsX2lkYCArIGBtb3Rpb25fdGV4dCA9IGRlc2NyaXB0aW9uYCk7IGFsbCAyMTQgY29uY3VycmVuY2Ugcm93cyBkby4gVGhpcyBpcyBhIGNsZWFuLCBkZWNpc2l2ZQpzcGxpdCBjb25maXJtZWQgYWdhaW5zdCByZWFsIHZvdGUtbGlua2FnZSBkYXRhLCBub3QganVzdCB0ZXh0IHBhdHRlcm4tbWF0Y2hpbmcuCgoqKlJlY29tbWVuZGVkIGByZXF1aXJlc19wYXR0ZXJuYCBnYXRlKiosIHZhbGlkYXRlZCBhZ2FpbnN0IGFsbCA0MjQgcm93cyB3aXRoICoqemVybyBmYWxzZQpwb3NpdGl2ZXMgYW5kIHplcm8gZmFsc2UgbmVnYXRpdmVzKiogYWdhaW5zdCB0aGUgaGFzLWEtcmVhbC12b3RlIGdyb3VuZCB0cnV0aDoKCmBgYApjb25jdXJzIHdpdGggKEhvdXNlfFNlbmF0ZSkgYW1lbmRtZW50CmBgYAoKfCB8IG1hdGNoZXMgZ2F0ZSB8IGRvZXNuJ3QgbWF0Y2ggZ2F0ZSB8CnwtLS18LS0tfC0tLXwKfCAqKmhhcyByZWFsIFZvdGVFdmVudCoqIHwgMjE0ICh0cnVlIHBvc2l0aXZlKSB8IDAgKGZhbHNlIG5lZ2F0aXZlKSB8CnwgKipubyBWb3RlRXZlbnQgKHByb2NlZHVyYWwpKiogfCAwIChmYWxzZSBwb3NpdGl2ZSkgfCAyMTAgKHRydWUgbmVnYXRpdmUpIHwKCioqU3BvdC1jaGVjayBvZiBvdGhlciBVVC1zcGVjaWZpYyB0YWdzIGZvciBzaW1pbGFyIGFtYmlndWl0eToqKiBzYW1wbGVkIGBmYWlsdXJlYCAoMTA5IHJvd3MgLS0KY29uc2lzdGVudGx5IGAiSG91c2UvU2VuYXRlLyBmYWlsZWQiYCwgYCIuLi5zdWJzdGl0dXRlIGFkb3B0aW9uIGZhaWxlZCJgLCBgIi4uLmZsb29yIGFtZW5kbWVudApmYWlsZWQiYCwgY29tbWl0dGVlICJNb3Rpb24gdG8gUmVjb21tZW5kIEZhaWxlZCIgc2hhcGVzLCBubyByZWFsLXZvdGUvcHJvY2VkdXJhbCBtaXhpbmcgZm91bmQpLApgY29tbWl0dGVlLXBhc3NhZ2UtZmF2b3JhYmxlYCAoMSw5MzAgcm93cyAtLSBjb25zaXN0ZW50bHkgY29tbWl0dGVlIHJlY29tbWVuZGF0aW9uIGxhbmd1YWdlLCBubwpmbG9vci12b3RlIHRleHQgbWl4ZWQgaW4pLCBhbmQgYGFtZW5kbWVudC1mYWlsdXJlYCAoNyByb3dzIC0tIGNvbnNpc3RlbnRseSBgIkhvdXNlL1NlbmF0ZS8gZmxvb3IKYW1lbmRtZW50IGZhaWxlZCJgLCBhIHJlYWwgZmFpbGVkIGZsb29yIHZvdGUsIGRpc3RpbmN0IHRhZyBmcm9tIGBhbWVuZG1lbnQtcGFzc2FnZWAgc28gbm8gYmxlZWQpLgpObyBvdGhlciBkdWFsLW1lYW5pbmcgdGFnIGZvdW5kLiBgcGFzc2FnZWAtdGFnZ2VkIGNlcmVtb25pYWwgc2lnbmluZyByb3dzIChgIkhvdXNlLyBzaWduZWQgYnkKU3BlYWtlci8gc2VudCBmb3IgZW5yb2xsaW5nImAsIGAiU2VuYXRlLyBzaWduZWQgYnkgUHJlc2lkZW50LyByZXR1cm5lZCB0byBIb3VzZSJgKSBleGlzdCAoYXMgaW4KVkEpIGJ1dCBhcmUgbmF0dXJhbGx5IGV4Y2x1ZGVkIGZyb20gc2NvcmluZyBieSB0aGUgdGFsbHktcmVnZXggbm90IG1hdGNoaW5nIHRoZW0gLS0gdGhlIHNhbWUKY2VyZW1vbmlhbC1zaWduaW5nIHBhdHRlcm4gT1BFTi02NCBhbHJlYWR5IGNoYXJhY3Rlcml6ZWQgZm9yIFZBLCBub3QgYSBuZXcgZ2FwLgoKIyMgQ29uY2x1c2lvbgoKLSAqKkdsb2JhbCB0YWxseS1wYXR0ZXJuIHJlZ2V4Kio6IGZ1bGx5IGNvbXBhdGlibGUgd2l0aCByZWFsIFV0YWggdGFsbHkgZGF0YS4gTm8gY2hhbmdlIG5lZWRlZDsKICByZWNvbW1lbmQgcmV1c2luZyB0aGUgZ2xvYmFsIGRlZmF1bHQgYXMtaXMgZm9yIFV0YWgncyBgdGFsbHlfcGF0dGVybmAuCi0gKipgYW1lbmRtZW50LXBhc3NhZ2VgIHJlcXVpcmVzX3BhdHRlcm4gZ2F0ZSoqOiBVdGFoIG5lZWRzIHRoZSBzYW1lIGtpbmQgb2YgZ2F0ZSBWQSBuZWVkZWQgZm9yCiAgaXRzIG93biBgYW1lbmRtZW50LXBhc3NhZ2VgIGFtYmlndWl0eS4gUmVjb21tZW5kZWQgYEp1cmlzZGljdGlvbkVsaWdpYmlsaXR5UnVsZWA6CiAgLSBgY2xhc3NpZmljYXRpb24gPSAiYW1lbmRtZW50LXBhc3NhZ2UiYCwgYHJlcXVpcmVzX3BhdHRlcm4gPSAiY29uY3VycyB3aXRoIChIb3VzZXxTZW5hdGUpCiAgICBhbWVuZG1lbnQiYCAtLSB2YWxpZGF0ZWQgd2l0aCAwIGZhbHNlIHBvc2l0aXZlcy9uZWdhdGl2ZXMgYWdhaW5zdCA0MjQgcmVhbCByb3dzLgotICoqTm8gb3RoZXIgdGFnIGFtYmlndWl0eSBmb3VuZCoqIGluIGBmYWlsdXJlYCwgYGNvbW1pdHRlZS1wYXNzYWdlLWZhdm9yYWJsZWAsIG9yCiAgYGFtZW5kbWVudC1mYWlsdXJlYC4KClJlY29tbWVuZGVkIGB2ZXJpZmllZF9ub3Rlc2AgZm9yIHRoZSBgZGRwLWJyb2tlci1weWAgbWlncmF0aW9uIChgSnVyaXNkaWN0aW9uRWxpZ2liaWxpdHlDb25maWdgLApqdXJpc2RpY3Rpb24gaXNvMiBgVVRgKToKCj4gQmFzaXM6IEhCMjQ3IChgVXRIYjI0N0NvbmN1cnJlbmNlVGVzdGAsICJIb3VzZS8gY29uY3VycyB3aXRoIFNlbmF0ZSBhbWVuZG1lbnQiLCBhbWVuZG1lbnQtcGFzc2FnZSwKPiB5ZXM9Njcvbm89MC9vdGhlcj04KS4gQnJlYWR0aC12ZXJpZmllZCwgT1BFTi02MS8yMDI2LTA4LTEyOiBjbGFzc2lmaWNhdGlvbiBicmVha2Rvd24gYWNyb3NzIGFsbAo+IDM3LDM0MCBVVCBiaWxsYWN0aW9uIHJvd3MgKGJvdGgga25vd24gc2Vzc2lvbnMsIDIwMjVTMiArIDIwMjYgLS0gdGhlIGNvbXBsZXRlIGxvY2FsIGNvcnB1cywgbm90IGEKPiBzdWJzYW1wbGUpLiB0YWxseV9wYXR0ZXJuIGNvbmZpcm1lZCBmb3JtYXQtY29tcGF0aWJsZSB3aXRoIHJlYWwgdm90ZWNvdW50IGRhdGEgYWNyb3NzIDIxNCByZWFsCj4gY29uY3VycmVuY2Ugdm90ZXMgKDAgZm9ybWF0IGZhaWx1cmVzOyBVVCdzIHJhdyBhY3Rpb24gdGV4dCBuZXZlciBlbWJlZHMgdGFsbGllcyBpbmxpbmUsIHVubGlrZQo+IFZBL1VTIENvbmdyZXNzIC0tIHRhbGxpZXMgbGl2ZSBpbiB2b3RlY291bnQvdm90ZWV2ZW50IG9ubHkpLiBhbWVuZG1lbnQtcGFzc2FnZSB0YWcgY29uZmlybWVkCj4gZHVhbC1wdXJwb3NlIGxpa2UgVkEncyBvd24gY2FzZTogMjE0IHJlYWwgY3Jvc3MtY2hhbWJlciBjb25jdXJyZW5jZSB2b3RlcyAoMTAwJSBoYXZlIGEgbWF0Y2hpbmcKPiBWb3RlRXZlbnQpIHZzLiAyMTAgc2FtZS1jaGFtYmVyIGNvbW1pdHRlZS1sZXZlbCBhbWVuZG1lbnQgbWFya2VycyAoMCUgaGF2ZSBhIFZvdGVFdmVudCkgYWNyb3NzCj4gSEIxMDEsIEhCMTEwLCBIQjExMSwgSEIxMTMsIEhCMTE4LCBIQjExOSwgSEIxMjksIFNCMjkyLCBTQjY5LCBIQjQ3NSwgSEI1NjYsIEhCNTkxIGFuZCBtb3JlLgo+IHJlcXVpcmVzX3BhdHRlcm4gImNvbmN1cnMgd2l0aCAoSG91c2V8U2VuYXRlKSBhbWVuZG1lbnQiIGFkZGVkIGZvciBhbWVuZG1lbnQtcGFzc2FnZSwgdmFsaWRhdGVkCj4gd2l0aCAwIGZhbHNlIHBvc2l0aXZlcy9uZWdhdGl2ZXMgYWdhaW5zdCBhbGwgNDI0IHJvd3MuIE5vIG90aGVyIHRhZyBhbWJpZ3VpdHkgZm91bmQgaW4KPiBmYWlsdXJlL2NvbW1pdHRlZS1wYXNzYWdlLWZhdm9yYWJsZS9hbWVuZG1lbnQtZmFpbHVyZSBzYW1wbGluZy4KCioqQWRkaXRpb25hbCByZWdyZXNzaW9uIHRlc3QgY2FuZGlkYXRlIGZvciBQaGFzZSAyKiogKGJleW9uZCBgVXRIYjI0N0NvbmN1cnJlbmNlVGVzdGApOiBgSEIxMDFgCmlzIGEgc3Ryb25nIHNlY29uZCBmaXh0dXJlIGJlY2F1c2UgaXQgY29udGFpbnMgKmJvdGgqIHNoYXBlcyBpbiBvbmUgYmlsbCAtLSBhIHNhbWUtY2hhbWJlcgpgIlNlbmF0ZS8gY29tbSBycHQvIGFtZW5kZWQgWy4uLl0iYCBhY3Rpb24gdGhhdCBtdXN0IHN0YXkgYFVOQ0xFQVJgL25vbi1zY29yaW5nLCBhbmQgYSByZWFsCmAiSG91c2UvIGNvbmN1cnMgd2l0aCBTZW5hdGUgYW1lbmRtZW50ImAgdm90ZSAoeWVzPTcwLCBubz0xLCBvdGhlcj00KSB0aGF0IG11c3QgYmUKYGVsaWdpYmxlX2Zvcl9zY29yZWNhcmQ9VHJ1ZWAgLS0gZGlyZWN0bHkgZXhlcmNpc2luZyB0aGUgbmV3IGByZXF1aXJlc19wYXR0ZXJuYCBnYXRlIHRoZSB3YXkgVkEncwpgUmVxdWlyZXNQYXR0ZXJuRGlzdGluZ3Vpc2hlc1NhbWVDaGFtYmVyRnJvbUNvbmN1cnJlbmNlVGVzdGAgZG9lcyBmb3IgU0I3ODMuCgojIyBSZWZlcmVuY2VzCgotIGBub3Rlcy9vcGVuLTYwLXVzLWNvbmdyZXNzLWVsaWdpYmlsaXR5LXZlcmlmaWNhdGlvbi0yMDI2MDgxMi5tZGAgLS0gc2libGluZyB0aWNrZXQsIHNhbWUKICBtZWNoYW5pc20sIFVTIENvbmdyZXNzIGZvdW5kIGFjdGl2ZWx5IHdyb25nICgwLzQsODk3IHRhbGx5IG1hdGNoZXMpCi0gYG5vdGVzL29wZW4tNjQtdmlyZ2luaWEtZWxpZ2liaWxpdHktYnJlYWR0aC12ZXJpZmljYXRpb24tMjAyNjA4MTIubWRgIC0tIHNpYmxpbmcgdGlja2V0LCBzYW1lCiAgbWVjaGFuaXNtLCBWQSBmb3VuZCBjb3JyZWN0LXdpdGgtYS1nYXRlICh0aGUgYGFtZW5kbWVudC1wYXNzYWdlYC9TQjc4MyBzaGFwZSB0aGlzIHRpY2tldAogIGNvbmZpcm1lZCBVdGFoIHNoYXJlcykKLSBgbm90ZXMvYmlsbC1hY3Rpb25zLXBlcnNpc3RlZC12ZXJpZmljYXRpb24tMjAyNjA4MTEubWRgIC0tIGNvbmZpcm1zIGBvcGVuY2l2aWNkYXRhX2JpbGxhY3Rpb25gCiAgaXMgdGhlIGNvcnJlY3QsIGZ1bGx5LXBlcnNpc3RlZCBzb3VyY2UgdGFibGUsIGFuZCB0aGUgYGNhbXNgL01DUC10b29sIERCIGZvb3RndW4KLSBgbm90ZXMvdXQtMjAyNi10aWVyMi01MDAtYmlsbC1yYW5kb20tc2FtcGxlLTIwMjYwODAzLm1kYCwgYG5vdGVzL3V0LTIwMjVzMi10aWVyMi01MDAtYmlsbC0KICByYW5kb20tc2FtcGxlLTIwMjYwODAzLm1kYCAtLSBwcmlvciBVVCBkYXRhLXF1YWxpdHkgc3dlZXBzIGNvbmZpcm1pbmcgdGhlIDIgc2Vzc2lvbnMvMSwwMTYrNQogIGJpbGwgY291bnRzIHVzZWQgYXMgdGhpcyBkb2MncyBwb3B1bGF0aW9uCi0gUHJvZHVjdGlvbiBEQjogYG9wZW5jaXZpY2RhdGFfYmlsbGFjdGlvbmAgLyBgb3BlbmNpdmljZGF0YV9iaWxsYCAvCiAgYG9wZW5jaXZpY2RhdGFfbGVnaXNsYXRpdmVzZXNzaW9uYCAvIGBvcGVuY2l2aWNkYXRhX2p1cmlzZGljdGlvbmAgLyBgb3BlbmNpdmljZGF0YV92b3RlZXZlbnRgIC8KICBgb3BlbmNpdmljZGF0YV92b3RlY291bnRgCi0gUGhhc2UgMiBoYW5kb2ZmIHRhcmdldDogYGRkcC1icm9rZXItcHlgLCBgY29tbW9uL21vZGVscy9KdXJpc2RpY3Rpb25FbGlnaWJpbGl0eUNvbmZpZy5weWAgLwogIGBKdXJpc2RpY3Rpb25FbGlnaWJpbGl0eVJ1bGUucHlgLCBicmFuY2ggYGZpeC9CUk9LRVItNDctYWdlbnRgLCBQUiAjMjk1IC0tIG5vdCByZWFjaGFibGUgZnJvbQogIHRoaXMgY2hlY2tvdXQ7IG5vIGBkZHAtYnJva2VyLXB5YCBjbG9uZSBleGlzdHMgYW55d2hlcmUgaW4gdGhpcyB3b3Jrc3BhY2UK
+# OPEN-61: Utah `eligible_for_scorecard` breadth verification
+
+## Context
+
+`Motion.eligible_for_scorecard` (ddp-broker-py, BROKER-47) is computed from a global
+tally-pattern regex and a set of `DEFINITE_YES`/`DEFINITE_NO` action-classification tags that
+were only ever confirmed against Virginia's own action text. Utah currently has one real
+regression case (`HB247`, "House/ concurs with Senate amendment", `UtHb247ConcurrenceTest`) but
+no `JurisdictionEligibilityConfig` row and no jurisdiction-wide verification. This is Phase 1 of
+OPEN-61 (research, in `ddp-open-states`) -- the handoff artifact for Phase 2 (config/migration/
+tests, in `ddp-broker-py`, `fix/BROKER-47-agent`, PR #295).
+
+Three things were asked, all against real replica data, no invented examples:
+1. Sample `opencivicdata_billaction` rows for Utah, grouped by classification, across several
+   real bills (not just HB247).
+2. Whether the global tally-pattern regex holds broadly for Utah.
+3. Whether Utah has a tag that means more than one thing depending on context, the way Virginia's
+   `amendment-passage` covers both a real cross-chamber concurrence vote and a same-chamber floor
+   amendment that must never score -- specifically checking whether Utah's own `amendment-passage`
+   tag (HB247's tag) has the same shape.
+
+## Method
+
+Queried the production OpenStates Postgres replica directly --
+`postgresql://openstates:openstates_dev@localhost:5433/openstates` (the real replica; **not** the
+`cams` DB the `postgres` MCP tool defaults to -- same caveat as `bill-actions-persisted-
+verification-20260811.md`, `open-60-us-congress-eligibility-verification-20260812.md`, and
+`open-64-virginia-eligibility-breadth-verification-20260812.md`). Jurisdiction filter:
+`opencivicdata_jurisdiction.name = 'Utah'` (`ocd-jurisdiction/country:us/state:ut/government`).
+
+All numbers below are live counts as of 2026-08-12, via `psycopg2` against
+`opencivicdata_billaction` joined through `opencivicdata_bill` -> `opencivicdata_legislativesession`
+-> `opencivicdata_jurisdiction`, plus `opencivicdata_voteevent` / `opencivicdata_votecount` for
+real vote tallies.
+
+## Result
+
+### 1. Classification breakdown (37,340 total UT billaction rows, both known sessions)
+
+Utah has exactly **two** sessions persisted locally: `2025S2` (5 bills, a special session) and
+`2026` (1,016 bills). Unlike VA/US Congress this isn't a subsample of a larger corpus -- this is
+the complete set of Utah action data available, stated plainly per the AC's "across more than
+just HB247" ask.
+
+| classification | count |
+|---|---|
+| receipt | 4,361 |
+| passage | 2,144 |
+| committee-passage-favorable | 1,930 |
+| referral-committee | 1,447 |
+| executive-receipt | 554 |
+| reading-2 | 551 |
+| enrolled | 548 |
+| executive-signature | 515 |
+| filing | 505 |
+| **amendment-passage** | **424** |
+| amendment-introduction | 226 |
+| failure | 109 |
+| deferral | 9 |
+| amendment-failure | 7 |
+| executive-veto | 2 |
+| executive-veto-line-item | 1 |
+| substitution | 1 |
+| became-law | 1 |
+
+### Two real bills' full action lists
+
+**`HB 247`** (`ocd-bill/b692d11a-8bb8-4d0c-a8c1-9e692dc1b80b`, 2026 session, 66 actions) -- the
+existing `UtHb247ConcurrenceTest` bill. Full list on file; key rows:
+
+| order | date | description | classification |
+|---|---|---|---|
+| 22 | 2026-02-17 | House/ passed 3rd reading | `[passage]` |
+| 46-48 | 2026-03-06 | Senate/ 2nd & 3rd readings/ suspension ... Senate/ passed 2nd & 3rd readings/ suspension | `[]` |
+| 52 | 2026-03-06 | **House/ concurs with Senate amendment** | `[amendment-passage]` |
+| 55 | 2026-03-07 | Senate/ signed by President/ returned to House | `[passage]` |
+| 58 | 2026-03-07 | House/ signed by Speaker/ sent for enrolling | `[passage]` |
+| 65 | 2026-03-25 | Governor Signed | `[executive-signature]` |
+
+**`HB 101`** (`ocd-bill/85dcf430-f46e-43b1-812f-503275d99df0`, 2026 session, 45 actions) --
+chosen because it independently contains **both** `amendment-passage` shapes in one bill's own
+history, the same way VA's SB783 did:
+
+| order | date | description | classification |
+|---|---|---|---|
+| 22 | 2026-02-17 | Senate/ comm rpt/ amended [Senate Natural Resources, Agriculture, and Environment Committee] | `[amendment-passage]` (same-chamber, procedural, no vote) |
+| 28 | 2026-02-19 | Senate/ to House with amendments | `[]` |
+| 31 | 2026-02-20 | **House/ concurs with Senate amendment** | `[amendment-passage]` (cross-chamber, real vote: yes=70, no=1, other=4) |
+
+`HB 115` (`ocd-bill/919a6166-90fe-4dda-b0ed-1d47bd4eb876`) was pulled as a contrasting bill whose
+*only* `amendment-passage` action is the same-chamber committee shape (`House/ comm rpt/ amended
+[House Revenue and Taxation Committee]`, order 13) with no concurrence step at all -- confirms the
+committee-only shape occurs independently, not just as a same-bill companion to a real concurrence
+vote. `SB 2001` (`ocd-bill/5274ee44-c8d6-4efd-a7c6-0b2124c4a1d1`, the `2025S2` special session) was
+pulled for session diversity -- its `Senate/ floor amendment failed` action is tagged
+`[amendment-failure, failure]`, not `amendment-passage`, confirming Utah tracks failed same-chamber
+floor amendments under a *different* tag pair entirely (no bleed into `amendment-passage`).
+
+### 2. Tally-pattern regex
+
+```
+\(\s*\d+\s*-\s*Y\s+\d+\s*-\s*N(?:\s+\d+\s*-\s*A)?\s*\)
+```
+
+**Real methodological divergence from VA/US Congress, stated plainly:** scanning all 37,340 UT
+`billaction.description` rows, **zero** contain an inline tally string matching this regex (VA had
+2,720/9,022 `passage` rows match directly in description text). Utah's raw OpenStates action text
+never embeds vote tallies -- the Y/N/Other counts live exclusively in the separate
+`opencivicdata_votecount` table, joined via `opencivicdata_voteevent` (e.g. HB247's concurrence
+vote: `yes=67, no=0, other=8`; HB101's: `yes=70, no=1, other=4`). This is consistent with the
+ticket's premise that HB247 "already matched (56-Y 17-N)" -- that string isn't in the raw OpenStates
+data itself, so it must be `ddp-broker-py`'s own `Motion` construction that formats it from
+`votecount` before the regex runs. That construction code isn't reachable from this repo, but the
+regex's *shape-compatibility* was verified directly: formatting all 214 real `"concurs with"`
+concurrence votes' `votecount` rows as `(<yes>-Y <no>-N <other>-A)` produces a string the regex
+matches **214/214 times, 0 failures** (samples: `SB 292` -> `(24-Y 2-N 3-A)`, `SB 69` ->
+`(19-Y 0-N 10-A)`, `HB 475` -> `(58-Y 2-N 15-A)`, `HB 566` -> `(68-Y 1-N 6-A)`, `HB 591` ->
+`(47-Y 14-N 14-A)`). **No format gap found; the global regex is fully compatible with Utah's real
+tally data, whatever the exact string ddp-broker-py formats.**
+
+### 3. `amendment-passage` breadth -- Utah's own concurrence/same-chamber ambiguity, confirmed
+
+Utah's `amendment-passage` tag (424 total rows) is genuinely dual-purpose, the exact shape the
+ticket asked to check for -- mirroring VA's `amendment-passage`/SB783 finding:
+
+**Real cross-chamber concurrence votes (214 rows, 100% have a matching real `VoteEvent` +
+`votecount`):**
+- `"House/ concurs with Senate amendment"` and `"Senate/ concurs with House amendment"` -- the
+  only two distinct text shapes in this group.
+- Confirmed across many real bills beyond HB247: HB101, HB110, HB111, HB113, HB118, HB119, HB129,
+  SB292, SB69, HB475, HB566, HB591, and more.
+
+**Same-chamber committee-level amendment markers (210 rows, 0% have any matching `VoteEvent` --
+purely procedural, not real votes):**
+- `"House/ comm rpt/ amended [Committee Name]"` / `"Senate/ comm rpt/ amended [Committee Name]"`
+  -- committee reports out a bill with amendments, most common shape (e.g. `House/ comm rpt/
+  amended [House Education Committee]`, 15 occurrences; `Senate/ comm rpt/ amended [Senate
+  Judiciary, Law Enforcement, and Criminal Justice Committee]`, 12 occurrences; dozens more
+  committee variants).
+- `"House/ comm rpt/ substituted/ amended [Committee Name]"` -- same shape with a substitute.
+- `"Senate/ comm rpt/ sent to Rules/ amended [Senate Rules Committee]"`, `"Bill amended in Senate
+  Rules Committee [Senate Rules Committee]"`, `"Senate/ amended in Rules"` -- Rules Committee
+  procedural variants.
+- `"Bill amended by Conference Committee [Conference Committee]"` -- conference committee
+  procedural marker.
+
+None of the 210 same-chamber rows have a matching `opencivicdata_voteevent` row (joined on
+`bill_id` + `motion_text = description`); all 214 concurrence rows do. This is a clean, decisive
+split confirmed against real vote-linkage data, not just text pattern-matching.
+
+**Recommended `requires_pattern` gate**, validated against all 424 rows with **zero false
+positives and zero false negatives** against the has-a-real-vote ground truth:
+
+```
+concurs with (House|Senate) amendment
+```
+
+| | matches gate | doesn't match gate |
+|---|---|---|
+| **has real VoteEvent** | 214 (true positive) | 0 (false negative) |
+| **no VoteEvent (procedural)** | 0 (false positive) | 210 (true negative) |
+
+**Spot-check of other UT-specific tags for similar ambiguity:** sampled `failure` (109 rows --
+consistently `"House/Senate/ failed"`, `"...substitute adoption failed"`, `"...floor amendment
+failed"`, committee "Motion to Recommend Failed" shapes, no real-vote/procedural mixing found),
+`committee-passage-favorable` (1,930 rows -- consistently committee recommendation language, no
+floor-vote text mixed in), and `amendment-failure` (7 rows -- consistently `"House/Senate/ floor
+amendment failed"`, a real failed floor vote, distinct tag from `amendment-passage` so no bleed).
+No other dual-meaning tag found. `passage`-tagged ceremonial signing rows (`"House/ signed by
+Speaker/ sent for enrolling"`, `"Senate/ signed by President/ returned to House"`) exist (as in
+VA) but are naturally excluded from scoring by the tally-regex not matching them -- the same
+ceremonial-signing pattern OPEN-64 already characterized for VA, not a new gap.
+
+## Conclusion
+
+- **Global tally-pattern regex**: fully compatible with real Utah tally data. No change needed;
+  recommend reusing the global default as-is for Utah's `tally_pattern`.
+- **`amendment-passage` requires_pattern gate**: Utah needs the same kind of gate VA needed for
+  its own `amendment-passage` ambiguity. Recommended `JurisdictionEligibilityRule`:
+  - `classification = "amendment-passage"`, `requires_pattern = "concurs with (House|Senate)
+    amendment"` -- validated with 0 false positives/negatives against 424 real rows.
+- **No other tag ambiguity found** in `failure`, `committee-passage-favorable`, or
+  `amendment-failure`.
+
+Recommended `verified_notes` for the `ddp-broker-py` migration (`JurisdictionEligibilityConfig`,
+jurisdiction iso2 `UT`):
+
+> Basis: HB247 (`UtHb247ConcurrenceTest`, "House/ concurs with Senate amendment", amendment-passage,
+> yes=67/no=0/other=8). Breadth-verified, OPEN-61/2026-08-12: classification breakdown across all
+> 37,340 UT billaction rows (both known sessions, 2025S2 + 2026 -- the complete local corpus, not a
+> subsample). tally_pattern confirmed format-compatible with real votecount data across 214 real
+> concurrence votes (0 format failures; UT's raw action text never embeds tallies inline, unlike
+> VA/US Congress -- tallies live in votecount/voteevent only). amendment-passage tag confirmed
+> dual-purpose like VA's own case: 214 real cross-chamber concurrence votes (100% have a matching
+> VoteEvent) vs. 210 same-chamber committee-level amendment markers (0% have a VoteEvent) across
+> HB101, HB110, HB111, HB113, HB118, HB119, HB129, SB292, SB69, HB475, HB566, HB591 and more.
+> requires_pattern "concurs with (House|Senate) amendment" added for amendment-passage, validated
+> with 0 false positives/negatives against all 424 rows. No other tag ambiguity found in
+> failure/committee-passage-favorable/amendment-failure sampling.
+
+**Additional regression test candidate for Phase 2** (beyond `UtHb247ConcurrenceTest`): `HB101`
+is a strong second fixture because it contains *both* shapes in one bill -- a same-chamber
+`"Senate/ comm rpt/ amended [...]"` action that must stay `UNCLEAR`/non-scoring, and a real
+`"House/ concurs with Senate amendment"` vote (yes=70, no=1, other=4) that must be
+`eligible_for_scorecard=True` -- directly exercising the new `requires_pattern` gate the way VA's
+`RequiresPatternDistinguishesSameChamberFromConcurrenceTest` does for SB783.
+
+## References
+
+- `notes/open-60-us-congress-eligibility-verification-20260812.md` -- sibling ticket, same
+  mechanism, US Congress found actively wrong (0/4,897 tally matches)
+- `notes/open-64-virginia-eligibility-breadth-verification-20260812.md` -- sibling ticket, same
+  mechanism, VA found correct-with-a-gate (the `amendment-passage`/SB783 shape this ticket
+  confirmed Utah shares)
+- `notes/bill-actions-persisted-verification-20260811.md` -- confirms `opencivicdata_billaction`
+  is the correct, fully-persisted source table, and the `cams`/MCP-tool DB footgun
+- `notes/ut-2026-tier2-500-bill-random-sample-20260803.md`, `notes/ut-2025s2-tier2-500-bill-
+  random-sample-20260803.md` -- prior UT data-quality sweeps confirming the 2 sessions/1,016+5
+  bill counts used as this doc's population
+- Production DB: `opencivicdata_billaction` / `opencivicdata_bill` /
+  `opencivicdata_legislativesession` / `opencivicdata_jurisdiction` / `opencivicdata_voteevent` /
+  `opencivicdata_votecount`
+- Phase 2 handoff target: `ddp-broker-py`, `common/models/JurisdictionEligibilityConfig.py` /
+  `JurisdictionEligibilityRule.py`, branch `fix/BROKER-47-agent`, PR #295 -- not reachable from
+  this checkout; no `ddp-broker-py` clone exists anywhere in this workspace
