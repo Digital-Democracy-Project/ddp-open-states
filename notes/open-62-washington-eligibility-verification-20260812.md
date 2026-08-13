@@ -242,9 +242,10 @@ artifact, not confirmed as an eligibility-rule issue." Pulled SB 6002's full act
 (`ocd-bill/d15c7f64-3669-41e6-8110-3c7fb3279553`) directly:
 
 - No same-date duplicate `passage` or `reading-3` action exists in the current replica snapshot.
-  Single clean sequence: House passage (2026-02-04, `reading-3`, 40-9) → Senate amendment →
-  concurrence (2026-03-10, untagged) → single final-passage tally same date (`passage`, 39-10) →
-  signatures → law.
+  Single clean sequence: Senate passage (2026-02-04, `reading-3`, 40-9, acting org `Senate`) → House
+  amendment and its own passage (2026-03-05, `reading-3`, 84-10, acting org `House`) → Senate
+  concurrence (2026-03-10, untagged) → single final-passage tally same date (`passage`, 39-10,
+  acting org `Senate`) → signatures → law.
 - No `"will be reconsidered"` action anywhere in its history, unlike the 18 bills in §5.
 
 This confirms the ticket's own hedge: as of 2026-08-12, SB6002 shows no duplicate-motion pattern in
