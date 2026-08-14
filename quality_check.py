@@ -108,6 +108,41 @@ def breakdown_by_prefix(identifiers):
         counts[match.group(0) if match else identifier] += 1
     return dict(counts)
 
+
+def motion_text_chamber_mismatch(vote):
+    """OPEN-67 reproduction, as a single-vote invariant check (not a local-vs-live
+    diff): does this vote's own motion_text ("House/ passed 3rd reading", "Senate/
+    failed", ...) agree with the chamber it's actually recorded under? Mirrors
+    ddp-broker-py's own check exactly -- text starting "house" implies chamber
+    "lower", "senate" implies "upper". Returns None for a vote whose motion_text
+    doesn't start with either word (not applicable -- not a mismatch, just out of
+    scope for this check, e.g. "Governor signed"). Returns True if they agree,
+    False if they don't."""
+    motion = normalize(vote.get("motion_text"))
+    if motion.startswith("house"):
+        expected = "lower"
+    elif motion.startswith("senate"):
+        expected = "upper"
+    else:
+        return None
+    actual = (vote.get("organization") or {}).get("classification")
+    return expected == actual
+
+
+def parse_bill_ids(raw):
+    """Split --bill-ids' comma-separated identifier list into a clean, ordered,
+    deduplicated list -- e.g. "HB392, HB392,SB189" -> ["HB392", "SB189"]. Blank
+    entries (trailing/repeated commas) are dropped rather than becoming a spurious
+    empty-string lookup."""
+    seen = set()
+    result = []
+    for part in raw.split(","):
+        identifier = part.strip()
+        if identifier and identifier not in seen:
+            seen.add(identifier)
+            result.append(identifier)
+    return result
+
 # ── Output helpers ─────────────────────────────────────────────────────────────
 
 PASS  = "✓"
@@ -730,6 +765,54 @@ def run_tier2_only_check(report, conn, jurisdiction, session, api_key, tier2_lim
 
     return {"tier2_checked": len(tier2_ids)}
 
+
+def run_bill_ids_check(report, conn, jurisdiction, session, identifiers, api_key,
+                        blast_radius_cache=None):
+    """Local-vs-live compare_bills() for an explicit, caller-supplied list of bill
+    identifiers (OPEN-67) -- e.g. spot-checking specific bills a downstream consumer
+    flagged, rather than Tier 2's random/sorted sample of everything in a session.
+    Only ever proves CURRENT correctness: the local DB only has data from whenever
+    this jurisdiction was first scraped here (confirmed for UT: 2026-06-14 onward),
+    so this can't reconstruct a historical bug window that predates local coverage --
+    it's a snapshot check, not a time-travel diff."""
+    if blast_radius_cache is None:
+        blast_radius_cache = {}
+
+    print(f"\n{'═'*60}")
+    print(f"  BILL-IDS CHECK: {jurisdiction.upper()} {session} ({len(identifiers)} bills)")
+    print(f"{'═'*60}")
+
+    for identifier in identifiers:
+        label = f"{jurisdiction.upper()} {identifier} ({session})"
+        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
+        live = fetch_bill(LIVE_API, api_key, jurisdiction, session, identifier)
+        compare_bills(report, local, live, label,
+                      conn=conn, jurisdiction_code=jurisdiction, session=session,
+                      blast_radius_cache=blast_radius_cache)
+
+        # OPEN-67: compare_bills() above only diffs local vs live -- it never checks
+        # whether a vote's own motion_text agrees with the chamber it's recorded
+        # under. Run that invariant check against both sources independently.
+        for source_label, source in ((f"{label} local", local), (f"{label} live", live)):
+            if not source or "_error" in source:
+                continue
+            for vote in (source.get("votes") or []):
+                verdict = motion_text_chamber_mismatch(vote)
+                if verdict is None:
+                    continue
+                motion = vote.get("motion_text")
+                if verdict:
+                    report.record(PASS, f"{source_label}: chamber matches motion text "
+                                         f"({motion!r})")
+                else:
+                    chamber = (vote.get("organization") or {}).get("classification")
+                    report.record(FAIL, f"{source_label}: chamber SWAPPED vs motion text",
+                                  f"motion_text={motion!r} recorded_chamber={chamber!r}")
+
+        time.sleep(0.5)  # stay under the live API's 2 req/sec limit
+
+    return {"checked": len(identifiers)}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -762,6 +845,12 @@ def main():
                         help="With --tier2-limit, randomly sample that many bills instead of "
                              "taking the first N in sorted order (only with --coverage or "
                              "--tier2)")
+    parser.add_argument("--bill-ids", nargs=3, metavar=("JURISDICTION", "SESSION", "IDS"),
+                        help="Local-vs-live compare_bills() for an explicit comma-separated "
+                             "list of bill identifiers instead of a sample, e.g. "
+                             "--bill-ids ut 2026 'HB392,HB223,SB189'. Only proves current "
+                             "correctness -- can't reconstruct a bug window that predates "
+                             "this jurisdiction's local scrape history.")
     args = parser.parse_args()
 
     if not LIVE_KEY:
@@ -803,6 +892,26 @@ def main():
                                       tier2_limit=args.tier2_limit,
                                       tier2_random=args.tier2_random,
                                       blast_radius_cache={})
+                conn.close()
+                ok = report.summary()
+            finally:
+                sys.stdout = old_stdout
+        print(f"\n  (full output also written to {log_path})")
+        sys.exit(0 if ok else 1)
+
+    if args.bill_ids:
+        jurisdiction, session, raw_ids = args.bill_ids
+        identifiers = parse_bill_ids(raw_ids)
+        os.makedirs("logs/quality-check", exist_ok=True)
+        log_path = f"logs/quality-check/{jurisdiction}_{session}_bill-ids.log"
+        with open(log_path, "w") as logf:
+            tee = Tee(sys.stdout, logf)
+            old_stdout, sys.stdout = sys.stdout, tee
+            try:
+                report = Report()
+                conn = psycopg2.connect(DB_URL)
+                run_bill_ids_check(report, conn, jurisdiction, session, identifiers, LIVE_KEY,
+                                    blast_radius_cache={})
                 conn.close()
                 ok = report.summary()
             finally:
