@@ -15,6 +15,8 @@ from quality_check import (
     compare_bills,
     split_missing_by_docket_prefix,
     breakdown_by_prefix,
+    parse_bill_ids,
+    motion_text_chamber_mismatch,
     Report,
     PASS,
     WARN,
@@ -335,3 +337,55 @@ def test_breakdown_by_prefix_counts_by_leading_alpha_chars():
 
 def test_breakdown_by_prefix_handles_no_alpha_prefix():
     assert breakdown_by_prefix(["123", ""]) == {"123": 1, "": 1}
+
+
+# ── OPEN-67: --bill-ids targeted spot-check ─────────────────────────────────────
+
+def test_parse_bill_ids_splits_and_strips():
+    assert parse_bill_ids("HB392, HB223 ,SB189") == ["HB392", "HB223", "SB189"]
+
+
+def test_parse_bill_ids_dedupes_preserving_first_occurrence_order():
+    assert parse_bill_ids("HB392,SB189,HB392") == ["HB392", "SB189"]
+
+
+def test_parse_bill_ids_drops_blank_entries_from_trailing_or_repeated_commas():
+    assert parse_bill_ids("HB392,,SB189,") == ["HB392", "SB189"]
+
+
+def test_parse_bill_ids_single_identifier_no_commas():
+    assert parse_bill_ids("HB392") == ["HB392"]
+
+
+def test_motion_text_chamber_mismatch_house_text_correct_chamber():
+    vote = {"motion_text": "House/ passed 3rd reading",
+            "organization": {"classification": "lower"}}
+    assert motion_text_chamber_mismatch(vote) is True
+
+
+def test_motion_text_chamber_mismatch_senate_text_correct_chamber():
+    vote = {"motion_text": "Senate/ passed 2nd reading",
+            "organization": {"classification": "upper"}}
+    assert motion_text_chamber_mismatch(vote) is True
+
+
+def test_motion_text_chamber_mismatch_detects_swap():
+    # The exact OPEN-67 bug shape: House-text vote filed as upper (Senate).
+    vote = {"motion_text": "House/ passed 3rd reading",
+            "organization": {"classification": "upper"}}
+    assert motion_text_chamber_mismatch(vote) is False
+
+
+def test_motion_text_chamber_mismatch_case_insensitive():
+    vote = {"motion_text": "SENATE/ FAILED", "organization": {"classification": "upper"}}
+    assert motion_text_chamber_mismatch(vote) is True
+
+
+def test_motion_text_chamber_mismatch_not_applicable_for_other_motion_text():
+    vote = {"motion_text": "Governor signed", "organization": {"classification": "lower"}}
+    assert motion_text_chamber_mismatch(vote) is None
+
+
+def test_motion_text_chamber_mismatch_handles_missing_organization():
+    vote = {"motion_text": "House/ passed 3rd reading"}
+    assert motion_text_chamber_mismatch(vote) is False
