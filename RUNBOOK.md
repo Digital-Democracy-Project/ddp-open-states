@@ -471,6 +471,16 @@ part of fork `main` since 2026-08-01, no action needed):
 | #5696 | 2026-06-15 | MI House votes: regex mismatch + tab-separated names |
 | #5695 | 2026-06-16 | UT 2025+ votes: `yield from` fix, XPath fix, duplicate vote identifier fix |
 
+**On #5695 and OPEN-67 (added 2026-08-13):** this PR fixes a *missing-votes* bug (2025+
+API-rendered UT bills emitted zero votes before the `yield from` fix) -- it is **not** confirmed
+to be, and structurally could not have been, the fix for the separate House/Senate
+chamber-assignment swap OPEN-67 investigated (2026-03-05–2026-04-26, `ddp-broker-py`'s dev DB).
+The dead code this PR fixed produced no votes at all before it merged, so it can't have produced
+wrong-chamber ones either. Full git archaeology across `openstates-scrapers` and
+`openstates-core` found no reversed-then-fixed chamber mapping anywhere in either repo's history
+for this window -- see `notes/open-67-utah-chamber-swap-investigation-20260813.md`. Don't cite
+this PR as the chamber-swap fix without reading that note first.
+
 ---
 
 ## Incremental scraping
