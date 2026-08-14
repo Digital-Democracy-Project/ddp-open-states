@@ -16,21 +16,19 @@ edges) is implemented now; option (a) (fetch each referenced PDF, attach as a ve
 derived stage label) is explicitly deferred, and the canonical-bill question OPEN-36 flagged is
 still open pending product input.
 
+**2026-08-14 scope correction:** an earlier version of this note and of PR openstates-scrapers#25
+also described a Tier 1 implementation (`bill.add_citation(..., "chapter", ...)` for the enacted
+Chapter-of-the-Acts link). That's been removed from this ticket's scope entirely. OPEN-69's own
+2026-08-13 reconciliation comment had already flagged Tier 1 as a duplicate of OPEN-37, and
+`add_citation()` doesn't actually satisfy what OPEN-37 needs anyway: OPEN-37 requires
+`bill.add_version_link()` so the enacted text is a real, diffable `bill.versions` entry that
+OPEN-34's `archive_bill_versions()`/`diff_from_previous_version` pipeline can process — a citation
+is invisible to that pipeline. Tier 1 now belongs entirely to OPEN-37; this ticket and this note
+cover Tier 2 only.
+
 ## What shipped
 
-**Tier 1** — `scrape_action_page()` now extracts every href in each action row's third cell. A
-href matching `/Laws/SessionLaws/Acts/{year}/Chapter{N}` triggers
-`bill.add_citation("Acts of Massachusetts", f"Chapter {N} of the Acts of {year}", "chapter", url=..., effective=action_date)`.
-This mirrors `scrapers/de/bills.py:309-329`, which already does the identical thing for Delaware's
-own `SessionLaws/Chapter` link, and reuses `citation_type="chapter"` — a value that already exists
-in `openstates-core`'s `CITATION_TYPE_CHOICES` (`data/common.py:131-136`) for exactly this purpose.
-`add_version_link` was deliberately *not* used: a direct fetch of
-`/Laws/SessionLaws/Acts/2024/Chapter139` during this work confirmed the page is plain HTML with no
-PDF at all, so treating it as a `bill.versions` entry would risk it being swept into OPEN-34's
-PDF-diffing pipeline (`archive_bill_versions`/`diff_from_previous_version`), which only makes sense
-for actual bill-text PDFs.
-
-**Tier 2 (option (b) only)** — the same href loop also matches `/Bills/{session}/{bill-id}`
+**Tier 2 (option (b) only)** — the same href loop matches `/Bills/{session}/{bill-id}`
 (anchored so it excludes `/CoSponsor`, `/BillHistory`, `/Bills/GetAmendmentContent/...`, etc.). For
 each distinct match, not equal to the bill's own identifier, and not already present in
 `bill.related_bills`, it calls
@@ -124,14 +122,11 @@ be needed first.
 
 - `notes/ma-open-36-multi-version-capture-analysis-20260813.md` — full evidence this ticket was
   scoped from.
-- `scrapers/ma/bills.py` — `scrape_action_page()` (href extraction, citation + related_bill
-  capture), `scrape_bill()` (`:237-242`, the pre-existing `add_related_bill` precedent extended
-  here).
-- `scrapers/de/bills.py:309-329` — the existing `add_citation(..., "chapter", url=...)` precedent
-  Tier 1 mirrors.
-- `openstates-core/openstates/data/common.py` — `CITATION_TYPE_CHOICES` (:131-136),
-  `BILL_RELATION_TYPES` (:78-84).
+- `scrapers/ma/bills.py` — `scrape_action_page()` (href extraction, related_bill capture),
+  `scrape_bill()` (`:237-242`, the pre-existing `add_related_bill` precedent extended here).
+- `openstates-core/openstates/data/common.py` — `BILL_RELATION_TYPES` (:78-84).
 - Real `malegislature.gov` pages checked directly for this ticket (2026-08-14):
   `/Bills/192/H4891`, `/Bills/192/S2572`, `/Bills/192/S3097`'s own `BillHistory` AJAX endpoints
-  (reciprocity spike), plus re-confirmation of `/Bills/193/H4889` and `/Bills/194/H5620`'s
-  Chapter-of-the-Acts markup already audited in OPEN-36.
+  (reciprocity spike).
+- OPEN-37 — ticket of record for the enacted Chapter-of-the-Acts capture (Tier 1); not covered by
+  this note or this ticket.
