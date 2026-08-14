@@ -1108,6 +1108,22 @@ OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage mi 2025-2026 --tier
   [PR #69](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/69)) — if you're
   reading an older `--coverage us <session>` log showing 100% of bills "missing," that's the bug,
   not a real gap.
+- **Tier 2's "local" side does not read `DATABASE_URL` — it always hits the single shared
+  `localhost:8002` api-v3 instance** (found 2026-08-13, OPEN-63 round-3 verification).
+  `fetch_bill(LOCAL_API, ...)` uses the module-level `LOCAL_API = "http://localhost:8002"`
+  constant unconditionally; only Tier 1's direct-DB identifier diff (`fetch_all_local_identifiers`)
+  actually honors `DATABASE_URL`. On this Mac Studio, `localhost:8002` is always DDP's one
+  always-on production api-v3 container (`docker-compose.ddp.yml`, `DATABASE_URL` hardcoded to
+  the `openstates` DB) — so pointing your own shell's `DATABASE_URL` at `openstates_dev` (or any
+  other DB) to test freshly-scraped dev data will make Tier 1's coverage numbers correct but
+  **Tier 2's per-bill title/votes/sponsorships comparison will silently keep reading production
+  data regardless.** Caught this by getting a Tier 2 result that flatly contradicted a direct
+  query against `openstates_dev` for the same bill. If you need Tier 2 to genuinely test
+  non-production data, either query the DB directly yourself for the "local" half instead of
+  trusting Tier 2's own report, or stand up a second api-v3 container from the existing
+  `ddp-openstates-api:local` image on a different host port with `DATABASE_URL` pointed at the DB
+  you actually want to test (hit a Colima host-port-forwarding snag doing this once — worth
+  budgeting time to debug that, or falling back to the direct-query workaround).
 
 ---
 
