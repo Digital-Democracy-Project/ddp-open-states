@@ -23,6 +23,7 @@ _cache/
 
 # Logs (generated at runtime)
 logs/*.log
+logs/**/*.log
 
 # Python
 __pycache__/
