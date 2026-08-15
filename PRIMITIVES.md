@@ -260,6 +260,14 @@ DB row order is chronological for any bill-version work; use these instead**:
   re-fetching), mirroring `os-text-extract archive`'s dry-run-then-commit discipline. Use this
   any time the stage table changes, or to correct existing wrong diffs after finding a new
   jurisdiction-specific ordering issue — don't hand-write a one-off correction script.
+- **api-v3 has its own copy of this classifier** (`api-v3/api/version_ordering.py`, OPEN-92) —
+  api-v3's bill-detail endpoint (`include=versions`) used to resolve "latest"/"previous" via a
+  naive `(date, note)` sort and needed the same fix, but api-v3 installs `openstates` from PyPI
+  rather than this fork, so it can't import the module above directly yet. The copy's own
+  docstring says to keep it byte-for-byte identical to this one — if you're changing the stage
+  table here, port the change to api-v3's copy too, not the other way around. Re-pinning api-v3's
+  `openstates` dependency to this fork (so the copy can be deleted) is a known, larger follow-up,
+  not yet done.
 
 ## Motion classification tooling
 
