@@ -20,11 +20,12 @@ seat on that date, which has been Dave Smith the entire time.
 
 Confirmed directly, by calling the current importer's own person-resolution code
 (`BaseImporter.resolve_person`, `openstates-core/openstates/importers/base.py`) against
-this exact real data -- same Florida jurisdiction, same `"lower"` chamber classification,
-same session dates (`2026`, 2026-01-13 to 2026-03-13) -- it resolves a bare `"Smith"`
-to **Dave Smith**, correctly, every time. Two independent unit-test reproductions of the
-Dave/Carlos membership shape (clean synthetic case, and the exact real membership rows
-pulled from the DB) both resolve correctly under current code as well.
+this exact real data -- same Florida jurisdiction, same `"lower"` chamber classification
+-- across **every one of the four legislative sessions the 423 affected rows actually
+span** (2025B, 2026, 2026E, 2026F), it resolves a bare `"Smith"` to **Dave Smith**,
+correctly, every time. Two independent unit-test reproductions of the Dave/Carlos
+membership shape (a clean synthetic case, and the exact real membership rows pulled
+from the DB) both resolve correctly under current code as well.
 
 This is the same shape as the Grijalva case (`GRIJALVA-vote-misattribution-fix-20260729.md`):
 stale data written by an older import, before some earlier fix to `resolve_person`,
@@ -42,7 +43,12 @@ correcting.
   rows changes -- not the vote option, not the voter_name, not the bill or vote event.
 - **No row-level conflicts:** confirmed none of the 423 affected `vote_event`s already
   have a separate Dave Smith row -- each currently has exactly one `"Smith"` entry, and
-  it's simply attributed to the wrong person. Re-pointing creates no duplicates.
+  it's simply attributed to the wrong person. Re-pointing creates no duplicates. The
+  script re-checks this itself immediately before writing (aborts if any are found)
+  rather than relying solely on this investigation pass, and the UPDATE itself
+  re-checks `voter_id` at write time and verifies the updated-row count matches what
+  was fetched -- both guard against a row changing underneath the script between
+  investigation and execution.
 - **No legitimate Carlos Smith House votes are touched:** the query's own date guard
   (`start_date >= 2022-11-08`) would exclude any pre-departure row if one existed;
   confirmed none of the 423 predate his departure.
@@ -63,6 +69,16 @@ tail or attempt to resolve BROKER-86 -- both are explicitly out of scope here.
 ## Verification after running for real
 
 - Dry run: `python3 fix-open110-fl-smith-vote-misattribution.py --dry-run` reports
-  423 rows found, matching this document.
+  423 rows found and no duplicate-voter conflicts, matching this document.
 - Re-running the script a second time (without `--dry-run`) should report 0 rows found,
   since the WHERE clause only matches rows still pointing at Carlos.
+
+## Is OPEN-110 closed by this fix?
+
+This corrects every row this investigation could confirm as a genuine misattribution
+(423 rows, all provably dated after Carlos's real House departure with no ambiguity).
+The ~10-row tail noted above is a separate, unresolved question -- it should not be
+read as still-open work under OPEN-110 by omission; it's explicitly out of scope here
+because it doesn't fit this fix's provable pattern and at least one case overlaps
+BROKER-86. Whether that tail needs its own follow-up ticket is a judgment call for
+whoever reviews this, not something this fix resolves one way or the other.
