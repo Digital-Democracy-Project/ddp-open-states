@@ -27,12 +27,16 @@ resolve_person() against this exact data that it resolves each surname to the
 Senate member, not the House member, for these jurisdiction/chamber/session
 parameters.
 
-Unlike OPEN-110's Carlos/Dave Smith fix, no date guard is needed here: Julio
-Cortes and Michelle Valdez have *never* held an upper-chamber membership at
-all (confirmed directly against opencivicdata_membership), so any Senate vote
-attributed to either of them is categorically wrong, not just wrong-for-a-date
--- the WHERE clause's own classification='upper' + voter_id-is-the-wrong-
-House-member conditions are already as narrow as they can be.
+Establishing that the WRONG person (Julio, Michelle) never held an
+upper-chamber membership only proves the current attribution is wrong; it
+doesn't by itself prove the proposed correct person is right for every
+specific row. So this script also positively verifies, per row and at write
+time (not just once during investigation), that the correct person actually
+held an 'upper' membership in this jurisdiction on that row's own vote date
+(see verify_correct_person_eligible below) -- the same date-anchored standard
+used in OPEN-116's blank-voter_id backfill in this same batch. Any row that
+doesn't verify is left alone and reported separately, never repointed on
+the strength of "the wrong person couldn't have done it" alone.
 
 Confirmed no row-level conflicts as of this investigation pass: none of the
 affected vote_events already have a row for the correct (Senate) person, which
@@ -40,12 +44,17 @@ would make re-pointing create a duplicate voter on one roll call. The script
 re-checks this itself immediately before writing rather than relying solely on
 this investigation, in case the replica has changed since.
 
+Both pairs are fully validated (fetched, eligibility-checked, duplicate-
+checked) before either is written -- a failure partway through validating the
+second pair aborts before any write happens for either, rather than leaving
+one pair committed and the other not.
+
 Safe to re-run: each WHERE clause matches only rows still pointing at the wrong
 person, so already-fixed rows are excluded on a second run. The UPDATE also
 re-checks voter_id at write time (not just id), and the script aborts without
 committing if the number of rows actually updated doesn't match the number
-fetched -- both guard against a row changing underneath this script between
-the fetch and the write.
+expected to be updated -- both guard against a row changing underneath this
+script between validation and the write.
 
 NOT YET RUN FOR REAL as of this PR -- dry-run only, pending review (OPEN-113).
 
@@ -85,7 +94,7 @@ PAIRS = [
 ]
 
 FETCH_SQL = """
-    SELECT pv.id
+    SELECT pv.id, ve.id, ve.start_date::date
     FROM opencivicdata_personvote pv
     JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
     JOIN opencivicdata_organization o ON o.id = ve.organization_id
@@ -96,21 +105,60 @@ FETCH_SQL = """
       AND pv.voter_id = %s
 """
 
+# Date-anchored: did the correct person actually hold an 'upper' membership in
+# this jurisdiction on this exact vote date? (Not "currently" -- on that date.)
+ELIGIBILITY_SQL = """
+    SELECT 1
+    FROM opencivicdata_membership m
+    JOIN opencivicdata_organization o ON o.id = m.organization_id
+    WHERE m.person_id = %s
+      AND o.classification = 'upper'
+      AND o.jurisdiction_id = %s
+      AND (m.start_date = '' OR m.start_date <= %s)
+      AND (m.end_date = '' OR m.end_date >= %s)
+"""
+
 # A row here would mean re-pointing the wrong person's row to the correct person
 # would create a second voter for that person on the same roll call -- abort
 # rather than risk that, even though the investigation found none of these as
 # of its last pass.
 DUPLICATE_CHECK_SQL = """
-    SELECT pv.id
-    FROM opencivicdata_personvote pv
-    WHERE pv.id = ANY(%s::uuid[])
-      AND EXISTS (
-          SELECT 1 FROM opencivicdata_personvote other
-          WHERE other.vote_event_id = pv.vote_event_id AND other.voter_id = %s
-      )
+    SELECT 1 FROM opencivicdata_personvote other
+    WHERE other.vote_event_id = %s AND other.voter_id = %s
 """
 
 UPDATE_SQL = "UPDATE opencivicdata_personvote SET voter_id = %s WHERE id = %s AND voter_id = %s"
+
+
+def validate_pair(cur, surname, wrong_id, correct_id, label):
+    """Fetch + eligibility-check + duplicate-check one pair. Returns
+    (fillable, not_eligible, duplicate) -- no writes."""
+    cur.execute(FETCH_SQL, (WA_JURISDICTION_ID, surname, wrong_id))
+    rows = cur.fetchall()
+    print(f"[{label}] Found {len(rows):,} Washington Senate vote records "
+          f"currently misattributed to {wrong_id}.")
+
+    fillable, not_eligible, duplicate = [], [], []
+    for pv_id, ve_id, vote_date in rows:
+        cur.execute(
+            ELIGIBILITY_SQL, (correct_id, WA_JURISDICTION_ID, str(vote_date), str(vote_date))
+        )
+        if not cur.fetchone():
+            not_eligible.append(pv_id)
+            continue
+        cur.execute(DUPLICATE_CHECK_SQL, (ve_id, correct_id))
+        if cur.fetchone():
+            duplicate.append(pv_id)
+            continue
+        fillable.append(pv_id)
+
+    if not_eligible:
+        print(f"[{label}] Leaving {len(not_eligible)} row(s) alone -- {correct_id} did not "
+              f"hold an 'upper' seat on that row's own vote date: {not_eligible}")
+    if duplicate:
+        print(f"[{label}] Leaving {len(duplicate)} row(s) alone -- would create a duplicate "
+              f"voter on their vote_event: {duplicate}")
+    return fillable
 
 
 def main():
@@ -122,40 +170,36 @@ def main():
     conn.autocommit = False
 
     with conn.cursor() as cur:
-        for surname, wrong_id, correct_id, label in PAIRS:
-            cur.execute(FETCH_SQL, (WA_JURISDICTION_ID, surname, wrong_id))
-            row_ids = [row[0] for row in cur.fetchall()]
-            print(f"[{label}] Found {len(row_ids):,} Washington Senate vote records "
-                  f"currently misattributed to {wrong_id}.")
+        # Validate both pairs fully before writing anything, so a problem
+        # found while validating the second pair can't leave the first
+        # pair's writes committed with the second never attempted.
+        validated = [
+            (label, correct_id, wrong_id, validate_pair(cur, surname, wrong_id, correct_id, label))
+            for surname, wrong_id, correct_id, label in PAIRS
+        ]
 
-            cur.execute(DUPLICATE_CHECK_SQL, (row_ids, correct_id))
-            duplicate_rows = [row[0] for row in cur.fetchall()]
-            if duplicate_rows:
-                raise SystemExit(
-                    f"[{label}] Aborting: {len(duplicate_rows)} row(s) would create a "
-                    f"duplicate voter on their vote_event -- investigate before "
-                    f"re-running: {duplicate_rows}"
-                )
-
-            if args.dry_run:
-                print(f"[{label}] Dry run complete. Would re-point {len(row_ids):,} "
-                      f"records to {correct_id}. No duplicate-voter conflicts found.")
-            else:
-                update_cur = conn.cursor()
+        if args.dry_run:
+            for label, correct_id, _wrong_id, fillable in validated:
+                print(f"[{label}] Dry run complete. Would re-point {len(fillable):,} records "
+                      f"to {correct_id}.")
+        else:
+            update_cur = conn.cursor()
+            for label, correct_id, wrong_id, fillable in validated:
                 updated = 0
-                for row_id in row_ids:
+                for row_id in fillable:
                     update_cur.execute(UPDATE_SQL, (correct_id, row_id, wrong_id))
                     updated += update_cur.rowcount
-                if updated != len(row_ids):
+                if updated != len(fillable):
                     conn.rollback()
                     raise SystemExit(
-                        f"[{label}] Aborting without committing: expected to update "
-                        f"{len(row_ids)} rows but only {updated} matched at write time "
-                        f"-- a row likely changed underneath this script. Investigate "
+                        f"[{label}] Aborting without committing anything: expected to "
+                        f"update {len(fillable)} rows but only {updated} matched at write "
+                        f"time -- a row likely changed underneath this script. Investigate "
                         f"before re-running."
                     )
-                conn.commit()
-                print(f"[{label}] Done. Re-pointed {updated:,} records to {correct_id}.")
+                print(f"[{label}] Re-pointed {updated:,} records to {correct_id}.")
+            conn.commit()
+            print("Done. Committed both pairs.")
 
     conn.close()
 
