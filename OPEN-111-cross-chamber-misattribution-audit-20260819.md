@@ -60,7 +60,7 @@ of Senate (`upper`) rows wrongly attributed to Dave that OPEN-110 never covered,
 confirming the cache-bleed bug corrupted data in *both* directions for this same
 pair.
 
-### Shape 2: never resolved at all (a different, unrelated problem)
+### Shape 2: never resolved at all (a different observed data shape -- root cause not established)
 
 | Jurisdiction | Surname | Rows | Fresh resolution would be | Chamber | Dates |
 |---|---|---|---|---|---|
@@ -70,10 +70,19 @@ pair.
 
 These three groups' rows have `voter_id = NULL` in the stored data -- they were
 never resolved to *anyone*, not resolved to the wrong person. This is a different
-bug shape entirely (an unresolved-name gap, the same general category OPEN-2's
-Congress-specific bioguide/lis backfill addresses, not the cache-bleed mechanism
-OPEN-112 fixed) and is called out separately rather than folded into the
-misattribution tickets below.
+*observed shape* from Shape 1 (an unresolved-name gap, the same general category
+OPEN-2's Congress-specific bioguide/lis backfill addresses), but *why* these
+specific rows were never resolved hasn't been established here -- it isn't
+necessarily the OPEN-112 cache-bleed mechanism, but this audit didn't rule it out
+either. Called out separately rather than folded into the misattribution tickets
+below because the fix, if any, is different in kind: OPEN-112 already prevents
+future *wrong* resolutions; whether it's safe to *fill in* a currently-blank
+resolution is a distinct question this audit doesn't answer. Confirmed: across
+all 4,709 disagreements found, these were the only two shapes that occurred --
+every row was either a real, different stored `voter_id` (Shape 1, 3,253 rows) or
+a `NULL` stored `voter_id` (Shape 2, 1,456 rows). No other disagreement pattern
+(e.g. a stored id that no longer exists in the DB, or a fresh resolution that
+itself came back ambiguous) turned up.
 
 ## What this audit does NOT do
 
@@ -102,9 +111,24 @@ resolve_person call happened to return this today").
 
 This audit only checked bare-surname rows against the 153 groups that share a
 surname split across `upper`/`lower` specifically. It does not cover: collisions
-within the *same* chamber (e.g. two same-surname state Representatives), surnames
-that collide against a *retired* legislator not currently captured by the
-membership-based candidate query, or jurisdictions/organizations classified
-outside `upper`/`lower` (e.g. unicameral Nebraska, `legislature`-classified
-bodies). Scoped this way deliberately, matching OPEN-112's confirmed mechanism
-exactly rather than expanding into a broader, less-targeted sweep.
+within the *same* chamber (e.g. two same-surname state Representatives); a
+surname collision where one side's own membership history was simply never
+captured in our replica at all (as opposed to a *retired* legislator with a
+membership row, who the candidate query does include -- the "current or
+historical" wording in the methodology means the query has no date/current-role
+filter, so any captured membership counts); or jurisdictions/organizations
+classified outside `upper`/`lower` (e.g. unicameral Nebraska, `legislature`-
+classified bodies). Scoped this way deliberately, matching OPEN-112's confirmed
+mechanism exactly rather than expanding into a broader, less-targeted sweep.
+
+## Reproducibility
+
+Checked against the production OpenStates replica as of 2026-08-19, using
+`resolve_person()` from the `fix/open-112-resolve-person-cache-key-chamber`
+branch (openstates-core PR #25, not yet merged at time of writing) -- i.e. the
+fixed version, not `main`. The audit query and comparison logic are described in
+full in the Methodology section above; no script was committed to this repo,
+matching this project's existing convention for investigation write-ups (see the
+Grijalva and OPEN-110 docs, which document their queries in prose rather than as
+a checked-in script). Re-running against a later DB snapshot or after further
+`resolve_person` changes could change these counts.
