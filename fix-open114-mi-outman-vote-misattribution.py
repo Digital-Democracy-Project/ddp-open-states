@@ -16,12 +16,17 @@ Confirmed via a live call to the current (OPEN-112-fixed) resolve_person()
 against this exact data that it resolves "Outman" to Rick (the Senate member),
 not Pat, for these jurisdiction/chamber/session parameters.
 
-Pat Outman has never held any upper-chamber membership at all (confirmed
-directly against opencivicdata_membership -- his two 'lower' membership rows,
-split by a redistricting-era post change, are both House), so any Senate vote
-attributed to him is categorically wrong, not just wrong-for-a-date -- no date
-guard is needed beyond the WHERE clause's own classification='upper' +
-voter_id-is-Pat conditions.
+Establishing that Pat Outman never held any upper-chamber membership at all
+(confirmed directly against opencivicdata_membership -- his two 'lower'
+membership rows, split by a redistricting-era post change, are both House)
+only proves the current attribution is wrong; it doesn't by itself prove Rick
+is right for every specific row. So this script also positively verifies, per
+row and at write time, that Rick actually held an 'upper' membership in
+Michigan on that row's own vote date (see verify_correct_person_eligible
+below) -- the same date-anchored standard used in OPEN-116's blank-voter_id
+backfill in this same batch. Any row that doesn't verify is left alone and
+reported separately, never repointed on the strength of "Pat couldn't have
+done it" alone.
 
 Confirmed no row-level conflicts as of this investigation pass: none of the
 430 affected vote_events already have a row for Rick Outman, which would make
@@ -33,8 +38,8 @@ Safe to re-run: the WHERE clause matches only rows still pointing at Pat, so
 already-fixed rows are excluded on a second run. The UPDATE also re-checks
 voter_id at write time (not just id), and the script aborts without
 committing if the number of rows actually updated doesn't match the number
-fetched -- both guard against a row changing underneath this script between
-the fetch and the write.
+expected to be updated -- both guard against a row changing underneath this
+script between validation and the write.
 
 NOT YET RUN FOR REAL as of this PR -- dry-run only, pending review (OPEN-114).
 
@@ -59,7 +64,7 @@ WRONG_PERSON_ID = "ocd-person/1a809c60-e0a4-4b43-bdba-43f097021b1f"  # Pat Outma
 CORRECT_PERSON_ID = "ocd-person/9c525554-fb85-45f3-87fa-cf6a3208ce32"  # Rick Outman (Senate)
 
 FETCH_SQL = """
-    SELECT pv.id
+    SELECT pv.id, ve.id, ve.start_date::date
     FROM opencivicdata_personvote pv
     JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
     JOIN opencivicdata_organization o ON o.id = ve.organization_id
@@ -70,14 +75,22 @@ FETCH_SQL = """
       AND pv.voter_id = %s
 """
 
+# Date-anchored: did Rick Outman actually hold an 'upper' membership in
+# Michigan on this exact vote date? (Not "currently" -- on that date.)
+ELIGIBILITY_SQL = """
+    SELECT 1
+    FROM opencivicdata_membership m
+    JOIN opencivicdata_organization o ON o.id = m.organization_id
+    WHERE m.person_id = %s
+      AND o.classification = 'upper'
+      AND o.jurisdiction_id = %s
+      AND (m.start_date = '' OR m.start_date <= %s)
+      AND (m.end_date = '' OR m.end_date >= %s)
+"""
+
 DUPLICATE_CHECK_SQL = """
-    SELECT pv.id
-    FROM opencivicdata_personvote pv
-    WHERE pv.id = ANY(%s::uuid[])
-      AND EXISTS (
-          SELECT 1 FROM opencivicdata_personvote other
-          WHERE other.vote_event_id = pv.vote_event_id AND other.voter_id = %s
-      )
+    SELECT 1 FROM opencivicdata_personvote other
+    WHERE other.vote_event_id = %s AND other.voter_id = %s
 """
 
 UPDATE_SQL = "UPDATE opencivicdata_personvote SET voter_id = %s WHERE id = %s AND voter_id = %s"
@@ -93,38 +106,51 @@ def main():
 
     with conn.cursor() as cur:
         cur.execute(FETCH_SQL, (MI_JURISDICTION_ID, WRONG_PERSON_ID))
-        row_ids = [row[0] for row in cur.fetchall()]
-        print(f"Found {len(row_ids):,} Michigan Senate vote records currently "
+        rows = cur.fetchall()
+        print(f"Found {len(rows):,} Michigan Senate vote records currently "
               f"misattributed to Pat Outman ({WRONG_PERSON_ID}).")
 
-        cur.execute(DUPLICATE_CHECK_SQL, (row_ids, CORRECT_PERSON_ID))
-        duplicate_rows = [row[0] for row in cur.fetchall()]
-        if duplicate_rows:
-            raise SystemExit(
-                f"Aborting: {len(duplicate_rows)} row(s) would create a duplicate "
-                f"Rick Outman voter on their vote_event -- investigate before "
-                f"re-running: {duplicate_rows}"
+        fillable, not_eligible, duplicate = [], [], []
+        for pv_id, ve_id, vote_date in rows:
+            cur.execute(
+                ELIGIBILITY_SQL,
+                (CORRECT_PERSON_ID, MI_JURISDICTION_ID, str(vote_date), str(vote_date)),
             )
+            if not cur.fetchone():
+                not_eligible.append(pv_id)
+                continue
+            cur.execute(DUPLICATE_CHECK_SQL, (ve_id, CORRECT_PERSON_ID))
+            if cur.fetchone():
+                duplicate.append(pv_id)
+                continue
+            fillable.append(pv_id)
+
+        if not_eligible:
+            print(f"Leaving {len(not_eligible)} row(s) alone -- Rick Outman did not hold "
+                  f"an 'upper' seat on that row's own vote date: {not_eligible}")
+        if duplicate:
+            print(f"Leaving {len(duplicate)} row(s) alone -- would create a duplicate "
+                  f"voter on their vote_event: {duplicate}")
 
         if args.dry_run:
-            print(f"Dry run complete. Would re-point {len(row_ids):,} records "
-                  f"to Rick Outman ({CORRECT_PERSON_ID}). No duplicate-voter "
-                  f"conflicts found.")
+            print(f"Dry run complete. Would re-point {len(fillable):,} of {len(rows):,} "
+                  f"records to Rick Outman ({CORRECT_PERSON_ID}).")
         else:
             update_cur = conn.cursor()
             updated = 0
-            for row_id in row_ids:
+            for row_id in fillable:
                 update_cur.execute(UPDATE_SQL, (CORRECT_PERSON_ID, row_id, WRONG_PERSON_ID))
                 updated += update_cur.rowcount
-            if updated != len(row_ids):
+            if updated != len(fillable):
                 conn.rollback()
                 raise SystemExit(
-                    f"Aborting without committing: expected to update {len(row_ids)} "
+                    f"Aborting without committing: expected to update {len(fillable)} "
                     f"rows but only {updated} matched at write time -- a row likely "
                     f"changed underneath this script. Investigate before re-running."
                 )
             conn.commit()
-            print(f"Done. Re-pointed {updated:,} records to Rick Outman ({CORRECT_PERSON_ID}).")
+            print(f"Done. Re-pointed {updated:,} of {len(rows):,} records to Rick Outman "
+                  f"({CORRECT_PERSON_ID}).")
 
     conn.close()
 
