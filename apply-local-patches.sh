@@ -48,6 +48,7 @@ fi
 # scraper kept reading that branch's content indefinitely instead of whatever landed on main.
 # This loop's checkout+pull self-heals that every run, for both repos.
 for repo in "${REPOS[@]}"; do
+    echo "apply-local-patches: refreshing $(basename "$repo")..."
     cd "$repo"
     git checkout main
     git pull origin main
