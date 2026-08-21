@@ -1057,6 +1057,43 @@ documented in `mi_cookies.py`, not something this ticket claims to have solved. 
 removes one detection signal (identity inconsistency); it does not by itself clear the sustained
 IP-reputation block OPEN-22 is tracking.
 
+### Utah blocking (le.utah.gov WAF on default User-Agent) + closed-session incremental aborts (OPEN-106)
+
+The weekly `ut` scrape failed 2026-08-15 with `CommandError: no sessions from
+Utah.get_session_list()`. Two distinct, compounding causes, both confirmed live:
+
+1. **`get_session_list()` had no resilience of its own.** It called `url_xpath()` with no
+   `user_agent=`, falling back to `requests`' bare default UA. A direct repeated fetch of
+   `le.utah.gov/bills/billSearch.jsp` with that default header came back `200 OK` with a
+   246-byte `"Request Rejected"` WAF page — zero sessions, no exception, nothing to
+   distinguish from a genuinely empty page. The same endpoint is also independently
+   flaky/rate-limited on top of that (a bare-UA request failed twice then succeeded a third
+   time with no code change at all) — a browser-shaped UA measurably reduces rejections but
+   does not make the site reliable.
+2. **An incremental scrape of a closed session legitimately yields zero bills, and that used
+   to abort the whole run.** The weekly run scrapes every "active" session in one invocation
+   (currently `2025S2`, a closed special, and `2026`, current) — every `2025S2` bill predates
+   the incremental `start=` cutoff, so `UTBillScraper.scrape()` correctly yields nothing for
+   it, but zero net output tripped `openstates-core`'s blanket `ScrapeError`, aborting the run
+   before the still-active `2026` session (queued right after) was ever reached.
+
+**Fixed in OPEN-106** ([PR #36](https://github.com/Digital-Democracy-Project/openstates-scrapers/pull/36),
+merged 2026-08-21): `get_session_list()` sends a browser-shaped UA (`get_random_user_agent()`,
+same helper FL/MI use) and retries 3× with backoff, raising a specific `ScrapeError` naming the
+last real failure if still empty. `UTBillScraper` defaults to the same UA. `scrape()` now raises
+`EmptyScrape` (the existing `openstates-core` escape hatch) when it found real bill-list
+candidates but every one predates the incremental cutoff, instead of falling through to the
+blanket `ScrapeError` — a session whose list page itself came back empty (real breakage) is
+unchanged and still raises normally. Live-reverified post-merge against the real site: see
+`notes/open-106-utah-session-list-waf-and-empty-scrape-fix-20260821.md` for the full trace
+(exit 0, both sessions handled correctly, 1,021 bills checked in ~34 min at the platform's
+60 req/min default).
+
+Residual, explicitly out of scope: `le.utah.gov`'s own flakiness/rate-limiting beyond what a UA
+change fixes. If `billlist.jsp` itself comes back genuinely empty (not just the incremental
+filter finding nothing), that's still the ordinary "no objects returned" `ScrapeError` —
+intentionally not masked.
+
 ### `SELECT DISTINCT + ORDER BY RANDOM()` fails in PostgreSQL
 
 Must use a subquery. Already fixed in `quality_check.py`.
