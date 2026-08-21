@@ -122,6 +122,19 @@ should reuse rather than reimplement:
   production WireGuard tunnel reads from — never silently drifts behind community data; `ddp` is
   purely a staging remote for pushing a local fix branch and opening a PR back upstream, never a
   pull source. See `PLAN-fork-management.md` §1 for the full reasoning.
+- **Branch hygiene (OPEN-99): delete a fix branch, local and remote, as the last step of
+  closing every PR against `openstates-core`/`openstates-scrapers`.** This directly prevents a
+  recurrence of the exact failure mode the worktree-lock/freshness-guard bullets above exist
+  for — a merged branch left checked out (or just left lying around) is how
+  `fix/fl-floor-vote-source-url` sat stale for 2 days in 2026-07-23's incident. Check
+  `git branch --merged origin/main` (scrapers) / `git branch --merged ddp/main` (core) before
+  deleting anything, not a blanket sweep — a branch that isn't an ancestor of the fork's own
+  main is either still-open work or something to ask about first, never delete on a guess.
+  One-time sweep done 2026-08-21 (OPEN-99): removed 4 merged remote branches + 3 stale local
+  ones from `openstates-scrapers`, 4 merged remote branches (plus the two retired
+  cherry-pick-model branches, `cherry-pick-line`/`ddp-patches` — confirmed genuinely unused, no
+  open PRs referenced either) + 2 stale local ones from `openstates-core`, across both the
+  production checkout and this dev checkout's own nested clones.
 
 ## `check-scrape-staleness.sh` — scraper staleness watchdog (repo root, OPEN-40)
 
