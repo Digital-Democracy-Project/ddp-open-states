@@ -13,11 +13,19 @@
 # entirely going unnoticed until the next rebuild) and had drifted out of sync with actual
 # practice anyway -- the last three DDP fixes (PRs #3, #5, #6) all merged straight to the
 # fork's own `main`, bypassing cherry-pick-line, because that's simpler and nobody was
-# actually using the range-pick path anymore. This file now treats both repos identically.
+# actually using the range-pick path anymore. Since that move both repos' refresh step is
+# identical, so this file no longer has two differently-shaped halves (simplified 2026-08-21,
+# PLAN-fork-management.md §2/§5.G's "keep it, it does two jobs" premise no longer holds) --
+# one shared loop replaces what used to be two near-duplicate blocks.
 #
 # Run periodically (ddp-sync's nightly openstates_patch_refresh job) or whenever someone's
 # already touching either repo.
 set -euo pipefail
+
+REPOS=(
+    /Users/agentsmith/Developer/repos/ddp-open-states/openstates-core
+    /Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers
+)
 
 # Worktree lock — both repos are installed as pip editable packages; a running scrape reads
 # their code live. Skip the refresh rather than mutate the tree mid-scrape. Stale markers
@@ -34,19 +42,15 @@ if [ -d "$SCRAPE_MARKER_DIR" ]; then
     done
 fi
 
-# ── openstates-core ──────────────────────────────────────────────────────────
-cd /Users/agentsmith/Developer/repos/ddp-open-states/openstates-core
-git checkout main
-git pull origin main
-echo "openstates-core: on main ($(git rev-parse --short HEAD))"
-
-# ── openstates-scrapers ──────────────────────────────────────────────────────
-# Added 2026-07-23: a fix branch (fix/fl-floor-vote-source-url) sat checked out here for 2
-# days after its commits were pushed, because nothing ever re-synced this checkout back to
-# main -- the running scraper kept reading that branch's content indefinitely instead of
-# whatever landed on main. This closes that gap the same way the openstates-core section
-# above self-heals on every run.
-cd /Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers
-git checkout main
-git pull origin main
-echo "openstates-scrapers: on main ($(git rev-parse --short HEAD))"
+# Added 2026-07-23 (originally scrapers-only, now identical for both repos): a fix branch
+# (fix/fl-floor-vote-source-url) sat checked out in openstates-scrapers for 2 days after its
+# commits were pushed, because nothing ever re-synced the checkout back to main -- the running
+# scraper kept reading that branch's content indefinitely instead of whatever landed on main.
+# This loop's checkout+pull self-heals that every run, for both repos.
+for repo in "${REPOS[@]}"; do
+    echo "apply-local-patches: refreshing $(basename "$repo")..."
+    cd "$repo"
+    git checkout main
+    git pull origin main
+    echo "$(basename "$repo"): on main ($(git rev-parse --short HEAD))"
+done
