@@ -32,9 +32,26 @@ archival/versioning features). Concretely:
   `flhouse.gov` WAF-session-refresh fix (`f76852483`, opened as openstates/openstates-scrapers#5751)
   was DDP's own earlier contribution, opened and merged upstream the same way this policy now
   describes explicitly.
-- **Who reviews:** no separate DDP-side review gate beyond the normal PR review DDP already
-  does for its own fork -- the public project's own maintainers are the real reviewers for an
-  upstream PR, the same as any other outside contributor.
+- **Who reviews:** no separate DDP-side *code* review gate beyond the normal PR review DDP
+  already does for its own fork -- the public project's own maintainers are the real reviewers
+  for an upstream PR's content, the same as any other outside contributor. **Exception: an
+  agent (not a human DDP contributor) opening the upstream PR itself requires an explicit human
+  go-ahead first**, same as this ticket's own resolution below -- code review and "is it okay
+  for this to become a visible, attributed action against a third-party public repo" are
+  different questions, and only the public maintainers answer the first one.
+- **Enforcement, so classification isn't just a well-intentioned skip-able step:** a DDP fix
+  classified "contribute upstream" isn't considered closed out until one of three things exists:
+  an opened upstream PR, an upstream issue (if a PR isn't ready yet), or an explicit
+  documented reason it's *not* going upstream after all (discovered to be riskier/more
+  DDP-specific than it first looked). "Genuinely general" fixes don't get to just sit
+  fork-only by default -- that's the exact gap this ticket exists to close.
+- **DDP-only isn't just "the default when unsure"** -- it specifically covers things like
+  anti-bot/WAF-evasion tactics, DDP's own archival/versioning/resilience-profile features, and
+  anything that would reveal DDP's specific operational posture to a public audience. When a
+  fix's *general* shape is clear but a specific *behavior choice* inside it is DDP-flavored
+  (the UT User-Agent case), contribute the general shape and note the DDP-specific choice
+  separately, rather than defaulting the whole fix to fork-only or forcing DDP's specific
+  choice onto the public project.
 
 ## Resolving the one concretely known pending case
 
