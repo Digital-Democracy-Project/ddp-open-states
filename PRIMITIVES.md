@@ -122,6 +122,36 @@ should reuse rather than reimplement:
   production WireGuard tunnel reads from — never silently drifts behind community data; `ddp` is
   purely a staging remote for pushing a local fix branch and opening a PR back upstream, never a
   pull source. See `PLAN-fork-management.md` §1 for the full reasoning.
+- **Branch hygiene (OPEN-99): once a PR merges, delete its fix branch, local and remote.** This
+  directly prevents a recurrence of the exact failure mode the worktree-lock/freshness-guard
+  bullets above exist for — a merged branch left checked out (or just left lying around) is
+  how `fix/fl-floor-vote-source-url` sat stale for 2 days in 2026-07-23's incident. Only ever
+  delete a branch you've personally confirmed is merged — never on the strength of a `[gone]`
+  local tracking marker alone (that only means the remote ref disappeared, not that the content
+  is safely in `main`; the 2026-08-21 sweep found a real counter-example, see the note below).
+  Safe sequence, either repo:
+  ```
+  git fetch <remote> --prune
+  git merge-base --is-ancestor <branch> <fork-main>   # must print nothing / exit 0
+  git push origin --delete <branch>                   # remote
+  git branch -d <branch>                               # local, each checkout that has it
+  ```
+  `<fork-main>` is `origin/main` for `openstates-scrapers`, `ddp/main` for `openstates-core`'s
+  dev checkout specifically (its `origin`/`ddp` remotes are still the pre-2026-08-01 reversed
+  naming — see the remote-convention bullet above; the production checkout uses `origin/main`
+  for both repos). If the branch isn't yours, or you're not sure it's genuinely abandoned
+  (not just merged), ask before deleting rather than sweeping it in. GitHub's own
+  "automatically delete head branches" repo setting would make this automatic instead of
+  manual, but as of 2026-08-21 it's off on every DDP fork checked (`openstates-core`,
+  `openstates-scrapers`, `api-v3`) — worth a human turning on in each repo's Settings page.
+
+  One-time sweep done 2026-08-21 (OPEN-99): removed 4 merged remote branches + 3 stale local
+  ones from `openstates-scrapers`, 4 merged remote branches (plus the two retired
+  cherry-pick-model branches, `cherry-pick-line`/`ddp-patches` — confirmed genuinely unused via
+  `gh pr list --state open` on both forks, empty) + 2 stale local ones from `openstates-core`,
+  across both the production checkout and this dev checkout's own nested clones. Full
+  branch-by-branch audit trail (names, commits, which were deliberately left alone and why):
+  `notes/open-99-branch-hygiene-sweep-20260821.md`.
 
 ## `check-scrape-staleness.sh` — scraper staleness watchdog (repo root, OPEN-40)
 
