@@ -213,6 +213,21 @@ step matters — a newer pip breaks one of the pinned deps' build.
   `psycopg2-binary==2.9.9` for Postgres-16 SCRAM auth on arm64 — the stock pin links an old
   libpq that can't do `scram-sha-256`), `docker-compose.stopgap.yml` (pinned rollback target,
   points at the old CAMS-shared DB on :5432), `Dockerfile.ddp.dockerignore`.
+- **`refresh-api-v3.sh`** (OPEN-101, repo root) — the repeatable pull/rebuild/redeploy cycle
+  api-v3 never had one of (unlike `apply-local-patches.sh` for `openstates-core`/
+  `openstates-scrapers`): `git pull origin main` in the production `api-v3` checkout, then
+  `docker-compose -f deploy/docker-compose.ddp.yml build api` and `up -d --force-recreate api`
+  — **always with an explicit `api` service argument**, never a bare `up -d`/`--force-recreate`.
+  That distinction is the entire point: the first-ever manual redeploy (2026-07-29, PR #1/#2)
+  ran a bare `--force-recreate` with no service name, which also recreated the *shared*
+  dedicated Postgres (`ddp-openstates-postgres-1`, :5433 — the same DB native scrapers write
+  to) and killed two live scrapes (`va`, `ut`) mid-write. Deliberately skips the worktree-lock/
+  scrape-running check `apply-local-patches.sh` has — api-v3's checkout is only ever read at
+  `docker build` time (baked into the image), not live by a running process the way
+  `openstates-core`/`openstates-scrapers` are, so scoping every command to `api` already keeps
+  the shared Postgres untouched by construction. Run manually after merging a PR to the fork's
+  `main` — no cron yet, same "not worth it until deploy volume justifies it" call
+  `PLAN-fork-management.md` §5.F made for drift visibility.
 
 ## `quality_check.py` — live-vs-replica data quality diff (repo root)
 
