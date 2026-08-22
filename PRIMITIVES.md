@@ -339,6 +339,55 @@ DB row order is chronological for any bill-version work; use these instead**:
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
   doesn't cover yet, before hand-writing new regexes.
 
+## Per-jurisdiction configuration: which mechanism to use (OPEN-120/OPEN-121, 2026-08-22)
+
+Before adding a new "this jurisdiction needs different behavior" special case anywhere in
+`openstates-core`/`openstates-scrapers`, check whether it fits one of the two conventions below
+instead of inventing a third. A full audit (2026-08-22, `jurisdiction-config` Jira label) found
+per-jurisdiction logic expressed **six different, independently-invented ways** across the whole
+DDP stack — two of them (below) are the ones worth deliberately standardizing on *within these two
+repos specifically*; the others (a live DB table in `ddp-broker-py`, YAML in `ddp-sync`, plain
+per-state code folders) fit their own repo's different constraints and aren't being changed.
+
+- **A plain settings file, for simple per-state text patterns.**
+  `openstates-scrapers/scrapers/config/motion_classification.yaml`, loaded once by
+  `classify_motion.py` (see "Motion classification tooling" above), is the template: one YAML
+  block per jurisdiction holding regex lists, with a small named-function registry
+  (`_PREPROCESSORS`) for the rare case plain regex data can't express — never an inline branch
+  for that case either.
+- **A Python dict of richer objects, when the config needs more than plain data.**
+  `openstates-core/openstates/utils/resilience_profiles.py`'s `RESILIENCE_PROFILES` is the
+  template: one dict entry per jurisdiction holding real objects (a `CookieProvider` instance,
+  rate limits, feature flags) that YAML can't naturally hold. Turning on WAF/cookie resilience
+  for a newly-blocked jurisdiction is "add a `RESILIENCE_PROFILES` entry," not another hand-wired
+  branch copied from Michigan's original one-off machinery.
+
+**Why not a database table (like `ddp-broker-py`'s `JurisdictionEligibilityConfig`) here:**
+`openstates-core`/`openstates-scrapers` are forks that get merged from a public project DDP
+doesn't control (see `apply-local-patches.sh` above) — every DDP-only migration added to either
+repo is a standing risk of colliding with whatever the public project adds on its own next. This
+already happened for real: OPEN-98's 2026-08-21 upstream merge hit a genuine Django
+migration-number collision (DDP's own `0046_billversiondocument.py` vs. upstream's unrelated new
+`0046_bill_indexes.py`, both descending from the same parent), resolved with a real merge
+migration, not a hypothetical risk. `ddp-broker-py` doesn't have this problem — nothing else
+changes its database out from under it — so its DB-table convention stays right for that repo
+specifically, just not portable here.
+
+**What's still using neither convention, on purpose, pending cleanup:** bare inline
+`if jurisdiction_name == "Virginia":`-style conditionals dropped directly into shared code —
+found only in `openstates-core/openstates/cli/text_extract.py`'s version-diffing path (WA/MI/VA/AZ
+text-cleanup dispatch, OPEN-7/9/10/11). Tracked as **OPEN-121** — migrate opportunistically
+whenever that code is already being touched, not as a big-bang rewrite. Two inline checks in the
+same file (an FL TLS-cipher workaround, a CA jurisdiction-ID check) are byte-for-byte identical to
+the public project's own code and are deliberately *not* candidates — rewriting those would only
+add diff noise against every future upstream merge for a problem DDP doesn't own.
+
+**What's explicitly not a "per-jurisdiction config" problem, even though it looks like one:**
+`version_ordering.py`'s stage-classification table (see above) knows MI writes `"(S-1)"`, WA
+writes `"Second Substitute"`, etc., but it isn't jurisdiction-*keyed* — it's one shared cascade of
+patterns evaluated in a fixed order regardless of which state a bill is from, by design. Forcing
+it into a per-jurisdiction registry would change its semantics, not just its storage — don't.
+
 ## Cross-cutting conventions (don't reinvent these)
 
 - **DB connection defaults** — every Python script here defaults to
