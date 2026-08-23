@@ -239,6 +239,106 @@ else
     echo "PASS: escalation message has no unescaped quote or backslash"; PASS=$((PASS + 1))
 fi
 
+# ===================================================================================
+# OPEN-135: the watchlist is derived from ddp-sync's schedule, not hardcoded here
+# ===================================================================================
+#
+# These drive the real script with STALE_WATCHLIST UNSET, which is the only way to
+# exercise derive_watchlist(). Every other test above sets it, so the derivation was
+# entirely uncovered until now.
+
+SCHED="$TMPDIR_ROOT/sync_schedule.yaml"
+
+write_schedule() {  # $1 = fl sync_day line ("" for daily)
+    cat > "$SCHED" <<YAML
+openstates_scrape:
+  primary:
+    fl:
+      enabled: true
+      sync_time_utc: "02:00"
+      ${1}
+      sessions:
+        - "2026"
+        - "2026F"
+    wa:
+      enabled: true
+      sync_time_utc: "02:30"
+    disabled_juris:
+      enabled: false
+      sync_time_utc: "02:00"
+  secondary:
+    enabled: true
+    sync_day: sunday
+    sync_time_utc: "02:00"
+    jurisdictions:
+      - va
+      - mi
+YAML
+}
+
+run_derived() {  # runs with the derivation live; $1 = optional extra env assignment
+    STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+    STALE_DRY_RUN=1 STALE_NOW_EPOCH="${2:-$NOW_EPOCH}" \
+    STALE_SCHEDULE_FILE="$SCHED" ${1:-} bash "$WATCHDOG" 2>&1
+}
+
+echo ""
+echo "=== 18. OPEN-135: watchlist derived from the schedule file ==="
+write_schedule 'sync_day: sunday'
+rm -f "$FIXTURE"/*.ts "$FIXTURE"/*.stale-alerted 2>/dev/null
+OUT=$(run_derived)
+assert_contains "derivation reports how many keys it watches" "$OUT" "derived from"
+# Session-qualified primary keys, bare secondary keys (OPEN-24), disabled juris skipped.
+for k in fl_session_2026 fl_session_2026F wa va mi; do
+    if echo "$OUT" | grep -q "$k"; then
+        echo "PASS: derived watchlist includes $k"; PASS=$((PASS + 1))
+    else
+        echo "FAIL: derived watchlist missing $k"; FAIL=$((FAIL + 1))
+    fi
+done
+if echo "$OUT" | grep -q "disabled_juris"; then
+    echo "FAIL: watched a jurisdiction with enabled: false"; FAIL=$((FAIL + 1))
+else
+    echo "PASS: a jurisdiction with enabled: false is not watched"; PASS=$((PASS + 1))
+fi
+
+echo ""
+echo "=== 19. OPEN-135: an unreadable schedule ALERTS, never watches nothing quietly ==="
+OUT=$(STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+      STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
+      STALE_SCHEDULE_FILE="$TMPDIR_ROOT/does-not-exist.yaml" bash "$WATCHDOG" 2>&1); RC=$?
+assert_contains "missing schedule alerts to Slack" "$OUT" "cannot read the scrape schedule"
+assert_contains "missing schedule says it is watching nothing" "$OUT" "watching NOTHING"
+if [ "$RC" -ne 0 ]; then
+    echo "PASS: missing schedule exits non-zero"; PASS=$((PASS + 1))
+else
+    echo "FAIL: missing schedule exited 0 — a blind watchdog must not look healthy"; FAIL=$((FAIL + 1))
+fi
+
+printf 'this: is: not: valid: yaml: [\n' > "$TMPDIR_ROOT/broken.yaml"
+OUT=$(STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+      STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
+      STALE_SCHEDULE_FILE="$TMPDIR_ROOT/broken.yaml" bash "$WATCHDOG" 2>&1)
+assert_contains "unparseable schedule alerts too" "$OUT" "cannot read the scrape schedule"
+
+printf 'some_other_block:\n  a: 1\n' > "$TMPDIR_ROOT/nokeys.yaml"
+OUT=$(STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+      STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
+      STALE_SCHEDULE_FILE="$TMPDIR_ROOT/nokeys.yaml" bash "$WATCHDOG" 2>&1)
+assert_contains "a schedule with no openstates_scrape block alerts" "$OUT" "cannot read the scrape schedule"
+
+echo ""
+echo "=== 20. OPEN-135: FL flipping daily<->weekly needs no edit to this script ==="
+write_schedule 'sync_day: sunday'
+W1=$(run_derived | grep -o 'watching [0-9]* keys')
+write_schedule ''
+W2=$(run_derived | grep -o 'watching [0-9]* keys')
+if [ "$W1" = "$W2" ]; then
+    echo "PASS: same keys watched whether FL is daily or weekly ($W1)"; PASS=$((PASS + 1))
+else
+    echo "FAIL: key count changed with cadence ($W1 vs $W2)"; FAIL=$((FAIL + 1))
+fi
+
 echo ""
 echo "RESULT: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && { echo "ALL PASS"; exit 0; } || exit 1

@@ -69,40 +69,158 @@ MISSING_AGE_HOURS=999999   # "maximally stale" — a missing marker always excee
 # to filter watchdog chatter. Same log() shape as run-scrape.sh (local-time variant).
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 
-# --- Watched key -> threshold map (hardcoded allowlist, AC #2) -------------------
+# --- Watched key -> deadline map, DERIVED from ddp-sync's schedule (OPEN-135) ----
 #
-# key:threshold_hours, one entry per line. The key is run-scrape.sh's SCRAPE_KEY —
-# the exact basename of the logs/last-run/<key>.ts marker. Hardcoded on purpose
-# (the §11.3 design's own decision): logs/last-run/ also holds one-time backfill
-# markers (fl_session_2023..2025C, usa_session_118_*) that will correctly never
-# update and must never be watched, so globbing the directory is wrong.
+# Still emits `key:threshold_hours` so everything below is unchanged, but the pairs
+# are now computed from ddp-sync's own config/sync_schedule.yaml instead of being
+# typed out here.
 #
-# Verified against ddp-sync config/sync_schedule.yaml + production logs/last-run/
-# on 2026-08-08 (OPEN-40 architecture assessment — supersedes the original §11.3
-# table). This map is THE thing to touch when the ddp-sync schedule changes:
-#   - 48h  = daily jobs   (2x their cadence)
-#   - 228h = weekly jobs  (~9.5 days: Sunday jobs get until Tuesday-ish before alarm)
-#   - fl_session_2026*: weekly ONLY while sync_schedule.yaml has primary.fl.sync_day:
-#     sunday (out-of-session since 2026-07-16). Move back to 48h when FL reverts to
-#     daily for the 2027 session.
-#   - ma is the BARE key, not ma_session_194th: ddp-sync passes session_arg=None for
-#     all secondaries (OPEN-24 — VA/UT each had two simultaneously-active sessions),
-#     so run-scrape.sh derives SCRAPE_KEY=ma and writes ma.ts. Watching
-#     ma_session_194th would be a permanent false alert.
-WATCHLIST="${STALE_WATCHLIST:-
-wa:48
-usa_session_119_chamber_lower:48
-usa_session_119_chamber_upper:48
-fl_session_2026:228
-fl_session_2026D:228
-fl_session_2026E:228
-fl_session_2026F:228
-va:228
-mi:228
-ut:228
-az:228
-ma:228
-}"
+# WHY. The map this replaces carried its own warning: "This map is THE thing to
+# touch when the ddp-sync schedule changes." That is a hand-maintained coupling
+# between two repos, and it drifted exactly as you would expect. It also could not
+# express the actual question. Arizona sat 14 days stale having produced one alert
+# reading "229h vs a 228th threshold" — which triage reasonably dismissed as a
+# rounding error, because 228 was a hand-picked number standing in for "a weekly
+# job missed its run", not the thing itself.
+#
+# WHAT CHANGED. A threshold is now derived per key from that job's real schedule:
+#
+#     threshold = hours since that job's most recent scheduled run
+#     ...unless we are still within the grace window, in which case nothing alerts
+#
+# Read it as a question about the marker rather than about elapsed time: is the
+# marker older than the moment the last run was due to start? If it is, that run
+# cannot have written it, so a scheduled run has been and gone without completing.
+# If it is newer, the run completed. The grace window covers the hours a run
+# legitimately takes — during it the marker is still a full cadence old and must
+# not alert.
+#
+# So the alert condition is now "a run was scheduled and did not complete", at
+# whatever cadence the schedule happens to say, rather than a hand-picked number of
+# hours standing in for that.
+#
+# Consequences worth knowing:
+#   - FL flipping between daily and weekly for its session needs no edit here.
+#   - A new jurisdiction in sync_schedule.yaml is watched automatically.
+#   - A jurisdiction removed from the schedule stops being watched, rather than
+#     alerting forever.
+#
+# STILL AN ALLOWLIST. Derived from the schedule, never from globbing
+# logs/last-run/ — that directory also holds one-time backfill markers
+# (fl_session_2023..2025C, usa_session_118_*) which correctly never update and must
+# never be watched.
+#
+# THE ONE THING NOT TO CHANGE. This watchdog runs OUTSIDE ddp-sync on purpose, so
+# it survives the scheduler being dead — which happened unnoticed 2026-07-04 to
+# 07-08. Reading ddp-sync's config file does not weaken that (a file is readable
+# whether or not the process is alive), but it does introduce a way to fail, so an
+# unreadable or unparseable schedule ALERTS rather than quietly watching nothing.
+# Operator decision, 2026-08-23: read the real schedule, alarm if it cannot be
+# read, do not keep a second copy here to drift again.
+SCHEDULE_FILE="${STALE_SCHEDULE_FILE:-/Users/agentsmith/Developer/repos/ddp-sync/config/sync_schedule.yaml}"
+GRACE_HOURS="${STALE_GRACE_HOURS:-24}"
+
+derive_watchlist() {
+    python3 - "$SCHEDULE_FILE" "$GRACE_HOURS" "$NOW_EPOCH" <<'PY'
+import sys, yaml, datetime
+
+path, grace_h, now_epoch = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+cfg = yaml.safe_load(open(path))
+block = (cfg or {}).get("openstates_scrape") or {}
+if not block:
+    raise SystemExit("no openstates_scrape block in schedule")
+
+DAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+        "friday": 4, "saturday": 5, "sunday": 6}
+now = datetime.datetime.fromtimestamp(now_epoch, datetime.timezone.utc)
+
+
+def hhmm(s, default="02:00"):
+    try:
+        h, m = str(s or default).split(":")[:2]
+        return int(h), int(m)
+    except (ValueError, AttributeError):
+        return 2, 0
+
+
+# Large but finite. Used as "not due yet", and deliberately just under
+# MISSING_AGE_HOURS (999999) so a job that has NEVER produced a marker still
+# alerts even inside its grace window -- there is no run in progress to wait for.
+NOT_DUE_YET = 999998
+
+
+def threshold_for(sync_day, sync_time):
+    """Hours of marker-age that mean "the most recent scheduled run did not complete".
+
+    The threshold is simply *hours since that run was scheduled*. If the marker is
+    older than that, it predates the run, so the run did not write it.
+
+        marker younger than the scheduled time  -> it completed        -> quiet
+        marker older   than the scheduled time  -> it did not          -> alert
+
+    And while we are still inside the grace window after a scheduled time, nothing
+    alerts at all: the job is probably still running, and its marker is legitimately
+    a full cadence old until the moment it finishes.
+
+    Worth spelling out why the obvious-looking alternative is wrong. Anchoring on the
+    run BEFORE the most recent one produces a threshold that grows at exactly the same
+    rate as the marker ages, so the comparison never trips: by the following Saturday a
+    weekly job that missed its Sunday has an age of 312h against a threshold of 336h and
+    reports healthy. Anchoring on the most recent scheduled time is what makes this
+    "a scheduled run did not complete" rather than another elapsed-hours proxy.
+    """
+    h, m = hhmm(sync_time)
+    at = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if sync_day is None:
+        prev = at if at <= now else at - datetime.timedelta(days=1)
+    else:
+        target = DAYS[str(sync_day).strip().lower()]
+        back = (now.weekday() - target) % 7
+        prev = at - datetime.timedelta(days=back)
+        if prev > now:
+            prev -= datetime.timedelta(days=7)
+    since = int((now - prev).total_seconds() // 3600)
+    return since if since > grace_h else NOT_DUE_YET
+
+
+def key_for(state, session_arg):
+    raw = f"{state} {session_arg}" if session_arg else state
+    return raw.replace(" ", "_").replace("=", "_")
+
+
+out = []
+
+# primary: one entry per jurisdiction, times one per configured session
+for state, jcfg in (block.get("primary") or {}).items():
+    if not isinstance(jcfg, dict) or not jcfg.get("enabled", False):
+        continue
+    day = jcfg.get("sync_day")
+    when = jcfg.get("sync_time_utc")
+    sessions = jcfg.get("sessions") or [None]
+    for s in sessions:
+        arg = f"session={s}" if s else None
+        out.append((key_for(state, arg), threshold_for(day, when)))
+
+# secondary: bare jurisdiction keys. ddp-sync passes session_arg=None for every
+# secondary (OPEN-24: VA and UT each had two simultaneously-active sessions), so
+# run-scrape.sh derives SCRAPE_KEY=<state> and writes <state>.ts. Deriving a
+# session-qualified key here would watch a file that is never written.
+sec = block.get("secondary") or {}
+if sec.get("enabled", False):
+    overdue = threshold_for(sec.get("sync_day"), sec.get("sync_time_utc"))
+    for state in sec.get("jurisdictions") or []:
+        out.append((key_for(state, None), overdue))
+
+if not out:
+    raise SystemExit("schedule parsed but produced no watched keys")
+for k, t in out:
+    print(f"{k}:{t}")
+PY
+}
+
+# The watchlist is resolved further down, after the alerting helpers are defined --
+# a derivation failure needs to alert, and post_slack/post_cams do not exist yet
+# at this point in the file.
 
 # --- Alerting (copy of run-scrape.sh's pattern — see OPEN-43 header note) --------
 
@@ -229,6 +347,31 @@ write_sentinel() {
     printf 'tier=%s\nfirst_alerted_utc=%s\nfirst_alerted_epoch=%s\nfirst_alerted_age_hours=%s\nlast_alerted_utc=%s\n' \
         "$2" "$3" "$4" "$5" "$(date -u +%Y-%m-%dT%H:%M:%S)" > "$1"
 }
+
+# --- Resolve the watchlist (OPEN-135) --------------------------------------------
+#
+# Here rather than beside derive_watchlist() because a derivation failure has to
+# alert, and post_slack/post_cams are only defined above this line.
+if [ -n "${STALE_WATCHLIST:-}" ]; then
+    WATCHLIST="$STALE_WATCHLIST"
+else
+    DERIVE_ERR=$(mktemp)
+    if ! WATCHLIST=$(derive_watchlist 2>"$DERIVE_ERR"); then
+        reason=$(tr '\n' ' ' < "$DERIVE_ERR" | tail -c 300)
+        rm -f "$DERIVE_ERR"
+        # Loudly, and non-zero. The alternative — fall back to an empty watchlist
+        # and report every jurisdiction healthy — is the one outcome a watchdog
+        # must never produce, and it is what this script did for its whole life
+        # if the hardcoded map went stale.
+        log "ERROR: cannot derive the watchlist from $SCHEDULE_FILE — watching NOTHING this run: $reason"
+        post_slack "🚨 *Staleness watchdog cannot read the scrape schedule* — \`$SCHEDULE_FILE\` is missing or unparseable, so no jurisdiction is being watched for staleness right now. This is the watchdog itself being blind, not a quiet night. Error: \`${reason}\`"
+        post_cams "staleness watchdog could not read $SCHEDULE_FILE: $reason" \
+            "schedule" "unreadable" "0"
+        exit 1
+    fi
+    rm -f "$DERIVE_ERR"
+    log "watching $(echo "$WATCHLIST" | grep -c ':') keys derived from $SCHEDULE_FILE (grace ${GRACE_HOURS}h)"
+fi
 
 # --- Main check ------------------------------------------------------------------
 
