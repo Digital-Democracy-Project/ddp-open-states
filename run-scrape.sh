@@ -139,8 +139,27 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # non-incremental scrape, which is why it took until then to surface.
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
+#
+# Flat comma list rather than a chained conditional, per OPEN-124's rule (see PRIMITIVES.md,
+# "Per-jurisdiction configuration"). Not cosmetic: the chained form had been extended four times
+# and `ma` was silently missing until OPEN-55, which cost a completed 9,496-bill MA scrape its
+# entire import. A one-line list can be checked at a glance; a four-term chain can't.
+#
+# Same list-plus-comma-wrapped-`case` pattern as ARCHIVE_ENABLED_STATES — defined in activate.sh:55,
+# consumed at run-archive.sh:77 — so this repo has one matching style, not two.
+#
+# `case` returns 0 when nothing matches, so unlike a naive `if` rewrite this cannot trip `set -e`
+# and the ERR trap, which would turn every non-listed jurisdiction's scrape into a spurious
+# failure alert. (The old AND-OR form was safe too, but only incidentally.)
+#
+# Substring matching means a $STATE that is itself a comma-joined list ("mi,fl") matches, where the
+# chained form did not. $STATE is $1, one jurisdiction abbreviation from ddp-sync, so that cannot
+# occur; run-archive.sh has the same property. Noted, not guarded.
+ALLOW_DUPLICATES_STATES="mi,fl,va,ma"
 IMPORT_FLAGS=""
-[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] || [ "$STATE" = "ma" ] && IMPORT_FLAGS="--allow_duplicates"
+case ",$ALLOW_DUPLICATES_STATES," in
+    *",$STATE,"*) IMPORT_FLAGS="--allow_duplicates" ;;
+esac
 
 # OPEN-50: ten jurisdictions (ct ia ks ma md mn nm or pr tx) register a SEPARATE `votes`
 # scraper that has to be asked for by name; everywhere else votes are yielded from inside
