@@ -140,25 +140,21 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
 #
-# Flat comma list rather than a chained conditional, per OPEN-124's recorded rule (see
-# ddp-open-states/PRIMITIVES.md, "Per-jurisdiction configuration") and matching activate.sh's
-# ARCHIVE_ENABLED_STATES. Not cosmetic: the chained form had been extended four times and `ma`
-# was silently missing from it until OPEN-55, which cost a completed 9,496-bill MA scrape its
-# entire import. A one-line list is a thing you can check at a glance.
+# Flat comma list rather than a chained conditional, per OPEN-124's rule (see PRIMITIVES.md,
+# "Per-jurisdiction configuration"). Not cosmetic: the chained form had been extended four times
+# and `ma` was silently missing until OPEN-55, which cost a completed 9,496-bill MA scrape its
+# entire import. A one-line list can be checked at a glance; a four-term chain can't.
 #
-# The comma-wrapped `case` is the same idiom run-archive.sh:77 already uses for
-# ARCHIVE_ENABLED_STATES, deliberately — one matching style in this repo, not two.
+# Same list-plus-comma-wrapped-`case` pattern as ARCHIVE_ENABLED_STATES — defined in activate.sh:55,
+# consumed at run-archive.sh:77 — so this repo has one matching style, not two.
 #
-# `case` also returns 0 when nothing matches, so this cannot interact with `set -e` and the ERR
-# trap. The old `[ A ] || [ B ] || … && assign` form happened to be safe too (bash exempts a
-# failing command inside an AND-OR list) but only incidentally — a naive `if` rewrite here would
-# have turned every non-listed jurisdiction's scrape into a spurious failure alert.
+# `case` returns 0 when nothing matches, so unlike a naive `if` rewrite this cannot trip `set -e`
+# and the ERR trap, which would turn every non-listed jurisdiction's scrape into a spurious
+# failure alert. (The old AND-OR form was safe too, but only incidentally.)
 #
-# One known property of substring matching, shared with run-archive.sh: a $STATE that is itself a
-# comma-joined list ("mi,fl") would match, where the old chained form would not. $STATE is $1, a
-# single jurisdiction abbreviation from ddp-sync, so that input cannot occur — noted rather than
-# guarded, since diverging from the house idiom to defend an impossible input costs more clarity
-# than it buys.
+# Substring matching means a $STATE that is itself a comma-joined list ("mi,fl") matches, where the
+# chained form did not. $STATE is $1, one jurisdiction abbreviation from ddp-sync, so that cannot
+# occur; run-archive.sh has the same property. Noted, not guarded.
 ALLOW_DUPLICATES_STATES="mi,fl,va,ma"
 IMPORT_FLAGS=""
 case ",$ALLOW_DUPLICATES_STATES," in
