@@ -14,14 +14,23 @@ archives — all read-only, all already-paid-for traffic.
 
 ## Bottom line
 
-**The signal is introduction date, not last-action date.** The caveat's bad case is the real one.
-This was settled offline, without the scrape, because the cache already contains the diff the
-ticket asked for: one full-scrape search response and six real incremental search responses.
+**`dateFrom=` behaves as an introduction-date-like filter. It is definitively not a last-action
+filter.** The caveat's bad case is the real one. This was established offline, without the scrape,
+because the cache already contains the diff the ticket asked for: one full-scrape search response
+and six real incremental search responses.
 
-Consequence, measured against production data: an MI incremental window silently skips roughly
+The negative half of that claim — not last-action — is as close to nailed down as observational
+evidence gets (see below). The positive half is a behavioural description, not a field name: bills
+are selected on something that tracks introduction, and DDP cannot see which column from outside.
+For every purpose DDP has, the two are equivalent; the distinction only matters to someone writing
+a fix that tries to keep using the parameter.
+
+Consequence, estimated against production data: an MI incremental window cannot return roughly
 **80 bills per week** (median 88, worst observed week 165) whose only change since the cutoff is a
-later action. Over 22 weekly windows, **59.7%** of all bill-weeks with real activity would be
-missed.
+later action — **59.7%** of all bill-weeks with activity over 22 windows. Excluding MI's
+administrative `electronically reproduced` rows, which are arguably not user-visible changes, it is
+**67/week and 55.6%**. The conclusion is not sensitive to that choice; both are estimates of
+opportunity, not counts of confirmed-missing rows.
 
 A **second, separate defect** turned up on the way (see below): when an MI search matches exactly
 one bill, the site serves that bill's page instead of a results page, the scraper's xpath matches
@@ -58,7 +67,7 @@ Two recent MI changes were checked and neither touches it: OPEN-81's `bill_no=` 
 downstream at `:266`, and OPEN-52/53/54's `mi_waf_get`/`_waf_circuit_breaker.py` work is
 transport-layer only.
 
-## Evidence — why "introduction date" is settled
+## Evidence
 
 `_cache/` retains every distinct search URL MI's scraper has fetched, keyed by query string. That
 includes the full-scrape response (`dateFrom=` blank, 3,752 results) and six real incremental
@@ -85,10 +94,17 @@ That alone is suggestive rather than conclusive: a last-action filter would also
 recently-introduced bills *if* no older bill happened to see activity. So the complementary check
 matters more.
 
+**Row count reconciliation.** The table's non-empty windows sum to 174 result rows, while 172
+distinct bill pages were fetched. The gap is overlap, not loss: `2026-SCR-0015` appears in both the
+2026-06-28 and 2026-07-12 windows, and `2026-SR-0135` in both 2026-06-28 and 2026-07-26. 174 rows =
+172 distinct bills. Checked directly — of the 96 bills in the 2026-06-28 window, zero have a cached
+page older than that cutoff, so no row was ever served from a stale cache entry instead of being
+fetched. Every count below is over distinct bills.
+
 **Eight weeks of incremental runs never revisited a single pre-existing bill.** Across all four
-non-empty incremental runs, 172 bill pages were fetched. The earliest introduction date among all
-172 is **2026-06-30** — two days after the first cutoff. Not one bill introduced before its
-window's cutoff was ever returned:
+non-empty incremental runs, 172 distinct bill pages were fetched. The earliest introduction date
+among all 172 is **2026-06-30** — two days after the first cutoff. Not one bill introduced before
+its window's cutoff was ever returned:
 
 ```
 fetched 2026-07-11: n=94  earliest intro 2026-06-30   (cutoff 2026-06-28)
@@ -167,18 +183,33 @@ the last full scrape, so no post-scrape blind spot skews it):
 | 2026-06-13 | 192 | 129 | 67.2 |
 | 2026-06-20 | 225 | 165 | 73.3 |
 
-**22 windows · 2,943 bill-weeks with real activity · 1,758 would be missed · 59.7% · mean 80/week ·
+**22 windows · 2,943 bill-weeks with activity · 1,758 unreturnable · 59.7% · mean 80/week ·
 worst 165.**
 
+MI's `bill electronically reproduced` rows (2,270 of 25,629 MI action rows) are administrative and
+arguably not user-visible changes. Excluding them: **2,667 bill-weeks · 1,482 unreturnable · 55.6% ·
+mean 67/week · worst 151.** The estimate is not sensitive to that judgement call, so the headline
+figure keeps them in and this is the conservative floor.
+
 "Missed" here means the bill had at least one action inside the window and was introduced before it,
-so an intro-date filter cannot return it. What is lost is the action itself — amendments, committee
+so an intro-date filter cannot return it. It is a count of *opportunities to miss* derived from
+complete history, not a verified count of rows currently absent from production. What is lost is the action itself — amendments, committee
 reports, floor votes, gubernatorial signature — on bills DDP already tracks. Votes are the sharpest
 edge: OPEN-30's 16-bill vote gap needed a hand-built `bill_no=` mechanism to recover precisely
 because no weekly incremental run would ever have revisited those bills. That was treated as a
 one-off backfill; on this evidence it is the normal steady state.
 
-MI has run incremental-only since 2026-06-28. Every action recorded on a pre-2026-06-28 bill since
-then is missing from production unless a targeted backfill happened to catch it.
+**Boundary and inclusion rules**, so the table is reproducible: a window is `[start, start+7)` on
+action `date::date`, local dates throughout, no timestamps. "Activity" = at least one action row
+dated inside the window. "Missed" = that, and an `INTRODUCED%` row dated strictly before
+`start`. Bills with no `INTRODUCED%` row at all (1 of 3,924) are excluded. Three windows in the
+series are absent from the table (2026-01-03, 03-28, 04-04) because they contain no action rows at
+all — legislative recess, not filtered data.
+
+MI has run incremental-only since 2026-06-28. It follows that actions recorded on pre-2026-06-28
+bills since then are very likely absent from production unless a targeted backfill caught them —
+but that is an inference from the mechanism, not a measurement. Confirming it means fetching the
+bills whose actions were missed, which is the unrun full scrape.
 
 ## Second defect found (not in scope, should be its own ticket)
 
@@ -208,54 +239,103 @@ available. Every MI request routes through `mi_waf_get`'s cookie/UA identity han
 (`bills.py:236-241`), and a request without those warmed cookies gets a WAF block, not an answer.
 The experiment must run through the real scraper.
 
-**Preconditions**
+**Preconditions (all four are go/no-go, not advisory)**
 
 1. OPEN-52/53/54 resilience work landed and exercised on MI. `logs/scraper.log` shows twelve
    `Starting scrape: mi` lines between 2026-07-31 and 2026-08-04 with no matching
    `SCRAPE SUMMARY` — a mix of scheduled and manual attempts, none of which completed. Confirm
    that period's instability is resolved before adding a multi-hour full scrape on top of it.
-2. `MI_COOKIE_PROVIDER` warm-up confirmed healthy — one cheap already-scheduled incremental run
-   completing normally is sufficient evidence.
-3. No concurrent MI scrape or archive step. Check `ps aux` and the import lock.
-4. Run from the **dev** checkout (`ddp-open-states-dev`, `activate-dev.sh`) so nothing writes the
-   production database, and assert `SELECT current_database()` before and after (per OPEN-41's
-   Approach B). The comparison is over scraped counts, not imported rows.
+2. The two most recent scheduled MI incrementals each produced a `SCRAPE SUMMARY` line, and
+   `grep -c "WafBlockDetected\|WAF block" ` over their log windows returns 0. One clean run is
+   weak evidence; two consecutive is the bar.
+3. No concurrent MI scrape, archive step, or import. Check `ps aux | grep -i "os-update\|run-scrape"`
+   and that `logs/last-run/` has no live import lock.
+4. Run from the **dev** checkout (`ddp-open-states-dev`, `activate-dev.sh`). Assert
+   `SELECT current_database()` in the same shell immediately before and after (OPEN-41 Approach B) —
+   it must read `openstates_dev`, never `openstates`.
 
 **Window** — MI's own scheduled slot, 22:00 local, immediately *after* a normal weekly incremental
 completes, so the day's MI traffic is one contiguous block rather than two. Prefer a recess week:
 the 2026-05-02 and 2026-05-23 windows above show near-zero legislative activity, which also makes
 the diff cleaner.
 
+**Cache handling — read this before running anything.** The whole offline finding above rests on
+`_cache/` retaining responses, which cuts both ways: the blank-`dateFrom=` full search URL is
+*already cached* from 2026-06-27, and so are 3,924 bill pages. A full scrape against a warm cache
+would compare a fresh incremental against a fourteen-month-stale full response and prove nothing.
+So:
+
+- Use the **dev checkout's own `_cache/`**, not production's. Confirm which directory is live before
+  starting (`os-update` resolves it relative to the invoking checkout).
+- Delete or move aside just the two MI search entries — the blank-`dateFrom=` one and the target
+  cutoff's — so both sides of the diff are fetched during the experiment. Leave the 3,924 bill-page
+  entries in place: the diff is over *search result sets*, the bill pages are not part of it, and
+  re-fetching them is the entire 7-8h cost.
+- Prove freshness afterwards: both search entries' mtimes must fall inside the run window.
+
 **Steps**
 
-1. Capture the incremental baseline from the normal scheduled run: its `SCRAPE SUMMARY`
-   `bills_scraped=N`, its cutoff, and its cached search response in `_cache/`.
-2. Force the full scrape by moving the cutoff marker aside — `run-scrape.sh` treats a missing
-   `.ts` as first-run and drops `start=` entirely (`run-scrape.sh:31-45`):
+1. Capture the incremental baseline. It must come from the **same checkout and code revision** as
+   the full run — do not diff a production scheduled run against a dev full run. Either re-run the
+   incremental in dev with the production cutoff passed explicitly (`start=<cutoff>`), which costs
+   only the one search request plus its handful of bills, or run both legs in dev back to back.
+   Record: the cutoff used, `bills_scraped=N`, and the path + mtime of the cached search response.
+2. Force the full scrape by moving the cutoff marker aside. `run-scrape.sh` treats a missing `.ts`
+   as first-run and drops `start=` entirely (`run-scrape.sh:31-45`). Use a trap so an interrupted
+   shell cannot leave the marker absent — the FL precedent
+   (`notes/fl-open-41-waf-vote-gap-verification-20260808.md`) is exactly this failure, where a
+   cleared cutoff silently turned a later scheduled run into a full scrape:
    ```
-   mv logs/last-run/mi.ts logs/last-run/mi.ts.open89-bak
+   TS=logs/last-run/mi.ts
+   cp -p "$TS" "$TS.open89-bak"
+   trap 'mv -f "$TS.open89-bak" "$TS"; ls -la "$TS"' EXIT INT TERM
+   mv "$TS" "$TS.open89-hidden"
    ./run-scrape.sh mi
-   mv logs/last-run/mi.ts.open89-bak logs/last-run/mi.ts   # restore immediately after
    ```
-   Restoring matters — leaving it absent makes the *next* scheduled run full as well. That exact
-   mistake is on record for FL (`notes/fl-open-41-waf-vote-gap-verification-20260808.md`).
-3. Diff the two cached search responses on bill identifier, not count:
-   `full_set − incremental_set`, then partition by introduction date relative to the cutoff.
+   Then confirm by hand that `mi.ts` is back and its contents match the pre-run value.
+3. Validate response shape on **both** cached search responses before diffing anything. The
+   single-match redirect above is precisely the trap here — an xpath that matches nothing looks
+   identical to an empty result set. For each response assert: `<title>` contains
+   `Search Results`, exactly one `tableScrollWrapper` div exists, and its header row reads
+   `Document | Type | Description`. If either response fails, the run is inconclusive — do not
+   proceed to the diff, and treat a redirect as a hit on the second defect instead.
+4. Diff on normalised bill identifier, not count. Extract `objectName=` from each result row's href
+   (the same field `make_bill_url()` uses) rather than link text, which carries zero-padding
+   variance — `_mi_bill_id_to_no()` exists for exactly that reason. Compute
+   `full_set − incremental_set`, then for each bill in that difference read its intro date from its
+   `INTRODUCED%` history row (not `min(date)` — MI's tables are not chronological) and its action
+   dates, and partition on `intro < cutoff AND max(action) >= cutoff`.
 
 **Decision rule**
 
-- Bills in `full − incremental` with intro < cutoff **and** an action ≥ cutoff →
-  **introduction-date filter confirmed.** Expect ~80 for a 7-day window on these figures.
-- That set empty (every bill with an action ≥ cutoff also appeared in the incremental set) →
-  **last-action-date filter**, caveat closes, `RUNBOOK.md:626` updated to "verified".
-- Anything else — e.g. the full set missing bills the incremental found — means the search endpoint
-  is not stable across calls, and the diff is inconclusive rather than negative.
+- Difference set contains bills with `intro < cutoff` **and** an action `>= cutoff` →
+  **introduction-date behaviour confirmed.** Expect ~80 for a 7-day window on these figures; an
+  order of magnitude fewer would contradict the estimate and is itself worth investigating.
+- Difference set contains no such bill, i.e. every bill with an action `>= cutoff` also appeared in
+  the incremental set → **last-action behaviour**, this note is wrong, the caveat closes and
+  `RUNBOOK.md:626` becomes "verified".
+- Either response failed step 3's shape check, or the full set is *missing* bills the incremental
+  found → **inconclusive**, not negative. The endpoint is not stable across calls and the diff
+  cannot be interpreted either way.
+
+**Abort criteria during the run** — stop and restore the cutoff immediately on any of: the WAF
+circuit breaker firing (`MIWafCircuitBreakerMixin` aborts the scrape by design, so this shows up as
+a failed run); more than a handful of `WafBlockDetected` re-warms in the log; or the run exceeding
+12h wall clock. A partial full scrape is not a usable diff input — the difference set would be
+indistinguishable from a real filtering gap. Record the abort and retry no sooner than the next
+week's slot.
 
 **Cost** — the 2026-06-27 full run took **3h02m** for 3,752 bills (22:00:00 → 01:02:06). That
 predates OPEN-21's `MI_SCRAPELIB_RPM=10` cap (`089191b04`, 2026-08-02), which is live now with no
 env override, so pacing alone is ~6.3h for 3,752 bills; with `http_resilience_mode`'s 1-3s jitter,
-budget **7-8h** and roughly 3,800 requests. That is the real price of this ticket, and the reason
-the cache evidence above is worth more than the run.
+budget **7-8h** and roughly 3,800 requests — and that assumes mostly clean responses. Every
+`WafBlockDetected` adds a Playwright cookie re-warm plus a retry, so on a bad night this can run
+considerably longer, which is what the 12h abort exists for. That is the real price of this ticket,
+and the reason the cache evidence above is worth more than the run.
+
+**After the run** — confirm production was untouched: `mi.ts` restored to its original contents,
+production `_cache/` mtimes unchanged, and the production `openstates` database's MI bill/action
+counts identical to a baseline taken before starting.
 
 ## What remains unknown
 
