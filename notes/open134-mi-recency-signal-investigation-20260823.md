@@ -13,7 +13,9 @@ first, the way OPEN-89 did. All three steps are answered below from the scrapeli
 
 ## Step 1 — Does MI's search accept a last-action-date parameter?
 
-**No.**
+**No such parameter is exposed anywhere in the cached evidence.** (Deliberately worded that way —
+see the caveat at the end of this section. Cache evidence cannot prove a negative about the
+server.)
 
 The results page re-renders the search form, so a cached `ExecuteSearch` response contains the
 form itself. Every field it offers:
@@ -109,7 +111,54 @@ ones a bill page links to.)
 | Drop the date filter, walk everything | **~3,752 bill pages, ~6.3 h at the 10 rpm cap** |
 
 Roughly a **600-fold** difference in requests against the site that WAF-blocks us. That is the
-whole argument.
+cost argument, and it holds. The coverage argument does not — see next.
+
+### Step 2b — but how much of the gap do journals actually recover? **About 57%, and the
+### remainder is structural**
+
+The volume figures above are suggestive, not evidence that the bills journals name are the bills
+we are missing. So this was measured directly, against the production database (read-only) and
+the cache.
+
+Method: take MI bills whose last action is later than their first — the class `dateFrom` cannot
+return — and check whether the bill is named in a journal for its own last-action date. **2,842**
+MI bills match that class from 2025 onward; a 400-bill sample was tested, of which **253** have a
+cached journal for their exact last-action date.
+
+```
+named in that day's journal: 146/253 = 57%
+```
+
+**Recall is 57%, not near-complete.** And the misses are not random — pulling the actual actions
+behind them shows exactly one pattern:
+
+| Bill | Last action | Classification |
+|---|---|---|
+| HB 4864 | reported with recommendation with substitute (H-1) | `committee-passage` |
+| HB 4894 | reported with recommendation for referral to Committee on Rules | `committee-passage` |
+| HB 5518 | reported with recommendation for referral to Committee on Rules | `committee-passage` |
+| HB 6127 | bill electronically reproduced 06/24/2026 | *(none — administrative)* |
+
+**Journals carry floor business. Committee reports and administrative rows are simply not in
+them.** Verified this is not a chamber artifact: both the House and Senate journals for
+2026-06-25 are cached, and these bills appear in neither.
+
+And non-floor activity is the *majority* of MI bill activity. All MI actions dated 2026-06-25:
+
+| Classification | Count |
+|---|---|
+| *(none — administrative)* | 143 |
+| `referral-committee` | 42 |
+| `passage` | 37 |
+| `introduction` | 29 |
+| `committee-passage` | 25 |
+| `reading-3` | 23 |
+| `reading-1` | 21 |
+| `reading-2` | 13 |
+
+Roughly 210 non-floor rows against 94 floor ones on a single day. So journals are a **partial**
+recovery mechanism, and the committee surface the ticket listed as a maybe is in fact the larger
+half of the problem.
 
 ## Step 3 — Interaction with OPEN-132
 
@@ -122,32 +171,66 @@ originally dropped a bill. The masking risk is moot because the bug is fixed rat
 
 ## Recommendation
 
-Replace `dateFrom` as the change signal with a journal-derived set of recently-acted bills:
+**Journals are a real signal and worth building, but they are not the whole fix.** Stated in that
+order because the volume numbers alone read more encouragingly than the recall measurement
+justifies.
+
+Keep `dateFrom` — it is not *wrong* about newly introduced bills, only blind to later activity on
+older ones — and add journals alongside it:
 
 1. Per chamber, track the last-seen journal sequence number.
 2. Each run, walk forward from it until a 404, fetching each new journal.
 3. Extract `House|Senate Bill No. N` references.
-4. Scrape the union of (bills the existing `dateFrom` search returns — still correct for genuinely
-   *new* bills) and (bills named in journals since the last run — the ones being missed today).
+4. Scrape the union of the `dateFrom` results and the journal-named bills.
 
-Keeping the existing search rather than replacing it matters: `dateFrom` is not wrong about newly
-introduced bills, it is only blind to later activity on older ones. The journals fill exactly that
-hole, so the two are complementary and the change is additive.
+Expected recovery on the measurement above: **roughly 57% of the missed class**, i.e. the
+floor-action half. That is a large improvement on today's zero and it is cheap, so it is worth
+doing on its own — but it must not be described as closing OPEN-134.
 
-### Open questions for whoever implements it
+### The committee surface is now the critical unknown, not a footnote
 
-- **Committee reports.** The ticket also names these. Not investigated here: no committee-report
-  documents appeared in the cache under a recognisable path, so there was nothing to read without
-  network access. Journals alone may not cover committee action that never reaches the floor —
-  worth checking before assuming full coverage.
+The ticket listed committee reports as a maybe. The recall measurement promotes them to the
+larger half of the problem: `committee-passage` and unclassified administrative rows outnumber
+floor actions roughly two to one on a sitting day, and journals contain none of them.
+
+Nothing could be established about them here — no committee-report document appeared in the cache
+under any recognisable path, so there was nothing to read without network access. **That is the
+next investigation, and it should happen before anyone commits to an architecture**, because if
+committee reports turn out to be unavailable or unparseable then the honest options narrow back
+toward a periodic full walk, and the design changes shape entirely.
+
+### Other open questions for whoever implements the journal half
+
+- **Checkpoint semantics.** Advancing the last-seen sequence number before the journal-derived
+  bills have actually been scraped would make a failed run skip those bills permanently. Only
+  advance after successful processing, or keep the pending set durable.
+- **A premature 404 must not be treated as authoritative.** If a gap in the server's own numbering
+  ever exists, stopping at the first miss silently truncates every future run. Probe a small
+  number past the first 404 before concluding, and log where it stopped.
 - **Bill-number to identifier mapping.** Journals say `House Bill No. 4123`; the scraper works in
-  `HB 4123` / `2025-HB-4123`. `_mi_bill_id_to_no()` already normalises this shape, so it should
-  reuse that rather than inventing a second parser.
-- **Sequence-number bootstrap.** First run after this ships has no last-seen number. Seeding from
-  the highest number already in the cache avoids a walk from 001.
-- **Resolutions.** The regex above catches `Resolution`/`Joint Resolution`/`Concurrent
-  Resolution`, but the mapping from those to our identifiers (HR/SR/HJR/SJR/HCR/SCR) needs the
-  same care as bills.
+  `HB 4123` / `2025-HB-4123`. `_mi_bill_id_to_no()` already normalises this shape — reuse it
+  rather than writing a second parser.
+- **Sequence-number bootstrap.** The first run has no last-seen number, and the cache is not a
+  complete record (it only holds journals a bill page happened to link to). Seeding from the
+  highest cached number avoids a walk from 001 but may skip journals never fetched.
+- **Resolutions.** The regex catches `Resolution`/`Joint Resolution`/`Concurrent Resolution`, but
+  mapping those to HR/SR/HJR/SJR/HCR/SCR needs the same care as bills.
+- **WAF guardrails.** Whatever ships needs a hard request cap, adherence to the 10 rpm limit, no
+  retry escalation on a WAF-shaped failure (OPEN-53), a config kill switch, and a dry-run mode
+  that logs what it *would* fetch. MI is the one jurisdiction where an implementation bug costs
+  more than the bug it fixes.
+- **Measure the residual.** Re-run OPEN-89's own method after shipping and report recovered
+  count, residual misses, and which categories remain — the 57% figure above is the baseline to
+  beat, and the number that says whether the committee work is still needed.
+
+### This note does not close OPEN-134
+
+Said plainly because the ticket is a fix ticket, and pm-review's first observation on this note
+was that merging it must not be mistaken for completing the work. The bug is live: MI is still
+losing bills every week. What this note establishes is *what to build and what not to bother
+trying*, plus a measured ceiling on how much the buildable half recovers.
+
+OPEN-134 should stay open until code lands and the ~80/week figure is re-measured.
 
 ### What was not done, and why
 
