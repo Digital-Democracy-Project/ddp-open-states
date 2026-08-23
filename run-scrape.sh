@@ -139,6 +139,48 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 IMPORT_FLAGS=""
 [ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] && IMPORT_FLAGS="--allow_duplicates"
 
+# OPEN-50: ten jurisdictions (ct ia ks ma md mn nm or pr tx) register a SEPARATE `votes`
+# scraper that has to be asked for by name; everywhere else votes are yielded from inside
+# `bills`. Until now this script only ever ran `--scrape bills`, so onboarding one of those
+# ten would have looked completely successful and silently produced no vote data.
+#
+# Ask the scraper what it registers rather than keeping a list of states here. A list would
+# have to be hand-maintained across all 50 states, and the --allow_duplicates list directly
+# above is the cautionary tale: `ma` was missing from it until OPEN-55, which cost a
+# completed 9,496-bill backfill its entire import.
+#
+# This probe is load-bearing, not an optimisation: do_update() raises
+# CommandError("no such scraper: ...") and fails the whole run if `votes` is requested for a
+# jurisdiction that doesn't have one, so "just always pass votes" would break every
+# currently-tracked state.
+#
+# stderr is captured to a separate file, NOT merged into the value: importing a jurisdiction
+# emits FutureWarnings and a DEBUG line, and folding those into $VOTES_SCRAPER would splice
+# several lines of warning text onto the os-update command line as positional arguments.
+VOTES_SCRAPER=""
+VOTES_PROBE_ERR=$(mktemp)
+if ! VOTES_SCRAPER=$("$OS_VENV/bin/python" - "$STATE" 2>"$VOTES_PROBE_ERR" <<'PY'
+import sys
+from openstates.cli.update import get_jurisdiction
+juris, _ = get_jurisdiction(sys.argv[1])
+print("votes" if "votes" in juris.scrapers else "", end="")
+PY
+); then
+    # Fail loudly rather than falling back to bills-only. A probe failure means we don't know
+    # whether this jurisdiction's votes are being collected, which is the exact blind spot
+    # OPEN-50 exists to close — silently guessing "no" would recreate it.
+    PROBE_TAIL=$(tail -3 "$VOTES_PROBE_ERR" | tr '\n' ' ')
+    rm -f "$VOTES_PROBE_ERR"
+    log "ERROR: could not determine which scrapers $STATE registers: $PROBE_TAIL"
+    FAILURE_ERROR_TYPE="ScraperProbeFailure"
+    FAILURE_MESSAGE="could not import jurisdiction $STATE to check for a votes scraper: $PROBE_TAIL"
+    trap - ERR
+    on_failure
+    exit 1
+fi
+rm -f "$VOTES_PROBE_ERR"
+[ -n "$VOTES_SCRAPER" ] && log "$STATE registers a separate votes scraper; scraping bills and votes"
+
 # Import-as-you-go (PLAN-incremental-scraping.md, "Reopened 2026-07-30", approved for
 # implementation) — off by default. When enabled, a killed scrape no longer loses everything:
 # a periodic sweep imports scraped JSON into Postgres throughout the run instead of in one
@@ -267,7 +309,14 @@ SCRAPE_MARKER=$(mktemp)
 SCRAPE_OUT=$(mktemp)
 scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log AND captures
                     # to SCRAPE_OUT; returns os-update's real exit code (not tee's).
-    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG $1 $DIR_FLAGS 2>&1 \
+    # $VOTES_SCRAPER is "votes" or empty (see OPEN-50 probe above). Its position here is
+    # load-bearing and must stay AFTER $SESSION_ARG/$INCREMENTAL_FLAG: do_update() walks the
+    # positional args left to right and attaches each k=v to the most recently named scraper
+    # (openstates-core/openstates/cli/update.py:390-403). Moving `votes` before them would
+    # hand `session=`/`start=` to the votes scraper — which accepts no `start=` at all — and
+    # would simultaneously strip the incremental cutoff off `bills`, turning every run into a
+    # full scrape. Both failures are silent.
+    $OS_UPDATE "$STATE" --scrape bills $SESSION_ARG $INCREMENTAL_FLAG $VOTES_SCRAPER $1 $DIR_FLAGS 2>&1 \
         | tee "$SCRAPE_OUT" >> "$LOG_DIR/scraper.log"
     return "${PIPESTATUS[0]}"
 }
