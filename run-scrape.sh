@@ -415,10 +415,10 @@ finish_no_op() {
     mkdir -p "$LAST_RUN_DIR"
     date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
     echo "0:incremental" > "$COUNT_FILE"
-    # OPEN-139: no import ran, so genuinely zero new bills. Recorded rather than skipped so the
-    # rolling series has no holes — a missing entry and a zero entry must not look alike to a
-    # reader deciding whether a jurisdiction has gone quiet.
-    echo "0:0:0:incremental" > "$IMPORTED_FILE"
+    # OPEN-139: no import ran because nothing changed since the cutoff, so genuinely zero new
+    # bills — an `ok` measurement of zero, not a failure to measure. Recorded rather than skipped
+    # so the series has no holes; see import-summary.sh for the file's format and guarantees.
+    echo "ok:0:0:0:incremental" > "$IMPORTED_FILE"
     rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
     exit 0
 }
@@ -601,13 +601,14 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
     # loop" and "a real failure" matters: only require_import_lock's own result should ever
     # trigger on_failure below.
     kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true
-    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS > \"$IMPORT_OUT\" 2>&1"
+    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS > \"$IMPORT_OUT\" 2>&1" \
+        || IMPORT_RC=$?
 else
     $OS_UPDATE "$STATE" --import $IMPORT_FLAGS $DIR_FLAGS \
-        > "$IMPORT_OUT" 2>&1
+        > "$IMPORT_OUT" 2>&1 || IMPORT_RC=$?
 fi
 
-# OPEN-139: the import's own output now lands in a per-run file first, then gets appended to
+# OPEN-139: the import's own output lands in a per-run file first, then gets appended to
 # scraper.log verbatim. Two reasons it is not read back out of scraper.log instead:
 #
 #   1. scraper.log is shared. The secondary job fans its five jurisdictions out with
@@ -618,35 +619,67 @@ fi
 #      status of tee, and inside require_import_lock's `eval` there is no clean place to recover
 #      ${PIPESTATUS[0]} -- see scrape_attempt() above, which needs exactly that dance.
 #
+# `|| IMPORT_RC=$?` on both branches is load-bearing, and is why the failure handling below is
+# written out by hand instead of left to the ERR trap. A failing command inside an AND-OR list is
+# exempt from `set -e`, so the append below always runs -- pm-review caught that the first version
+# of this change lost the import's stderr from scraper.log on exactly the runs that need it, since
+# `set -e` aborted before reaching the append and the failure alert says "check scraper.log".
+# Confirmed by reproducing it: with a bare redirect, a non-zero import never reaches this line.
+#
 # Tradeoff, stated plainly: the import's output no longer streams into scraper.log while it
 # runs, it appears when the import finishes. Imports are the short half of a run (AZ's 895-bill
 # import took 32s on 2026-08-22 against a 95-minute scrape), so this costs little visibility.
 cat "$IMPORT_OUT" >> "$LOG_DIR/scraper.log"
 
+if [ "${IMPORT_RC:-0}" -ne 0 ]; then
+    # Same shape as the scrape-failure path above: disable the ERR trap so it cannot double-fire,
+    # alert once, and exit with the import's real status.
+    rm -f "$IMPORT_OUT"
+    trap - ERR
+    on_failure
+    exit "$IMPORT_RC"
+fi
+
 log "Import done: $STATE."
 
+# OPEN-139: read the PREVIOUS run's new-bill count before this run's marker overwrites it. See
+# import-summary.sh for the .imported file's format and its three guarantees.
+PREV_NEW=""
+PREV_IMPORTED_MODE=""
+if [ -f "$IMPORTED_FILE" ]; then
+    if [ "$(cut -d: -f1 "$IMPORTED_FILE")" = "ok" ]; then
+        PREV_NEW=$(cut -d: -f2 "$IMPORTED_FILE")
+        PREV_IMPORTED_MODE=$(cut -d: -f5 "$IMPORTED_FILE")
+    fi
+fi
+
 IMPORT_COUNTS=$(parse_import_bill_counts "$IMPORT_OUT")
+rm -f "$IMPORT_OUT"
+
+mkdir -p "$LAST_RUN_DIR"
 if [ -n "$IMPORT_COUNTS" ]; then
     NEW_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f1)
     UPDATED_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f2)
     NOOP_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f3)
     log "=== IMPORT SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_new=$NEW_BILLS | bills_updated=$UPDATED_BILLS | bills_noop=$NOOP_BILLS ==="
+    echo "ok:${IMPORT_COUNTS}:${MODE}" > "$IMPORTED_FILE"
 
-    if import_looks_stuck "${SCRAPED_BILLS:-0}" "$NEW_BILLS" "$UPDATED_BILLS"; then
+    if import_looks_stuck "$MODE" "${SCRAPED_BILLS:-0}" "$NEW_BILLS" "$UPDATED_BILLS"; then
         log "WARNING: $STATE ${SESSION_ARG} scraped $SCRAPED_BILLS bill files but the import found 0 new and 0 updated — the incremental cutoff is probably stuck re-scraping one frozen window (OPEN-139)"
     fi
-else
-    log "WARNING: could not parse an import bill-count line for $STATE ${SESSION_ARG} — filing-activity tracking has no figure for this run (OPEN-139)"
-fi
-rm -f "$IMPORT_OUT"
 
-mkdir -p "$LAST_RUN_DIR"
+    # The rewired replacement for the <20%-of-previous warning removed above, now comparing the
+    # count that can actually see a collapse.
+    if [ -n "$PREV_NEW" ] && new_bills_collapsed "$MODE" "$PREV_IMPORTED_MODE" "$PREV_NEW" "$NEW_BILLS"; then
+        log "WARNING: $STATE ${SESSION_ARG} imported $NEW_BILLS new bills, under 20% of the previous incremental run's $PREV_NEW — possible over-filtering or a broken change signal (OPEN-139)"
+    fi
+else
+    # Written, not skipped. Leaving the previous run's counts in place would make a stale figure
+    # look current to anything building a series from this file, and a fabricated 0 would make a
+    # measurement failure look like a quiet week. Neither is acceptable; `unparsed` says which.
+    log "WARNING: could not parse an import bill-count line for $STATE ${SESSION_ARG} — recording this run as unmeasured (OPEN-139)"
+    echo "unparsed::::${MODE}" > "$IMPORTED_FILE"
+fi
+
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
-# OPEN-139: written alongside .count, and deliberately only when the counts were actually parsed.
-# A run whose import report couldn't be read leaves the previous run's figures in place rather
-# than overwriting them with a fabricated zero -- a reader comparing runs must never mistake
-# "we failed to measure" for "this jurisdiction filed nothing".
-if [ -n "$IMPORT_COUNTS" ]; then
-    echo "${IMPORT_COUNTS}:${MODE}" > "$IMPORTED_FILE"
-fi
