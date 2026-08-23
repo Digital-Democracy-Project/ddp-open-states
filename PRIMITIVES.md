@@ -373,6 +373,48 @@ migration, not a hypothetical risk. `ddp-broker-py` doesn't have this problem �
 changes its database out from under it — so its DB-table convention stays right for that repo
 specifically, just not portable here.
 
+**Per-jurisdiction settings in shell scripts and the scheduler (OPEN-124, decided 2026-08-22).**
+The survey above found a seventh, unnamed mechanism outside these two repos: plain lists of state
+abbreviations sitting in shell scripts (`run-scrape.sh`'s `--allow_duplicates` states,
+`activate.sh`'s `ARCHIVE_ENABLED_STATES`). It falls outside the `openstates-core`/`openstates-scrapers`
+decision above by construction — those files are entirely DDP's, with no upstream to collide with —
+so nothing covered it. The rule now:
+
+- **Anything a scheduler decides goes in `ddp-sync`'s `config/sync_schedule.yaml`**, as an
+  `{enabled, jurisdictions}` block read by a small `_*_eligible()` helper in the relevant pipeline
+  module. Which jurisdictions are enrolled in a rollout, which are opted out of retries, which get
+  a fallback — all of these. `ddp-sync` is what actually invokes `run-scrape.sh`, it already
+  resolves per-jurisdiction opt-ins this way (`secondary.scrapebot_fallback`, and now
+  `openstates_scrape.sweep_import`), and keeping the decision there leaves the shell scripts free
+  of new conditionals. **Do not add a new `$STATE` test in bash for this.**
+- **Only genuine wrapper-local flags stay in the shell script** — a flag the scheduler has no
+  opinion about, like `--allow_duplicates`, which is a property of a jurisdiction's data rather
+  than of a rollout. Where one is needed, use the **flat comma-list** shape
+  (`ARCHIVE_ENABLED_STATES="fl,ut,az,…"`) rather than a chained
+  `[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || …`. The chained form has now been extended four
+  times and silently missed `ma` once (OPEN-55), which cost a completed 9,496-bill backfill its
+  entire import.
+
+**The line is semantic ownership, not which process passes the argument.** `ddp-sync` invokes
+`run-scrape.sh` and could in principle set any of its arguments, so "the scheduler passes it" is
+not the test. Ask instead what the setting *is*: orchestration, eligibility and timing — who is
+enrolled, who is opted out, when — belong to the scheduler. A jurisdiction data-behaviour flag
+that must hold **every time the wrapper runs, regardless of schedule** is wrapper-local. A setting
+can arrive as a shell argument and still be scheduler-owned policy, and vice versa.
+
+Why the split rather than consolidating everything: the two categories fail differently, and need
+different visibility. A rollout gate set wrong changes *when* data lands for a live jurisdiction,
+silently, and needs to be reviewable in one place. A wrapper flag set wrong fails locally and
+loudly — which is *not* the same as cheaply: OPEN-55's missing `ma` entry aborted the import of a
+completed 9,496-bill, ~15-hour MA scrape. Loud, localised, and expensive. Deciding both in the
+same place would mean either putting scrape-time data quirks into the scheduler's config or putting
+rollout state into a bash array.
+
+`run-scrape.sh:140`'s existing `--allow_duplicates` conditional is deliberately left as-is here —
+converting it inside unrelated work is how you get an unreviewable diff. It is tracked as
+**OPEN-131** rather than left as an ambient inconsistency, since an unowned counter-example sitting
+at exactly the spot this rule is about would read as implicit permission.
+
 **What's still using neither convention, on purpose, pending cleanup:** bare inline
 `if jurisdiction_name == "Virginia":`-style conditionals dropped directly into shared code —
 found only in `openstates-core/openstates/cli/text_extract.py`'s version-diffing path (WA/MI/VA/AZ
