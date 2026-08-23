@@ -134,10 +134,13 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 
 # MI has a pagination overlap that produces duplicate bill JSON files.
 # VA has the same issue (confirmed 2026-06-29 via DuplicateItemError on HB 1054).
+# MA has it too (OPEN-55, confirmed 2026-08-09 via DuplicateItemError on H 5280
+# during OPEN-42's session=194th full backfill) — MA rarely gets a full,
+# non-incremental scrape, which is why it took until then to surface.
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
 IMPORT_FLAGS=""
-[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] && IMPORT_FLAGS="--allow_duplicates"
+[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] || [ "$STATE" = "ma" ] && IMPORT_FLAGS="--allow_duplicates"
 
 # OPEN-50: ten jurisdictions (ct ia ks ma md mn nm or pr tx) register a SEPARATE `votes`
 # scraper that has to be asked for by name; everywhere else votes are yielded from inside
