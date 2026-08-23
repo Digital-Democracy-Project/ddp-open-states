@@ -9,6 +9,27 @@ asked, and the reason is in the validation section: pm-review's strongest object
 recommendation was unmeasured, and measuring it meant fetching all 57 committees rather than
 sampling five. Judged worth it; flagging the count rather than hiding it.
 
+**Corrected 2026-08-23**, after review found the document contradicted itself. Four fixes, all in
+this file's favour of being less confident than it was:
+
+1. The latest-action classification table was wrong — several rows (`amendment-failure` 272,
+   `amendment-passage` 222, `committee-passage-favorable` 57) did not survive re-derivation against
+   the database, and no denominator was stated. Replaced with the complete breakdown. The corrected
+   committee-vs-floor split is **70/30, not "near an even split"** — which *strengthens* the
+   recommendation, so the error was not in a self-serving direction, but it was an error.
+2. The weekly loss rate was a mean over eight selected weeks. Restated with the window, mean,
+   median and range, and the Michigan comparison softened accordingly.
+3. Two "what was NOT examined" bullets contradicted the body: they claimed five of 57 committees
+   were sampled when all 57 were fetched, and claimed no non-API surfaces were examined when Item 3b
+   examines seven.
+4. Added the 69%-unclassified caveat wherever the split is quoted.
+
+All database figures here are re-derivable from a read-only query over `opencivicdata_bill` /
+`opencivicdata_billaction` filtered to `jurisdiction_id LIKE '%state:ma%'`, taking each bill's
+min and max non-empty `date` and the highest-`order` action on the max date.
+
+---
+
 MA decides whether a bill changed by reading `ResponseDate` off the bill's **sponsor** records.
 Sponsorship is set at filing and a floor action does not touch it, so a bill whose only change is
 a floor action is skipped. This is the research ticket asking what else the API offers.
@@ -31,17 +52,24 @@ date cannot reflect. It does not prove every one of those updates was actually s
 later activity may coincide with a sponsor change, or have been picked up by a full run. Proving
 the stricter claim needs replaying the filter against each window, which was not done.
 
-Weekly rate — bills whose most recent activity fell in each week:
+Weekly rate — bills whose most recent activity fell in each week, over the ten complete weeks
+2026-23 to 2026-32:
 
 ```
-2026-31: 173    2026-30: 154    2026-28: 134    2026-25: 136
-2026-32:  79    2026-29:  72    2026-27:  74    2026-26:  38
+2026-32:  79    2026-31: 173    2026-30: 154    2026-29:  72    2026-28: 134
+2026-27:  74    2026-26:  38    2026-25: 136    2026-24:  34    2026-23:  77
 ```
 
-So **on the order of 100 bills a week**, and 71% of all MA bills have post-filing activity the
-sponsor-date filter structurally cannot see. That is comparable to Michigan's ~80/week (OPEN-89),
-which is worth saying plainly: MA has been treated as the awkward jurisdiction, but the two losses
-are the same order of magnitude and MA's is larger in percentage terms.
+**Mean 97, median 78, range 34–173.** The variance is large enough that a single figure misleads, so
+both are given. Weeks 2026-33 and later are excluded as incomplete (they return 1 and 4, which is
+collection lag, not a quiet legislature) — and excluding them is a judgement that flatters the
+numbers slightly, so it is stated rather than buried.
+
+So **roughly 80–100 bills a week depending on which statistic you take**, and 71% of all MA bills
+have post-filing activity the sponsor-date filter structurally cannot see. On the weekly count that
+is close to a tie with Michigan's ~80/week (OPEN-89) rather than clearly worse; where MA is
+genuinely worse is the *proportion* — 71% of its bills are exposed. MA has been treated as the
+awkward jurisdiction, and the fair statement is that the two losses are the same order of magnitude.
 
 ## Item 1 — is there an API index or specification?
 
@@ -124,8 +152,8 @@ SenateChairperson, ShortName
 ```
 
 `ReportedOutDocuments` and `DocumentsBeforeCommittee` are real and populated. Senate Ways and
-Means (`S30`): **92 reported out, 1,161 before committee, 1 hearing.** Several sampled committees
-are empty, which looks like genuine inactivity rather than a broken field.
+Means (`S30`): **92 reported out, 1,161 before committee, 1 hearing.** 18 of the 57 have an empty
+`ReportedOutDocuments`, which looks like genuine inactivity rather than a broken field.
 
 **But each record carries the same nine `Documents` fields and no date:**
 
@@ -171,24 +199,38 @@ activity moves a bill between committee states, and **that cannot be answered fr
 It needs two, a week apart. Not measurable in a single session, and the single most useful next
 measurement.
 
-What the classification of each bill's latest action suggests, as a proxy:
+What the classification of each bill's latest action suggests, as a proxy. This is the **complete**
+breakdown over the 4,787 bills in the 2026 missed class — every row, not a top-N, so the counts sum
+to the denominator:
 
 | Latest action | Count | Would a committee diff see it? |
 |---|---|---|
-| *(unclassified)* | 4,105 | unknown — the bulk, and opaque |
-| `committee-passage-favorable` + `referral-committee` | 781 | yes |
-| `referral-committee` | 289 | yes |
-| `amendment-failure` | 272 | **no** |
-| `reading-2` | 261 | **no** |
-| `amendment-passage` | 222 | **no** |
+| *(unclassified)* | 3,292 | unknown — the bulk, and opaque |
+| `committee-passage-favorable` + `referral-committee` | 776 | yes |
+| `referral-committee` | 250 | yes |
+| `reading-2` | 234 | **no** |
 | `executive-signature` | 174 | **no** |
-| `committee-passage-favorable` | 57 | yes |
+| `committee-passage-unfavorable` + `referral-committee` | 17 | yes |
+| `reading-1` + `reading-2` | 14 | **no** |
+| `amendment-passage` | 11 | **no** |
+| `passage` | 8 | **no** |
+| `passage` + `reading-3` | 5 | **no** |
+| `committee-passage-favorable` | 5 | yes |
+| `amendment-passage` + `reading-2` | 1 | **no** |
+| **total** | **4,787** | |
 
-Among the *classified* ones that is roughly 1,127 committee-ish against 929 floor-ish — near an
-even split, with the large unclassified bulk unknown. So the limit is specific and it is the one
-that matters: it catches **committee movement**, not floor action. A bill given a second reading
-or amended on the floor without changing committee state does not appear as a new entry anywhere —
-and "a bill whose only change is a floor action" is exactly the case OPEN-128 named.
+Among the *classified* ones that is **1,048 committee-ish against 447 floor-ish — roughly 70/30 in
+favour of committee movement**, with the large unclassified bulk (69% of the class) unknown. So the
+limit is specific and it is the one that matters: it catches **committee movement**, not floor
+action. A bill given a second reading or amended on the floor without changing committee state does
+not appear as a new entry anywhere — and "a bill whose only change is a floor action" is exactly the
+case OPEN-128 named.
+
+Two things about that split are worth stating rather than leaving implied. It runs *in favour* of the
+recommendation — most classified activity in this class is committee activity, so the share a diff
+could in principle see is the larger one. But 69% of the class is unclassified, which is more than
+the committee and floor shares combined, so the split is computed over less than a third of the
+population and should not be read as "70% of the loss is recoverable."
 
 ## Item 4 — costing the honest fallback
 
@@ -228,7 +270,8 @@ than the detection story supports.
 1. Keep the sponsor `ResponseDate` filter. It correctly catches newly filed bills.
 2. Add a per-run snapshot of each committee's `ReportedOutDocuments` and
    `DocumentsBeforeCommittee`, and scrape the set difference. 57 requests, and it catches the
-   committee-movement share of the ~100 bills/week.
+   committee-movement share of the ~80–100 bills/week — the larger share of the classified
+   activity, but an unknown share of the unclassified 69%.
 3. Accept that pure floor actions remain uncovered by any cheap signal found here — API or
    otherwise — and decide separately whether that residue justifies a periodic full walk, for
    which the wall-clock cost still needs measuring.
@@ -260,12 +303,16 @@ Not repeating that:
 - **No API specification exists**, so the endpoint list is a lower bound from guessing. Endpoints
   nobody named may exist.
 - **Only the 194th General Court** was queried. Behaviour for other sessions is assumed, not checked.
-- **Five committees of 57** were sampled for populated activity lists. The others are assumed to
-  behave the same way.
-- **No non-API surfaces** were examined — the ticket asked about journals, daily-action pages and
-  RSS feeds, and site navigation was not read. Given committees turned out to be the useful
-  surface, that is a real remaining gap.
+- **The detection rate is unmeasured.** All 57 committees were fetched, so coverage is measured, but
+  a single snapshot cannot show how many bills move between snapshots. This is the gap that matters
+  most and it is restated in the recommendation above.
+- **The non-API surfaces were probed, not explored.** Seven paths were checked by URL (Item 3b) and
+  none exposed a dated feed, but site navigation was never actually read, so a dated page that is
+  linked rather than guessable would have been missed. `/Journal` returning 405 is the specific
+  loose end.
 - **The full-walk wall-clock cost was not measured**, only its request count.
+- **69% of the missed class has no action classification**, so the committee-vs-floor split is
+  computed over under a third of the population.
 - **Why `ma/bills.py:103` passes `verify=False`** was not established. Every request here matched
   that behaviour rather than investigating it, so the reason is still unknown and is worth
   understanding before anyone adds call sites.
