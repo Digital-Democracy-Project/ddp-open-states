@@ -7,10 +7,24 @@ SESSION_ARG=${2:-""}
 LOG_DIR=/Users/agentsmith/Developer/repos/ddp-open-states/logs
 OS_UPDATE=/Users/agentsmith/Developer/repos/ddp-open-states/.venv/bin/os-update
 
+# OPEN-139: import-report parsing and the stuck-run detector. Sourced from this script's own
+# directory rather than an absolute path so a worktree/checkout runs its own copy, not the deploy
+# checkout's. Hard failure if absent, deliberately: the alternative is a run that silently stops
+# recording filing activity, which is the exact class of silence this ticket exists to remove.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=import-summary.sh
+. "$SCRIPT_DIR/import-summary.sh"
+
 LAST_RUN_DIR="$LOG_DIR/last-run"
 SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')
 TS_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.ts"
 COUNT_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.count"
+# OPEN-139: how many bills the IMPORT actually treated as new/changed, as opposed to how many
+# JSON files the scrape wrote (.count above). These are not the same number and the difference
+# is the whole point: AZ ran 14 days dead writing 895 files a night while the import reported
+# "0 new 0 updated 895 noop" every time. The file count said healthy; only the import knew.
+# Format: new:updated:noop:mode
+IMPORTED_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.imported"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"; }
 
@@ -364,6 +378,11 @@ SCRAPE_MARKER=$(mktemp)
 # across runs even when _data/{state}/ is wiped, so a mid-run interruption
 # still benefits from whatever was fetched before the failure.
 SCRAPE_OUT=$(mktemp)
+# OPEN-139: the import's stdout/stderr, captured per run so its bill counts can be read without
+# racing the other jurisdictions writing into the shared scraper.log. Removed on every exit path
+# that can be reached after this point -- note on_failure() only alerts, it does not clean up, so
+# each early-exit site removes its own temp files explicitly (same convention as SCRAPE_OUT).
+IMPORT_OUT=$(mktemp)
 scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log AND captures
                     # to SCRAPE_OUT; returns os-update's real exit code (not tee's).
     # $VOTES_SCRAPER is "votes" or empty (see OPEN-50 probe above). Its position here is
@@ -396,7 +415,11 @@ finish_no_op() {
     mkdir -p "$LAST_RUN_DIR"
     date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
     echo "0:incremental" > "$COUNT_FILE"
-    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+    # OPEN-139: no import ran because nothing changed since the cutoff, so genuinely zero new
+    # bills — an `ok` measurement of zero, not a failure to measure. Recorded rather than skipped
+    # so the series has no holes; see import-summary.sh for the file's format and guarantees.
+    echo "ok:0:0:0:incremental" > "$IMPORTED_FILE"
+    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
     exit 0
 }
 
@@ -528,7 +551,7 @@ if [ "$rc" -ne 0 ]; then
         SUPPRESS_FAILURE_ALERT=0
     fi
     # Alert once (disable the ERR trap so it can't double-fire) and stop.
-    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
+    rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
     trap - ERR
     on_failure
     exit "$SCRAPE_EXIT_CODE"
@@ -544,13 +567,20 @@ if [ -f "$COUNT_FILE" ]; then
     PREV_BILLS=$(cut -d: -f1 "$COUNT_FILE")
     PREV_MODE=$(cut -d: -f2 "$COUNT_FILE")
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_scraped=$SCRAPED_BILLS | prev_run=${PREV_BILLS} (${PREV_MODE}) ==="
-    # Warn if two consecutive incremental runs diverge by more than 80%.
-    if [ "$MODE" = "incremental" ] && [ "$PREV_MODE" = "incremental" ] && [ "${PREV_BILLS:-0}" -gt 10 ]; then
-        THRESHOLD=$(python3 -c "print(max(1, int($PREV_BILLS * 0.2)))")
-        if [ "$SCRAPED_BILLS" -lt "$THRESHOLD" ]; then
-            log "WARNING: bills_scraped ($SCRAPED_BILLS) is <20% of previous incremental run ($PREV_BILLS) — possible over-filtering for $STATE ${SESSION_ARG}"
-        fi
-    fi
+    # OPEN-139 removed the <20%-of-previous-run warning that used to sit here. It compared this
+    # run's bills_scraped against the last run's, and it could not have caught the failure it was
+    # meant to catch: AZ scraped 895 files a night for 14 nights, so every comparison was 895 vs
+    # 895 -- a flat line, no drop, no warning, while the import was reporting 0 new 0 updated the
+    # whole time. Two problems with the number itself, not the threshold:
+    #
+    #   * bills_scraped counts JSON files written, which includes re-writing bills that haven't
+    #     changed. A stuck cutoff therefore reads as perfectly healthy.
+    #   * this block runs BEFORE the import, so the only figure available here is the one that
+    #     cannot distinguish new work from repeated work.
+    #
+    # The replacement lives after the import, keyed on the count of genuinely new bills, and
+    # explicitly flags the scraped-files>0 / new+updated=0 shape AZ was stuck in. Deliberately
+    # not reimplemented here as well -- one check, in the one place that can see the real number.
 else
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_scraped=$SCRAPED_BILLS | prev_run=none (first run) ==="
 fi
@@ -571,14 +601,85 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
     # loop" and "a real failure" matters: only require_import_lock's own result should ever
     # trigger on_failure below.
     kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true
-    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS >> \"$LOG_DIR/scraper.log\" 2>&1"
+    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS > \"$IMPORT_OUT\" 2>&1" \
+        || IMPORT_RC=$?
 else
     $OS_UPDATE "$STATE" --import $IMPORT_FLAGS $DIR_FLAGS \
-        >> "$LOG_DIR/scraper.log" 2>&1
+        > "$IMPORT_OUT" 2>&1 || IMPORT_RC=$?
+fi
+
+# OPEN-139: the import's own output lands in a per-run file first, then gets appended to
+# scraper.log verbatim. Two reasons it is not read back out of scraper.log instead:
+#
+#   1. scraper.log is shared. The secondary job fans its five jurisdictions out with
+#      asyncio.gather (confirmed live 2026-08-22: VA and UT both started at 22:00:00), so
+#      several imports interleave their lines into the same file. Any offset- or tail-based
+#      read of that shared log would attribute another jurisdiction's counts to this one.
+#   2. A redirect keeps the import's real exit status intact. Piping to `tee` would make $? the
+#      status of tee, and inside require_import_lock's `eval` there is no clean place to recover
+#      ${PIPESTATUS[0]} -- see scrape_attempt() above, which needs exactly that dance.
+#
+# `|| IMPORT_RC=$?` on both branches is load-bearing, and is why the failure handling below is
+# written out by hand instead of left to the ERR trap. A failing command inside an AND-OR list is
+# exempt from `set -e`, so the append below always runs -- pm-review caught that the first version
+# of this change lost the import's stderr from scraper.log on exactly the runs that need it, since
+# `set -e` aborted before reaching the append and the failure alert says "check scraper.log".
+# Confirmed by reproducing it: with a bare redirect, a non-zero import never reaches this line.
+#
+# Tradeoff, stated plainly: the import's output no longer streams into scraper.log while it
+# runs, it appears when the import finishes. Imports are the short half of a run (AZ's 895-bill
+# import took 32s on 2026-08-22 against a 95-minute scrape), so this costs little visibility.
+cat "$IMPORT_OUT" >> "$LOG_DIR/scraper.log"
+
+if [ "${IMPORT_RC:-0}" -ne 0 ]; then
+    # Same shape as the scrape-failure path above: disable the ERR trap so it cannot double-fire,
+    # alert once, and exit with the import's real status.
+    rm -f "$IMPORT_OUT"
+    trap - ERR
+    on_failure
+    exit "$IMPORT_RC"
 fi
 
 log "Import done: $STATE."
 
+# OPEN-139: read the PREVIOUS run's new-bill count before this run's marker overwrites it. See
+# import-summary.sh for the .imported file's format and its three guarantees.
+PREV_NEW=""
+PREV_IMPORTED_MODE=""
+if [ -f "$IMPORTED_FILE" ]; then
+    if [ "$(cut -d: -f1 "$IMPORTED_FILE")" = "ok" ]; then
+        PREV_NEW=$(cut -d: -f2 "$IMPORTED_FILE")
+        PREV_IMPORTED_MODE=$(cut -d: -f5 "$IMPORTED_FILE")
+    fi
+fi
+
+IMPORT_COUNTS=$(parse_import_bill_counts "$IMPORT_OUT")
+rm -f "$IMPORT_OUT"
+
 mkdir -p "$LAST_RUN_DIR"
+if [ -n "$IMPORT_COUNTS" ]; then
+    NEW_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f1)
+    UPDATED_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f2)
+    NOOP_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f3)
+    log "=== IMPORT SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_new=$NEW_BILLS | bills_updated=$UPDATED_BILLS | bills_noop=$NOOP_BILLS ==="
+    echo "ok:${IMPORT_COUNTS}:${MODE}" > "$IMPORTED_FILE"
+
+    if import_looks_stuck "$MODE" "${SCRAPED_BILLS:-0}" "$NEW_BILLS" "$UPDATED_BILLS"; then
+        log "WARNING: $STATE ${SESSION_ARG} scraped $SCRAPED_BILLS bill files but the import found 0 new and 0 updated — the incremental cutoff is probably stuck re-scraping one frozen window (OPEN-139)"
+    fi
+
+    # The rewired replacement for the <20%-of-previous warning removed above, now comparing the
+    # count that can actually see a collapse.
+    if [ -n "$PREV_NEW" ] && new_bills_collapsed "$MODE" "$PREV_IMPORTED_MODE" "$PREV_NEW" "$NEW_BILLS"; then
+        log "WARNING: $STATE ${SESSION_ARG} imported $NEW_BILLS new bills, under 20% of the previous incremental run's $PREV_NEW — possible over-filtering or a broken change signal (OPEN-139)"
+    fi
+else
+    # Written, not skipped. Leaving the previous run's counts in place would make a stale figure
+    # look current to anything building a series from this file, and a fabricated 0 would make a
+    # measurement failure look like a quiet week. Neither is acceptable; `unparsed` says which.
+    log "WARNING: could not parse an import bill-count line for $STATE ${SESSION_ARG} — recording this run as unmeasured (OPEN-139)"
+    echo "unparsed::::${MODE}" > "$IMPORTED_FILE"
+fi
+
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
