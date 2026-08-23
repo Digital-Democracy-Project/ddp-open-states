@@ -61,7 +61,21 @@ endpoint already proven above, and the channel is noisy enough without a second 
 `/api/v1/failures` is POST-only (`GET` returns 405), so the record cannot be read back through it;
 the `202` plus the `triaging` fingerprint is the delivery evidence.
 
-## The actual finding: staleness alerts are structurally always declined
+## What is and is not verified here
+
+Worth being precise, because four other tickets depend on this answer and could over-read it:
+
+- **Verified:** a Slack message reaches `#automation-errors` (observed in the channel, not inferred
+  from a 200). CAMS *accepts* the POST and enters triage (202 + a `triaging` fingerprint).
+- **Verified:** both token-extraction implementations produce working credentials against production.
+- **NOT verified:** durable CAMS persistence or readback — the endpoint is POST-only, so there is no
+  way to fetch the record back. The fingerprint is an intake receipt, not proof of storage.
+- **NOT verified:** that an alert becomes a human-actionable item. It demonstrably does not, today —
+  see below.
+- **NOT a licence to add callers.** This says the transport works. Any new caller still needs its own
+  justification and alert semantics.
+
+## The actual finding: triage declines these, and it is predictable rather than accidental
 
 The alerts arrived. They were also picked up by CodeBot's failure listener, evaluated, and
 **explicitly declined** — three times out of three, each for the same stated reason:
@@ -72,25 +86,49 @@ The alerts arrived. They were also picked up by CodeBot's failure listener, eval
 | 2026-08-18 11:02 | `ut` stale, 229h (0.4% over) | No ticket — *"marginal… just 1 hour over… no stacktrace or code-level error"* |
 | 2026-08-18 12:32 | `az` stale, 229h (0.4% over) | No ticket — *"marginal… ~0.4% over… no stacktrace or scraper error"* |
 
-Two things follow, and the second is the important one.
+**First read, which was wrong and is worth recording as such.** My initial conclusion was that a
+triage rule *requires* a stacktrace, and therefore declines every staleness alert structurally. A
+reviewer pushed back that three declines don't prove a rule, so I read the rule instead of inferring
+it — `ddp-agents/src/agent_smith/failure_watcher.py:130-150`. There is no such rule:
 
-**The "marginal" reasoning is an artifact of when the alert fires.** `check-scrape-staleness.sh`
-alerts the first time a job crosses its threshold, so the first (and, per the sentinel de-dupe, only)
-alert always reports a value barely over the line. 229h against a 228h threshold genuinely reads
-like a rounding error. It is not: the underlying condition then grew to **14 days** with no further
-alert, because `az.stale-alerted` correctly suppresses repeats for the same episode. The alert is
-emitted at exactly the moment it looks least serious, and the de-dupe guarantees it never looks
-worse later.
+> "…transient / external / expected — a DB connection drop, an out-of-memory, a network blip, an
+> auth/config value that's just unset, **a normal empty result (e.g. a scraper that returns little
+> because the legislature is out of session)**. Use your knowledge of the service; **there is
+> deliberately no hardcoded rule list**."
+>
+> "Be conservative: a wrong ticket wastes CodeBot and a human reviewer. **When genuinely unsure
+> whether it's a bug vs. expected behavior, decline and say why.**"
 
-**But the deeper reason is a category mismatch, not a judgement call.** MI's alert was 46% over
-threshold, not 0.4%, and was declined too — with the same "no stacktrace" reasoning. Staleness is the
-*absence* of activity. It can never present a stacktrace or a scraper error, so a triage rule that
-requires code-level evidence will decline every staleness alert it ever sees, regardless of severity.
-CodeBot behaved reasonably within its own rule; the rule cannot represent this class of failure.
+**The accurate finding is narrower and more actionable.** Triage is an LLM judgement with a
+deliberate conservative bias, and the alert gives it almost nothing to judge on:
 
-This is a close cousin of SYNC-3, where a sustained-WAF-block escalation has never once fired
-because its classifier reads a stream the detail never reaches. Same shape: monitoring that exists,
-is wired, and cannot succeed.
+1. The prompt's own list of *expected* conditions includes a scraper being quiet because the
+   legislature is out of session. A staleness alert is close to indistinguishable from that, on the
+   information it carries.
+2. `stacktrace` is genuinely empty for these — the prompt renders it as `(none provided)` — so the
+   only signal is one line: `scrape staleness: az last run 229h, threshold 228h`.
+3. Given "when unsure, decline," declining is the *designed* response to that input. Both declines
+   even reasoned about marginality (229h vs 228h) and got it right on the numbers.
+
+So this is not a broken rule and not a bad decision. It is an alert that does not carry enough to
+distinguish "quiet because out of session" from "this job is dead," handed to a system explicitly
+told to decline when it cannot tell.
+
+**Two compounding factors that make it worse than a single bad call.** `check-scrape-staleness.sh`
+alerts on first threshold crossing, so its one and only alert always reports a value barely over the
+line — 229h against 228h reads as a rounding error, and it *is* marginal at that instant. The
+condition then grew to **14 days** with no further alert, because `az.stale-alerted` correctly
+suppresses repeats for the same episode. The alert fires at the moment it looks least serious and, by
+design, never looks worse later. And MI's 2026-08-08 alert was 46% over threshold, so severity alone
+does not rescue it either.
+
+The fix therefore belongs in the alert, not the triage engine: say "this job has produced no
+successful run in N days across M scheduled attempts" rather than "229h vs a 228h threshold," and
+re-alert as the multiple grows. That is a separate ticket, deliberately not built here.
+
+Related in shape, though not in mechanism: SYNC-3's sustained-WAF-block escalation has never once
+fired because its classifier reads a stream the detail never reaches. Both are monitoring that is
+wired up and still cannot do its job.
 
 ## Secondary finding: the channel is noisy
 
@@ -109,6 +147,28 @@ assume the transport is sound.
 human or CodeBot will act on. Filed separately — see the ticket link on OPEN-129. The fix is not
 more alerting; it is escalation on an existing alert (re-alert as the multiple grows) and a triage
 path that can accept an absence of activity as evidence.
+
+## Live-test hygiene
+
+This investigation posted a real message to a channel real people read, and a real record to CAMS.
+For the record:
+
+- Operator authorisation was obtained in advance, specifically for forcing a real failure alert.
+- Both were labelled unmistakably as tests — `OPEN-129 DELIVERY TEST (not a real failure)` and
+  `AlertDeliveryVerification` / *"deliberate test of run-scrape.sh's bash CAMS path - ignore"*.
+- Slack was fired **once**, from the Python path only. The bash path's Slack call was *inspected*
+  rather than fired — it builds its JSON inline with shell interpolation (`run-scrape.sh:64-69`)
+  rather than via `json.dumps`, so it is a genuinely different construction, but it uses the same
+  token, the same hardcoded `#automation-errors` literal and the same endpoint, all already proven.
+  A second post was judged not worth the channel noise. If someone wants that exact payload proven,
+  it remains unfired.
+- Checked afterwards for unintended side effects: **no Jira issue was created** in the 30 minutes
+  following either POST, so CodeBot's triage did not turn the test into a ticket.
+- The CAMS test record cannot be deleted (POST-only endpoint) and the Slack message was left in
+  place deliberately, as the audit trail for this verification. CAMS fingerprint:
+  `7aad7d43ae7c92a0`.
+- No token values appear in this document or in any committed file — only lengths and, for Slack,
+  the non-secret `xoxb-` format prefix. Environment inspection was read-only via `ps eww`.
 
 ## Reproducing
 
