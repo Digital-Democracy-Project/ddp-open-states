@@ -199,6 +199,46 @@ assert_contains "legacy sentinel still escalates at 2x" "$OUT" "OpenStates scrap
 assert_not_contains "legacy sentinel claims no growth baseline it doesn't have" "$OUT" "Was 300h when first alerted"
 assert_contains "legacy sentinel says so plainly in the detail block" "$OUT" "first-alert details unrecorded"
 
+echo "=== 16. malformed tier= in a sentinel must not silently suppress the alert ==="
+# `[ x -gt y ]` on a non-numeric value is an error that evaluates false under
+# `set -uo pipefail` — i.e. silence, the exact failure OPEN-130 exists to remove.
+touch_age "$FIXTURE/va.ts" 300
+printf 'tier=oops\n' > "$FIXTURE/va.stale-alerted"
+OUT=$(run_watchdog "va:228")
+assert_contains "malformed tier still alerts" "$OUT" "OpenStates scrape stale: va"
+assert_contains "malformed tier is logged, not swallowed" "$OUT" "non-numeric tier"
+assert_contains "malformed sentinel is rewritten cleanly" "$(cat "$FIXTURE/va.stale-alerted")" "tier=1"
+OUT=$(run_watchdog "va:228")
+assert_not_contains "self-healed sentinel then de-dupes normally" "$OUT" "DRY_RUN slack"
+
+echo "=== 17. Slack payload invariant: single line, no JSON-breaking characters ==="
+# post_slack() builds its JSON inline in bash, so a newline, double quote or
+# backslash in the message would produce an invalid request body. The multi-line
+# evidence block must stay confined to the CAMS path (python3 json.dumps).
+touch_age "$FIXTURE/mi.ts" 500
+rm -f "$FIXTURE/mi.stale-alerted"
+SLACK_LINES=$(run_watchdog "mi:228" | grep -c '^DRY_RUN slack')
+if [ "$SLACK_LINES" = "1" ]; then
+    echo "PASS: alert produces exactly one Slack line"; PASS=$((PASS + 1))
+else
+    echo "FAIL: alert produced $SLACK_LINES Slack lines (expected 1 — message must not contain newlines)"; FAIL=$((FAIL + 1))
+fi
+rm -f "$FIXTURE/mi.stale-alerted"
+SLACK_MSG=$(run_watchdog "mi:228" | grep '^DRY_RUN slack')
+if echo "$SLACK_MSG" | grep -q '["\\]'; then
+    echo "FAIL: Slack message contains a JSON-breaking character: $SLACK_MSG"; FAIL=$((FAIL + 1))
+else
+    echo "PASS: Slack message has no unescaped quote or backslash"; PASS=$((PASS + 1))
+fi
+# Same invariant on the escalation and recovery wordings, not just the first alert.
+SLACK_MSG=$(run_watchdog_at 500 "mi:228" | grep '^DRY_RUN slack')
+assert_contains "escalation path exercised for this check" "$SLACK_MSG" "past its threshold"
+if echo "$SLACK_MSG" | grep -q '["\\]'; then
+    echo "FAIL: escalation message contains a JSON-breaking character"; FAIL=$((FAIL + 1))
+else
+    echo "PASS: escalation message has no unescaped quote or backslash"; PASS=$((PASS + 1))
+fi
+
 echo ""
 echo "RESULT: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ] && { echo "ALL PASS"; exit 0; } || exit 1

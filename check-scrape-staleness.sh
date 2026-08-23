@@ -283,6 +283,17 @@ for entry in $WATCHLIST; do
         # "tier 1 already sent" so an in-flight episode escalates, not re-alerts.
         [ -f "$sentinel" ] && [ -z "$prev_tier" ] && prev_tier=1
         [ -z "$prev_tier" ] && prev_tier=0
+        # A non-numeric tier= (typo in the RUNBOOK's hand-silence recipe, truncated
+        # write) would make the -gt below an integer-expression error, which under
+        # `set -uo pipefail` (no -e) evaluates false and SILENTLY suppresses the
+        # alert — the exact failure this ticket exists to remove. Fall back to 0:
+        # this run alerts and rewrites the sentinel cleanly, so it self-heals noisy
+        # rather than silent.
+        case "$prev_tier" in
+            ''|*[!0-9]*)
+                log "WARNING: sentinel $sentinel has non-numeric tier '${prev_tier}' — treating as un-alerted and rewriting"
+                prev_tier=0 ;;
+        esac
         cur_tier=$(tier_for "$age_hours" "$threshold_hours")
         [ "$marker_missing" = "1" ] && cur_tier=4   # missing marker: top tier, fires once
 

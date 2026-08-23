@@ -207,6 +207,15 @@ one-line signal indistinguishable from a scraper legitimately quiet out of sessi
   `finish_no_op()` stamps `<key>.ts` even on a zero-bill run — an out-of-session jurisdiction
   still refreshes its marker, so a stale marker means the scheduled job is not completing.
 * A **missing** marker is recorded at the top tier: "never" cannot grow, so it fires once.
+* A **malformed** `tier=` value (typo in the hand-silence recipe below, truncated write) logs a
+  warning and is treated as un-alerted, so the run alerts and rewrites the sentinel — silence
+  is never the failure mode.
+
+**Know the remaining gap.** On a weekly job the threshold is 228h, so 2× is ~19 days: the
+az incident that motivated this (14 days stale) would *still* have received only one alert.
+What changed is that the one alert now reads "no successful scrape in 9 days … 1 scheduled
+weekly run missed", not "229h vs 228h". Moving that second signal earlier means moving the
+threshold, which is a separate decision — file it against the watchlist, not the tiers.
 
 ```bash
 # See current staleness state (who has alerted, when, and at which tier)
