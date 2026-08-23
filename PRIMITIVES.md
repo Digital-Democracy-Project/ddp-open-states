@@ -430,6 +430,133 @@ writes `"Second Substitute"`, etc., but it isn't jurisdiction-*keyed* — it's o
 patterns evaluated in a fixed order regardless of which state a bill is from, by design. Forcing
 it into a per-jurisdiction registry would change its semantics, not just its storage — don't.
 
+**Per-jurisdiction credentials — the mechanism already exists, don't invent one (OPEN-126,
+decided 2026-08-22).** Some jurisdictions gate their API behind a registered key. This is a
+*fifth* thing that can be per-jurisdiction, and unlike the four above it is a secret, so it needs
+saying where it goes. It already has an answer, and the answer is "what this repo already does":
+
+- **The value goes in `ddp-open-states/.env`** (gitignored, `.gitignore:31`, not tracked).
+- **`activate.sh:6` already loads it** — `[ -f "$SCRIPT_DIR/.env" ] && set -a && source
+  "$SCRIPT_DIR/.env" && set +a`. `set -a` exports everything it sources, so anything in `.env`
+  is in the scraper's environment. `run-scrape.sh:47` sources `activate.sh`, so a scrape already
+  gets it. **No new loader, no new file, no code change in either fork.**
+- **The variable name must be byte-for-byte the name the scraper already reads** — `DC_API_KEY`,
+  `INDIANA_API_KEY`, `NEW_YORK_API_KEY` — never a DDP-invented alias.
+
+`.env` and `activate.sh` are not competing options, which is how the ticket first framed them:
+`activate.sh` is the *loader* and is committed, `.env` is the *store* and is not. That split is
+already the pattern here and it is the right one — the committed file carries the mechanism, the
+ignored file carries the secret. Putting a key in `activate.sh` is wrong for the obvious reason;
+putting the loader in `.env` isn't a thing.
+
+**This is not new ground: `va` already does exactly this in production.** `VA_API_KEY` sits in
+`.env` today and `openstates-scrapers/scrapers/va/bills.py:79` reads it, for a jurisdiction in
+the live rotation. `run-all-scrapes.sh:32` even carries the comment `# va requires VA_API_KEY in
+.env`. So the convention below is a written-down version of what already works, not a proposal.
+
+**Why not AWS Secrets Manager**, notwithstanding that the fleet uses it: there is no read path
+from this machine. `~/.aws` is root-owned with no readable credentials and no `AWS_*` is set in
+the shell; AWS is reachable only through the sudo-gated, root-owned S3 proxy wrappers
+(`ddp-infra/Production_S3_Wrappers.md`), which do S3 objects, not secrets. More to the point, the
+fleet's own Secrets Manager consumers **already fall back to `.env` on this machine by design** —
+`ddp-sync/src/ddp_sync/config.py:263-276` catches the failure, logs `"Secrets Manager
+unavailable"`, and calls `_load_from_env()`. So `.env` is not a downgrade from the fleet
+convention; on the Mac Studio it *is* the fleet convention, and Secrets Manager is the EC2 half
+of the same one. Revisit only if scrapers ever run on EC2.
+
+Because `.env` is **sourced by a shell**, not parsed by `python-dotenv`, entries must be
+shell-safe `KEY=value` lines — quote any value containing spaces, `#`, `$` or a quote, and don't
+expect `dotenv`-style escaping to work. Nothing here reads `.env` from Python.
+
+**The exact list of credentialed jurisdictions, and why only `dc` breaks at import.** Five
+jurisdictions want a credential — one optionally — and the failure shape differs by *where the
+lookup sits*, not by policy. **Inventory current as of `upstream/main` `9a8ec1331` (2026-08-14);**
+re-derive it after a big upstream merge rather than trusting this table forever:
+
+| Jurisdiction | Variable | Required? | Read where | Fails when |
+|---|---|---|---|---|
+| `va` | `VA_API_KEY` | required | `os.getenv` + explicit absence check, in a method | scrape time, with a good message |
+| `usa` | `CONGRESS_GOV_API_KEY` | **optional** | `os.environ.get(..., None)` guard, in a method | never — degrades, events only |
+| `in` | `INDIANA_API_KEY` | required | bare `os.environ[...]`, in `__init__`/`get_session_list` | scrape time, bare `KeyError` |
+| `ny` | `NEW_YORK_API_KEY` | required | bare `os.environ[...]`, in methods | scrape time, bare `KeyError` |
+| `dc` | `DC_API_KEY` | required | bare `os.environ[...]` **in a class body** (`bills.py:23`) | **import time**, bare `KeyError` |
+
+`dc` is the only one whose lookup is a class attribute, so it evaluates at class-definition time:
+`import scrapers.dc` → `__init__.py:4` → `bills.py:15` (class body) → `bills.py:23` → `KeyError`.
+That is a code-shape accident, not a property of needing a credential — which is why "DC can't be
+imported" and "DC needs a key" are two different facts and only the second one generalizes.
+(`docker-compose.yml:19-33` also passes `AR_FTP_*` and `VIRGINIA_FTP_*` through, but no scraper
+under `scrapers/` reads either name — verified by grep, stale entries, ignore them.)
+
+**Making the absent-credential failure legible: upstream already has the template, so don't write
+a DDP one.** `scrapers/va/bills.py:70-74` is the shape wanted — it names the jurisdiction, links
+the registration page, warns that registration takes days, and points at a fallback scraper:
+
+```python
+if not os.getenv("VA_API_KEY"):
+    self.error(
+        "Virginia requires an LIS api key. Register at https://lis.virginia.gov/developers \n API key registration can take days, the csv_bills scraper works without one."
+    )
+    return
+```
+
+That block is **upstream's own code, untouched by DDP**. So is `dc`'s bare `KeyError`:
+`scrapers/dc/bills.py` and `scrapers/dc/__init__.py` are byte-for-byte identical to
+`upstream/main`, and the only DDP commit touching `scrapers/dc/` is an upstream merge. Upstream
+therefore contains both the good pattern and the bad one, and DC's is upstream's inconsistency to
+own. Per the same rule applied to `text_extract.py`'s FL/CA checks above, **do not rewrite it
+locally** — it would add diff noise to every future upstream merge for a bug DDP didn't write. If
+someone wants it fixed, the correctly-placed fix is a small **upstream PR** porting VA's guard to
+`dc` (and to `in`/`ny`), which costs DDP no merge surface and helps everyone.
+
+**For the import sweep specifically, OPEN-125 already handles it — and only that.**
+`check-scraper-imports.sh` classifies an *import* failure into `MISSING MODULE` / `MISSING
+CREDENTIAL` / `OTHER FAILURE` at the *caller*, by inspecting the exception — an `ENV_VAR`-shaped
+`KeyError` naming something genuinely absent from `os.environ` is reported as credential-gated and
+**exits 0**, while a `ModuleNotFoundError` or any other break exits 1. That is the right place for
+the distinction: it lives in DDP's own script, needs no upstream change, and means a credential we
+have deliberately not bought does not make the sweep noisy. **Don't duplicate that classification
+anywhere else** — if a second consumer ever needs it, factor it out of that script rather than
+re-deriving the heuristic.
+
+**Be precise about what that does and does not make legible: import-time only, which today means
+`dc` alone.** `in` and `ny` read their key inside a method, so they import *cleanly without a
+credential* and the sweep will never flag them — then fail at scrape time with a bare `KeyError`
+that OPEN-125's script never sees. A green `check-scraper-imports.sh` is therefore **not** evidence
+that a jurisdiction's credential is present or working. Nothing in this repo has made a
+method-time missing credential legible, and nothing here should: per the paragraph above, the fix
+for `in`/`ny` belongs upstream.
+
+**Onboarding a credentialed jurisdiction, then, depends on where its lookup sits** — check the
+table before choosing how to verify:
+
+- **Add** `<NAME>=<value>` to `.env` using the scraper's own variable name (shell-safe, quoted if
+  needed).
+- **Import-time gate (`dc` today):** `check-scraper-imports.sh` should stop listing it as
+  credential-gated. That is a real check, and it is sufficient for this class.
+- **Method-time gate (`in`, `ny`, `va` — the common case):** the import check proves nothing. The
+  only thing that does is **running the scrape** — `run-scrape.sh <state>`, which sources
+  `activate.sh` and so gets `.env` — and confirming it fetches instead of raising `KeyError`. Do
+  this on a small/incremental run before enrolling the jurisdiction in the schedule.
+
+The one gap left is discoverability of the *names*: this repo has no `.env.example` (four other
+fleet repos do), so the set of variables `.env` is expected to hold is currently only findable by
+grepping the scrapers. Worth adding when someone next touches `.env`; not worth a dedicated change
+on its own.
+
+**`dc` specifically is parked, and the gating question is scope, not the key.** DDP holds no DC
+credential and nobody can self-serve one — LIMS publishes no registration page, so it needs a
+human to ask DC Council. Before anyone spends that ask: `PLAN-push-button-onboarding.md` already
+excludes **DC and the territories from the 50-state goal** ("noted so nobody probes them by
+accident"), and the broker really does refuse DC — `ddp-broker-py`'s
+`fetch/interfaces/OpenStates/openstates_util.py:71` raises `NotImplementedError("Washington, DC
+districts are not currently supported.")`. That exclusion is about the broker's *congressional-
+district* resolution rather than DC Council bill scraping, so it is not literally the same
+question — but the documented default is "DC is out of scope," and no credential should be
+requested until that is deliberately revisited. `in` is the one that makes this section urgent
+anyway: it is on the pilot shortlist (`NC, GA, CO, OH, IN`) and needs `INDIANA_API_KEY`, so the
+first credentialed onboarding DDP actually does is more likely Indiana than DC.
+
 ## Cross-cutting conventions (don't reinvent these)
 
 - **DB connection defaults** — every Python script here defaults to
