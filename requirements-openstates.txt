@@ -4,12 +4,19 @@
 # so DDP's patches actually take effect. Pinning a release here (as this file did until
 # 2026-07-19) silently installs upstream's unpatched code instead — this file's job is only to
 # freeze *openstates' dependencies*, not openstates itself.
+#
+# Also frozen here: the dependencies openstates-scrapers/pyproject.toml declares for
+# individual state scrapers (feedparser/suds-py3/cloudscraper/ics and their own closure).
+# Because the install is --no-deps, anything missing from this file is simply absent, and the
+# scraper that needs it raises ModuleNotFoundError the first time someone runs that state --
+# how ga/gu/mp/nh/oh were found broken (OPEN-125). ./check-scraper-imports.sh catches that.
 altgraph==0.17.2
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
 appnope==0.1.4
 argcomplete==1.10.3
+arrow==1.4.0
 asgiref==3.11.1
 async-timeout==5.0.1
 attrs==20.3.0
@@ -24,6 +31,7 @@ cfgv==3.4.0
 chardet==3.0.4
 charset-normalizer==3.4.7
 click==8.1.8
+cloudscraper==1.2.71
 compressed-rtf==1.0.7
 cryptography==49.0.0
 cssselect==1.3.0
@@ -38,6 +46,7 @@ email-validator==2.3.0
 et_xmlfile==2.0.0
 exceptiongroup==1.3.1
 extract-msg==0.28.7
+feedparser==6.0.12
 filelock==3.19.1
 future==0.18.2
 gitdb==4.0.12
@@ -55,6 +64,7 @@ h11==0.16.0
 httpcore==1.0.9
 httptools==0.8.0
 httpx==0.28.1
+ics==0.7.3
 identify==2.6.15
 idna==3.18
 IMAPClient==2.1.0
@@ -106,6 +116,7 @@ pyee==13.0.1
 Pygments==2.20.0
 PyJWT==2.13.0
 PyMuPDF==1.26.5
+pyparsing==3.3.2
 pyrsistent==0.20.0
 pytest==6.2.5
 python-dateutil==2.9.0.post0
@@ -119,9 +130,11 @@ PyYAML==6.0.3
 reactivex==4.1.0
 redis==7.0.1
 requests==2.32.5
+requests-toolbelt==1.0.0
 s3transfer==0.16.1
 scrapelib==2.4.1
 sentry-sdk==1.45.1
+sgmllib3k==1.0.0
 six==1.12.0
 smmap==5.0.3
 sortedcontainers==2.4.0
@@ -132,6 +145,8 @@ SQLAlchemy==1.4.54
 SQLAlchemy-Utils==0.42.1
 sqlparse==0.5.5
 starlette==0.49.3
+suds-py3==1.4.5.0
+TatSu==5.8.3
 text-unidecode==1.3
 textract==1.6.5
 toml==0.10.2
@@ -139,6 +154,7 @@ tomli==2.4.1
 traitlets==5.15.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+tzdata==2026.3
 tzlocal==5.3.1
 ujson==5.11.0
 urllib3==1.26.20
