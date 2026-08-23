@@ -395,14 +395,25 @@ so nothing covered it. The rule now:
   times and silently missed `ma` once (OPEN-55), which cost a completed 9,496-bill backfill its
   entire import.
 
-Why this split rather than consolidating everything: the two categories fail differently. A
-rollout gate set wrong changes *when* data lands for a live jurisdiction and needs to be visible
-and reviewable in one place; a wrapper flag set wrong just breaks one jurisdiction's import
-loudly. Deciding them in the same place would mean either putting scrape-time data quirks into the
-scheduler's config or putting rollout state into a bash array.
+**The line is semantic ownership, not which process passes the argument.** `ddp-sync` invokes
+`run-scrape.sh` and could in principle set any of its arguments, so "the scheduler passes it" is
+not the test. Ask instead what the setting *is*: orchestration, eligibility and timing — who is
+enrolled, who is opted out, when — belong to the scheduler. A jurisdiction data-behaviour flag
+that must hold **every time the wrapper runs, regardless of schedule** is wrapper-local. A setting
+can arrive as a shell argument and still be scheduler-owned policy, and vice versa.
 
-`run-scrape.sh:140`'s existing `--allow_duplicates` conditional is deliberately left as-is —
-converting it is a trivial follow-up, not something to do inside unrelated work.
+Why the split rather than consolidating everything: the two categories fail differently, and need
+different visibility. A rollout gate set wrong changes *when* data lands for a live jurisdiction,
+silently, and needs to be reviewable in one place. A wrapper flag set wrong fails locally and
+loudly — which is *not* the same as cheaply: OPEN-55's missing `ma` entry aborted the import of a
+completed 9,496-bill, ~15-hour MA scrape. Loud, localised, and expensive. Deciding both in the
+same place would mean either putting scrape-time data quirks into the scheduler's config or putting
+rollout state into a bash array.
+
+`run-scrape.sh:140`'s existing `--allow_duplicates` conditional is deliberately left as-is here —
+converting it inside unrelated work is how you get an unreviewable diff. It is tracked as
+**OPEN-131** rather than left as an ambient inconsistency, since an unowned counter-example sitting
+at exactly the spot this rule is about would read as implicit permission.
 
 **What's still using neither convention, on purpose, pending cleanup:** bare inline
 `if jurisdiction_name == "Virginia":`-style conditionals dropped directly into shared code —
