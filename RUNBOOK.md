@@ -709,19 +709,44 @@ This is the cheap procedure. Roughly three requests.
 
 **Step 0 — check the fix is actually deployed before testing it.**
 
-Easy to skip and it invalidates everything after it. Merging a PR on GitHub does not update this
+Easy to skip, and it invalidates everything after it. Merging a PR on GitHub does not update this
 host; `apply-local-patches.sh` does, on its daily 01:00 UTC run
 (`openstates_scrape.patch_refresh` in ddp-sync's `config/sync_schedule.yaml`).
 
+**Check for the fix itself, not just for "up to date".** A zero commit count does not prove your
+fix is present — the checkout could be diverged, dirty, or on another branch, and a non-zero count
+may be entirely unrelated commits:
+
 ```bash
 cd ~/Developer/repos/ddp-open-states/openstates-scrapers
-git fetch origin && git rev-list --count HEAD..origin/main    # 0 = deployed
-grep -c '<the symbol your fix introduced>' scrapers/mi/bills.py
+git branch --show-current                       # expect: main
+git status --porcelain | head                    # expect: empty
+git fetch origin
+git merge-base --is-ancestor <FIX_COMMIT> HEAD && echo "fix commit present"
+grep -c '<FIX_SYMBOL>' scrapers/mi/bills.py      # expect: non-zero
 ```
 
-A non-zero count from the first command means you would be testing the old code. Either wait for
-the next patch refresh or pull manually — but note `apply-local-patches.sh` does
-`git checkout main && git pull`, so a manual pull is doing that job early, not instead of it.
+`<FIX_SYMBOL>` is whatever the fix introduced — for OPEN-132 it was `_redirected_single_bill`.
+The grep is the check that actually matters: it asks whether the running code contains the fix,
+which is the question, rather than whether git thinks the branch is current.
+
+**Two things worth knowing about the refresh, because they mislead in opposite directions.**
+
+It works: the reflog shows real `pull origin main: Fast-forward` entries on consecutive days. So a
+checkout that is a few commits behind is usually just "merged after last night's run", and waiting
+until 01:00 UTC is a legitimate answer.
+
+But it **skips silently when a scrape is running**, by design — both nested repos are installed as
+pip *editable* packages, so pulling underneath a live scrape would swap the code out from under it.
+The skip is logged to `scraper.log` as `skipping patch refresh (run manually after scrape
+completes)`, and **ddp-sync still records the job as `done`**, because skipping is a clean exit.
+There were 11 such skips in the retained logs. Nobody runs it manually afterwards.
+
+So do not infer "deployed" from the job having run. Check the grep above. And if you do pull
+manually, confirm no scrape is in flight first — `ls /tmp/ddp-openstates-scrapes/` must be empty —
+for exactly the reason the script guards against. Nothing else happens after the pull loop (the
+script is 56 lines), so a manual `git checkout main && git pull` really is doing that job early
+rather than instead of it.
 
 **Step 1 — is the thing you are about to "recover" actually missing?**
 
@@ -741,31 +766,55 @@ If `updated_at` is later than the incident date, a subsequent run already picked
 is nothing to recover. Verified 2026-08-23 for OPEN-132's dropped bill: `SR 135` present, created
 2026-07-11, updated 2026-08-08 — the 2026-07-25 drop cost that run's update, not the bill.
 
+> ### STOP — everything below writes to the production database
+>
+> Steps 2 and 3 run `run-scrape.sh`, which scrapes **and imports**. There is no dry-run flag.
+> Proceed only with named approval from whoever owns the data, and record that approval on the
+> ticket you are working. A read-only session stops here, at the end of step 1.
+
 **Step 2 — one targeted bill fetch, if recovery IS needed.**
 
 `bill_no=` targeting (OPEN-81) exists for exactly this and needs no full run:
 
 ```bash
 source activate.sh
-./run-scrape.sh mi bill_no=SR135
+./run-scrape.sh mi bill_no=<BILL_NO_ARG>        # e.g. bill_no=SR135
 ```
+
+Note the two formats differ and both are correct: the database stores `SR 135` with a space, the
+scraper argument takes `SR135` without one. `_mi_bill_id_to_no()` normalises the padding and
+spacing, so `SR135`, `sr 0135` and `SR 0135` all resolve to the same bill.
 
 **Step 3 — confirm the behaviour, both directions.**
 
-Over-firing matters as much as under-firing, so check both:
+Over-firing matters as much as under-firing, so check both. The redirect case and the genuinely
+empty case must be **distinguishable in `logs/scraper.log`**, not merely both "successful":
 
-- a window matching **exactly one** bill returns that bill, and it lands in the database — not
-  merely that the scrape exited 0
-- a **genuinely empty** window still yields nothing, and the two are distinguishable in
-  `logs/scraper.log` rather than looking alike
+| Case | Expected `scraper.log` line |
+|---|---|
+| one match, redirected | `MI search matched exactly one bill and redirected to its page: ... (OPEN-132)` |
+| genuinely empty window | `MI search returned a results page with no matching bills -- genuine empty result` |
+| neither shape | `MI search response is neither a results page nor a bill page ...` |
 
-`run-scrape.sh` writes to the production database, so this is the step that needs a decision, not
-just a terminal. Read-only sessions can get as far as step 1.
+Pass for the one-match case is the bill present in the database afterwards, **not** that the
+scrape exited 0 — a silent drop exits 0, which is the entire reason OPEN-132 existed.
 
-**Keep the request count in the log.** Every prior MI investigation recorded its own cost, and
-several answered their question with zero requests by reading the scrapelib cache first — see
-`notes/open89-mi-date-signal-verification-plan-20260822.md` and
-`notes/open134-mi-recency-signal-investigation-20260823.md` for how far that gets you.
+Choosing the windows is the fiddly part, and it is worth doing from the scrapelib cache before
+spending any live request: `_cache/` already holds real `ExecuteSearch` responses for many
+`dateFrom` values, so you can often find a one-match window without asking the site anything. See
+`notes/open134-mi-recency-signal-investigation-20260823.md` for how to read them.
+
+**If a targeted scrape imports something wrong**, the bill's row is updated rather than duplicated
+(the importer matches on the natural key), so the remedy is a corrected re-scrape of the same
+`bill_no=`, not a delete. Record what you ran either way.
+
+**Record the cost on the ticket**, in the shape every prior MI investigation used: how many
+requests you made, to which endpoints, and whether the cache could have answered it instead. Two
+of them — OPEN-89 and OPEN-134 — answered their questions with **zero** live requests by reading
+`_cache/` first, and both wrote that down, which is why the number is now the first thing anyone
+asks. If a run starts making more requests than you expected, stop it rather than letting it
+finish: MI is the one jurisdiction where the recovery from over-scraping costs more than the
+information.
 
 ---
 
