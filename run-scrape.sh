@@ -59,8 +59,31 @@ CAMS_TOKEN=$(grep -E '^CAMS_API_TOKEN=' /Users/agentsmith/Developer/repos/ddp-ag
     2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
 CAMS_URL="${CAMS_URL:-http://localhost:8000}"
 
+# Exit code meaning "this failed, and retrying it would make things worse rather than better."
+# run-scrape-retrying.sh (OPEN-87) checks for exactly this code and stops instead of retrying.
+# Deliberately not 1 or 2: this script runs under `set -e` with an ERR trap, so an unclassified
+# failure exits with whatever code the failing command returned, and the low codes are the ones
+# that collide with that.
+EXIT_DO_NOT_RETRY=90
+
 on_failure() {
     log "ERROR: scrape/import failed for $STATE"
+    # OPEN-87: the one suppression guard for run-scrape-retrying.sh. That wrapper may invoke
+    # this script up to N times for a single logical failure, and without this each attempt
+    # would fire its own Slack + CAMS alert — so a transient blip that recovered on attempt 2
+    # would still page someone twice about a run that ultimately succeeded. The wrapper sets
+    # this on every attempt but the last, and leaves it off for the last, so exactly one alert
+    # fires and only once the failure is actually final.
+    #
+    # It suppresses the *alert*, not the failure. This function is reached both directly and via
+    # the ERR trap under `set -e`; returning 0 here changes nothing about that. The failing
+    # command's non-zero status still propagates, the script still exits non-zero, and the
+    # wrapper still sees the failure and decides what to do with it. Detection is untouched —
+    # the only thing skipped is telling a human about a failure that isn't final yet.
+    if [ "${SUPPRESS_FAILURE_ALERT:-0}" = "1" ]; then
+        log "SUPPRESS_FAILURE_ALERT=1 — skipping Slack/CAMS alert (retry wrapper will alert if attempts are exhausted)"
+        return 0
+    fi
     [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
         -X POST https://slack.com/api/chat.postMessage \
         -H "Authorization: Bearer $SLACK_TOKEN" \
@@ -275,6 +298,14 @@ scrape_attempt() {  # $1 = extra flags (e.g. --fastmode). Streams to scraper.log
 # An incremental run that legitimately finds nothing changed since the cutoff makes
 # os-update raise "no objects returned" and exit non-zero. That is a clean no-op, not a
 # failure — record it and skip the import instead of firing the failure alert.
+#
+# The `exit 0` below is load-bearing for run-scrape-retrying.sh (OPEN-87): a no-op must look
+# like success to the wrapper, or every no-op run would burn all its retry attempts and all
+# the backoff between them on a guaranteed-identical result. Note that a scraper raising
+# EmptyScrape explicitly (OPEN-106's change to UT) does NOT come through here at all —
+# openstates-core catches EmptyScrape in do_scrape() and returns normally, so os-update exits
+# 0 and this script runs a zero-bill import and exits 0 on the happy path. Both no-op shapes
+# end at exit 0; only one of them is this function.
 finish_no_op() {
     log "=== SCRAPE SUMMARY: $STATE ${SESSION_ARG} | mode=incremental | bills_scraped=0 | no changes since cutoff (no-op) ==="
     log "No new bills for $STATE ${SESSION_ARG} since cutoff; skipping import."
@@ -375,11 +406,35 @@ if [ "$rc" -ne 0 ]; then
     # error_type/message instead of the generic fallback in report_failure_to_cams.
     FAILURE_MESSAGE=$(grep -E '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception): ' "$SCRAPE_OUT" 2>/dev/null | tail -1)
     FAILURE_ERROR_TYPE=$(echo "$FAILURE_MESSAGE" | grep -oE '^[A-Za-z_][A-Za-z0-9_.]*(Error|Exception)')
+    # OPEN-87: is this a WAF block? If so it is terminal, because OPEN-53 established that a
+    # blind retry against a WAF worsens the block rather than recovering from it — each attempt
+    # is more traffic from an already-suspect client.
+    #
+    # This check belongs here specifically, and nowhere else. $SCRAPE_OUT is the *only* place
+    # the WAF marker is visible: MI's circuit breaker raises it into the scrape's own output,
+    # which this script tees into scraper.log. ddp-sync's classify_failure_reason() sees only
+    # the external stderr tail, which is why its own comment records that a real MI WAF block
+    # always misclassified as nonzero_exit_other and its reactive fallback never once fired.
+    # Classifying at the one point that can actually see the text avoids repeating that.
+    #
+    # Marker text matches scrapers/mi/_waf_circuit_breaker.py ("WAF block detected even after
+    # cookie re-warm ... consecutive blocks: N"). It is duplicated from ddp-sync's
+    # WAF_BLOCK_MARKERS rather than shared, because the two live in different repos and
+    # languages; called out in the PR so the operator can decide whether that's worth fixing.
+    SCRAPE_EXIT_CODE=1
+    if grep -qiE 'waf block detected|consecutive waf blocks' "$SCRAPE_OUT" 2>/dev/null; then
+        log "Failure for $STATE classified as a WAF block — terminal, will not be retried (OPEN-53)"
+        SCRAPE_EXIT_CODE=$EXIT_DO_NOT_RETRY
+        # Alert even under a retry wrapper: suppression exists so intermediate failures stay
+        # quiet until a *final* attempt alerts, and this failure is already final. Leaving it
+        # suppressed would make a WAF block the one failure class that silently never alerts.
+        SUPPRESS_FAILURE_ALERT=0
+    fi
     # Alert once (disable the ERR trap so it can't double-fire) and stop.
     rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER"
     trap - ERR
     on_failure
-    exit 1
+    exit "$SCRAPE_EXIT_CODE"
 fi
 rm -f "$SCRAPE_OUT"
 
