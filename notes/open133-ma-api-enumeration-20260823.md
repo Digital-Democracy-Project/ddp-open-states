@@ -9,8 +9,9 @@ asked, and the reason is in the validation section: pm-review's strongest object
 recommendation was unmeasured, and measuring it meant fetching all 57 committees rather than
 sampling five. Judged worth it; flagging the count rather than hiding it.
 
-**Corrected 2026-08-23**, after review found the document contradicted itself. Four fixes, all in
-this file's favour of being less confident than it was:
+**Corrected 2026-08-23**, after review found the document contradicted itself. Four fixes. Three of
+them make this file less confident than it was; the first cuts the other way, and that is worth
+being explicit about rather than presenting every correction as a retreat:
 
 1. The latest-action classification table was wrong — several rows (`amendment-failure` 272,
    `amendment-passage` 222, `committee-passage-favorable` 57) did not survive re-derivation against
@@ -25,8 +26,13 @@ this file's favour of being less confident than it was:
 4. Added the 69%-unclassified caveat wherever the split is quoted.
 
 All database figures here are re-derivable from a read-only query over `opencivicdata_bill` /
-`opencivicdata_billaction` filtered to `jurisdiction_id LIKE '%state:ma%'`, taking each bill's
-min and max non-empty `date` and the highest-`order` action on the max date.
+`opencivicdata_billaction`, joined through `opencivicdata_legislativesession` and filtered to
+`jurisdiction_id LIKE '%state:ma%'`. Rows with a null or empty `date` are dropped. Each bill's first
+and last action are `MIN(date)` and `MAX(date)`; the "missed class" is `last_date > first_date`, and
+the 2026 subset adds `last_date >= '2026'` (`date` is a `character varying`, so these are string
+comparisons on `YYYY-MM-DD` — which sorts correctly, but is worth knowing). "Latest action" is
+disambiguated by `DISTINCT ON (bill_id) ... ORDER BY bill_id, "order" DESC` among the actions on
+that last date — `order` being the integer column openstates uses to sequence same-day actions.
 
 ---
 
@@ -66,7 +72,8 @@ collection lag, not a quiet legislature) — and excluding them is a judgement t
 numbers slightly, so it is stated rather than buried.
 
 So **roughly 80–100 bills a week depending on which statistic you take**, and 71% of all MA bills
-have post-filing activity the sponsor-date filter structurally cannot see. On the weekly count that
+(8,098 of the 11,289 with any dated action) have post-filing activity the sponsor-date filter
+structurally cannot see. On the weekly count that
 is close to a tie with Michigan's ~80/week (OPEN-89) rather than clearly worse; where MA is
 genuinely worse is the *proportion* — 71% of its bills are exposed. MA has been treated as the
 awkward jurisdiction, and the fair statement is that the two losses are the same order of magnitude.
@@ -187,7 +194,9 @@ Busiest: `J19` 860 reported out, `H52` 790, `J40` 619, `J23` 612, `J11` 605.
 ### Coverage is excellent. Detection is the open question.
 
 Of the 4,787 bills in the missed class, **4,722 (98%) appear somewhere in the committee sets**, and
-4,597 (96%) in `ReportedOutDocuments` alone.
+4,597 (96%) in `ReportedOutDocuments` alone. That is a *presence* figure — how many of the missed
+bills the committee surface knows about at all. It is not a recovery figure, and the next two
+sections are about why the gap between those matters.
 
 That is far better than the equivalent MI surface (OPEN-134 measured 57% recall from journals), and
 it is the number that makes this worth recommending at all.
@@ -269,9 +278,11 @@ than the detection story supports.
 
 1. Keep the sponsor `ResponseDate` filter. It correctly catches newly filed bills.
 2. Add a per-run snapshot of each committee's `ReportedOutDocuments` and
-   `DocumentsBeforeCommittee`, and scrape the set difference. 57 requests, and it catches the
+   `DocumentsBeforeCommittee`, and scrape the set difference. 57 requests, and it is *aimed at* the
    committee-movement share of the ~80–100 bills/week — the larger share of the classified
-   activity, but an unknown share of the unclassified 69%.
+   activity, but an unknown share of the unclassified 69%. "Aimed at" and not "catches": the
+   detection rate is unmeasured, and until the two-snapshot test below is run, no claim about what
+   this actually catches is supportable.
 3. Accept that pure floor actions remain uncovered by any cheap signal found here — API or
    otherwise — and decide separately whether that residue justifies a periodic full walk, for
    which the wall-clock cost still needs measuring.
