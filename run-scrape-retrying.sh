@@ -41,10 +41,11 @@
 #
 #   * A WAF block. OPEN-53's finding is that a blind retry against a WAF makes a block worse
 #     rather than recovering from it -- each attempt is more traffic from an already-suspect
-#     client. run-scrape.sh now classifies this and exits $EXIT_DO_NOT_RETRY (90); see there.
-#     The primary guard is that MI, the jurisdiction this actually happens to, is not opted in
-#     at all (ddp-sync's `retry.jurisdictions_excluded`). The exit code is the backstop for a
-#     WAF block somewhere we didn't expect one.
+#     client. run-scrape.sh classifies this and signals it via DO_NOT_RETRY_FLAG (see below);
+#     it also exits 90, but the flag is what this wrapper decides on. The primary guard is that
+#     MI, the jurisdiction this actually happens to, is not opted in at all (ddp-sync's
+#     `retry.jurisdictions_excluded`). The flag is the backstop for a WAF block somewhere we
+#     didn't expect one.
 #
 # WHICH JURISDICTIONS GET THIS is not decided here. ddp-sync decides, from
 # `openstates_scrape.retry` in config/sync_schedule.yaml, and invokes this script instead of
@@ -83,9 +84,9 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 RUN_SCRAPE="${RUN_SCRAPE:-$SCRIPT_DIR/run-scrape.sh}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 
-# Must match run-scrape.sh's EXIT_DO_NOT_RETRY. Deliberately not 1 or 2: run-scrape.sh runs
-# under `set -e` with an ERR trap, so an un-classified failure exits with whatever code the
-# failing command returned, and the low codes are the ones that collide.
+# run-scrape.sh's exit code for a do-not-retry failure. Recorded here for readers, but NOT what
+# this wrapper decides on -- see DO_NOT_RETRY_FLAG below. It is propagated as this wrapper's own
+# exit code when it happens, so the distinction is still visible to ddp-sync and in the logs.
 EXIT_DO_NOT_RETRY=90
 
 SCRAPE_RETRY_MAX_ATTEMPTS="${SCRAPE_RETRY_MAX_ATTEMPTS:-3}"
@@ -103,6 +104,21 @@ SCRAPE_RETRY_BACKOFF_SECS="${SCRAPE_RETRY_BACKOFF_SECS:-900,1800}"
 # Comma-separated jurisdictions that must never be retried. Empty by default; ddp-sync supplies
 # it from sync_schedule.yaml. See the header on why there is no hardcoded state name here.
 SCRAPE_RETRY_EXCLUDED_JURISDICTIONS="${SCRAPE_RETRY_EXCLUDED_JURISDICTIONS:-}"
+
+# How run-scrape.sh tells us "do not retry this one". A file, not the exit code: every failure
+# path in run-scrape.sh other than the deliberate classification exits with whatever code the
+# failing command returned (set -e + ERR trap), so an exit code can be produced by accident. If
+# that ever collided with the do-not-retry code, this wrapper would stop retrying AND assume
+# run-scrape.sh had alerted -- while suppression meant it hadn't. A silent failure, and worse
+# than the duplicate alert it would be avoiding. run-scrape.sh writes this file only inside the
+# one branch that deliberately makes the decision, so "present" cannot happen by coincidence.
+#
+# We own the whole lifecycle: we pick the path, clear it before every attempt, and remove it on
+# exit. So there is no staleness, no cleanup left to anyone else, and no shared key to collide
+# on between concurrent jurisdictions.
+DO_NOT_RETRY_FLAG="${TMPDIR:-/tmp}/ddp-openstates-do-not-retry.$$"
+export DO_NOT_RETRY_FLAG
+trap 'rm -f "$DO_NOT_RETRY_FLAG"' EXIT
 
 log() {
     local line="[$(date '+%Y-%m-%d %H:%M:%S')] [retry-wrapper] $*"
@@ -166,6 +182,7 @@ while : ; do
     [ "$MAX_ATTEMPTS" -gt 1 ] && log "Attempt $attempt/$MAX_ATTEMPTS for $LABEL"
 
     rc=0
+    rm -f "$DO_NOT_RETRY_FLAG"
     # $SESSION_ARG unquoted so an empty session expands to no argument at all, matching how
     # ddp-sync invokes run-scrape.sh today.
     SUPPRESS_FAILURE_ALERT="$SUPPRESS" bash "$RUN_SCRAPE" "$STATE" $SESSION_ARG || rc=$?
@@ -177,8 +194,10 @@ while : ; do
     fi
 
     # Classified by run-scrape.sh as a failure that a retry would make worse, not better.
-    # run-scrape.sh has already alerted (it un-suppresses itself for this case).
-    if [ "$rc" -eq "$EXIT_DO_NOT_RETRY" ]; then
+    # Decided on the flag file, NOT on $rc -- see DO_NOT_RETRY_FLAG above for why an exit code
+    # cannot carry this safely. run-scrape.sh has already alerted (it un-suppresses itself for
+    # this case), which is only sound because the flag cannot be set by accident.
+    if [ -f "$DO_NOT_RETRY_FLAG" ]; then
         log "Attempt $attempt/$MAX_ATTEMPTS for $LABEL failed and was classified do-not-retry — stopping (run-scrape.sh has alerted)"
         exit "$rc"
     fi
@@ -189,6 +208,9 @@ while : ; do
     fi
 
     sleep_secs=$(backoff_for "$attempt")
+    # A config with no usable values would otherwise sleep 0 and hammer the source. Retrying
+    # immediately is never what anyone wanted here, so floor it rather than trusting the config.
+    [ "$sleep_secs" -lt 1 ] && sleep_secs=900
     log "Attempt $attempt/$MAX_ATTEMPTS for $LABEL failed (rc=$rc, alert suppressed) — retrying in ${sleep_secs}s"
     sleep "$sleep_secs"
     attempt=$((attempt + 1))

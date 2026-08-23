@@ -425,6 +425,20 @@ if [ "$rc" -ne 0 ]; then
     if grep -qiE 'waf block detected|consecutive waf blocks' "$SCRAPE_OUT" 2>/dev/null; then
         log "Failure for $STATE classified as a WAF block — terminal, will not be retried (OPEN-53)"
         SCRAPE_EXIT_CODE=$EXIT_DO_NOT_RETRY
+        # Positively signal the classification, rather than leaving the wrapper to infer it from
+        # the exit code alone. The exit code cannot carry this safely: every *other* failure path
+        # in this script exits with whatever code the failing command returned (set -e + ERR
+        # trap), so if any of them ever returned 90 by coincidence, a wrapper trusting the code
+        # would stop retrying AND assume this script had alerted — while suppression meant it
+        # hadn't. That is a silent failure, and it is worse than the duplicate alert it would be
+        # trying to avoid. The flag is only ever written here, in the one branch that deliberately
+        # makes this decision, so "flag present" cannot happen by accident.
+        #
+        # The wrapper owns the file's whole lifecycle (it picks the path, clears it before every
+        # attempt, and deletes it on exit), so there is no staleness or cleanup problem here and
+        # no key to collide on. Absent when run-scrape.sh is invoked directly, which is why this
+        # is guarded rather than unconditional.
+        [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
         # Alert even under a retry wrapper: suppression exists so intermediate failures stay
         # quiet until a *final* attempt alerts, and this failure is already final. Leaving it
         # suppressed would make a WAF block the one failure class that silently never alerts.
