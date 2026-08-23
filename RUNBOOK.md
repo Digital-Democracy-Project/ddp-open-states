@@ -146,7 +146,8 @@ tail -f logs/os-api.log
 Detects jurisdictions that **silently stop scraping** — the failure mode every in-run alert
 path (`run-scrape.sh`'s `ERR` trap / `on_failure`) can't see, and how MA ran wrong for six
 weeks unnoticed. It compares the age of each watched `logs/last-run/<key>.ts` marker against
-that job's cadence and alerts once per staleness episode.
+that job's cadence, alerts with the evidence needed to act on it, and escalates at 2× and 4×
+threshold rather than going silent (OPEN-130).
 
 **Status: live.** The companion hook in `ddp-agents/deployment/scripts/health-check-slack.sh`
 merged and reached production the same day (2026-08-08), and this script itself landed in the
@@ -181,21 +182,52 @@ the thing to update when the ddp-sync schedule changes — keep it in sync with
 
 **Alert lifecycle:** first detection posts to Slack `#automation-errors` **and** CAMS
 `/api/v1/failures` (`error_type=ScrapeStalenessDetected`, so it reaches Agent Smith triage),
-then writes a `logs/last-run/<key>.stale-alerted` sentinel — subsequent 5-minute runs stay
-silent. When the marker freshens, the sentinel is removed and a recovery message posts.
-Sentinels are written by the root-owned daemon so they land root-owned; `logs/last-run/` is
-agentsmith-owned, so `rm` still works without sudo.
+then writes a `logs/last-run/<key>.stale-alerted` sentinel recording the escalation tier —
+subsequent 5-minute runs at the same tier stay silent. When the marker freshens, the sentinel
+is removed and a recovery message posts. Sentinels are written by the root-owned daemon so they
+land root-owned; `logs/last-run/` is agentsmith-owned, so `rm` still works without sudo.
+
+**Escalation tiers (OPEN-130).** The one-alert-per-episode version fired at the moment the
+condition looked *least* serious — `az last run 229h, threshold 228h` reads as a rounding
+error — and then went correctly silent while az grew to 14 days. All three staleness alerts
+ever sent were declined by CodeBot triage as "not a code bug", the designed response to a
+one-line signal indistinguishable from a scraper legitimately quiet out of session. So now:
+
+* Each alert **carries its own evidence**: staleness in days, the absolute last-success
+  timestamp, the count of **missed scheduled runs** (derived from the key's threshold — 48h ⇒
+  daily, 228h ⇒ weekly), and the multiple of threshold. The CAMS payload puts that block in
+  `stacktrace` (previously `(none provided)` in triage) plus `severity_hint` and
+  `escalation_tier`/`scheduled_runs_missed` metadata. No ddp-agents change was needed — those
+  fields were always accepted.
+* It **re-alerts at 2× and 4× threshold** with wording that says it is the same episode
+  growing, not a new outage. Between tiers, and above 4×, it stays silent. The wording (not
+  just the numbers) differs per tier on purpose: CAMS fingerprints failures with digits
+  normalized to `<n>`, so tiers differing only numerically would de-dupe into one signal.
+* The missed-run count is the load-bearing fact for triage, because `run-scrape.sh`'s
+  `finish_no_op()` stamps `<key>.ts` even on a zero-bill run — an out-of-session jurisdiction
+  still refreshes its marker, so a stale marker means the scheduled job is not completing.
+* A **missing** marker is recorded at the top tier: "never" cannot grow, so it fires once.
+* A **malformed** `tier=` value (typo in the hand-silence recipe below, truncated write) logs a
+  warning and is treated as un-alerted, so the run alerts and rewrites the sentinel — silence
+  is never the failure mode.
+
+**Know the remaining gap.** On a weekly job the threshold is 228h, so 2× is ~19 days: the
+az incident that motivated this (14 days stale) would *still* have received only one alert.
+What changed is that the one alert now reads "no successful scrape in 9 days … 1 scheduled
+weekly run missed", not "229h vs 228h". Moving that second signal earlier means moving the
+threshold, which is a separate decision — file it against the watchlist, not the tiers.
 
 ```bash
-# See current staleness state (who has alerted and when)
+# See current staleness state (who has alerted, when, and at which tier)
 ls -la logs/last-run/*.stale-alerted 2>/dev/null; cat logs/last-run/*.stale-alerted 2>/dev/null
 
 # Watchdog's own activity log (quiet runs log nothing)
 tail logs/staleness-check.log
 
-# Silence a known/expected staleness episode without fixing it yet
-# (it will NOT re-alert — the sentinel is the de-dupe; remove it to re-arm)
-date -u +%Y-%m-%dT%H:%M:%S > logs/last-run/<key>.stale-alerted
+# Silence a known/expected staleness episode without fixing it yet.
+# tier=4 is the top tier, so this suppresses escalations too; a bare-timestamp
+# sentinel (the pre-OPEN-130 recipe) only suppresses up to 2x. Remove it to re-arm.
+printf 'tier=4\n' > logs/last-run/<key>.stale-alerted
 
 # Run the fixture tests (no network, no production paths)
 bash test-check-scrape-staleness.sh
