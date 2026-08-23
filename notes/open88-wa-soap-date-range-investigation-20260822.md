@@ -23,7 +23,8 @@ This ticket asked whether WA's SOAP API exposes a `GetLegislativeStatusChangesBy
 operation that would let the scraper learn *which* bills changed first, and skip `GetLegislation`
 entirely for the rest.
 
-**Answer: yes.** That operation exists, under exactly that name, and returns exactly what's needed.
+**Answer: yes.** That operation exists, under exactly that name, and returns the right thing --
+with one correctness trap (§4) and one open assumption a prototype has to validate (§5).
 
 ## Method
 
@@ -145,7 +146,7 @@ collapses every prefixed form to its base ID. Verified against the live values:
 
 It also drops `SGA` for free, matching how :341-346 already filters the bill list.
 
-### 5. Two caveats, both benign in this direction
+### 5. Caveats, and the limits of what this sampling proves
 
 **a. `ActionDate` is date-only.** Every returned `ActionDate` had a `00:00:00` time component, so
 the window is effectively day-granular while `_start_dt` is a full datetime. The existing filter at
@@ -162,16 +163,40 @@ This errs in the safe direction and is worth stating explicitly, because it defi
 profile of the change: the date-range call would be used **only to narrow the candidate set**, and
 the existing `CurrentStatus/ActionDate` check at :363-371 stays in place as the authoritative
 filter. A superset costs a few wasted fetches and changes nothing about correctness. Only a
-*subset* -- a bill that changed but wasn't reported -- would drop data, and the sampling found the
-operation erring the other way.
+*subset* -- a bill that changed but wasn't reported -- would drop data.
+
+**What the sampling does and does not establish here.** In the windows sampled, the operation erred
+toward returning extra records rather than missing them. That is *not* proof that it is always a
+complete superset -- 3 windows over 4 requests cannot establish the absence of false negatives, and
+no paired comparison against a full unfiltered scrape was run. Treat "no false negatives" as the
+open assumption this investigation did not close, and the thing a prototype has to validate (see
+the required validation below) rather than something already settled.
+
+**Also untested, and worth checking before a build:** whether the operation paginates, truncates,
+caps results, or faults on larger or busier windows than the single session day sampled. The
+sampling was deliberately kept to four requests against a public government API, so this is
+unresolved rather than ruled out.
+
+**One more precision point:** the alignment between this operation's `ActionDate` and the filter's
+`CurrentStatus/ActionDate` is established from the WSDL schema plus sample response shape -- they
+*appear* to be the same status-change date, and the field naming and values are consistent with
+that. It was not confirmed by comparing specific bills' `GetLegislation` `CurrentStatus/ActionDate`
+against the date-range records for the same bills. That comparison is cheap and belongs in the
+prototype's validation step.
 
 ## Conclusion
 
-**Yes, qualified-favourable.** `GetLegislativeStatusChangesByDateRange` exists, takes exactly
-`(biennium, beginDate, endDate)`, returns per-bill status-change records keyed on the same
-`ActionDate` field the scraper's own incremental filter already uses, and returns *zero* real bills
-across a 30-day out-of-session window. It removes the per-bill-fetch floor rather than working
+**Qualified yes -- suitable to prototype, with the paired validation below.**
+`GetLegislativeStatusChangesByDateRange` exists, takes exactly `(biennium, beginDate, endDate)`,
+returns per-bill status-change records keyed on what is evidently the same `ActionDate` the
+scraper's own incremental filter already uses, and returned *zero* real bills across a 30-day
+out-of-session window. That is the right shape to remove the per-bill-fetch floor rather than work
 around it, which is what the ticket was asking for.
+
+The question this ticket asked -- does such an operation exist and could it work -- is now answered
+and can stop being open. What is *not* established is that the operation never omits a changed bill
+(§5). That is the one assumption a prototype must validate before the optimisation is trusted; it
+does not need more investigation to decide whether to try.
 
 This is not a trivially-yes one-liner, because of the `BillId` prefix trap in §4, so per the task
 framing no code was changed. The scoped sketch below is deliberately minimal.
@@ -194,10 +219,17 @@ It should stay that small. All line numbers are current `scrapers/wa/bills.py`.
    `_changed_bill_ids()` and keep only `bill_ids` in that set. This slots into the exact spot, and
    exact idiom, that OPEN-78's `bill_no` filter already established.
 
-3. **Fail open, always.** If the call errors, returns nothing parseable, or the biennium is
-   rejected, fall back to the current behaviour (scrape all `bill_ids`). A failed optimisation must
-   degrade to a slow-but-correct scrape, never to a silently-empty one. This is the only new
-   failure mode worth guarding.
+3. **Fail open, always -- and distinguish "empty" from "broken".** These are two different
+   outcomes and must not collapse into one:
+   - A *successfully parsed but empty* `ArrayOfLegislativeStatus` means "no candidates" and should
+     legitimately narrow to zero bills. This is the normal out-of-session case (§3) and is the
+     entire point of the change.
+   - A transport error, HTTP failure, unparseable/malformed XML, or rejected biennium should return
+     `None` and fall back to the current behaviour (scrape all `bill_ids`).
+
+   A failed optimisation must degrade to a slow-but-correct scrape, never to a silently-empty one.
+   This is the only new failure mode worth guarding, and conflating the two cases is the way it
+   would go wrong.
 
 4. **Leave :363-371 exactly as it is.** It stays the authoritative per-bill filter, which is what
    makes a superset response harmless (§5b) and keeps the blind spot unchanged rather than widened
@@ -214,10 +246,28 @@ those bills would be skipped. The current filter at :363-371 *already* skips the
 reason, since it also only reads `CurrentStatus/ActionDate`. This change neither fixes nor worsens
 that. Widening the change signal is a separate question and should not be bundled in.
 
-**Suggested verification if it is built:** run WA with `start=` set to a known-quiet
-out-of-session date and confirm zero `GetLegislation` calls plus zero bills emitted; then re-run
-against an in-session date and diff the emitted bill set against an unfiltered run of the same
-window, confirming the substitute/engrossed bills in particular are present.
+**Required validation before the optimisation is trusted (not optional).** False negatives -- a
+bill that changed but wasn't reported by the date-range call -- are the primary correctness risk
+(§5), and the only way to close it is a paired run:
+
+1. **The false-negative test.** For at least one busy in-session window, run the current
+   full-fetch path and the optimised candidate path over the same window, then confirm **every**
+   bill emitted by the current path is also emitted by the optimised one. Substitute and engrossed
+   bills (`SHB`/`2SHB`/`E2SHB`/`ESSB`…) must be explicitly represented in the compared set, since
+   §4 is exactly where a silent drop would come from. Any bill present in the unoptimised run and
+   missing from the optimised run is a blocker, not a tuning issue.
+2. **The quiet-window test.** Run with `start=` set to a known-quiet out-of-session date and
+   confirm zero `GetLegislation` calls and zero bills emitted -- i.e. the saving is real.
+3. **Lock §4 with unit tests.** The `norm_bill_id_re.findall()` normalisation of the live ID forms
+   in §4 should be pinned by tests, since that is the failure mode most likely to silently skip
+   bills later.
+4. **Also confirm the date-boundary semantics** the implementation picks: which timezone the
+   `beginDate`/`endDate` conversion uses, that the end of the window is inclusive, and that
+   `endDate = today + 1 day` is actually safe given the day-granular `ActionDate` (§5a).
+
+**Minimal logging, no new infrastructure:** log the raw candidate-record count, the normalised
+real-bill count, and whether the run fell back to a full scrape. That is enough to notice a
+suspiciously empty result during an active session without building anything.
 
 ## References
 
