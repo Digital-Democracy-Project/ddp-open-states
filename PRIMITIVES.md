@@ -464,24 +464,29 @@ unavailable"`, and calls `_load_from_env()`. So `.env` is not a downgrade from t
 convention; on the Mac Studio it *is* the fleet convention, and Secrets Manager is the EC2 half
 of the same one. Revisit only if scrapers ever run on EC2.
 
-**The exact list of credentialed jurisdictions, and why only `dc` breaks at import.** Four
-jurisdictions in current upstream code want a credential, and the failure shape differs by where
-the lookup sits, not by policy:
+Because `.env` is **sourced by a shell**, not parsed by `python-dotenv`, entries must be
+shell-safe `KEY=value` lines — quote any value containing spaces, `#`, `$` or a quote, and don't
+expect `dotenv`-style escaping to work. Nothing here reads `.env` from Python.
 
-| Jurisdiction | Variable | Read where | Fails when |
-|---|---|---|---|
-| `va` | `VA_API_KEY` | `os.getenv` + explicit absence check, in a method | scrape time, with a good message |
-| `usa` | `CONGRESS_GOV_API_KEY` | `os.environ.get(..., None)` guard, in a method | never — optional, degrades |
-| `in` | `INDIANA_API_KEY` | bare `os.environ[...]`, in `__init__`/`get_session_list` | scrape time, bare `KeyError` |
-| `ny` | `NEW_YORK_API_KEY` | bare `os.environ[...]`, in methods | scrape time, bare `KeyError` |
-| `dc` | `DC_API_KEY` | bare `os.environ[...]` **in a class body** (`bills.py:23`) | **import time**, bare `KeyError` |
+**The exact list of credentialed jurisdictions, and why only `dc` breaks at import.** Five
+jurisdictions want a credential — one optionally — and the failure shape differs by *where the
+lookup sits*, not by policy. **Inventory current as of `upstream/main` `9a8ec1331` (2026-08-14);**
+re-derive it after a big upstream merge rather than trusting this table forever:
+
+| Jurisdiction | Variable | Required? | Read where | Fails when |
+|---|---|---|---|---|
+| `va` | `VA_API_KEY` | required | `os.getenv` + explicit absence check, in a method | scrape time, with a good message |
+| `usa` | `CONGRESS_GOV_API_KEY` | **optional** | `os.environ.get(..., None)` guard, in a method | never — degrades, events only |
+| `in` | `INDIANA_API_KEY` | required | bare `os.environ[...]`, in `__init__`/`get_session_list` | scrape time, bare `KeyError` |
+| `ny` | `NEW_YORK_API_KEY` | required | bare `os.environ[...]`, in methods | scrape time, bare `KeyError` |
+| `dc` | `DC_API_KEY` | required | bare `os.environ[...]` **in a class body** (`bills.py:23`) | **import time**, bare `KeyError` |
 
 `dc` is the only one whose lookup is a class attribute, so it evaluates at class-definition time:
 `import scrapers.dc` → `__init__.py:4` → `bills.py:15` (class body) → `bills.py:23` → `KeyError`.
 That is a code-shape accident, not a property of needing a credential — which is why "DC can't be
 imported" and "DC needs a key" are two different facts and only the second one generalizes.
-(`docker-compose.yml:19-33` also passes `AR_FTP_*` and `VIRGINIA_FTP_*` through, but no current
-scraper reads either — stale entries, ignore them.)
+(`docker-compose.yml:19-33` also passes `AR_FTP_*` and `VIRGINIA_FTP_*` through, but no scraper
+under `scrapers/` reads either name — verified by grep, stale entries, ignore them.)
 
 **Making the absent-credential failure legible: upstream already has the template, so don't write
 a DDP one.** `scrapers/va/bills.py:70-74` is the shape wanted — it names the jurisdiction, links
@@ -504,8 +509,8 @@ locally** — it would add diff noise to every future upstream merge for a bug D
 someone wants it fixed, the correctly-placed fix is a small **upstream PR** porting VA's guard to
 `dc` (and to `in`/`ny`), which costs DDP no merge surface and helps everyone.
 
-**In the meantime nothing local is needed, because OPEN-125 already handles it.**
-`check-scraper-imports.sh` classifies an import failure into `MISSING MODULE` / `MISSING
+**For the import sweep specifically, OPEN-125 already handles it — and only that.**
+`check-scraper-imports.sh` classifies an *import* failure into `MISSING MODULE` / `MISSING
 CREDENTIAL` / `OTHER FAILURE` at the *caller*, by inspecting the exception — an `ENV_VAR`-shaped
 `KeyError` naming something genuinely absent from `os.environ` is reported as credential-gated and
 **exits 0**, while a `ModuleNotFoundError` or any other break exits 1. That is the right place for
@@ -514,12 +519,30 @@ have deliberately not bought does not make the sweep noisy. **Don't duplicate th
 anywhere else** — if a second consumer ever needs it, factor it out of that script rather than
 re-deriving the heuristic.
 
-**Onboarding a credentialed jurisdiction, then, is:** add `<NAME>=<value>` to `.env` using the
-scraper's own variable name, confirm `check-scraper-imports.sh` stops listing it as
-credential-gated, scrape. The one gap left is discoverability — this repo has no `.env.example`
-(four other fleet repos do), so the set of names `.env` is expected to hold is currently only
-findable by grepping the scrapers. Worth adding when someone next touches `.env`; not worth a
-dedicated change on its own.
+**Be precise about what that does and does not make legible: import-time only, which today means
+`dc` alone.** `in` and `ny` read their key inside a method, so they import *cleanly without a
+credential* and the sweep will never flag them — then fail at scrape time with a bare `KeyError`
+that OPEN-125's script never sees. A green `check-scraper-imports.sh` is therefore **not** evidence
+that a jurisdiction's credential is present or working. Nothing in this repo has made a
+method-time missing credential legible, and nothing here should: per the paragraph above, the fix
+for `in`/`ny` belongs upstream.
+
+**Onboarding a credentialed jurisdiction, then, depends on where its lookup sits** — check the
+table before choosing how to verify:
+
+- **Add** `<NAME>=<value>` to `.env` using the scraper's own variable name (shell-safe, quoted if
+  needed).
+- **Import-time gate (`dc` today):** `check-scraper-imports.sh` should stop listing it as
+  credential-gated. That is a real check, and it is sufficient for this class.
+- **Method-time gate (`in`, `ny`, `va` — the common case):** the import check proves nothing. The
+  only thing that does is **running the scrape** — `run-scrape.sh <state>`, which sources
+  `activate.sh` and so gets `.env` — and confirming it fetches instead of raising `KeyError`. Do
+  this on a small/incremental run before enrolling the jurisdiction in the schedule.
+
+The one gap left is discoverability of the *names*: this repo has no `.env.example` (four other
+fleet repos do), so the set of variables `.env` is expected to hold is currently only findable by
+grepping the scrapers. Worth adding when someone next touches `.env`; not worth a dedicated change
+on its own.
 
 **`dc` specifically is parked, and the gating question is scope, not the key.** DDP holds no DC
 credential and nobody can self-serve one — LIMS publishes no registration page, so it needs a

@@ -86,6 +86,13 @@ logs `"Secrets Manager unavailable"`, and calls `_load_from_env()`, with `get_co
 exposing which path was taken. So `.env` is the Mac-side half of the existing fleet convention,
 not a departure from it.
 
+**Credential inventory, and its shelf life.** The five-jurisdiction table in `PRIMITIVES.md` was
+derived by grepping `scrapers/` for credential-shaped `os.environ`/`os.getenv` reads against
+`upstream/main` at **`9a8ec1331` (2026-08-14)**, and is anchored to that ref in the doc because
+this is a fork that periodically merges upstream — a later merge can add a sixth. The same grep is
+what establishes that `docker-compose.yml`'s `AR_FTP_*` and `VIRGINIA_FTP_*` pass-throughs are
+stale: no file under `scrapers/` reads either name.
+
 **Consistency with OPEN-125.** `check-scraper-imports.sh` on `fix/OPEN-125-scraper-import-deps`
 already separates `MISSING CREDENTIAL` from `MISSING MODULE`/`OTHER FAILURE` by inspecting the
 exception at the caller, and deliberately exits 0 for a credential while exiting 1 for a real
@@ -131,6 +138,37 @@ was changed here**, and each deserves its own ticket and its own repo's judgemen
 
 No credential values were read, printed, or recorded during any of this; the survey collected
 variable names, file paths and loader call sites only.
+
+## `/pm-review` round 1 — `needs_revision`, folded in
+
+The review caught a real error in the first draft, worth recording because it is the same
+conflation the ticket itself makes. The draft's onboarding step said "add the key, confirm
+`check-scraper-imports.sh` stops listing it as credential-gated, scrape" — but that check only
+exercises **import-time** lookups, i.e. `dc` alone. `in` and `ny` import cleanly without a
+credential and fail later, so for the Indiana case the draft's own recommended verification would
+have gone green while proving nothing. Fixed by splitting the onboarding step by where the lookup
+sits, and by narrowing the legibility claim to import-time explicitly rather than letting
+"OPEN-125 handles it" imply more than it does.
+
+Also folded in: the `.env`-is-shell-sourced quoting note; required-vs-optional in the inventory
+table (`usa` is optional and degrades); the `upstream/main` ref anchor on the table; and the grep
+evidence for the stale `docker-compose.yml` entries, which the draft asserted without showing.
+
+**Deliberately not done**, with reasons:
+
+- *"Cross-link this from the onboarding entry point."* Reasonable, but the entry point is
+  `PLAN-push-button-onboarding.md` in **`ddp-infra`** — a different repo, so it cannot be part of
+  this PR. Left for whoever next revises that plan; DC and credentialed states are not in its
+  active pilot path today.
+- *"Prefer file/function references over line numbers."* Declined: `PRIMITIVES.md` already cites
+  line numbers throughout (`run-scrape.sh:140`, `activate.sh`, etc.) and every citation here is
+  paired with quoted content or a symbol name, so drift is self-evident rather than silent.
+  Matching the file's existing convention beats being locally tidier.
+- *"Re-check placement after the base PRs settle."* No change needed — the block appends at the
+  very end of the section it extends, so it does not interleave with #147/#153's content.
+- Nothing was added in the way of tooling, a helper module, a credential registry, or enforcement.
+  The review did not ask for any, and the deliverable stays a convention plus a corrected error
+  story.
 
 ## Reference
 
