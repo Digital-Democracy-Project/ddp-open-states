@@ -21,11 +21,35 @@
 # OPEN-43 tracks extracting a shared helper; this script may stay a deliberate copy
 # even then (monitoring shouldn't share code with the monitored).
 #
-# Alert lifecycle per key (sentinel de-dupe, once per staleness episode):
-#   stale + no sentinel  -> alert Slack #automation-errors + CAMS, write <key>.stale-alerted
-#   stale + sentinel     -> silent (already alerted this episode)
-#   fresh + sentinel     -> remove sentinel, post recovery message
-#   missing .ts entirely -> maximally stale (alerts, never skips)
+# Alert lifecycle per key (sentinel de-dupe + escalation tiers, OPEN-130):
+#   stale, no sentinel        -> alert (tier 1) Slack #automation-errors + CAMS,
+#                                write <key>.stale-alerted recording tier=1
+#   stale, same tier          -> silent (already alerted at this severity)
+#   stale, crossed 2x/4x      -> RE-alert, escalated wording, bump tier in sentinel
+#   stale, past 4x            -> silent again (4x is the top tier)
+#   fresh + sentinel          -> remove sentinel, post recovery message
+#   missing .ts entirely      -> maximally stale (alerts, never skips), pinned to
+#                                the top tier: there is no growth left to report
+#
+# Why tiers (OPEN-130): the pre-tier version alerted exactly once, at the moment
+# the condition looked LEAST serious ("az last run 229h, threshold 228h" reads as
+# a rounding error), and then the sentinel correctly silenced it while the real
+# staleness grew — az reached 14 days with nobody alerted again. All three
+# staleness alerts ever sent were declined by CodeBot triage as "not a code bug",
+# which was the designed response to a one-line signal that cannot be told apart
+# from a scraper legitimately quiet out of session.
+#
+# So the alert body now carries its own evidence: absolute last-success date,
+# count of MISSED SCHEDULED RUNS, and the multiple of threshold. The load-bearing
+# fact is the missed-run count, because run-scrape.sh's finish_no_op() stamps
+# <key>.ts even on a zero-bill run — an out-of-session jurisdiction still
+# refreshes its marker, so a stale marker means the scheduled job is not
+# completing, NOT that there was nothing to scrape.
+#
+# Escalation wording deliberately changes WORDS per tier, not just numbers:
+# CAMS's failure fingerprint normalizes all digits to <n>
+# (ddp-agents failure_watcher._normalize), so "now 2x" and "now 4x" would
+# collapse into one de-duped signal if the tiers differed only numerically.
 #
 # STALE_* env vars below are test seams (see test-check-scrape-staleness.sh) —
 # production (the health-monitor hook) sets none of them.
@@ -108,12 +132,19 @@ post_slack() {
 }
 
 post_cams() {
-    # $1 = message, $2 = key, $3 = age display, $4 = threshold hours.
+    # $1 = message, $2 = key, $3 = age display, $4 = threshold hours,
+    # $5 = evidence block (multi-line), $6 = tier, $7 = missed runs, $8 = last success.
     # Best-effort POST to CAMS /api/v1/failures so a real staleness episode reaches
     # Agent Smith triage, not just Slack. curl -sf + || true throughout: an alerting
     # outage must never break the health monitor this script runs under.
+    #
+    # $5 goes in `stacktrace` (an accepted FailureReport field, ddp-agents
+    # cams/api/routes.py) because triage renders it as "Stacktrace / details" and
+    # previously received "(none provided)" — the whole reason OPEN-130 exists.
+    # No ddp-agents change is needed for this: the fields were always accepted.
     if [ "$DRY_RUN" = "1" ]; then
-        echo "DRY_RUN cams: ScrapeStalenessDetected key=$2 age=$3 threshold=${4}h"
+        echo "DRY_RUN cams: ScrapeStalenessDetected key=$2 age=$3 threshold=${4}h tier=$6 missed_runs=$7 last_success=$8"
+        echo "DRY_RUN cams details: $5"
         return 0
     fi
     [ -n "$CAMS_TOKEN" ] || return 0
@@ -124,13 +155,79 @@ print(json.dumps({
     "service": "ddp-open-states",
     "error_type": "ScrapeStalenessDetected",
     "message": sys.argv[1],
-    "metadata": {"key": sys.argv[2], "age": sys.argv[3], "threshold_hours": sys.argv[4]},
+    "stacktrace": sys.argv[5],
+    "severity_hint": "high" if sys.argv[6] != "1" else "warning",
+    "metadata": {
+        "key": sys.argv[2], "age": sys.argv[3], "threshold_hours": sys.argv[4],
+        "escalation_tier": sys.argv[6], "scheduled_runs_missed": sys.argv[7],
+        "last_success": sys.argv[8],
+    },
 }))
-' "$1" "$2" "$3" "$4" 2>/dev/null | \
+' "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" 2>/dev/null | \
         curl -sf --max-time 10 -X POST "$CAMS_URL/api/v1/failures" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $CAMS_TOKEN" \
             -d @- >/dev/null || true
+}
+
+# --- Evidence derivation (OPEN-130) ----------------------------------------------
+#
+# The watchlist's threshold IS the cadence signal — see the map above: 48h means a
+# daily job (2x cadence), 228h means a weekly job (~9.5d on a 7d cadence). Kept as
+# an explicit case, not arithmetic, so a new threshold has to be thought about
+# rather than silently producing a fabricated missed-run count. Unknown threshold
+# falls back to cadence == threshold, which UNDER-counts misses (>= 1 when past the
+# threshold) rather than inventing them.
+cadence_hours_for() {
+    case "$1" in
+        48)  echo 24  ;;   # daily jobs
+        228) echo 168 ;;   # weekly jobs
+        *)   echo "$1" ;;  # unknown threshold: conservative, never over-counts
+    esac
+}
+
+cadence_label_for() {
+    case "$1" in
+        24)  echo "daily"  ;;
+        168) echo "weekly" ;;
+        *)   echo "every ${1}h" ;;
+    esac
+}
+
+# 72 -> "3 days"; 30 -> "30h". Days are what makes "this is bad" legible; hours
+# stay in the message too because the threshold is expressed in hours.
+human_hours() {
+    if [ "$1" -ge 48 ]; then echo "$(( $1 / 24 )) days"; else echo "${1}h"; fi
+}
+
+# age threshold -> "1.4" (one decimal, integer math only — no bc on this box path)
+multiple_display() {
+    local tenths=$(( $1 * 10 / $2 ))
+    echo "$(( tenths / 10 )).$(( tenths % 10 ))"
+}
+
+# age threshold -> 1 | 2 | 4 (escalation tier; 4 is the top tier)
+tier_for() {
+    if   [ "$1" -ge $(( $2 * 4 )) ]; then echo 4
+    elif [ "$1" -ge $(( $2 * 2 )) ]; then echo 2
+    else echo 1
+    fi
+}
+
+# sentinel_field <file> <name> -> value, or "" when absent. grep/cut rather than
+# sourcing: the sentinel is a root-written file in a user-writable directory, so it
+# is data, never code. Absent field also covers pre-OPEN-130 sentinels, which hold
+# a bare timestamp — those read as tier "" and are treated as tier 1 below, so an
+# in-flight staleness episode upgrades cleanly instead of re-alerting.
+sentinel_field() {
+    [ -f "$1" ] || return 0
+    grep -E "^$2=" "$1" 2>/dev/null | tail -1 | cut -d= -f2-
+}
+
+# write_sentinel <file> <tier> <first_utc> <first_epoch> <first_age_hours>
+write_sentinel() {
+    printf 'tier=%s\nfirst_alerted_utc=%s\nfirst_alerted_epoch=%s\nfirst_alerted_age_hours=%s\nlast_alerted_utc=%s\n' \
+        "$2" "$3" "$4" "$5" "$(date -u +%Y-%m-%dT%H:%M:%S)" > "$1"
 }
 
 # --- Main check ------------------------------------------------------------------
@@ -140,28 +237,129 @@ for entry in $WATCHLIST; do
     threshold_hours="${entry##*:}"
     ts_file="$LAST_RUN_DIR/$key.ts"
     sentinel="$LAST_RUN_DIR/$key.stale-alerted"
+    cadence_hours=$(cadence_hours_for "$threshold_hours")
+    cadence_label=$(cadence_label_for "$cadence_hours")
 
     if [ -f "$ts_file" ]; then
         mtime=$(stat -f %m "$ts_file" 2>/dev/null || echo 0)   # BSD stat (this Mac), not GNU
         age_hours=$(( (NOW_EPOCH - mtime) / 3600 ))
         age_display="${age_hours}h"
+        last_success=$(date -r "$mtime" '+%Y-%m-%d %H:%M %Z' 2>/dev/null || echo "unknown")
+        # Scheduled runs that should have completed since the last success and
+        # didn't. Floor division: 336h stale on a 168h weekly cadence = 2 missed.
+        missed_runs=$(( age_hours / cadence_hours ))
+        mult_display=$(multiple_display "$age_hours" "$threshold_hours")
+        severity_phrase="${mult_display}× threshold"
+        # Days for legibility, hours because the threshold is stated in hours.
+        # Under 48h the two are the same number, so don't say it twice.
+        if [ "$age_hours" -ge 48 ]; then
+            headline="no successful scrape in $(human_hours "$age_hours") — ${age_display} (threshold ${threshold_hours}h), ${severity_phrase}"
+        else
+            headline="no successful scrape in ${age_display} (threshold ${threshold_hours}h), ${severity_phrase}"
+        fi
+        missed_phrase="${missed_runs} scheduled ${cadence_label} run(s) missed"
+        missed_sentence="A marker this old means ${missed_runs} scheduled ${cadence_label} run(s) did not complete at all."
+        last_success_detail="${last_success} (${age_display} ago)"
+        marker_missing=0
     else
         # Missing marker = the job has NEVER succeeded (or someone removed the
-        # marker) — maximally stale. Alerts, never skips (AC #3).
+        # marker) — maximally stale. Alerts, never skips (AC #3). Recorded at the
+        # top tier: "never" cannot grow, so escalation could only add noise.
         age_hours=$MISSING_AGE_HOURS
         age_display="never (no ${key}.ts marker)"
+        last_success="none on record"
+        missed_runs="all"
+        severity_phrase="no successful run on record at all"
+        headline="no successful scrape ever recorded — ${age_display}, threshold ${threshold_hours}h"
+        missed_phrase="No scheduled ${cadence_label} run has ever completed for this key"
+        missed_sentence="There is no marker at all, so no scheduled ${cadence_label} run has ever completed for this key (or the marker was deleted)."
+        last_success_detail="none on record — logs/last-run/${key}.ts does not exist"
+        marker_missing=1
     fi
 
     if [ "$age_hours" -gt "$threshold_hours" ]; then
-        if [ ! -f "$sentinel" ]; then
-            log "STALE: $key last-run age ${age_display} exceeds ${threshold_hours}h threshold — alerting"
-            msg="🕰️ *OpenStates scrape stale: ${key}* — last successful run: ${age_display} (threshold ${threshold_hours}h). The job that should refresh logs/last-run/${key}.ts is not completing. See ~/Developer/repos/ddp-open-states/RUNBOOK.md (staleness watchdog) and logs/scraper.log."
+        prev_tier=$(sentinel_field "$sentinel" tier)
+        # Pre-OPEN-130 sentinel (bare timestamp) or a hand-made one: treat as
+        # "tier 1 already sent" so an in-flight episode escalates, not re-alerts.
+        [ -f "$sentinel" ] && [ -z "$prev_tier" ] && prev_tier=1
+        [ -z "$prev_tier" ] && prev_tier=0
+        cur_tier=$(tier_for "$age_hours" "$threshold_hours")
+        [ "$marker_missing" = "1" ] && cur_tier=4   # missing marker: top tier, fires once
+
+        if [ "$cur_tier" -gt "$prev_tier" ]; then
+            first_utc=$(sentinel_field "$sentinel" first_alerted_utc)
+            first_epoch=$(sentinel_field "$sentinel" first_alerted_epoch)
+            first_age=$(sentinel_field "$sentinel" first_alerted_age_hours)
+            if [ "$prev_tier" = "0" ]; then
+                first_utc=$(date -u +%Y-%m-%dT%H:%M:%S)
+                first_epoch="$NOW_EPOCH"
+                first_age="$age_hours"
+            fi
+
+            if [ -n "$first_utc" ] && [ -n "$first_age" ]; then
+                first_alert_note="first alerted ${first_utc} at ${first_age}h"
+            else
+                first_alert_note="first-alert details unrecorded (sentinel predates escalation tracking)"
+            fi
+
+            # Evidence block: what triage renders as "Stacktrace / details" and
+            # previously got "(none provided)". The finish_no_op paragraph is the
+            # point — it is the fact that separates "quiet, out of session" from
+            # "this job is dead", and it is the judgement CodeBot declined three
+            # times for want of exactly this.
+            details="Staleness watchdog evidence (check-scrape-staleness.sh, OPEN-40):
+  jurisdiction key:       ${key}
+  last successful scrape: ${last_success_detail}
+  staleness threshold:    ${threshold_hours}h (${severity_phrase})
+  scheduled cadence:      ${cadence_label} (every ${cadence_hours}h)
+  scheduled runs missed:  ${missed_runs}
+  marker not refreshed:   logs/last-run/${key}.ts
+  escalation tier:        ${cur_tier} (previous tier ${prev_tier}; ${first_alert_note})
+
+This is a watchdog observation, not a caught exception, so there is no stacktrace:
+no scrape process reported an error — the scheduled job simply did not complete.
+
+A jurisdiction being out of session does NOT explain this. run-scrape.sh's
+finish_no_op() stamps logs/last-run/${key}.ts even when a run scrapes zero bills,
+so a legitimately-quiet jurisdiction still refreshes its marker every cycle.
+${missed_sentence} Start at logs/scraper.log for ${key} and the ddp-sync schedule."
+
+            # Wording branches on FIRST ALERT vs ESCALATION, not on tier number: a
+            # key that jumps straight past 2x (watchdog or scheduler was itself
+            # down) still deserves first-alert wording, while recording the tier it
+            # actually reached so it doesn't immediately "escalate" to itself.
+            if [ "$prev_tier" = "0" ]; then
+                log "STALE: $key last-run age ${age_display} exceeds ${threshold_hours}h threshold (${missed_phrase}) — alerting (tier ${cur_tier})"
+                msg="🕰️ *OpenStates scrape stale: ${key}* — ${headline}. Last success: ${last_success}. ${missed_phrase}. An out-of-session jurisdiction still refreshes its marker (run-scrape.sh finish_no_op), so this means the scheduled job is not completing. See ~/Developer/repos/ddp-open-states/RUNBOOK.md (staleness watchdog) and logs/scraper.log."
+                cams_msg="scrape staleness: $key last run ${age_display}, threshold ${threshold_hours}h, ${missed_phrase}, last success ${last_success}"
+            else
+                # Distinct WORDS per tier, not just distinct numbers — see the
+                # fingerprint note in the header comment.
+                if [ "$cur_tier" = "4" ]; then
+                    tier_word="SEVERELY stale"
+                    tier_note="four times past its threshold"
+                else
+                    tier_word="STILL stale and getting worse"
+                    tier_note="twice past its threshold"
+                fi
+                growth=""
+                [ -n "$first_age" ] && [ "$first_age" != "$age_hours" ] \
+                    && growth=" Was ${first_age}h when first alerted on ${first_utc}; it has grown since and nothing has recovered it."
+                log "ESCALATING: $key age ${age_display} crossed tier ${cur_tier} (was tier ${prev_tier}) — re-alerting"
+                msg="🚨 *OpenStates scrape ${tier_word}: ${key}* — ${tier_note}: ${headline}. Last success: ${last_success}. ${missed_phrase}.${growth} This is the same unresolved episode escalating, not a new outage. See ~/Developer/repos/ddp-open-states/RUNBOOK.md (staleness watchdog) and logs/scraper.log."
+                cams_msg="scrape staleness ${tier_word}: $key has now gone ${age_display} with no successful run (${tier_note}, threshold ${threshold_hours}h), ${missed_phrase}, last success ${last_success}"
+            fi
+
             post_slack "$msg"
-            post_cams "scrape staleness: $key last run ${age_display}, threshold ${threshold_hours}h" \
-                "$key" "$age_display" "$threshold_hours"
-            # Sentinel = "already alerted this episode". If the write fails we'd
-            # re-alert every 5 minutes, so log that loudly instead of hiding it.
-            date -u +%Y-%m-%dT%H:%M:%S > "$sentinel" \
+            post_cams "$cams_msg" "$key" "$age_display" "$threshold_hours" \
+                "$details" "$cur_tier" "$missed_runs" "$last_success"
+
+            # Sentinel = "already alerted this episode, at this tier". If the write
+            # fails we'd re-alert every 5 minutes, so log that loudly. Rewritten
+            # (not appended) on escalation, preserving the first-alert fields so the
+            # growth clause survives; root-owned rewrites by root are fine, and a
+            # failed rewrite degrades to the old behaviour (noisy, not silent).
+            write_sentinel "$sentinel" "$cur_tier" "$first_utc" "$first_epoch" "$first_age" \
                 || log "ERROR: could not write sentinel $sentinel — $key will re-alert every run"
         fi
     else
@@ -169,7 +367,7 @@ for entry in $WATCHLIST; do
             log "RECOVERED: $key fresh again (age ${age_display}, threshold ${threshold_hours}h) — clearing sentinel"
             rm -f "$sentinel" \
                 || log "ERROR: could not remove sentinel $sentinel — recovery will re-post every run"
-            post_slack "✅ *OpenStates scrape recovered: ${key}* — fresh last-run marker (age ${age_display}, threshold ${threshold_hours}h)."
+            post_slack "✅ *OpenStates scrape recovered: ${key}* — fresh last-run marker (age ${age_display}, threshold ${threshold_hours}h). Escalation state cleared."
         fi
     fi
 done

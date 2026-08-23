@@ -32,6 +32,18 @@ run_watchdog() {
     bash "$WATCHDOG"
 }
 
+# run_watchdog_at <hours_after_NOW> <watchlist> — same, with "now" pushed forward so
+# an episode can age without the test sleeping (OPEN-130 escalation tiers). The
+# marker stays put and time moves, which is what actually happens in production.
+run_watchdog_at() {
+    STALE_LAST_RUN_DIR="$FIXTURE" \
+    STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+    STALE_DRY_RUN=1 \
+    STALE_NOW_EPOCH="$(( NOW_EPOCH + $1 * 3600 ))" \
+    STALE_WATCHLIST="$2" \
+    bash "$WATCHDOG"
+}
+
 # touch_age <file> <hours_ago>
 touch_age() {
     local ts
@@ -110,6 +122,82 @@ OUT=$(run_watchdog "va:228
 mi:228")
 assert_contains "mi alerts in multi-key run" "$OUT" "OpenStates scrape stale: mi"
 assert_not_contains "va stays silent in multi-key run" "$OUT" "stale: va"
+
+# === OPEN-130: self-evidencing alerts + escalation tiers ==========================
+#
+# Reproduces the az timeline from OPEN-130: tripped at 229h against a 228h weekly
+# threshold ("reads as a rounding error"), then silence while it grew to 14 days.
+# The marker is placed once and "now" walks forward, as it does in production.
+
+echo "=== 8. first alert is self-evidencing (missed runs + absolute last-success date) ==="
+touch_age "$FIXTURE/az.ts" 229
+LAST_SUCCESS_DATE=$(date -r $(( NOW_EPOCH - 229 * 3600 )) '+%Y-%m-%d')
+OUT=$(run_watchdog "az:228")
+assert_contains "first alert names missed scheduled runs" "$OUT" "1 scheduled weekly run(s) missed"
+assert_contains "first alert states staleness in days, not just hours" "$OUT" "no successful scrape in 9 days"
+assert_contains "first alert names the absolute last-success date" "$OUT" "Last success: $LAST_SUCCESS_DATE"
+assert_contains "first alert states the multiple of threshold" "$OUT" "× threshold"
+assert_contains "cams metadata carries the missed-run count" "$OUT" "missed_runs=1"
+assert_contains "cams detail block replaces the empty stacktrace" "$OUT" "scheduled runs missed:  1"
+assert_contains "cams details rule out the out-of-session explanation" "$OUT" "out of session does NOT explain this"
+assert_file "first alert writes sentinel" "$FIXTURE/az.stale-alerted" exists
+assert_contains "sentinel records the tier" "$(cat "$FIXTURE/az.stale-alerted")" "tier=1"
+assert_contains "sentinel records the first-alert age" "$(cat "$FIXTURE/az.stale-alerted")" "first_alerted_age_hours=229"
+
+echo "=== 9. between tiers (329h, the real az 14-day point) -> still silent ==="
+OUT=$(run_watchdog_at 100 "az:228")
+assert_not_contains "no re-alert below 2x threshold" "$OUT" "DRY_RUN slack"
+assert_not_contains "no re-post to cams below 2x threshold" "$OUT" "DRY_RUN cams"
+
+echo "=== 10. crossing 2x threshold (460h) -> escalated re-alert ==="
+OUT=$(run_watchdog_at 231 "az:228")
+assert_contains "2x escalation alerts slack" "$OUT" "OpenStates scrape STILL stale and getting worse: az"
+assert_contains "2x escalation says twice past threshold" "$OUT" "twice past its threshold"
+assert_contains "2x escalation shows the growth from the first alert" "$OUT" "Was 229h when first alerted"
+assert_contains "2x escalation marks it the same episode, not a new outage" "$OUT" "same unresolved episode escalating"
+assert_contains "2x escalation reports the grown missed-run count" "$OUT" "2 scheduled weekly run(s) missed"
+assert_contains "2x escalation re-posts to cams with tier" "$OUT" "tier=2"
+assert_contains "sentinel bumped to tier 2" "$(cat "$FIXTURE/az.stale-alerted")" "tier=2"
+assert_contains "sentinel preserves the original first-alert age" "$(cat "$FIXTURE/az.stale-alerted")" "first_alerted_age_hours=229"
+
+echo "=== 11. between 2x and 4x (629h) -> silent again (de-dupe still holds) ==="
+OUT=$(run_watchdog_at 400 "az:228")
+assert_not_contains "no re-alert between 2x and 4x" "$OUT" "DRY_RUN slack"
+
+echo "=== 12. crossing 4x threshold (929h) -> second escalation, distinct wording ==="
+OUT=$(run_watchdog_at 700 "az:228")
+assert_contains "4x escalation alerts slack" "$OUT" "OpenStates scrape SEVERELY stale: az"
+assert_contains "4x escalation says four times past threshold" "$OUT" "four times past its threshold"
+assert_contains "4x escalation reports 5 missed weekly runs" "$OUT" "5 scheduled weekly run(s) missed"
+assert_contains "sentinel bumped to tier 4" "$(cat "$FIXTURE/az.stale-alerted")" "tier=4"
+# Wording (not just numbers) differs per tier because CAMS fingerprints failures
+# with all digits normalized to <n> — same words at 2x and 4x would de-dupe away.
+assert_not_contains "4x wording differs from 2x wording" "$OUT" "STILL stale and getting worse"
+
+echo "=== 13. past the top tier (1129h) -> silent, no alert storm ==="
+OUT=$(run_watchdog_at 900 "az:228")
+assert_not_contains "no alerts above the top tier" "$OUT" "DRY_RUN slack"
+
+echo "=== 14. recovery clears escalation state; a later episode starts at tier 1 ==="
+touch -t "$(date -r $(( NOW_EPOCH + 900 * 3600 )) '+%Y%m%d%H%M.%S')" "$FIXTURE/az.ts"
+OUT=$(run_watchdog_at 900 "az:228")
+assert_contains "recovery posts after escalation" "$OUT" "OpenStates scrape recovered: az"
+assert_file "recovery removes escalation sentinel" "$FIXTURE/az.stale-alerted" absent
+touch_age "$FIXTURE/az.ts" 300
+OUT=$(run_watchdog "az:228")
+assert_contains "new episode alerts as a first alert, not an escalation" "$OUT" "🕰️ *OpenStates scrape stale: az*"
+assert_not_contains "new episode is not worded as an escalation" "$OUT" "same unresolved episode"
+assert_contains "new episode sentinel restarts tier accounting" "$(cat "$FIXTURE/az.stale-alerted")" "first_alerted_age_hours=300"
+
+echo "=== 15. pre-OPEN-130 sentinel (bare timestamp) upgrades without re-alerting ==="
+touch_age "$FIXTURE/ut.ts" 300
+date -u +%Y-%m-%dT%H:%M:%S > "$FIXTURE/ut.stale-alerted"   # old-format sentinel
+OUT=$(run_watchdog "ut:228")
+assert_not_contains "legacy sentinel still suppresses the tier-1 repeat" "$OUT" "DRY_RUN slack"
+OUT=$(run_watchdog_at 200 "ut:228")
+assert_contains "legacy sentinel still escalates at 2x" "$OUT" "OpenStates scrape STILL stale and getting worse: ut"
+assert_not_contains "legacy sentinel claims no growth baseline it doesn't have" "$OUT" "Was 300h when first alerted"
+assert_contains "legacy sentinel says so plainly in the detail block" "$OUT" "first-alert details unrecorded"
 
 echo ""
 echo "RESULT: $PASS passed, $FAIL failed"
