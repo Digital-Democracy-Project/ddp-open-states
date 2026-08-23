@@ -179,6 +179,18 @@ PY
     exit 1
 fi
 rm -f "$VOTES_PROBE_ERR"
+# Only "" or "votes" is a valid answer. Anything else means something wrote to stdout during
+# the import, and $VOTES_SCRAPER is deliberately unquoted at the call site (it has to expand to
+# either one word or none), so stray output would be word-split into extra positional args for
+# os-update. Fail rather than guess — the stderr-merge bug this replaced was exactly this shape.
+if [ -n "$VOTES_SCRAPER" ] && [ "$VOTES_SCRAPER" != "votes" ]; then
+    log "ERROR: unexpected scraper-probe output for $STATE: '$VOTES_SCRAPER'"
+    FAILURE_ERROR_TYPE="ScraperProbeFailure"
+    FAILURE_MESSAGE="scraper probe for $STATE returned unexpected output: '$VOTES_SCRAPER'"
+    trap - ERR
+    on_failure
+    exit 1
+fi
 [ -n "$VOTES_SCRAPER" ] && log "$STATE registers a separate votes scraper; scraping bills and votes"
 
 # Import-as-you-go (PLAN-incremental-scraping.md, "Reopened 2026-07-30", approved for
