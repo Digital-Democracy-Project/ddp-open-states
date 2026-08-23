@@ -20,6 +20,14 @@ Plus a smaller seventh case: plain hardcoded lists of state abbreviations sittin
 shell scripts (e.g. `run-scrape.sh`'s `--allow_duplicates` states, `mi fl va`) — not a named
 mechanism, just a bash array someone added when a specific state needed a flag.
 
+**Mechanism 7 now has an owner and a rule (OPEN-124, decided 2026-08-22).** This survey named it
+and then left it unassigned, which mattered more than it looked: two queued tickets (OPEN-86's
+sweep-import canary, OPEN-87's retry opt-out) would each have added per-jurisdiction gating in
+exactly this layer, and with no rule they would have made the decision by default. The rule, and
+the reasoning, is in `PRIMITIVES.md`'s own section — the short version is that anything a
+*scheduler* decides belongs in `ddp-sync`'s YAML, and only genuine wrapper-local flags stay in the
+shell script, as a flat list rather than a chained conditional.
+
 Nobody ever sat down and picked one convention for "per-jurisdiction configuration" across this
 whole stack — each mechanism was a locally reasonable choice for the problem in front of whoever
 built it, and never had to reconcile with the others.
