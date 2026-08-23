@@ -139,8 +139,31 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # non-incremental scrape, which is why it took until then to surface.
 # --allow_duplicates keeps the first instance and silently skips the rest.
 # See: https://github.com/openstates/openstates-scrapers/issues/5697
+#
+# Flat comma list rather than a chained conditional, per OPEN-124's recorded rule (see
+# ddp-open-states/PRIMITIVES.md, "Per-jurisdiction configuration") and matching activate.sh's
+# ARCHIVE_ENABLED_STATES. Not cosmetic: the chained form had been extended four times and `ma`
+# was silently missing from it until OPEN-55, which cost a completed 9,496-bill MA scrape its
+# entire import. A one-line list is a thing you can check at a glance.
+#
+# The comma-wrapped `case` is the same idiom run-archive.sh:77 already uses for
+# ARCHIVE_ENABLED_STATES, deliberately — one matching style in this repo, not two.
+#
+# `case` also returns 0 when nothing matches, so this cannot interact with `set -e` and the ERR
+# trap. The old `[ A ] || [ B ] || … && assign` form happened to be safe too (bash exempts a
+# failing command inside an AND-OR list) but only incidentally — a naive `if` rewrite here would
+# have turned every non-listed jurisdiction's scrape into a spurious failure alert.
+#
+# One known property of substring matching, shared with run-archive.sh: a $STATE that is itself a
+# comma-joined list ("mi,fl") would match, where the old chained form would not. $STATE is $1, a
+# single jurisdiction abbreviation from ddp-sync, so that input cannot occur — noted rather than
+# guarded, since diverging from the house idiom to defend an impossible input costs more clarity
+# than it buys.
+ALLOW_DUPLICATES_STATES="mi,fl,va,ma"
 IMPORT_FLAGS=""
-[ "$STATE" = "mi" ] || [ "$STATE" = "fl" ] || [ "$STATE" = "va" ] || [ "$STATE" = "ma" ] && IMPORT_FLAGS="--allow_duplicates"
+case ",$ALLOW_DUPLICATES_STATES," in
+    *",$STATE,"*) IMPORT_FLAGS="--allow_duplicates" ;;
+esac
 
 # Import-as-you-go (PLAN-incremental-scraping.md, "Reopened 2026-07-30", approved for
 # implementation) — off by default. When enabled, a killed scrape no longer loses everything:
