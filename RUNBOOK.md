@@ -697,6 +697,78 @@ The full run re-imports everything and resets the timestamp cleanly.
 
 ---
 
+## Verifying a Michigan scraper fix against the live site (OPEN-137)
+
+Michigan is the fleet's most WAF-sensitive jurisdiction and the only one excluded from scrape
+retries entirely (OPEN-53: retrying against a WAF worsens a block, because each attempt is more
+traffic from an already-suspect client). So "just run the scraper and see" is the wrong instinct
+here — a full MI run is roughly 3,800 requests and 7–8 hours at the live 10 rpm cap, and it has
+been explicitly declined as a verification budget more than once.
+
+This is the cheap procedure. Roughly three requests.
+
+**Step 0 — check the fix is actually deployed before testing it.**
+
+Easy to skip and it invalidates everything after it. Merging a PR on GitHub does not update this
+host; `apply-local-patches.sh` does, on its daily 01:00 UTC run
+(`openstates_scrape.patch_refresh` in ddp-sync's `config/sync_schedule.yaml`).
+
+```bash
+cd ~/Developer/repos/ddp-open-states/openstates-scrapers
+git fetch origin && git rev-list --count HEAD..origin/main    # 0 = deployed
+grep -c '<the symbol your fix introduced>' scrapers/mi/bills.py
+```
+
+A non-zero count from the first command means you would be testing the old code. Either wait for
+the next patch refresh or pull manually — but note `apply-local-patches.sh` does
+`git checkout main && git pull`, so a manual pull is doing that job early, not instead of it.
+
+**Step 1 — is the thing you are about to "recover" actually missing?**
+
+Free, and it has already saved one unnecessary scrape. A dropped bill often reappears in a later
+run, so check before spending requests:
+
+```bash
+psql "$DATABASE_URL" -c "
+SELECT b.identifier, b.created_at::date, b.updated_at::date
+FROM opencivicdata_bill b
+JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
+WHERE j.name = 'Michigan' AND b.identifier = 'SR 135';"
+```
+
+If `updated_at` is later than the incident date, a subsequent run already picked it up and there
+is nothing to recover. Verified 2026-08-23 for OPEN-132's dropped bill: `SR 135` present, created
+2026-07-11, updated 2026-08-08 — the 2026-07-25 drop cost that run's update, not the bill.
+
+**Step 2 — one targeted bill fetch, if recovery IS needed.**
+
+`bill_no=` targeting (OPEN-81) exists for exactly this and needs no full run:
+
+```bash
+source activate.sh
+./run-scrape.sh mi bill_no=SR135
+```
+
+**Step 3 — confirm the behaviour, both directions.**
+
+Over-firing matters as much as under-firing, so check both:
+
+- a window matching **exactly one** bill returns that bill, and it lands in the database — not
+  merely that the scrape exited 0
+- a **genuinely empty** window still yields nothing, and the two are distinguishable in
+  `logs/scraper.log` rather than looking alike
+
+`run-scrape.sh` writes to the production database, so this is the step that needs a decision, not
+just a terminal. Read-only sessions can get as far as step 1.
+
+**Keep the request count in the log.** Every prior MI investigation recorded its own cost, and
+several answered their question with zero requests by reading the scrapelib cache first — see
+`notes/open89-mi-date-signal-verification-plan-20260822.md` and
+`notes/open134-mi-recency-signal-investigation-20260823.md` for how far that gets you.
+
+---
+
 ## Motion classification
 
 `opencivicdata_voteevent.motion_classification` is a PostgreSQL ARRAY column. The scrapers
