@@ -143,44 +143,50 @@ def hhmm(s, default="02:00"):
         return 2, 0
 
 
-# Large but finite. Used as "not due yet", and deliberately just under
-# MISSING_AGE_HOURS (999999) so a job that has NEVER produced a marker still
-# alerts even inside its grace window -- there is no run in progress to wait for.
-NOT_DUE_YET = 999998
-
-
 def threshold_for(sync_day, sync_time):
-    """Hours of marker-age that mean "the most recent scheduled run did not complete".
+    """Hours of marker-age that mean "a scheduled run has been and gone without completing".
 
-    The threshold is simply *hours since that run was scheduled*. If the marker is
-    older than that, it predates the run, so the run did not write it.
+    Anchor on the most recent scheduled run **whose grace window has already
+    expired** -- i.e. the latest scheduled time at or before (now - grace). That run
+    has had its full allowance to finish, so:
 
-        marker younger than the scheduled time  -> it completed        -> quiet
-        marker older   than the scheduled time  -> it did not          -> alert
+        marker newer than it  -> it completed          -> quiet
+        marker older than it  -> it did not            -> alert
 
-    And while we are still inside the grace window after a scheduled time, nothing
-    alerts at all: the job is probably still running, and its marker is legitimately
-    a full cadence old until the moment it finishes.
+    Two earlier versions of this were wrong, and both are worth recording because
+    each looks right:
 
-    Worth spelling out why the obvious-looking alternative is wrong. Anchoring on the
-    run BEFORE the most recent one produces a threshold that grows at exactly the same
-    rate as the marker ages, so the comparison never trips: by the following Saturday a
-    weekly job that missed its Sunday has an age of 312h against a threshold of 336h and
-    reports healthy. Anchoring on the most recent scheduled time is what makes this
-    "a scheduled run did not complete" rather than another elapsed-hours proxy.
+    1. Anchoring on the run BEFORE the most recent one (to avoid judging a run that
+       may still be in progress) gives a threshold that grows at exactly the same
+       rate as the marker ages, so the comparison never trips. By the following
+       Saturday a weekly job that missed its Sunday shows 312h against a threshold
+       of 336h and reports healthy.
+
+    2. Anchoring on the most recent run and suppressing everything inside its grace
+       window looks like the fix for (1), and breaks two things at once. Daily jobs
+       stop being monitored entirely -- hours-since-most-recent for a daily job is
+       always 0..24, so with a 24h grace the suppression is permanent. And a weekly
+       job that was ALREADY stale goes quiet for 24h after every scheduled time,
+       a recurring blind spot in exactly the window someone would be looking.
+
+    Shifting the anchor by the grace period instead of special-casing the recent
+    window fixes both: a daily job's anchor is yesterday's run (so a missed run
+    alerts at ~grace+cadence), and an already-stale weekly job keeps alerting
+    straight through the next run's grace window, because its marker is older than
+    the anchor either way.
     """
     h, m = hhmm(sync_time)
-    at = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    deadline = now - datetime.timedelta(hours=grace_h)
+    at = deadline.replace(hour=h, minute=m, second=0, microsecond=0)
     if sync_day is None:
-        prev = at if at <= now else at - datetime.timedelta(days=1)
+        anchor = at if at <= deadline else at - datetime.timedelta(days=1)
     else:
         target = DAYS[str(sync_day).strip().lower()]
-        back = (now.weekday() - target) % 7
-        prev = at - datetime.timedelta(days=back)
-        if prev > now:
-            prev -= datetime.timedelta(days=7)
-    since = int((now - prev).total_seconds() // 3600)
-    return since if since > grace_h else NOT_DUE_YET
+        back = (deadline.weekday() - target) % 7
+        anchor = at - datetime.timedelta(days=back)
+        if anchor > deadline:
+            anchor -= datetime.timedelta(days=7)
+    return int((now - anchor).total_seconds() // 3600)
 
 
 def key_for(state, session_arg):
@@ -356,20 +362,43 @@ if [ -n "${STALE_WATCHLIST:-}" ]; then
     WATCHLIST="$STALE_WATCHLIST"
 else
     DERIVE_ERR=$(mktemp)
+    SCHED_SENTINEL="$LAST_RUN_DIR/.schedule-unreadable-alerted"
     if ! WATCHLIST=$(derive_watchlist 2>"$DERIVE_ERR"); then
         reason=$(tr '\n' ' ' < "$DERIVE_ERR" | tail -c 300)
         rm -f "$DERIVE_ERR"
-        # Loudly, and non-zero. The alternative — fall back to an empty watchlist
-        # and report every jurisdiction healthy — is the one outcome a watchdog
-        # must never produce, and it is what this script did for its whole life
-        # if the hardcoded map went stale.
+        # Always logged. The alternative — fall back to an empty watchlist and
+        # report every jurisdiction healthy — is the one outcome a watchdog must
+        # never produce.
         log "ERROR: cannot derive the watchlist from $SCHEDULE_FILE — watching NOTHING this run: $reason"
-        post_slack "🚨 *Staleness watchdog cannot read the scrape schedule* — \`$SCHEDULE_FILE\` is missing or unparseable, so no jurisdiction is being watched for staleness right now. This is the watchdog itself being blind, not a quiet night. Error: \`${reason}\`"
-        post_cams "staleness watchdog could not read $SCHEDULE_FILE: $reason" \
-            "schedule" "unreadable" "0"
+        # Alerted once per episode, same sentinel discipline as the per-key alerts
+        # below. This script runs every 5 minutes, so an unreadable schedule would
+        # otherwise post 288 identical Slack messages a day and get muted, which is
+        # the opposite of what a blind watchdog needs.
+        if [ ! -f "$SCHED_SENTINEL" ]; then
+            post_slack "🚨 *Staleness watchdog cannot read the scrape schedule* — \`$SCHEDULE_FILE\` is missing or unparseable, so no jurisdiction is being watched for staleness right now. This is the watchdog itself being blind, not a quiet night. Error: \`${reason}\`"
+            # All eight arguments: post_cams runs under `set -u` and reads through
+            # $8, so a short call kills the script here -- before the sentinel below
+            # is written, which is how a first draft of this managed to alert every
+            # five minutes forever.
+            post_cams "staleness watchdog could not read $SCHEDULE_FILE: $reason" \
+                "(schedule)" "n/a" "0" \
+                "$SCHEDULE_FILE could not be read or parsed, so the watchlist is empty and no jurisdiction is being checked for staleness. Error: $reason" \
+                "1" "unknown" "unknown"
+            date -u +%Y-%m-%dT%H:%M:%S > "$SCHED_SENTINEL" \
+                || log "ERROR: could not write $SCHED_SENTINEL — this will re-alert every run"
+        fi
+        # Non-zero for the record, though the health-monitor hook invokes this as
+        # `bash <script> || true`, so the exit code is not what surfaces the problem
+        # — the Slack/CAMS alert above is. Kept non-zero so a human running it by
+        # hand, or any future caller that does check, sees the failure.
         exit 1
     fi
     rm -f "$DERIVE_ERR"
+    if [ -f "$SCHED_SENTINEL" ]; then
+        log "RECOVERED: schedule readable again — clearing $SCHED_SENTINEL"
+        rm -f "$SCHED_SENTINEL"
+        post_slack "✅ *Staleness watchdog can read the scrape schedule again* — resuming normal staleness checks."
+    fi
     log "watching $(echo "$WATCHLIST" | grep -c ':') keys derived from $SCHEDULE_FILE (grace ${GRACE_HOURS}h)"
 fi
 

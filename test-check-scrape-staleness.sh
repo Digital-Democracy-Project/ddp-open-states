@@ -315,12 +315,14 @@ else
     echo "FAIL: missing schedule exited 0 — a blind watchdog must not look healthy"; FAIL=$((FAIL + 1))
 fi
 
+rm -f "$FIXTURE/.schedule-unreadable-alerted"   # a separate episode from the case above
 printf 'this: is: not: valid: yaml: [\n' > "$TMPDIR_ROOT/broken.yaml"
 OUT=$(STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
       STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
       STALE_SCHEDULE_FILE="$TMPDIR_ROOT/broken.yaml" bash "$WATCHDOG" 2>&1)
 assert_contains "unparseable schedule alerts too" "$OUT" "cannot read the scrape schedule"
 
+rm -f "$FIXTURE/.schedule-unreadable-alerted"   # ditto
 printf 'some_other_block:\n  a: 1\n' > "$TMPDIR_ROOT/nokeys.yaml"
 OUT=$(STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
       STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
@@ -338,6 +340,111 @@ if [ "$W1" = "$W2" ]; then
 else
     echo "FAIL: key count changed with cadence ($W1 vs $W2)"; FAIL=$((FAIL + 1))
 fi
+
+echo ""
+echo "=== 21. OPEN-135: threshold arithmetic over time (pm-review's high-risk area) ==="
+#
+# Two earlier versions of threshold_for() were wrong, and both looked right. These
+# assertions exist so a third attempt cannot quietly reintroduce either:
+#
+#   (a) anchoring on the run BEFORE the most recent -> threshold grows as fast as the
+#       marker ages, so a missed weekly run never alerts.
+#   (b) anchoring on the most recent and suppressing inside its grace window ->
+#       daily jobs never alert at all (hours-since is always 0..24 < 24h grace), and
+#       an already-stale weekly job goes quiet for 24h after every scheduled time.
+
+# The watchdog logs only "watching N keys", not the pairs, so read the derivation
+# directly: pull derive_watchlist() out of the script and run it in isolation. That
+# is the unit under test, and extracting it keeps the production script from having
+# to log its whole watchlist every five minutes just to be testable.
+DERIVE_HARNESS="$TMPDIR_ROOT/derive.sh"
+sed -n '/^derive_watchlist()/,/^}/p' "$WATCHDOG" > "$DERIVE_HARNESS"
+printf 'SCHEDULE_FILE="$1"; GRACE_HOURS="$2"; NOW_EPOCH="$3"; derive_watchlist\n' >> "$DERIVE_HARNESS"
+
+at_time() {   # at_time <iso8601> <key> -> that key's derived threshold
+    local epoch
+    epoch=$(python3 -c "import datetime;print(int(datetime.datetime.fromisoformat('$1'.replace('Z','+00:00')).timestamp()))")
+    bash "$DERIVE_HARNESS" "$SCHED" 24 "$epoch" | grep "^$2:" | head -1 | cut -d: -f2
+}
+
+assert_num() {  # <label> <actual> <op> <expected>
+    if [ "$2" -"$3" "$4" ] 2>/dev/null; then
+        echo "PASS: $1 ($2 $3 $4)"; PASS=$((PASS + 1))
+    else
+        echo "FAIL: $1 — got '$2', expected $3 $4"; FAIL=$((FAIL + 1))
+    fi
+}
+
+write_schedule 'sync_day: sunday'   # fl weekly; wa daily 02:30; secondary va/mi weekly Sunday
+rm -f "$FIXTURE"/*.ts "$FIXTURE"/*.stale-alerted "$FIXTURE"/.schedule-unreadable-alerted 2>/dev/null
+
+# (b) regression guard: a DAILY job must get a real, finite, useful threshold. The
+# broken version returned 999998 at every hour of every day.
+D=$(at_time "2026-08-24T06:00:00Z" wa)
+assert_num "daily job gets a finite threshold, not a suppress-everything sentinel" "$D" lt 1000
+assert_num "daily job's threshold is at least the grace window" "$D" ge 24
+D2=$(at_time "2026-08-24T20:00:00Z" wa)
+assert_num "daily threshold stays finite later in the day" "$D2" lt 1000
+
+# A daily marker one full missed run old must exceed the threshold at every hour.
+for T in 2026-08-24T03:00:00Z 2026-08-24T12:00:00Z 2026-08-24T23:00:00Z; do
+    TH=$(at_time "$T" wa)
+    if [ "$TH" -lt 52 ]; then
+        echo "PASS: daily job with a 52h-old marker would alert at ${T#*T} (threshold $TH)"; PASS=$((PASS + 1))
+    else
+        echo "FAIL: daily job with a 52h-old marker would NOT alert at $T (threshold $TH)"; FAIL=$((FAIL + 1))
+    fi
+done
+
+# (b) regression guard, weekly half: an ALREADY-stale weekly job must keep alerting
+# through the next run's grace window. Sunday 03:00 is one hour after the scheduled
+# time, i.e. squarely inside grace.
+W=$(at_time "2026-08-23T03:00:00Z" va)
+if [ "$W" -lt 337 ]; then
+    echo "PASS: weekly job stale for two cycles still alerts inside the grace window (threshold $W < 337h marker)"; PASS=$((PASS + 1))
+else
+    echo "FAIL: weekly job stale for two cycles goes quiet inside grace (threshold $W)"; FAIL=$((FAIL + 1))
+fi
+# ...while a weekly job whose LAST run succeeded must stay quiet at that same moment.
+if [ "$W" -ge 169 ]; then
+    echo "PASS: a weekly job that ran last Sunday stays quiet during this Sunday's grace (threshold $W >= 169h marker)"; PASS=$((PASS + 1))
+else
+    echo "FAIL: a healthy weekly job would false-alert during grace (threshold $W < 169)"; FAIL=$((FAIL + 1))
+fi
+
+# (a) regression guard: the threshold must NOT grow fast enough to outrun a missed
+# run. Across the week, a marker from the previous cycle must always exceed it.
+for T in 2026-08-24T06:00:00Z 2026-08-26T02:00:00Z 2026-08-29T02:00:00Z; do
+    TH=$(at_time "$T" va)
+    AGE=$(python3 -c "
+import datetime
+now=datetime.datetime.fromisoformat('$T'.replace('Z','+00:00'))
+marker=datetime.datetime.fromisoformat('2026-08-16T02:00:00+00:00')
+print(int((now-marker).total_seconds()//3600))")
+    if [ "$AGE" -gt "$TH" ]; then
+        echo "PASS: missed weekly run still alerts at ${T%T*} (age ${AGE}h > threshold ${TH}h)"; PASS=$((PASS + 1))
+    else
+        echo "FAIL: missed weekly run reports healthy at $T (age ${AGE}h vs threshold ${TH}h)"; FAIL=$((FAIL + 1))
+    fi
+done
+
+echo ""
+echo "=== 22. OPEN-135: an unreadable schedule alerts ONCE per episode, not every 5 min ==="
+rm -f "$FIXTURE/.schedule-unreadable-alerted"
+run_broken() {
+    STALE_LAST_RUN_DIR="$FIXTURE" STALE_LOG_FILE="$TMPDIR_ROOT/test.log" \
+    STALE_DRY_RUN=1 STALE_NOW_EPOCH="$NOW_EPOCH" \
+    STALE_SCHEDULE_FILE="$TMPDIR_ROOT/does-not-exist.yaml" bash "$WATCHDOG" 2>&1
+}
+N1=$(run_broken | grep -c 'DRY_RUN slack')
+N2=$(run_broken | grep -c 'DRY_RUN slack')
+assert_num "first unreadable-schedule run alerts" "$N1" ge 1
+assert_num "second run is silent (sentinel held)" "$N2" eq 0
+# ...and recovery clears it and says so.
+OUT=$(run_derived)
+assert_contains "recovery posts once the schedule is readable again" "$OUT" "read the scrape schedule again"
+N3=$(run_broken | grep -c 'DRY_RUN slack')
+assert_num "after recovery, a new episode alerts again" "$N3" ge 1
 
 echo ""
 echo "RESULT: $PASS passed, $FAIL failed"
