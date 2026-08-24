@@ -6,10 +6,36 @@
 the existing scrapelib cache, per the ticket's own instruction to read the cache before touching
 the network.
 
+## Two row counts appear below, and they are not the same measurement
+
+**3,752** is what the committed xpath extractor (`_extract_last_actions`) reads off the cached
+sweep. **3,718** is what a throwaway regex read while exploring, before the extractor existed;
+the regex missed 34 rows whose markup it did not anticipate. The classification and
+database-comparison tables below were computed with the regex and so are stated over 3,718; the
+extractor's own count is 3,752 and it is the number the implementation relies on. Neither figure
+is wrong — they are different tools — but the tables are a 99.1% sample of the corpus rather
+than all of it, and that is worth knowing before leaning on the percentages.
+
 ## Answer
 
 **Yes, committee activity is reachable — but not from a committee-specific surface, and the
 surface that does carry it is one we were already fetching.**
+
+To be explicit about the acceptance criteria: **no per-day or per-committee surface was
+verified.** OPEN-150 asked whether one exists, expecting that OPEN-134 would need it. It turns
+out OPEN-134 does not: an already-fetched *global* search surface carries the committee movement,
+so the per-committee question is moot for this purpose rather than answered.
+
+The exact request, unfiltered — no `dateFrom`, no `dateTo`:
+
+```
+https://legislature.mi.gov/Search/ExecuteSearch
+  ?chamber=
+  &docTypesList=HB%2CSB&docTypesList=HR%2CSR
+  &docTypesList=HCR%2CSCR&docTypesList=HJR%2CSJR
+  &sessions=2025-2026
+  &sponsor=&number=&dateFrom=&dateTo=&contentFullText=
+```
 
 The `ExecuteSearch` results page carries **every bill's own last action, in the row next to its
 link**. Committee reports, administrative rows and floor business all appear there. So one
@@ -40,8 +66,8 @@ on the search page. That is the class of action the journals do not carry.
 
 ## Why this beats journals, measured
 
-Classifying every last action in a cached full sweep (3,718 rows parsed by an early regex; the
-committed xpath extractor gets all 3,752):
+Classifying every last action in a cached full sweep (the 3,718-row regex read — see the note on
+row counts above):
 
 | Last-action shape | Count |
 |---|---|
@@ -49,9 +75,17 @@ committed xpath extractor gets all 3,752):
 | **administrative** | **1,432** |
 | other / floor | 739 |
 
-**80% of the corpus's last actions are committee or administrative** — precisely the two categories
-OPEN-150 established that journals structurally cannot see, and precisely the reason journal recall
-measured only 57%.
+**Roughly 80% of last actions are committee or administrative** — the two categories OPEN-150
+established that journals structurally cannot see, and the reason journal recall measured only
+57%.
+
+**The classification rule is crude, and the 80% rests on it, so here it is verbatim:** the text
+was bucketed as committee-ish if it contained the substring `committee`; else administrative if
+it contained `reproduced`, `assigned` or `printed`; else floor. Nothing more. That is good enough
+to answer "do journals miss the majority" — the two buckets are separated by a wide margin, and
+`referred to Committee on Government Operations` or `assigned pa 74'26` are not borderline — but
+it is not a taxonomy. Borderline rows were not adjudicated, and a row mentioning a committee
+incidentally would be miscounted. Treat 80% as an order-of-magnitude finding, not a statistic.
 
 ## The comparison is exact, not fuzzy
 
@@ -64,9 +98,15 @@ across the cached full sweep against the production database:
 | differed | 33 |
 | bills on the page but absent from our database | **0** |
 
-All 33 differences were cases where the **database was newer than the cache** — not disagreements
-about the same moment. So a mismatch is a reliable "this bill moved" signal rather than a
-formatting artefact, and no fuzzy matching is needed.
+The 33 differences were **inspected by sampling, not exhaustively classified.** Every one sampled
+was the **database being newer than the cache** — the cache predates a later import — rather than
+a disagreement about the same moment. That is consistent with a reliable signal and no fuzzy
+matching, but the exhaustive claim is not made: 33 rows were not individually adjudicated, so the
+honest statement is "no counter-example was found in the sample", not "none exists".
+
+What the 99.1% does establish firmly is the thing that matters: the two strings are drawn from
+the same vocabulary and the same formatting, so a mismatch is not an artefact of comparing a
+site rendering against a differently-shaped database field.
 
 ## Live confirmation, and the gap as it actually stands
 
@@ -136,3 +176,24 @@ contemplated is the answer:
 - **No measurement of how often the last-action text changes without a substantive change** (e.g. a
   site-side re-wording). If that happens, it costs one wasted bill fetch, never a miss — the
   asymmetry is in the safe direction, but the rate is unmeasured.
+- **The inverse — a false NEGATIVE — is the one real hole in the design, and it is unmeasured.**
+  If a bill's later substantive action renders to text identical to the one already stored, the
+  diff sees nothing and the bill is skipped. Michigan plainly can repeat a string: "referred to
+  Committee on Rules" could occur twice, and a re-referral to the same committee is a normal
+  legislative event. Whether that ever happens as two *consecutive* last actions with no
+  distinguishable row in between was not established, and the search row carries no date or
+  sequence number to disambiguate it. The periodic full scrape is the backstop; this path is
+  explicitly about the ~80/week the date filter made structurally invisible, not about
+  guaranteeing every edit is seen.
+- **The 3,924-to-3,924 live comparison was not proven as set equality in both directions.** What
+  was checked is that no bill on the page was absent from the database, and that the two totals
+  are equal. Together those imply set equality, but the reverse direction (a database bill
+  missing from the page) was not tested directly.
+- **The row structure is assumed to be unpaginated.** The sweep returns the whole session in one
+  response, which is what makes the approach cheap; behaviour if the site introduces pagination,
+  suppresses rows, or returns a partial response under WAF pressure was not tested. The
+  implementation (`openstates-scrapers` #41) fails closed on this rather than assuming: if the
+  page lists bills but fewer than 95% of them yield a parseable last action, it aborts without
+  touching its baseline instead of concluding that nothing moved. It also refuses to run
+  incrementally with no baseline, rather than seeding from the site and silently marking stale
+  bills current.
