@@ -504,8 +504,23 @@ if [ "$rc" -ne 0 ] && [ "$FIRST_ATTEMPT_FLAGS" != "--fastmode" ]; then
 fi
 if [ "$rc" -ne 0 ]; then
     # Benign: incremental run with nothing new since the cutoff.
+    #
+    # OPEN-152: "no objects returned" is necessary but NOT sufficient for that conclusion.
+    # openstates-core raises it whenever a scraper yields nothing, which covers both "nothing
+    # changed" and "I could not read the site". Taking the no-op path for the second case is
+    # what let a WAF-blocked MI run record `ok:0:0:0` on 2026-08-24 -- and, worse, advance
+    # $TS_FILE past a window whose bills were never examined, so no later incremental run would
+    # revisit it. Ask the scrape's own output which case this is before deciding.
     if [ "$MODE" = "incremental" ] && grep -q "no objects returned from" "$SCRAPE_OUT"; then
-        finish_no_op
+        if scrape_output_shows_unreachable_site "$SCRAPE_OUT"; then
+            # Fall through to the failure path below deliberately. That path alerts via
+            # on_failure(), classifies a WAF block as terminal, and -- the point of this
+            # ticket -- writes neither the watermark nor the `.imported` marker, so the window
+            # stays eligible for the next run instead of being silently skipped.
+            log "$STATE ${SESSION_ARG} returned no objects AND its output indicates the site could not be read — treating as a failure, not a no-op (OPEN-152). The watermark will NOT advance."
+        else
+            finish_no_op
+        fi
     fi
     # Genuine failure — pull the actual Python exception line out of the scrape
     # output (before it's removed below) so the CAMS report carries a real

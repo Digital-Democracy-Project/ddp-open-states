@@ -108,3 +108,36 @@ new_bills_collapsed() {
     [ "$threshold" -lt 1 ] && threshold=1
     [ "$this_new" -lt "$threshold" ]
 }
+
+
+# OPEN-152: is a zero-object scrape a genuine no-op, or did we fail to reach the site?
+#
+# openstates-core raises the same "no objects returned from <X>Scraper scrape" whenever a
+# scraper yields nothing, and run-scrape.sh treats that as a clean no-op -- correctly, for the
+# common case of an incremental run where nothing changed since the cutoff. But the message
+# cannot distinguish that from "the scraper could not read the site at all", and on 2026-08-24 a
+# WAF-blocked MI run was recorded as `ok:0:0:0` with a freshly advanced watermark. That is worse
+# than a misleading marker: the watermark moved past a window whose bills were never examined,
+# so an incremental run will never look at it again.
+#
+# The scrapers already say which case it is, in their own output -- run-scrape.sh just was not
+# reading it. MI logs a distinct warning when the response is neither a results page nor a bill
+# page, precisely because OPEN-132 made that case noisy instead of invisible. Match on those
+# statements rather than trying to infer intent from request counts or elapsed time, both of
+# which were tried and neither of which separates the cases (a blocked MI run made 2 requests
+# and a genuinely quiet VA run made 0).
+#
+# Deliberately a deny-list, not an allow-list. A jurisdiction that emits none of these markers
+# behaves exactly as it does today, so this cannot make a currently-working scraper start
+# failing -- it only rescues cases that are currently silent. The cost of that choice is that a
+# new jurisdiction's block page stays silent until someone adds its marker, which is the same
+# position we are in now rather than a regression.
+_SCRAPE_UNREACHABLE_MARKERS='neither a results page nor a usable bill page|waf block detected|consecutive waf blocks|unrecognised block page|unrecognized block page'
+
+# Usage: scrape_output_shows_unreachable_site <path-to-scrape-output>
+# Returns 0 (true) when the output positively indicates the site could not be read.
+scrape_output_shows_unreachable_site() {
+    local out="$1"
+    [ -f "$out" ] || return 1
+    grep -qiE "$_SCRAPE_UNREACHABLE_MARKERS" "$out" 2>/dev/null
+}
