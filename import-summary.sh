@@ -108,3 +108,56 @@ new_bills_collapsed() {
     [ "$threshold" -lt 1 ] && threshold=1
     [ "$this_new" -lt "$threshold" ]
 }
+
+
+# OPEN-152: is a zero-object scrape a genuine no-op, or did we fail to reach the site?
+#
+# openstates-core raises the same "no objects returned from <X>Scraper scrape" whenever a
+# scraper yields nothing, and run-scrape.sh treats that as a clean no-op -- correctly, for the
+# common case of an incremental run where nothing changed since the cutoff. But the message
+# cannot distinguish that from "the scraper could not read the site at all", and on 2026-08-24 a
+# WAF-blocked MI run was recorded as `ok:0:0:0` with a freshly advanced watermark. That is worse
+# than a misleading marker: the watermark moved past a window whose bills were never examined,
+# so an incremental run will never look at it again.
+#
+# The scrapers already say which case it is, in their own output -- run-scrape.sh just was not
+# reading it. MI logs a distinct warning when the response is neither a results page nor a bill
+# page, precisely because OPEN-132 made that case noisy instead of invisible. Match on those
+# statements rather than trying to infer intent from request counts or elapsed time, both of
+# which were tried and neither of which separates the cases (a blocked MI run made 2 requests
+# and a genuinely quiet VA run made 0).
+#
+# Deliberately a deny-list, not an allow-list. A jurisdiction that emits none of these markers
+# behaves exactly as it does today, so this cannot make a currently-working scraper start
+# failing -- it only rescues cases that are currently silent. The cost of that choice is that a
+# new jurisdiction's block page stays silent until someone adds its marker, which is the same
+# position we are in now rather than a regression.
+#
+# The two WAF strings are deliberately identical to ddp-sync's WAF_BLOCK_MARKERS
+# ("consecutive waf blocks detected", "waf block detected") and to the pair run-scrape.sh
+# already greps for further down. Matching something narrower here would be safer against false
+# positives but would diverge from the fleet's one agreed spelling of "this was a WAF block",
+# which is a worse trade: three places would then disagree about the same event.
+_SCRAPE_UNREACHABLE_MARKERS='neither a results page nor a usable bill page|waf block detected|consecutive waf blocks|unrecognised block page|unrecognized block page'
+
+# A line that NEGATES a marker must not count as one. Nothing in the fleet currently logs
+# "no WAF block detected", but the markers above are short enough that a future diagnostic line
+# could contain one harmlessly, and the failure mode would be ugly and quiet: every genuinely
+# quiet week for that jurisdiction would start alerting and its watermark would stop advancing.
+# Cheap to guard now, unpleasant to debug later.
+_SCRAPE_NEGATED_MARKER='(^|[^[:alnum:]])(no|not|never|without|isn.t|wasn.t)[[:space:]]+(an?[[:space:]]+)?(waf block|consecutive waf|unrecognised block|unrecognized block|results page)'
+
+# Usage: scrape_output_shows_unreachable_site <path-to-scrape-output>
+# Returns 0 (true) when the output positively indicates the site could not be read.
+#
+# Naming note: this lives in import-summary.sh because that is already the helper run-scrape.sh
+# sources, and adding a second sourced file for one function is not worth it. It is
+# scrape-outcome logic in an import-named file, which is a little muddy -- if a third such
+# helper appears, that is the moment to split them.
+scrape_output_shows_unreachable_site() {
+    local out="$1"
+    [ -f "$out" ] || return 1
+    # Drop negated lines first, then look for a marker in what remains.
+    grep -viE "$_SCRAPE_NEGATED_MARKER" "$out" 2>/dev/null \
+        | grep -qiE "$_SCRAPE_UNREACHABLE_MARKERS"
+}
