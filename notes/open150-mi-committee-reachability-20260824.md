@@ -176,8 +176,24 @@ contemplated is the answer:
 - **No measurement of how often the last-action text changes without a substantive change** (e.g. a
   site-side re-wording). If that happens, it costs one wasted bill fetch, never a miss — the
   asymmetry is in the safe direction, but the rate is unmeasured.
-- **The inverse — a false NEGATIVE — is the one real hole in the design, and it is unmeasured.**
-  If a bill's later substantive action renders to text identical to the one already stored, the
+- ~~**The inverse — a false NEGATIVE — is the one real hole in the design, and it is unmeasured.**~~
+  **MEASURED 2026-08-25 (OPEN-158) — see `notes/open158-mi-last-action-collision-rate-20260825.md`.
+  The concern below was CORRECT and the rate is not negligible: 1.20% of bills (47 of 3,924, 63
+  pairs) sit in a window where a repeated last-action string could hide a real change, and what
+  gets hidden is substantive — adopted substitutes, committee reports, floor referrals; in one case
+  25 actions.** The specific example feared below is the most common one: `referred to Committee on
+  Appropriations` repeats 49 times across the corpus.
+
+  Two things this note got wrong and OPEN-158 corrects. **First, "the periodic full scrape is the
+  backstop" (below) is not true — there is no periodic full scrape.** `run-scrape.sh` does a full
+  walk only when `logs/last-run/<key>.ts` is absent; `mi.ts` exists and nothing in the repo ever
+  removes a `.ts` marker, nor is a forced walk scheduled anywhere. MI has had exactly one full walk
+  and will never have another. **Second**, the claim below that the search row carries no date or
+  sequence number is right, and OPEN-158 confirmed it against a real cached page — which is also why
+  no cleverer diff key is available.
+
+  Original text, kept because the reasoning was right and the fear did materialise:
+  if a bill's later substantive action renders to text identical to the one already stored, the
   diff sees nothing and the bill is skipped. Michigan plainly can repeat a string: "referred to
   Committee on Rules" could occur twice, and a re-referral to the same committee is a normal
   legislative event. Whether that ever happens as two *consecutive* last actions with no
