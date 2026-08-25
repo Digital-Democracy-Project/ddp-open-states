@@ -74,7 +74,12 @@ except Exception:
     fi
 fi
 
-source /Users/agentsmith/Developer/repos/ddp-open-states/activate.sh
+# OPEN-159: this checkout's own activate.sh, not the production one by absolute path. Same
+# reasoning as import-summary.sh at the top of this file -- "so a worktree/checkout runs its own
+# copy, not the deploy checkout's". Sourcing production's meant a dev-checkout run inherited
+# production's data dirs and production's database; see that ticket.
+# shellcheck source=activate.sh
+source "$SCRIPT_DIR/activate.sh"
 
 # OPEN-152: restore the caller's overrides, which activate.sh has just clobbered. Empty in
 # production, so this is a no-op there. See the block near the top for why it exists.
@@ -101,6 +106,41 @@ CAMS_URL="${CAMS_URL:-http://localhost:8000}"
 # failure exits with whatever code the failing command returned, and the low codes are the ones
 # that collide with that.
 EXIT_DO_NOT_RETRY=90
+
+# OPEN-159: refuse to run a REAL scrape from a non-production checkout against the production
+# database. activate.sh's file paths now follow whichever checkout they live in, but a database
+# NAME cannot be derived from a path -- production is `openstates`, the dev checkout's is
+# `openstates_dev` -- so without an explicit override a dev or worktree run still imports into
+# production. Silently, and after openstates-core has already wiped that jurisdiction's data
+# directory. That is the whole bug this ticket is about, so it is worth refusing rather than
+# documenting.
+#
+# Exempt when OS_UPDATE_OVERRIDE is set. That means a stub os-update, so nothing reaches any
+# database; it is how this repo's own test-*.sh suites drive this script, and they should not each
+# have to declare a database they never touch.
+#
+# Placed after EXIT_DO_NOT_RETRY rather than immediately after the source above because it needs
+# that constant. Nothing between the two does any work -- they are token reads and definitions --
+# so this still fires long before anything is scraped or wiped.
+# Both sides canonicalised with `pwd -P`. pm-review's sharpest practical point: if production is
+# ever reached through a symlink or an alternate mount, a plain string compare would classify it
+# as non-production and refuse every scheduled scrape -- turning a safety guard into an outage.
+# They match today (checked), so this costs nothing and removes the failure mode.
+PRODUCTION_CHECKOUT="$(cd "/Users/agentsmith/Developer/repos/ddp-open-states" 2>/dev/null && pwd -P || echo "/Users/agentsmith/Developer/repos/ddp-open-states")"
+_THIS_CHECKOUT="$(cd "$SCRIPT_DIR" && pwd -P)"
+if [ "$_THIS_CHECKOUT" != "$PRODUCTION_CHECKOUT" ] \
+   && [ -z "${DATABASE_URL_OVERRIDE:-}" ] \
+   && [ -z "${OS_UPDATE_OVERRIDE:-}" ]; then
+    log "ERROR: refusing to run from a non-production checkout without DATABASE_URL_OVERRIDE."
+    log "       checkout:   $_THIS_CHECKOUT"
+    log "       production: $PRODUCTION_CHECKOUT"
+    log "       This run would scrape into $SCRAPED_DATA_DIR (wiped at scrape start) and import"
+    log "       into the PRODUCTION database. Set DATABASE_URL_OVERRIDE to an isolated database,"
+    log "       or run from the production checkout. See OPEN-159."
+    # Same idiom as the other two call sites: the flag is set by run-scrape-retrying.sh, not here.
+    [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
+    exit "$EXIT_DO_NOT_RETRY"
+fi
 
 on_failure() {
     log "ERROR: scrape/import failed for $STATE"
