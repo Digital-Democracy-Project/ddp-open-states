@@ -128,6 +128,28 @@ EXIT_DO_NOT_RETRY=90
 # They match today (checked), so this costs nothing and removes the failure mode.
 PRODUCTION_CHECKOUT="$(cd "/Users/agentsmith/Developer/repos/ddp-open-states" 2>/dev/null && pwd -P || echo "/Users/agentsmith/Developer/repos/ddp-open-states")"
 _THIS_CHECKOUT="$(cd "$SCRIPT_DIR" && pwd -P)"
+
+# A non-production checkout must not raise production alarms. on_failure() posts to
+# #automation-errors and reports to CAMS, whose CodeBot failure listener then files Jira tickets
+# -- so a failing dev or worktree run does not just make noise, it manufactures work.
+#
+# Learned the hard way on 2026-08-25, debugging this very ticket. Nine alerts reached
+# #automation-errors from worktree runs, and CodeBot opened two tickets off them: one proposing to
+# swallow the votes-scraper probe's ModuleNotFoundError and "treat as no votes scraper", which
+# would have reintroduced OPEN-50's silent-skip bug that the probe's own comment exists to
+# prevent; and one calling VA's empty session identifier an upstream resolution bug, when passing
+# no session is the documented deliberate behaviour for secondary states. Both diagnoses were
+# reasonable given the evidence; the evidence was just my test environment.
+#
+# Deliberately not conditional on OS_UPDATE_OVERRIDE the way the refusal below is. A stubbed run
+# should not alert either -- there is no such thing as a non-production failure worth paging on.
+# Committed suites already set this by hand; doing it here is what makes an ad-hoc invocation safe
+# too, which is the case that actually went wrong.
+if [ "$_THIS_CHECKOUT" != "$PRODUCTION_CHECKOUT" ] && [ "${SUPPRESS_FAILURE_ALERT:-0}" != "1" ]; then
+    SUPPRESS_FAILURE_ALERT=1
+    log "Non-production checkout ($_THIS_CHECKOUT) — suppressing Slack/CAMS failure alerts"
+fi
+
 if [ "$_THIS_CHECKOUT" != "$PRODUCTION_CHECKOUT" ] \
    && [ -z "${DATABASE_URL_OVERRIDE:-}" ] \
    && [ -z "${OS_UPDATE_OVERRIDE:-}" ]; then

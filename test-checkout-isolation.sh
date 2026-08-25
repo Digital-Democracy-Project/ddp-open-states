@@ -207,6 +207,24 @@ else
     PASS=$((PASS + 1)); echo "  ok   an explicit DATABASE_URL_OVERRIDE is accepted"
 fi
 
+
+echo "== a non-production checkout must not raise production alarms =="
+
+# on_failure() posts to #automation-errors and reports to CAMS, whose CodeBot listener files Jira
+# tickets off what it sees. So a failing worktree run does not merely make noise -- it manufactures
+# work. On 2026-08-25 nine such alerts fired from worktrees and CodeBot opened two tickets, one of
+# which proposed reintroducing OPEN-50's silent-skip bug. This is the guard against a repeat.
+STUB_FAIL="$TMP_ROOT/stub-fail"
+printf '#!/usr/bin/env bash\necho "openstates.exceptions.ScrapeError: no objects returned from VaBillScraper scrape"\nexit 1\n' > "$STUB_FAIL"
+chmod +x "$STUB_FAIL"
+out=$(run_guard OS_UPDATE_OVERRIDE="$STUB_FAIL" \
+                SCRAPED_DATA_DIR_OVERRIDE="$TMP_ROOT/data3" \
+                CACHE_DIR_OVERRIDE="$TMP_ROOT/cache3")
+body="${out#*|}"
+assert_contains "says it is suppressing alerts" "suppressing Slack/CAMS failure alerts" "$body"
+# The decisive one: the alert path must report itself skipped, not fired.
+assert_contains "the alert path is actually skipped" "SUPPRESS_FAILURE_ALERT=1" "$body"
+
 echo
 if [ "$FAIL" -eq 0 ]; then
     echo "ALL PASS ($PASS assertions)"
