@@ -180,8 +180,69 @@ touch "$READER_MARKER"
 # the backgrounded sweep loop has its own separate copy of this variable in its own process
 # memory, so this trap (which runs in the main script, on the main script's exit) can only ever
 # see this process's own true "do I currently hold it" state, never the sweep's.
+# OPEN-154 adds the scrape lock to this trap, guarded on SCRAPE_LOCK_HELD for the same reason
+# IMPORT_LOCK_HELD is: it records whether THIS process holds it, so a run that exited because
+# someone else held the lock can never release the holder's. `${SCRAPE_LOCK_HELD:-0}` covers an
+# exit before the lock block below runs.
 trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true;
-      [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR"' EXIT
+      [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR";
+      [ "${SCRAPE_LOCK_HELD:-0}" = "1" ] && rm -rf "$SCRAPE_LOCK_DIR"' EXIT
+
+# OPEN-154: refuse to run two scrapes of the same jurisdiction at once.
+#
+# Nothing prevented this before, and the consequence is data loss rather than duplicated work:
+# openstates-core's do_scrape() WIPES $SCRAPED_DATA_DIR/$STATE at the start of a scrape. So a
+# second run starting mid-flight destroys everything the first has collected, the first keeps
+# writing into an emptied directory, and both then race to write $STATE.ts — leaving a watermark
+# that may correspond to neither run.
+#
+# The two existing markers look like locks and are not. READER_MARKER tells apply-local-patches
+# a scrape is in progress; nothing reads it to decide whether to start. SCRAPE_MARKER is a
+# mktemp timestamp for counting this run's own files. Neither excludes anything.
+#
+# Keyed on $STATE, deliberately NOT $SCRAPE_KEY. The hazard is the shared data directory, and
+# `fl session=2026` and `fl session=2026D` share one — a per-key lock would let them wipe each
+# other. Safe because ddp-sync runs FL's sessions sequentially (`for session in sessions:
+# await _run_scrape(...)`), so this cannot deadlock a legitimate multi-session run.
+#
+# Same atomic-mkdir + dead-holder-reclaim shape as acquire_import_lock() below, for the same
+# reason: mkdir either succeeds or fails, with no window between checking and taking.
+SCRAPE_LOCK_DIR="/tmp/ddp-openstates-scrape-locks/$STATE"
+SCRAPE_LOCK_HELD=0
+mkdir -p "$(dirname "$SCRAPE_LOCK_DIR")"
+if mkdir "$SCRAPE_LOCK_DIR" 2>/dev/null; then
+    sh -c 'echo $PPID' > "$SCRAPE_LOCK_DIR/pid"
+    SCRAPE_LOCK_HELD=1
+else
+    # `|| true` is load-bearing under `set -e`: with no pid file, cat exits non-zero and a bare
+    # assignment carries that status, killing the script before the refusal below can run. The
+    # test for "lock directory with no pid file" caught exactly that — it exited 1 instead of
+    # refusing cleanly, which would have turned a recoverable clash into an unexplained crash.
+    _holder=$(cat "$SCRAPE_LOCK_DIR/pid" 2>/dev/null || true)
+    if [ -n "$_holder" ] && ! kill -0 "$_holder" 2>/dev/null; then
+        log "Scrape lock for $STATE held by dead pid $_holder — reclaiming"
+        rm -rf "$SCRAPE_LOCK_DIR"
+        if mkdir "$SCRAPE_LOCK_DIR" 2>/dev/null; then
+            sh -c 'echo $PPID' > "$SCRAPE_LOCK_DIR/pid"
+            SCRAPE_LOCK_HELD=1
+        fi
+    fi
+fi
+if [ "$SCRAPE_LOCK_HELD" != "1" ]; then
+    # Exit non-zero rather than pretending success. A skipped run collected nothing, and
+    # reporting 0 would be the same silent-success failure OPEN-152 exists to remove.
+    #
+    # EXIT_DO_NOT_RETRY specifically: run-scrape-retrying.sh would otherwise re-invoke this and
+    # collide again on every attempt, turning one avoidable clash into N. Nothing here is
+    # retryable — the other run either finishes or it does not.
+    #
+    # No markers are written on this path, so the skipped window stays eligible for the next run
+    # and the staleness watchdog still sees the jurisdiction as overdue if the holder also fails.
+    log "ERROR: another scrape of $STATE is already running (pid $(cat "$SCRAPE_LOCK_DIR/pid" 2>/dev/null || echo unknown)) — refusing to start a second one (OPEN-154). openstates-core wipes this jurisdiction's data directory at scrape start, so running both would destroy the in-flight run's work. No markers written; this window remains eligible."
+    trap - ERR
+    on_failure
+    exit "$EXIT_DO_NOT_RETRY"
+fi
 
 MODE="full"
 [ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
