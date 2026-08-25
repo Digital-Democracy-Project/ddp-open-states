@@ -11,13 +11,24 @@ both differences matter more than the confirmations do.
 
 | Item | Result |
 |---|---|
-| 1. A live one-match window returns its bill | **Confirmed** — but not reachable by `dateFrom` any more, and no longer reachable in production at all |
+| 1. A live one-match window returns its bill | **The live redirect mechanism is confirmed, via bill-number narrowing.** The original `dateFrom` one-match window could **not** be reproduced — no `dateFrom` value yields one match today |
 | 2. A genuinely empty window yields nothing, distinguishably | **Confirmed live** |
-| 3. Recover `SR 135`, dropped 2026-07-25 | **No recovery needed — it was never missing** |
+| 3. Recover `SR 135`, dropped 2026-07-25 | **No recovery needed** — the bill was present before the incident, and every field checked matches the live page |
+
+That first row is deliberately wordy. What was proven is that *the site still redirects when a search
+matches exactly one bill, and our code resolves the bill from it*. What was **not** proven is that the
+original date-window path is reproducible — it is not, and the reason is in item 1 below.
 
 ## Item 3 first, because it changes what this ticket is for
 
-`SR 135` **is in the production database, and its data is complete.**
+`SR 135` **is in the production database, and every field checked matches the live page.**
+
+Scope that claim precisely, because "complete" would be stronger than what was done: **the three
+stored actions were compared against the three on the live bill page, and the bill's existence and
+creation date were read from the database.** Sponsors, versions, documents, and the bill's other
+metadata were **not** compared. The recovery question this ticket asks — is the bill missing, and are
+its actions stale — is fully answered; a general claim that the record is complete in every respect
+is not made.
 
 ```
 identifier : SR 135        session: 2025-2026
@@ -69,15 +80,23 @@ The count falls 14 → 0 between 2026-08-11 and 2026-08-12 with no intermediate 
 of the most recent bills share a single introduction date. `dateFrom` has day granularity, so there
 is no window between "14 bills" and "no bills".
 
-**Narrowing by bill number instead reproduces it exactly** — and lands on the incident bill itself:
+**Narrowing by bill number instead reproduces it exactly** — and lands on the incident bill itself.
+Two requests, and the first is worth keeping because it shows the boundary:
 
 ```
+GET /Search/ExecuteSearch?...&docTypesList=HR%2CSR&number=135&dateFrom=&dateTo=
+  -> HTTP 200, result rows: 2       ("HR 0135 of 2025", "SR 0135 of 2026")
+  -> no redirect                     <- two matches: a normal results table
+
 GET /Search/ExecuteSearch?...&docTypesList=SR&number=135&dateFrom=&dateTo=
-  -> HTTP 200
-  -> result rows: 0
+  -> HTTP 200, result rows: 0
   -> redirected to: /Bills/Bill?ObjectName=2026-SR-0135
   -> heading: "Senate Resolution 135 of 2026"
 ```
+
+The pair is the useful evidence rather than the second request alone: two matches produce a table,
+one match produces a redirect. That is the site behaviour OPEN-132 inferred from a single cached
+response, now demonstrated by changing only the match count.
 
 Zero result rows plus a bill page: precisely the shape OPEN-132's branch exists to handle, and
 precisely what made 2026-07-25 look like a clean empty week.
@@ -98,8 +117,18 @@ third of OPEN-132's three cases, and the scraper logs it distinctly:
 
 > `MI search returned a results page with no matching bills -- genuine empty result for this window`
 
-Observed firing on a real run on 2026-08-24. So the three cases are separated in the log as OPEN-132
-intended: redirect-to-bill, genuine-empty, and unrecognised-page.
+Observed firing on real runs on 2026-08-24 at **04:43:58Z** and **04:51:43Z**.
+
+**Those runs predate OPEN-134's deployment, and that matters.** PR #41 merged at
+**2026-08-24T18:20:17Z** — thirteen and a half hours *after* those log lines. So they were produced by
+the old code, which still sent `dateFrom` and so could still receive a zero-row page from a narrow
+window. That is not a contradiction with the section below; it is the last time this log line will
+have come from a scheduled run, because the current code never sends a date window and therefore
+never receives a zero-row results page.
+
+So the three cases are separated in the log as OPEN-132 intended — redirect-to-bill, genuine-empty,
+and unrecognised-page — and that separation was observed working on production traffic before the
+path stopped being exercised.
 
 ## The finding that outlives this ticket
 
@@ -114,8 +143,11 @@ above. But its production coverage is now zero, and that has two consequences wo
 than discovering later:
 
 * **The tests are the only thing keeping it honest.** OPEN-132 shipped 11 tests, 10 of which fail
-  against unfixed code. Those are now the sole protection; production traffic will not exercise this
-  path again unless something re-narrows the search server-side.
+  against unfixed code. They live in `openstates-scrapers/scrapers/mi/tests/test_bills.py` — the
+  maintained MI suite, not the stale `tests/test_mi_bills.py` duplicate that was deleted under
+  OPEN-134 — and cover `_redirected_single_bill()` plus the interaction with OPEN-123's
+  unmatched-`bill_no` warning. Those are now the sole protection; production traffic will not
+  exercise this path again unless something re-narrows the search server-side.
 * **Do not delete it as dead code.** It is one `dateFrom=` away from being load-bearing again, and
   the behaviour it handles is live today. A future change that reintroduces any server-side narrowing
   — a date filter, a chamber filter, a `number=` lookup — walks straight back into the 2026-07-25
