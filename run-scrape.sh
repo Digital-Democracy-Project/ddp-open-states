@@ -566,10 +566,13 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
         # bash 4+ feature). In-memory, this process's lifetime only.
         EXCLUDED_FROM_STAGING=","
         SWEEP_FAILURES=0
+        SWEEP_CYCLE=0
         while true; do
             sleep "$SWEEP_INTERVAL_SECS"
             [ -d "$STATE_DATADIR" ] || continue
 
+            SWEEP_CYCLE=$((SWEEP_CYCLE + 1))
+            local cycle_started; cycle_started=$(date +%s)
             rm -rf "$SWEEP_STAGING_DIR"; mkdir -p "$SWEEP_STAGING_DIR/$STATE"
             local cutoff=$(( $(date +%s) - 5 ))  # skip files touched in the last 5s — cheap
                                                   # insurance against a bill file the scraper is
@@ -581,6 +584,7 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
                 local mtime; mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null)
                 [ -n "$mtime" ] && [ "$mtime" -lt "$cutoff" ] && cp "$f" "$SWEEP_STAGING_DIR/$STATE/"
             done
+            local staged; staged=$(ls -1 "$SWEEP_STAGING_DIR/$STATE" 2>/dev/null | wc -l | tr -d ' ')
 
             local rc=0
             try_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS --datadir $SWEEP_STAGING_DIR --cachedir \$CACHE_DIR >> \"$LOG_DIR/scraper.log\" 2>&1" || rc=$?
@@ -599,7 +603,22 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
                     SWEEP_FAILURES=0
                 fi
             else
+                # OPEN-86: a SUCCESSFUL sweep cycle used to log nothing at all -- this branch was
+                # bare `SWEEP_FAILURES=0`. Only rc=2 (lock busy) and rc!=0 (failure) said anything.
+                #
+                # That silence is why this ticket sat unclosable. Its own acceptance criterion is
+                # "measure the real SWEEP_INTERVAL/LOCK_WAIT values from a run", and there was
+                # nothing in the log to measure. Worse, `grep sweep logs/scraper.log` returning
+                # empty was read as "the sweep loop has never executed a cycle" -- but that grep
+                # cannot detect a working cycle either, so it was not evidence. Confirmed on a real
+                # AZ canary 2026-08-25: nine successful cycles ran and produced zero matches.
+                #
+                # `staged` is the number that matters, not just the duration: every cycle re-stages
+                # the WHOLE accumulated data dir, so this grows all run long and the import cost
+                # grows with it. Measured at ~62ms per staged bill, which is what makes the
+                # rollout decision for a jurisdiction computable instead of guessed.
                 SWEEP_FAILURES=0
+                log "Sweep cycle $SWEEP_CYCLE imported for $STATE: staged=$staged files, took $(( $(date +%s) - cycle_started ))s (interval ${SWEEP_INTERVAL_SECS}s)"
             fi
         done
     }
