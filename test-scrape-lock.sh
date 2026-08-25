@@ -125,6 +125,52 @@ check "no pid file: treated as held (conservative)" "90" "$RUN_RC"
 rm -rf "$LOCK_ROOT/va"
 cleanup
 
+echo "== the retry wrapper must be told not to retry =="
+
+setup
+mkdir -p "$LOCK_ROOT/va"; echo $$ > "$LOCK_ROOT/va/pid"
+FLAG="$RUN_ROOT/do-not-retry"
+LOG_DIR="$RUN_LOG_DIR" OS_UPDATE_OVERRIDE="$RUN_ROOT/bin/os-update" \
+SCRAPED_DATA_DIR_OVERRIDE="$RUN_ROOT/data" CACHE_DIR_OVERRIDE="$RUN_ROOT/cache" \
+SUPPRESS_FAILURE_ALERT=1 SKIP_PATCHES=1 DO_NOT_RETRY_FLAG="$FLAG" \
+    bash "$SCRIPT_DIR/run-scrape.sh" va > "$RUN_ROOT/run.log" 2>&1
+# run-scrape-retrying.sh decides on the FLAG, not the exit code -- its own comment says so.
+# Without this the wrapper would re-invoke and collide again on every attempt, which is exactly
+# what this ticket exists to stop.
+check "contended: sets DO_NOT_RETRY_FLAG" "set" "$([ -f "$FLAG" ] && echo set || echo unset)"
+rm -rf "$LOCK_ROOT/va"; cleanup
+
+echo "== a pid-less lock ages out rather than wedging the jurisdiction forever =="
+
+setup
+mkdir -p "$LOCK_ROOT/va"
+# Backdate past the 24h threshold: a run killed between mkdir and the pid write leaves exactly
+# this, and refusing forever would be a permanent outage for the jurisdiction.
+touch -t "$(date -v-2d '+%Y%m%d%H%M' 2>/dev/null || date -d '2 days ago' '+%Y%m%d%H%M')" "$LOCK_ROOT/va"
+run_scrape
+check "abandoned pid-less lock: reclaimed and run proceeds" "0" "$RUN_RC"
+check "abandoned pid-less lock: says it reclaimed" "yes" \
+    "$(grep -q 'no pid file and is over 24h old' "$RUN_LOG_DIR/scraper.log" && echo yes || echo no)"
+rm -rf "$LOCK_ROOT/va"; cleanup
+
+echo "== different jurisdictions never contend =="
+
+setup
+mkdir -p "$LOCK_ROOT/ut"; echo $$ > "$LOCK_ROOT/ut/pid"   # UT held by a live process
+rm -rf "$LOCK_ROOT/va"
+run_scrape                                                # VA must be unaffected
+check "va runs while ut is locked" "0" "$RUN_RC"
+check "va writes its marker" "ok:0:0:0:incremental" "$(marker va.imported)"
+rm -rf "$LOCK_ROOT/ut" "$LOCK_ROOT/va"; cleanup
+
+echo "== a malformed jurisdiction key is refused before any path is built =="
+
+setup
+LOG_DIR="$RUN_LOG_DIR" SUPPRESS_FAILURE_ALERT=1 SKIP_PATCHES=1 \
+    bash "$SCRIPT_DIR/run-scrape.sh" "../../etc" > "$RUN_ROOT/bad.log" 2>&1
+check "traversal key refused" "yes" "$([ $? -ne 0 ] && echo yes || echo no)"
+cleanup
+
 echo
 if [ "$FAIL" -eq 0 ]; then
     echo "ALL PASS ($PASS assertions)"

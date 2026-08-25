@@ -207,6 +207,15 @@ trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEE
 #
 # Same atomic-mkdir + dead-holder-reclaim shape as acquire_import_lock() below, for the same
 # reason: mkdir either succeeds or fails, with no window between checking and taking.
+# $STATE reaches this from $1 unvalidated and is about to be interpolated into a path that
+# rm -rf operates on. Every real jurisdiction key is lowercase alphanumeric; anything else is a
+# typo or worse, and refusing is cheaper than reasoning about what `rm -rf /tmp/.../../..` does.
+case "$STATE" in
+    *[!a-z0-9_]*|"")
+        log "ERROR: refusing to run with a non-alphanumeric jurisdiction key: '$STATE' (OPEN-154)"
+        exit 1
+        ;;
+esac
 SCRAPE_LOCK_DIR="/tmp/ddp-openstates-scrape-locks/$STATE"
 SCRAPE_LOCK_HELD=0
 mkdir -p "$(dirname "$SCRAPE_LOCK_DIR")"
@@ -219,7 +228,20 @@ else
     # test for "lock directory with no pid file" caught exactly that — it exited 1 instead of
     # refusing cleanly, which would have turned a recoverable clash into an unexplained crash.
     _holder=$(cat "$SCRAPE_LOCK_DIR/pid" 2>/dev/null || true)
-    if [ -n "$_holder" ] && ! kill -0 "$_holder" 2>/dev/null; then
+    # A lock with no pid at all is the nasty case: a run killed between mkdir and the pid write
+    # leaves one behind, and nothing will ever clear it. Refusing forever is a permanent outage
+    # for that jurisdiction, so age it out. The threshold is deliberately far longer than any
+    # real scrape -- MA's full walk measured 8.2h (OPEN-128) -- so this can only ever fire on a
+    # genuinely abandoned lock, never on a slow but healthy run.
+    if [ -z "$_holder" ] && [ -n "$(find "$SCRAPE_LOCK_DIR" -maxdepth 0 -mmin +1440 2>/dev/null)" ]; then
+        log "Scrape lock for $STATE has no pid file and is over 24h old — abandoned, reclaiming"
+        rm -rf "$SCRAPE_LOCK_DIR"
+        if mkdir "$SCRAPE_LOCK_DIR" 2>/dev/null; then
+            sh -c 'echo $PPID' > "$SCRAPE_LOCK_DIR/pid"
+            SCRAPE_LOCK_HELD=1
+        fi
+    fi
+    if [ "$SCRAPE_LOCK_HELD" != "1" ] && [ -n "$_holder" ] && ! kill -0 "$_holder" 2>/dev/null; then
         log "Scrape lock for $STATE held by dead pid $_holder — reclaiming"
         rm -rf "$SCRAPE_LOCK_DIR"
         if mkdir "$SCRAPE_LOCK_DIR" 2>/dev/null; then
@@ -238,7 +260,13 @@ if [ "$SCRAPE_LOCK_HELD" != "1" ]; then
     #
     # No markers are written on this path, so the skipped window stays eligible for the next run
     # and the staleness watchdog still sees the jurisdiction as overdue if the holder also fails.
-    log "ERROR: another scrape of $STATE is already running (pid $(cat "$SCRAPE_LOCK_DIR/pid" 2>/dev/null || echo unknown)) — refusing to start a second one (OPEN-154). openstates-core wipes this jurisdiction's data directory at scrape start, so running both would destroy the in-flight run's work. No markers written; this window remains eligible."
+    log "ERROR: another scrape of $STATE is already running (pid $(cat "$SCRAPE_LOCK_DIR/pid" 2>/dev/null || echo unknown)) — refusing to start a second one (OPEN-154). openstates-core wipes this jurisdiction's data directory at scrape start, so running both would destroy the in-flight run's work. No markers written; this window remains eligible. If you are certain no scrape of $STATE is running, clear it with: rm -rf $SCRAPE_LOCK_DIR"
+    # EXIT_DO_NOT_RETRY is not sufficient on its own. run-scrape-retrying.sh's own comment is
+    # explicit that "it also exits 90, but the flag is what this wrapper decides on" -- so
+    # without setting the flag the wrapper would retry and collide again on every attempt,
+    # which is precisely what this ticket exists to stop. Same two-part signal the WAF branch
+    # uses further down, for the same reason.
+    [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
     trap - ERR
     on_failure
     exit "$EXIT_DO_NOT_RETRY"
