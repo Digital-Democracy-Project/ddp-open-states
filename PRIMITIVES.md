@@ -62,6 +62,34 @@ should reuse rather than reimplement:
   `_cache/` instead of re-hitting the legislature site). Distinguishes a genuine failure from a
   benign incremental no-op (`"no objects returned from"` in the scrape output + incremental mode
   → `finish_no_op()`, which still writes the marker/count files and exits 0, not a failure).
+- **No-op vs. unreachable (OPEN-152, 2026-08-25)** — `"no objects returned from"` alone is **not**
+  enough to call a run a no-op, and treating it that way was a data-loss bug, not a cosmetic one.
+  openstates-core raises that same `ScrapeError` whenever a scraper yields nothing, so it means
+  both "nothing changed since the cutoff" *and* "I could not read the site". Taking the no-op path
+  for the second case recorded `ok:0:0:0` as a **measurement** and advanced the watermark past a
+  window that was never examined — so the bills filed in it were skipped permanently, and the run
+  reported success. `run-scrape.sh` now consults
+  **`scrape_output_shows_unreachable_site()`** (defined in `import-summary.sh`, so the matcher is
+  testable without the script) before `finish_no_op()`; an unreachable run fails instead, leaving
+  the watermark where it was so the next run re-covers the window. The matcher greps the scrape
+  output for site-unreachable markers (WAF blocks, unrecognised block pages, "neither a results
+  page nor a usable bill page") and first drops lines where those phrases are **negated**, so a
+  future benign `no WAF block detected` diagnostic can't turn every quiet week into an alert.
+  **Add a new marker to `_SCRAPE_UNREACHABLE_MARKERS`, not a second matcher** — and add a fixture
+  to `test-scrape-outcome.sh` in the same change, because both failure directions here are silent.
+- **Same-jurisdiction scrape lock (OPEN-154, 2026-08-25)** — `/tmp/ddp-openstates-scrape-locks/$STATE`,
+  taken for the whole run and released by the `EXIT` trap. **This is not the same lock as the
+  worktree lock below, and the difference has already misled a reader once.** The worktree lock is
+  keyed on PID and coordinates scrapes against `apply-local-patches.sh`; it does nothing to stop
+  two scrapes of the *same jurisdiction* running at once, which openstates-core makes destructive
+  rather than merely wasteful — `do_scrape()` wipes `$SCRAPED_DATA_DIR/$STATE` at scrape start, so
+  the second run deletes the first's collected bills mid-flight. Keyed on `$STATE` and **not** on
+  `$SCRAPE_KEY`: two sessions of one state share the data directory, so keying on the session would
+  let them collide. `$STATE` is validated against `*[!a-z0-9_]*` before any path is built, since it
+  reaches a `rm -rf`. A lock whose holder PID is gone is reclaimed; a lock with no readable PID
+  ages out after 24h. Losing the lock also sets `DO_NOT_RETRY_FLAG` — exit 90 alone does **not**
+  stop `run-scrape-retrying.sh`, which decides on the flag file, so without it the wrapper would
+  have spun through every attempt against a jurisdiction that was already being scraped.
 - **Slack alert-on-failure** — `on_failure()` posts to `#automation-errors` via a bot token read
   from `ddp-agents/.env` (`SLACK_BOT_TOKEN`), fired via `trap 'on_failure' ERR`. Fails open (no
   token found → just skips the post, never blocks the scrape). **Reused verbatim in
@@ -76,7 +104,9 @@ should reuse rather than reimplement:
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
   clobber code a running scrape is reading. **This is a live lock protocol between two scripts —
   if you add a third script that mutates `openstates-core`'s checkout, it needs to honor this
-  same marker directory**, not add its own.
+  same marker directory**, not add its own. It protects the *code checkout*, keyed on PID — it
+  says nothing about which jurisdiction is being scraped, so it never prevented two scrapes of
+  the same state from running together. That is the separate lock documented above.
 - **`--allow_duplicates` states** — `mi`, `fl`, `va` pass this to `os-update --import` (pagination
   overlap produces duplicate bill JSON; see openstates-scrapers issue #5697). Check this list
   before assuming a new state needs the same flag — most don't.
@@ -580,6 +610,22 @@ first credentialed onboarding DDP actually does is more likely Indiana than DC.
   backup script), `logs/last-run/` (resumability markers), `logs/backfill/` (one-off backfill
   driver output), `logs/db-backups/` (pg_dump files). A new script's logs belong under `logs/`
   in one of these shapes, not a new top-level directory.
+- **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
+  production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
+  assertions)` and exit 0 or the first failing assertion and exit 1. Five of these now exist
+  (`test-import-summary.sh`, `test-check-scrape-staleness.sh`, `test-scrape-outcome.sh`,
+  `test-no-op-side-effects.sh`, `test-scrape-lock.sh`) and they all share that shape — copy the
+  nearest one rather than introducing a runner. Two of them drive **`run-scrape.sh` itself**
+  against a stub `os-update`, which is the only way to assert what the script *does* with a
+  decision rather than just what a matcher returns.
+- **Testing `run-scrape.sh` requires overriding `activate.sh` (OPEN-152, 2026-08-25)** — the
+  script sources `activate.sh`, which **unconditionally exports** `OS_UPDATE`,
+  `SCRAPED_DATA_DIR`, `CACHE_DIR` and `SCRAPELIB_RPM`, clobbering anything the caller set and
+  making the script untestable. It now captures a caller's `OS_UPDATE`/`SCRAPED_DATA_DIR`/
+  `CACHE_DIR` before the `source` and restores them after, and `LOG_DIR` is overridable too. A
+  test **must** set all of those plus **`SKIP_PATCHES=1`** — without the last one a test run
+  git-pulls the live nested checkouts and then scrapes a real legislature site. Found the hard
+  way, twice.
 
 ---
 
