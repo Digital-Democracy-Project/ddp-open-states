@@ -132,12 +132,32 @@ new_bills_collapsed() {
 # failing -- it only rescues cases that are currently silent. The cost of that choice is that a
 # new jurisdiction's block page stays silent until someone adds its marker, which is the same
 # position we are in now rather than a regression.
+#
+# The two WAF strings are deliberately identical to ddp-sync's WAF_BLOCK_MARKERS
+# ("consecutive waf blocks detected", "waf block detected") and to the pair run-scrape.sh
+# already greps for further down. Matching something narrower here would be safer against false
+# positives but would diverge from the fleet's one agreed spelling of "this was a WAF block",
+# which is a worse trade: three places would then disagree about the same event.
 _SCRAPE_UNREACHABLE_MARKERS='neither a results page nor a usable bill page|waf block detected|consecutive waf blocks|unrecognised block page|unrecognized block page'
+
+# A line that NEGATES a marker must not count as one. Nothing in the fleet currently logs
+# "no WAF block detected", but the markers above are short enough that a future diagnostic line
+# could contain one harmlessly, and the failure mode would be ugly and quiet: every genuinely
+# quiet week for that jurisdiction would start alerting and its watermark would stop advancing.
+# Cheap to guard now, unpleasant to debug later.
+_SCRAPE_NEGATED_MARKER='(^|[^[:alnum:]])(no|not|never|without|isn.t|wasn.t)[[:space:]]+(an?[[:space:]]+)?(waf block|consecutive waf|unrecognised block|unrecognized block|results page)'
 
 # Usage: scrape_output_shows_unreachable_site <path-to-scrape-output>
 # Returns 0 (true) when the output positively indicates the site could not be read.
+#
+# Naming note: this lives in import-summary.sh because that is already the helper run-scrape.sh
+# sources, and adding a second sourced file for one function is not worth it. It is
+# scrape-outcome logic in an import-named file, which is a little muddy -- if a third such
+# helper appears, that is the moment to split them.
 scrape_output_shows_unreachable_site() {
     local out="$1"
     [ -f "$out" ] || return 1
-    grep -qiE "$_SCRAPE_UNREACHABLE_MARKERS" "$out" 2>/dev/null
+    # Drop negated lines first, then look for a marker in what remains.
+    grep -viE "$_SCRAPE_NEGATED_MARKER" "$out" 2>/dev/null \
+        | grep -qiE "$_SCRAPE_UNREACHABLE_MARKERS"
 }

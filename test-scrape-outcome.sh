@@ -104,6 +104,29 @@ assert_unreachable "marker buried in a long log" "$(fixture buried \
     "WARNING openstates: MI search response is neither a results page nor a usable bill page" \
     "$(for i in $(seq 1 60); do echo "12:01:0$i INFO something else"; done)")"
 
+echo "== negated marker text must not count as a marker =="
+
+# Nothing in the fleet logs these today, but the WAF markers are short fragments shared with
+# ddp-sync's WAF_BLOCK_MARKERS, and a future diagnostic line could contain one harmlessly. The
+# failure mode would be quiet and nasty: every genuinely quiet week for that jurisdiction would
+# start alerting and its watermark would stop advancing.
+assert_benign "'no WAF block detected'" "$(fixture neg1 \
+    "12:00:02 INFO openstates: no WAF block detected; proceeding normally" \
+    "openstates.exceptions.ScrapeError: no objects returned from XxBillScraper scrape")"
+
+assert_benign "'not a waf block'" "$(fixture neg2 \
+    "12:00:02 INFO openstates: this was not a waf block, the session simply has no bills" \
+    "openstates.exceptions.ScrapeError: no objects returned from XxBillScraper scrape")"
+
+assert_benign "'without an unrecognised block page'" "$(fixture neg3 \
+    "12:00:02 INFO openstates: completed without an unrecognised block page")"
+
+# But a negated line must not mask a REAL marker elsewhere in the same output. Dropping negated
+# lines and matching the rest is what makes this hold; a whole-file negation check would not.
+assert_unreachable "a real marker alongside a negated one" "$(fixture neg_mixed \
+    "12:00:01 INFO openstates: no WAF block detected on the first attempt" \
+    "12:00:09 WARNING openstates: MI search response is neither a results page nor a usable bill page")"
+
 echo "== absent file =="
 
 # Defensive: a missing $SCRAPE_OUT must read as benign rather than erroring under `set -e`.

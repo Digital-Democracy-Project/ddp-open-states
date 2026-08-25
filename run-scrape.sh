@@ -4,8 +4,24 @@ set -e
 
 STATE=$1
 SESSION_ARG=${2:-""}
-LOG_DIR=/Users/agentsmith/Developer/repos/ddp-open-states/logs
-OS_UPDATE=/Users/agentsmith/Developer/repos/ddp-open-states/.venv/bin/os-update
+LOG_DIR="${LOG_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/logs}"
+OS_UPDATE="${OS_UPDATE:-/Users/agentsmith/Developer/repos/ddp-open-states/.venv/bin/os-update}"
+
+# OPEN-152: remember any caller-supplied overrides before `source activate.sh` below, which
+# unconditionally `export`s OS_UPDATE, SCRAPED_DATA_DIR and CACHE_DIR and would otherwise
+# silently discard them. Restored immediately after that source.
+#
+# This exists so the no-op-versus-unreachable decision can be tested against a stub instead of
+# only reasoned about — and the need is not hypothetical. Writing that test is what revealed
+# this shadowing at all: the first attempt set OS_UPDATE, watched activate.sh overwrite it, and
+# ran a real Virginia scrape against the live site. An untestable script is how this file
+# accumulated three separate silent-failure bugs (OPEN-152, OPEN-154, OPEN-155).
+#
+# Production sets none of these, so `${VAR:-}` is empty and nothing is restored: behaviour is
+# byte-for-byte what it was.
+_OVERRIDE_OS_UPDATE="${OS_UPDATE_OVERRIDE:-}"
+_OVERRIDE_DATA_DIR="${SCRAPED_DATA_DIR_OVERRIDE:-}"
+_OVERRIDE_CACHE_DIR="${CACHE_DIR_OVERRIDE:-}"
 
 # OPEN-139: import-report parsing and the stuck-run detector. Sourced from this script's own
 # directory rather than an absolute path so a worktree/checkout runs its own copy, not the deploy
@@ -59,6 +75,12 @@ except Exception:
 fi
 
 source /Users/agentsmith/Developer/repos/ddp-open-states/activate.sh
+
+# OPEN-152: restore the caller's overrides, which activate.sh has just clobbered. Empty in
+# production, so this is a no-op there. See the block near the top for why it exists.
+[ -n "$_OVERRIDE_OS_UPDATE" ] && OS_UPDATE="$_OVERRIDE_OS_UPDATE"
+[ -n "$_OVERRIDE_DATA_DIR" ] && export SCRAPED_DATA_DIR="$_OVERRIDE_DATA_DIR"
+[ -n "$_OVERRIDE_CACHE_DIR" ] && export CACHE_DIR="$_OVERRIDE_CACHE_DIR"
 
 # Slack alert on any scrape/import failure
 SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
