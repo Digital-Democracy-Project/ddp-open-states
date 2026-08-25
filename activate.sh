@@ -4,13 +4,81 @@
 # Load secrets (gitignored)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [ -f "$SCRIPT_DIR/.env" ] && set -a && source "$SCRIPT_DIR/.env" && set +a
+# OPEN-159: everything below that names a checkout is derived from $SCRIPT_DIR -- the directory
+# THIS file lives in -- rather than hardcoded to the production checkout. That is not a new
+# convention; line 60's OS_VENV already did it, so the venv and its binaries have always followed
+# the checkout correctly while the data paths silently did not.
+#
+# The bug that motivated it: run-scrape.sh used to source this file by absolute path from the
+# production checkout, so `./run-scrape.sh az` run in ddp-open-states-dev scraped into
+# production's _data/az -- which openstates-core wipes at scrape start -- and imported into the
+# production database. The dev checkout provided no isolation at all for the repo's main
+# entrypoint. In the production checkout every value below is byte-identical to what it was, so
+# this is a no-op there.
+#
+# PYTHONPATH matters as much as the data dirs: pointing it at the production checkout meant a
+# worktree's tests imported the DEPLOYED scrapers rather than the ones under test, which has
+# already produced a run of "63 passed" that was measuring the wrong code entirely.
+
 # Dedicated openstates Postgres (host :5433); CAMS keeps :5432. See PLAN-production-hardening.md WS0b.
-export DATABASE_URL="postgresql://openstates:openstates_dev@localhost:5433/openstates"
-export OS_PEOPLE_DIRECTORY="$HOME/Developer/repos/ddp-open-states/people"
-export PYTHONPATH="/Users/agentsmith/Developer/repos/ddp-open-states/openstates-scrapers/scrapers"
+#
+# DATABASE_URL cannot be derived from a path -- the database NAME is what differs between
+# production (`openstates`) and dev (`openstates_dev`) -- so it takes an explicit opt-in override
+# instead. Keyed on DATABASE_URL_OVERRIDE rather than honouring a pre-set DATABASE_URL, because
+# this file is sourced by a script that inherits its parent's whole environment: reading
+# DATABASE_URL directly would let any unrelated service's connection string silently become the
+# import target. A purpose-named variable cannot be set by accident.
+export DATABASE_URL="${DATABASE_URL_OVERRIDE:-postgresql://openstates:openstates_dev@localhost:5433/openstates}"
+
+# The distinction that makes this safe, and the rule to keep if you edit below:
+#
+#   INPUTS (code, toolchain) may fall back to the production checkout when this one has none.
+#   OUTPUTS (scraped data, cache) and the DATABASE never may.
+#
+# openstates-scrapers/, openstates-core/, people/ and .venv are gitignored nested checkouts, so
+# they exist in the production checkout and in ddp-open-states-dev but NOT in a git worktree. An
+# input falling back means a worktree can still run; an output falling back means a worktree
+# silently writes into production, which is the bug this ticket exists to fix. Borrowing an
+# interpreter or a scrapers tree is recoverable. Wiping production's _data/az is not.
+_PRODUCTION_CHECKOUT="/Users/agentsmith/Developer/repos/ddp-open-states"
+
+# Inputs: prefer this checkout's, else production's.
+if [ -d "$SCRIPT_DIR/openstates-scrapers/scrapers" ]; then
+    export PYTHONPATH="$SCRIPT_DIR/openstates-scrapers/scrapers"
+else
+    export PYTHONPATH="$_PRODUCTION_CHECKOUT/openstates-scrapers/scrapers"
+fi
+if [ -d "$SCRIPT_DIR/people" ]; then
+    export OS_PEOPLE_DIRECTORY="$SCRIPT_DIR/people"
+else
+    export OS_PEOPLE_DIRECTORY="$_PRODUCTION_CHECKOUT/people"
+fi
+
 export SCRAPELIB_RPM=60
-export SCRAPED_DATA_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_data"
-export CACHE_DIR="$HOME/Developer/repos/ddp-open-states/openstates-scrapers/_cache"
+
+# Outputs: strictly this checkout, no fallback. A checkout with no openstates-scrapers/ resolves
+# to a path that does not exist, and a run there fails to write rather than writing production's.
+# That is the intended outcome.
+#
+# Note where the escape hatch actually lives: SCRAPED_DATA_DIR_OVERRIDE / CACHE_DIR_OVERRIDE are
+# honoured by RUN-SCRAPE.SH (its OPEN-152 restore block), not by this file -- so they work for a
+# run-scrape.sh invocation and do nothing if you source this directly. pm-review caught an earlier
+# version of this comment implying otherwise.
+export SCRAPED_DATA_DIR="$SCRIPT_DIR/openstates-scrapers/_data"
+export CACHE_DIR="$SCRIPT_DIR/openstates-scrapers/_cache"
+
+# Sourcing this file directly from a non-production checkout is NOT protected the way
+# run-scrape.sh is -- it cannot be, since `exit` in a sourced file would kill the caller's shell.
+# So warn instead. The realistic mistake is `cd ddp-open-states-dev && source activate.sh &&
+# os-update az --import`, which would import into production. To stdout's sibling, not stdout,
+# so nothing parsing a script's output is disturbed.
+#
+# The fix for the dev checkout is one line in its own gitignored .env, which is sourced above
+# before DATABASE_URL is set:  DATABASE_URL_OVERRIDE=postgresql://.../openstates_dev
+if [ "$SCRIPT_DIR" != "$_PRODUCTION_CHECKOUT" ] && [ -z "${DATABASE_URL_OVERRIDE:-}" ]; then
+    echo "WARNING: $SCRIPT_DIR is not the production checkout, but DATABASE_URL_OVERRIDE is unset" >&2
+    echo "         so DATABASE_URL points at the PRODUCTION database. See OPEN-159." >&2
+fi
 # Permanent bill-document archive (PLAN-bill-document-provenance.md, Phase 1).
 # text_extract.py appends raw/{jurisdiction}/{session}/{bill_id}/ under this root itself.
 export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
@@ -57,7 +125,20 @@ export ARCHIVE_ENABLED_STATES="fl,ut,az,wa,va,mi,ma,al,us"
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
 # Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
 #   && .venv/bin/pip install --no-deps -r requirements-openstates.txt
-export OS_VENV="$SCRIPT_DIR/.venv"
+# OPEN-159: prefer this checkout's own venv, and fall back to the production one when the
+# checkout has none. The production checkout and ddp-open-states-dev each have their own; a git
+# WORKTREE does not, and creating one per worktree just to run a test would be absurd.
+#
+# Sharing an interpreter is safe in a way that sharing data is not. The venv is toolchain -- it
+# decides which openstates-core is installed, not which database is written or which scrapers are
+# imported. PYTHONPATH above is per-checkout, so a worktree borrowing production's interpreter
+# still runs ITS OWN scraper code, which is the property that actually matters and the one whose
+# absence previously produced a "63 passed" test run against the deployed scrapers.
+if [ -d "$SCRIPT_DIR/.venv" ]; then
+    export OS_VENV="$SCRIPT_DIR/.venv"
+else
+    export OS_VENV="$_PRODUCTION_CHECKOUT/.venv"
+fi
 export PATH="$OS_VENV/bin:$PATH"
 export OS_INITDB="$OS_VENV/bin/os-initdb"
 export OS_UPDATE="$OS_VENV/bin/os-update"
