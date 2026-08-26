@@ -4,8 +4,49 @@ set -e
 
 STATE=$1
 SESSION_ARG=${2:-""}
-LOG_DIR="${LOG_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/logs}"
-OS_UPDATE="${OS_UPDATE:-/Users/agentsmith/Developer/repos/ddp-open-states/.venv/bin/os-update}"
+
+# OPEN-172: derived here, at the top, because LOG_DIR below depends on it. (It was
+# previously defined further down, next to the import-summary.sh source.)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# OPEN-172: LOG_DIR follows the checkout, like everything OPEN-159 fixed in activate.sh.
+# It used to default to the production path outright, which meant a run from the dev
+# checkout or a worktree READ production's logs/last-run/<key>.ts -- so it ran incremental
+# against production's watermark instead of its own -- and on success would WRITE
+# production's .ts/.count/.imported markers from a run that imported into a different
+# database entirely. Production would then skip the window that other run had scraped, and
+# the miss would be silent.
+#
+# That is precisely the rule OPEN-159 wrote one file over: inputs may fall back to
+# production, outputs never may. logs/last-run/ is both, and the output half is the
+# dangerous one. Found live 2026-08-26 setting up OPEN-162's Michigan validation: a dev
+# run announced `incremental cutoff=2026-08-24T03:51:48`, which was production's marker.
+# It only failed loudly because MI's OPEN-134 guard refuses to run incrementally without a
+# baseline; a jurisdiction without such a guard would have run against a foreign watermark
+# and reported success.
+#
+# The environment override is preserved -- ddp-sync and this repo's own test suites both
+# redirect it deliberately.
+LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
+
+# Consequence of the line above, found by the isolation test rather than by reasoning:
+# while LOG_DIR pointed at production it always existed, so nothing ever had to create it.
+# A checkout that has never run a scrape has no logs/ at all, and the first `tee` into
+# scraper.log then kills the run before it starts. Cheap to create, and it must happen
+# before the first log() call.
+mkdir -p "$LOG_DIR/last-run"
+
+# OPEN-172: say which checkout's logs this run is reading and writing. The whole incident
+# class here is a run quietly using another checkout's watermark, and the one question an
+# operator needs answered -- "whose markers is this touching?" -- had no answer anywhere in
+# the output.
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] run-scrape.sh: checkout=$SCRIPT_DIR log_dir=$LOG_DIR" \
+    >> "$LOG_DIR/scraper.log"
+
+# Superseded a few lines below by activate.sh, which unconditionally exports a
+# checkout-relative OS_UPDATE (and OPEN-152 then restores any caller override on top).
+# Kept checkout-relative anyway so the fallback is not quietly wrong if that ever changes.
+OS_UPDATE="${OS_UPDATE:-$SCRIPT_DIR/.venv/bin/os-update}"
 
 # OPEN-152: remember any caller-supplied overrides before `source activate.sh` below, which
 # unconditionally `export`s OS_UPDATE, SCRAPED_DATA_DIR and CACHE_DIR and would otherwise
@@ -27,7 +68,6 @@ _OVERRIDE_CACHE_DIR="${CACHE_DIR_OVERRIDE:-}"
 # directory rather than an absolute path so a worktree/checkout runs its own copy, not the deploy
 # checkout's. Hard failure if absent, deliberately: the alternative is a run that silently stops
 # recording filing activity, which is the exact class of silence this ticket exists to remove.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=import-summary.sh
 . "$SCRIPT_DIR/import-summary.sh"
 
@@ -200,7 +240,12 @@ trap 'on_failure' ERR
 
 # Apply local patches — skipped when SKIP_PATCHES=1 (managed by ddp-sync scheduler)
 if [ "${SKIP_PATCHES:-}" != "1" ]; then
-    bash /Users/agentsmith/Developer/repos/ddp-open-states/apply-local-patches.sh \
+    # OPEN-172: this checkout's, not production's. Running the production copy from a dev
+    # checkout would rebuild PRODUCTION's nested scraper trees -- an output side-effect on
+    # the live pipeline from a run that was supposed to be isolated. Only reachable when
+    # SKIP_PATCHES is unset, which is why it survived the OPEN-159 sweep: ddp-sync always
+    # sets it.
+    bash "$SCRIPT_DIR/apply-local-patches.sh" \
         >> "$LOG_DIR/scraper.log" 2>&1
 fi
 

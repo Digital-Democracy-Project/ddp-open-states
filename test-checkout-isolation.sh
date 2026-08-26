@@ -207,6 +207,72 @@ else
     PASS=$((PASS + 1)); echo "  ok   an explicit DATABASE_URL_OVERRIDE is accepted"
 fi
 
+echo "== OPEN-172: LOG_DIR follows the checkout, so a dev run cannot touch production's markers =="
+
+# This block runs the scrape against a SANDBOXED COPY of the checkout whose idea of
+# "production" is a throwaway directory. That is structural, not a convention: pm-review
+# round 1 rightly refused to accept a comment warning here, and it was right to -- verifying
+# the assertion by reintroducing the old absolute default made the test itself overwrite
+# production's real va.ts on 2026-08-26, which had to be recovered from scraper.log. A test
+# whose entire purpose is preventing production-state corruption must not be able to cause
+# it, on any version of the code it might be pointed at.
+SANDBOX="$TMP_ROOT/sandbox-checkout"
+FAKE_PROD="$TMP_ROOT/fake-production"
+# NOTE: deliberately NOT creating $SANDBOX/logs -- run-scrape.sh must create it
+# itself, which is a real requirement now that LOG_DIR follows the checkout.
+mkdir -p "$SANDBOX" "$FAKE_PROD/logs/last-run" "$SANDBOX/data/va" "$SANDBOX/cache"
+# ONLY run-scrape.sh is rewritten. activate.sh is copied verbatim on purpose: its
+# production fallbacks are INPUTS (the venv, the scrapers tree, the people checkout) and
+# OPEN-159's rule explicitly permits those -- redirecting them at an empty fake directory
+# would just break the run for an unrelated reason. What must be neutralised is every
+# production path in run-scrape.sh, because those are the OUTPUT ones.
+sed "s|/Users/agentsmith/Developer/repos/ddp-open-states|$FAKE_PROD|g" \
+    "$SCRIPT_DIR/run-scrape.sh" > "$SANDBOX/run-scrape.sh"
+cp "$SCRIPT_DIR/activate.sh" "$SCRIPT_DIR/import-summary.sh" "$SANDBOX/"
+chmod +x "$SANDBOX/run-scrape.sh"
+
+OK_STUB="$TMP_ROOT/stub-os-update-ok"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$OK_STUB"
+chmod +x "$OK_STUB"
+
+fake_prod_fingerprint() {
+    find "$FAKE_PROD/logs/last-run" -type f 2>/dev/null | sort | while read -r f; do
+        printf '%s ' "$f"; cat "$f" 2>/dev/null; printf '\n'
+    done | (md5 2>/dev/null || md5sum)
+}
+FP_BEFORE=$(fake_prod_fingerprint)
+
+# LOG_DIR deliberately unset -- the exact shape ddp-sync uses, which passes SKIP_PATCHES
+# but never LOG_DIR. This is what makes the default itself the thing under test.
+env -u LOG_DIR OS_UPDATE_OVERRIDE="$OK_STUB" \
+    SCRAPED_DATA_DIR_OVERRIDE="$SANDBOX/data" \
+    CACHE_DIR_OVERRIDE="$SANDBOX/cache" \
+    SUPPRESS_FAILURE_ALERT=1 SKIP_PATCHES=1 \
+    bash "$SANDBOX/run-scrape.sh" va > "$TMP_ROOT/sandbox-run.log" 2>&1
+
+if [ -f "$SANDBOX/logs/last-run/va.ts" ]; then
+    PASS=$((PASS + 1)); echo "  ok   markers land in the running checkout's own logs/last-run"
+else
+    FAIL=$((FAIL + 1)); echo "  FAIL markers did not land in the running checkout's logs/last-run"
+fi
+
+if [ "$FP_BEFORE" = "$(fake_prod_fingerprint)" ]; then
+    PASS=$((PASS + 1)); echo "  ok   the production checkout's logs/last-run is untouched"
+else
+    FAIL=$((FAIL + 1)); echo "  FAIL a run from another checkout wrote the production checkout's markers"
+fi
+
+# The sweep AC: the only absolute production path left must be the refusal guard's own
+# constant. Asserted by identifying the line, not by counting occurrences -- a count of one
+# would still pass if some future absolute OUTPUT path replaced the guard.
+STRAY=$(grep -n "/Users/agentsmith/Developer/repos/ddp-open-states" "$SCRIPT_DIR/run-scrape.sh" \
+        | grep -vc "^[0-9]*:PRODUCTION_CHECKOUT=")
+if [ "$STRAY" -eq 0 ]; then
+    PASS=$((PASS + 1)); echo "  ok   the only absolute production path is PRODUCTION_CHECKOUT itself"
+else
+    FAIL=$((FAIL + 1)); echo "  FAIL $STRAY absolute production path(s) outside PRODUCTION_CHECKOUT"
+fi
+
 echo
 if [ "$FAIL" -eq 0 ]; then
     echo "ALL PASS ($PASS assertions)"
