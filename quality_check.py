@@ -632,12 +632,25 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
     local_by_date = defaultdict(list)
     for v in local_votes:
         local_by_date[vote_key(v)].append(v)
+    # Pair against live's *substantive* events for the same reason the count
+    # comparison above ignores them: an event with no counts and no voters has
+    # nothing to compare a tally against. Left unfiltered, every live placeholder
+    # produced two warnings that could never be acted on -- a "vote tally differs
+    # ... live={}" against an empty dict, and a "vote count differs" for the
+    # event-count gap the check had just decided to forgive. On MA that is not a
+    # rounding error: live carries an empty `upper` placeholder on most of these
+    # bills, and those warnings are the ones the readiness recommendation gets
+    # read against.
+    #
+    # The local side stays unfiltered here, exactly as above -- an empty event of
+    # ours is a real defect and this loop is what surfaces it, as a tally of {}
+    # against live's real counts.
     live_by_date = defaultdict(list)
-    for v in live_votes:
+    for v in live_substantive:
         live_by_date[vote_key(v)].append(v)
 
     shared_dates = sorted(d for d in local_by_date if d in live_by_date)
-    if local_votes and live_votes and not shared_dates:
+    if local_votes and live_substantive and not shared_dates:
         report.record(WARN, f"{label}: no shared vote date+chamber to compare tallies against",
                       f"local={sorted('/'.join(k) for k in local_by_date)} "
                       f"live={sorted('/'.join(k) for k in live_by_date)}")

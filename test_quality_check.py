@@ -20,6 +20,7 @@ from quality_check import (
     Report,
     PASS,
     WARN,
+    FAIL,
 )
 
 
@@ -389,3 +390,127 @@ def test_motion_text_chamber_mismatch_not_applicable_for_other_motion_text():
 def test_motion_text_chamber_mismatch_handles_missing_organization():
     vote = {"motion_text": "House/ passed 3rd reading"}
     assert motion_text_chamber_mismatch(vote) is False
+
+
+# ── OPEN-169: empty live vote events, and pairing by chamber ───────────────────
+#
+# Two changes to the vote comparison, both driven by the Massachusetts coverage
+# gate, and both easy to get subtly wrong in the direction of a weaker gate:
+#
+#   1. The live API returns placeholder vote events carrying no counts and no
+#      per-voter rows. Counting them made us look behind on data we hold -- for
+#      the six MA bills reported as "missing Senate votes", all 14 of live's
+#      extra events were empty and we held the real roll calls. Verified against
+#      the live API: `counts` and `votes` are both literally `[]`, not zero-valued
+#      counts, so the emptiness test is an existence test.
+#   2. Pairing tallies on date alone compared a Senate roll call against a House
+#      one whenever both chambers voted on a bill the same day, reporting e.g. a
+#      40-vs-148 "tally mismatch" that was really two different votes.
+#
+# The risk in (1) is relaxing the gate until it cannot fail. These tests pin the
+# asymmetry that keeps it honest: live's empty events are forgiven, ours are not,
+# and a live vote we are genuinely missing still FAILS.
+
+def make_chamber_vote_event(date, chamber, counts, votes, motion_text="Passed"):
+    """A vote event with an organization.classification, which the real API sets."""
+    event = make_vote_event(date, motion_text, counts, votes)
+    event["organization"] = {"classification": chamber}
+    return event
+
+
+def make_empty_live_event(date, chamber):
+    """Live's placeholder: the event exists, with none of its content."""
+    return make_chamber_vote_event(date, chamber, {}, [])
+
+
+def test_empty_live_vote_event_is_not_counted_as_a_missing_vote():
+    """The headline. We hold the real roll call; live adds an empty placeholder."""
+    real = make_chamber_vote_event("2026-02-12", "upper", {"yes": 30, "no": 6},
+                                   [("Alice", "yes"), ("Bob", "no")])
+    local = make_bill("S 2947", [real])
+    live = make_bill("S 2947", [real, make_empty_live_event("2026-02-12", "upper")])
+    report = Report()
+    compare_bills(report, local, live, "MA S 2947 (194th)")
+
+    missing = checks_for(report, "local is MISSING votes vs live")
+    assert missing == [], "an event with no counts and no voters is not data we lack"
+    matches = checks_for(report, "vote event count matches")
+    assert matches and matches[0][0] == PASS
+    assert "ignoring 1 empty live event(s)" in matches[0][1]
+
+
+def test_empty_live_vote_event_does_not_pollute_the_tally_comparison():
+    """The half that was missed: filtering the count check but not the pairing loop
+    left every placeholder generating a 'tally differs ... live={}' warning plus a
+    'vote count differs' for the gap the check had just forgiven. Those warnings can
+    never be acted on, and they are what the MA readiness call gets read against."""
+    real = make_chamber_vote_event("2026-04-01", "upper", {"yes": 38, "no": 0},
+                                   [("Alice", "yes")])
+    local = make_bill("S 3029", [real])
+    live = make_bill("S 3029", [real, make_empty_live_event("2026-04-01", "upper")])
+    report = Report()
+    compare_bills(report, local, live, "MA S 3029 (194th)")
+
+    assert checks_for(report, "vote tally differs") == []
+    assert checks_for(report, "vote count on") == []
+    # The real vote is still compared -- the filter must not cost us the comparison.
+    tally_matches = checks_for(report, "vote tally matches")
+    assert tally_matches and tally_matches[0][0] == PASS
+
+
+def test_our_own_empty_vote_event_is_still_surfaced():
+    """The asymmetry, and the reason for it. An empty event on OUR side is a real
+    defect -- exactly what the MA House votes did when they imported with correct
+    tallies and zero voters. Only the live side is forgiven."""
+    local = make_bill("H 4240", [make_chamber_vote_event("2025-10-08", "lower", {}, [])])
+    live = make_bill("H 4240", [make_chamber_vote_event("2025-10-08", "lower",
+                                                        {"yes": 100, "no": 5},
+                                                        [("Alice", "yes")])])
+    report = Report()
+    compare_bills(report, local, live, "MA H 4240 (194th)")
+
+    differs = checks_for(report, "vote tally differs")
+    assert differs, "an empty local event against a real live one must be reported"
+    assert differs[0][0] == WARN
+
+
+def test_a_real_live_vote_we_do_not_have_still_fails():
+    """The gate must keep its teeth. This is the failure the whole ticket exists to
+    drive to zero, and it has to stay reachable."""
+    live_real = make_chamber_vote_event("2025-10-08", "lower", {"yes": 132, "no": 23},
+                                        [("Alice", "yes")])
+    report = Report()
+    compare_bills(report, make_bill("H 4240", []), make_bill("H 4240", [live_real]),
+                  "MA H 4240 (194th)")
+
+    missing = checks_for(report, "local is MISSING votes vs live")
+    assert missing, "a live vote with real content that we lack is still a failure"
+    assert missing[0][0] == FAIL
+
+
+def test_same_day_votes_in_different_chambers_are_not_paired():
+    """Both chambers routinely vote on a bill the same day with near-identical motion
+    text, so a date-only key cross-paired them and reported a nonsense mismatch."""
+    local = make_bill("H 5470", [make_chamber_vote_event(
+        "2026-06-04", "lower", {"yes": 151, "no": 0}, [("Rep", "yes")])])
+    live = make_bill("H 5470", [make_chamber_vote_event(
+        "2026-06-04", "upper", {"yes": 37, "no": 3}, [("Sen", "yes")])])
+    report = Report()
+    compare_bills(report, local, live, "MA H 5470 (194th)")
+
+    assert checks_for(report, "vote tally differs") == [], \
+        "a House roll call and a Senate one are different votes, not a mismatch"
+    assert checks_for(report, "no shared vote date+chamber") != []
+
+
+def test_same_day_same_chamber_votes_are_still_paired():
+    """The other half: narrowing the key must not stop real comparisons happening."""
+    counts, voters = {"yes": 153, "no": 0}, [("Rep", "yes")]
+    local = make_bill("H 5470", [make_chamber_vote_event("2026-06-03", "lower", counts, voters)])
+    live = make_bill("H 5470", [make_chamber_vote_event("2026-06-03", "lower", counts, voters)])
+    report = Report()
+    compare_bills(report, local, live, "MA H 5470 (194th)")
+
+    matches = checks_for(report, "vote tally matches")
+    assert matches and matches[0][0] == PASS
+    assert "2026-06-03/lower" in matches[0][1], "the chamber should show in the message"
