@@ -332,6 +332,66 @@ def sample_people(conn, jurisdiction_code, n):
 
 # ── API helpers ───────────────────────────────────────────────────────────────
 
+# requests builds its exception message from the full request URL, and the API key
+# travels as a query parameter -- so every recorded error wrote the live key in
+# cleartext into the log. 21 files under logs/quality-check/ already carry it.
+# Scrub at the single point where an exception becomes recorded text.
+_APIKEY_RE = re.compile(r"(apikey=)[^&\s\]]+", re.I)
+
+
+def _redact(text):
+    """Strip the API key out of anything derived from a request URL."""
+    return _APIKEY_RE.sub(r"\1<redacted>", text)
+
+
+# OPEN-169: transient throttling used to be indistinguishable from a data defect.
+# fetch_bill() had no retry, so one HTTP 429 or read timeout became a permanent
+# "live API error" FAIL for that bill -- and the bill was never actually compared.
+# A full MA 194th run on 2026-08-25 reported 205 failures of which 181 were this,
+# i.e. 88% of the "failures" were our own client giving up, while the bills behind
+# them went unchecked and were silently counted as neither pass nor fail.
+_TRANSIENT_STATUS = frozenset({429, 500, 502, 503, 504})
+
+
+def _is_transient(exc):
+    """True for errors worth retrying: throttling, 5xx, timeouts, connection drops."""
+    if isinstance(exc, (requests.exceptions.Timeout,
+                        requests.exceptions.ConnectionError)):
+        return True
+    resp = getattr(exc, "response", None)
+    return resp is not None and resp.status_code in _TRANSIENT_STATUS
+
+
+def _get_with_retry(url, params, timeout=15, attempts=4):
+    """GET with exponential backoff on transient failures.
+
+    The wait is `max(exponential_backoff, min(Retry-After, 60))` -- so a Retry-After
+    only ever *lengthens* the wait, never shortens it below our own backoff, and one
+    oversized header cannot stall a whole run. A Retry-After expressed as an HTTP-date
+    is ignored in favour of plain backoff; the live API has only ever sent numeric
+    values. Non-transient errors (a 404, a malformed request) raise immediately rather
+    than burning three retries on a result that will not change.
+    """
+    if attempts < 1:
+        raise ValueError(f"attempts must be >= 1, got {attempts}")
+    for attempt in range(attempts):
+        try:
+            r = requests.get(url, params=params, timeout=timeout)
+            r.raise_for_status()
+            return r
+        except Exception as e:
+            if attempt == attempts - 1 or not _is_transient(e):
+                raise
+            wait = 2 ** attempt
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                try:
+                    wait = max(wait, min(float(resp.headers.get("Retry-After", 0)), 60))
+                except (TypeError, ValueError):
+                    pass
+            time.sleep(wait)
+
+
 def fetch_bill(base_url, api_key, jurisdiction, session, identifier):
     """Fetch a bill with votes + sponsorships from an api-v3 endpoint."""
     params = {
@@ -342,24 +402,22 @@ def fetch_bill(base_url, api_key, jurisdiction, session, identifier):
         "apikey":       api_key,
     }
     try:
-        r = requests.get(f"{base_url}/bills", params=params, timeout=15)
-        r.raise_for_status()
+        r = _get_with_retry(f"{base_url}/bills", params)
         results = r.json().get("results", [])
         return results[0] if results else None
     except Exception as e:
-        return {"_error": str(e)}
+        return {"_error": _redact(str(e))}
 
 
 def fetch_person(base_url, api_key, person_id):
     """Fetch a person record."""
     params = {"id": person_id, "apikey": api_key}
     try:
-        r = requests.get(f"{base_url}/people", params=params, timeout=15)
-        r.raise_for_status()
+        r = _get_with_retry(f"{base_url}/people", params)
         results = r.json().get("results", [])
         return results[0] if results else None
     except Exception as e:
-        return {"_error": str(e)}
+        return {"_error": _redact(str(e))}
 
 # ── Comparison logic ──────────────────────────────────────────────────────────
 
