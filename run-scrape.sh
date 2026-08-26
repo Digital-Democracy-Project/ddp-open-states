@@ -652,6 +652,32 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
         EXCLUDED_FROM_STAGING=","
         SWEEP_FAILURES=0
         SWEEP_CYCLE=0
+        # OPEN-163: the lower edge of the window this cycle stages. Everything at or
+        # after it has not been successfully imported yet; everything before it has.
+        #
+        # Two properties this rests on, stated because they are assumptions rather
+        # than things the script enforces (pm-review round 1):
+        #
+        #   * THE SWEEP IS BEST-EFFORT; THE FINAL IMPORT IS THE COMPLETENESS
+        #     GUARANTEE. It reads the whole $STATE_DATADIR regardless of anything
+        #     here, so a bill this loop skips -- excluded after a failure, unreadable
+        #     mtime, or passed over by a clock jump -- still reaches the database at
+        #     the end. Nothing below may be read as "every bill gets swept".
+        #   * The scraper writes each bill file once and does not rewrite it later
+        #     with an older or preserved mtime. That is the same assumption the 5s
+        #     freshness cutoff already makes. If a scraper ever starts rewriting
+        #     files in place, this watermark stops being a valid proxy for
+        #     already-imported and the sweep would skip the rewrite -- the final
+        #     import would still catch it, but the sweep's value would quietly drop.
+        #
+        # A single watermark rather than a manifest of imported basenames, because the
+        # scraper writes each bill file exactly once (single open/dump/close -- the same
+        # property the 5s upper cutoff below already relies on), so file mtime is a
+        # stable ordering and one integer expresses "already imported" for the whole
+        # run. A manifest would mean an O(files) membership test per file per cycle in
+        # bash 3.2, which has no associative arrays -- reintroducing the quadratic cost
+        # this ticket exists to remove, in the bookkeeping rather than the import.
+        SWEEP_IMPORTED_THROUGH=0
         while true; do
             sleep "$SWEEP_INTERVAL_SECS"
             [ -d "$STATE_DATADIR" ] || continue
@@ -663,11 +689,27 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
                                                   # insurance against a bill file the scraper is
                                                   # still mid-write on (single open/dump/close,
                                                   # not write-then-rename)
+            # OPEN-163: stage only the window [SWEEP_IMPORTED_THROUGH, cutoff) -- the bills
+            # written since the last cycle that actually imported. Previously every cycle
+            # copied the WHOLE accumulated directory, so a run's import cost grew all run
+            # long and the last cycles dominated. The canary made that visible: noop
+            # climbing 4 -> 16 -> 38 -> 63 -> 80 -> 101 -> 116 -> 134 -> 157 while genuinely
+            # new bills held at ~20 a cycle.
+            #
+            # That was not merely wasteful. At ~62ms per staged bill the final cycle for a
+            # large jurisdiction runs for minutes (MI ~244s, FL ~478s, MA ~720s projected),
+            # and the FINAL import uses require_import_lock, which blocks
+            # LOCK_WAIT_TIMEOUT_SECS (180s) and then fails the run outright. So a scrape
+            # that had worked perfectly for hours would be reported as a failure. Bounding
+            # each cycle to one interval's worth of new bills is what removes that.
             for f in "$STATE_DATADIR"/*.json; do
                 [ -e "$f" ] || continue
                 case "$EXCLUDED_FROM_STAGING" in *",$(basename "$f"),"*) continue ;; esac
                 local mtime; mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null)
-                [ -n "$mtime" ] && [ "$mtime" -lt "$cutoff" ] && cp "$f" "$SWEEP_STAGING_DIR/$STATE/"
+                [ -n "$mtime" ] || continue
+                [ "$mtime" -lt "$cutoff" ] || continue
+                [ "$mtime" -ge "$SWEEP_IMPORTED_THROUGH" ] || continue
+                cp "$f" "$SWEEP_STAGING_DIR/$STATE/"
             done
             local staged; staged=$(ls -1 "$SWEEP_STAGING_DIR/$STATE" 2>/dev/null | wc -l | tr -d ' ')
 
@@ -703,6 +745,15 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
                 # grows with it. Measured at ~62ms per staged bill, which is what makes the
                 # rollout decision for a jurisdiction computable instead of guessed.
                 SWEEP_FAILURES=0
+                # OPEN-163: advance the watermark ONLY here, on a successful import.
+                # A failed or lock-skipped cycle leaves it where it was, so the next
+                # cycle re-stages that window -- plus whatever has aged past the
+                # freshness cutoff since, because the upper edge is recomputed each
+                # cycle. So a retry is a SUPERSET of the failed window, not an exact
+                # replay of it (pm-review round 1 was right that "the same window"
+                # overstated it). That is the intended behaviour: it keeps retrying
+                # the unimported work without ever falling behind on new work.
+                SWEEP_IMPORTED_THROUGH="$cutoff"
                 log "Sweep cycle $SWEEP_CYCLE imported for $STATE: staged=$staged files, took $(( $(date +%s) - cycle_started ))s (interval ${SWEEP_INTERVAL_SECS}s)"
             fi
         done
