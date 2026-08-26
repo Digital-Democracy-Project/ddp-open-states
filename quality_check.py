@@ -558,17 +558,43 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
     # live > local means we're missing votes — that's the real problem.
     local_votes = local.get("votes") or []
     live_votes  = live.get("votes") or []
-    lv_count, rv_count = len(local_votes), len(live_votes)
+
+    # OPEN-169: compare vote events that actually carry a vote, not raw list length.
+    # The live API returns placeholder vote events with no counts and no per-voter
+    # rows -- an event that records only that a vote happened, with none of its
+    # content. Counting those made us look behind on data we in fact hold: across
+    # the six MA bills this check reported as "missing Senate votes", ALL 14 of
+    # live's extra events were empty, and we held the real roll calls. That is a
+    # defect in the comparison, not a gap in the data, and it made a clean MA run
+    # impossible -- the gate could never be met however good the scraper got.
+    #
+    # Deliberately not filtering the LOCAL side by the same rule. An empty event on
+    # our side is a real defect worth surfacing (see the MA House votes that
+    # imported with correct tallies and zero voters), and the tally comparison below
+    # is what catches it. Here we only stop crediting live for content it does not
+    # have.
+    def _carries_a_vote(v):
+        return bool(v.get("counts")) or bool(v.get("votes"))
+
+    live_substantive = [v for v in live_votes if _carries_a_vote(v)]
+    live_empty = len(live_votes) - len(live_substantive)
+
+    lv_count, rv_count = len(local_votes), len(live_substantive)
     if lv_count == rv_count:
-        report.record(PASS, f"{label}: vote event count matches ({lv_count})")
+        msg = f"{label}: vote event count matches ({lv_count})"
+        if live_empty:
+            msg += f" — ignoring {live_empty} empty live event(s)"
+        report.record(PASS, msg)
     elif lv_count > rv_count:
         # We have more votes than upstream — likely our scraper fix is better
         report.record(WARN, f"{label}: local has MORE votes than live (our fix not merged?)",
-                      f"local={lv_count} live={rv_count}")
+                      f"local={lv_count} live={rv_count}"
+                      + (f" (+{live_empty} empty live event(s) ignored)" if live_empty else ""))
     else:
-        # Live has more votes than us — we're behind
+        # Live has more real votes than us — we're behind
         report.record(FAIL, f"{label}: local is MISSING votes vs live",
-                      f"local={lv_count} live={rv_count}")
+                      f"local={lv_count} live={rv_count}"
+                      + (f" (+{live_empty} empty live event(s) ignored)" if live_empty else ""))
 
     # Vote tallies — match same-day votes between local and live before
     # comparing counts. Comparing by list position (local_votes[0] vs
@@ -582,23 +608,64 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
     def vote_date(v):
         return (v.get("start_date") or "")[:10]
 
+    # OPEN-169: pair on (date, CHAMBER), not date alone. Both chambers routinely
+    # vote on the same bill on the same day, with near-identical motion text --
+    # "Enacted", "Passed to be engrossed" -- so a date-only key happily compares a
+    # Senate roll call against a House one and reports a 40-vs-148 "tally mismatch"
+    # that is really two different votes.
+    #
+    # This was latent rather than new. It could not fire while MA held only Senate
+    # votes: there was nothing on our side for a live House vote to be mispaired
+    # with. Backfilling the House roll calls is what exposed it, and it accounted
+    # for the bulk of the warnings on the first clean run.
+    #
+    # organization.classification ("lower"/"upper") is the authoritative field --
+    # the same one that settled which chamber was actually missing. Falls back to
+    # the empty string so a record without it still groups consistently on both
+    # sides rather than silently dropping out of the comparison.
+    def vote_chamber(v):
+        return ((v.get("organization") or {}).get("classification") or "")
+
+    def vote_key(v):
+        return (vote_date(v), vote_chamber(v))
+
     local_by_date = defaultdict(list)
     for v in local_votes:
-        local_by_date[vote_date(v)].append(v)
+        local_by_date[vote_key(v)].append(v)
+    # Pair against live's *substantive* events for the same reason the count
+    # comparison above ignores them: an event with no counts and no voters has
+    # nothing to compare a tally against. Left unfiltered, every live placeholder
+    # produced two warnings that could never be acted on -- a "vote tally differs
+    # ... live={}" against an empty dict, and a "vote count differs" for the
+    # event-count gap the check had just decided to forgive. On MA that is not a
+    # rounding error: live carries an empty `upper` placeholder on most of these
+    # bills, and those warnings are the ones the readiness recommendation gets
+    # read against.
+    #
+    # The local side stays unfiltered here, exactly as above -- an empty event of
+    # ours is a real defect and this loop is what surfaces it, as a tally of {}
+    # against live's real counts.
     live_by_date = defaultdict(list)
-    for v in live_votes:
-        live_by_date[vote_date(v)].append(v)
+    for v in live_substantive:
+        live_by_date[vote_key(v)].append(v)
 
     shared_dates = sorted(d for d in local_by_date if d in live_by_date)
-    if local_votes and live_votes and not shared_dates:
-        report.record(WARN, f"{label}: no shared vote dates to compare tallies against",
-                      f"local={sorted(local_by_date)} live={sorted(live_by_date)}")
+    if local_votes and live_substantive and not shared_dates:
+        report.record(WARN, f"{label}: no shared vote date+chamber to compare tallies against",
+                      f"local={sorted('/'.join(k) for k in local_by_date)} "
+                      f"live={sorted('/'.join(k) for k in live_by_date)}")
 
     def tally(v):
         return {c["option"]: c["value"] for c in (v.get("counts") or [])}
 
-    for date in shared_dates:
-        lvs, rvs = list(local_by_date[date]), list(live_by_date[date])
+    for key in shared_dates:
+        lvs, rvs = list(local_by_date[key]), list(live_by_date[key])
+        # Unpack rather than carrying the tuple further: `date` stays a plain
+        # date string, which is what count_shared_date_signature()'s SQL binds,
+        # and the chamber only decorates the message. Keeping the tuple here
+        # silently passed a record into `LEFT(ve.start_date, 10) = %s`.
+        date, chamber = key
+        where = f"{date}/{chamber}" if chamber else date
 
         # A single day can carry more than one vote (companion votes, committee
         # + floor, or a "vote-a-rama" of amendments all dated the same day) --
@@ -634,7 +701,7 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
         for lv, rv in pairs:
             lc, rc = tally(lv), tally(rv)
             if lc == rc:
-                report.record(PASS, f"{label}: vote tally matches on {date} ({lc})")
+                report.record(PASS, f"{label}: vote tally matches on {where} ({lc})")
             else:
                 local_only, live_only = diff_voters(lv, rv)
                 detail = f"local={lc} live={rc} | {describe_voter_diff(local_only, live_only)}"
@@ -647,10 +714,10 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
                         cache=blast_radius_cache,
                     )
                     detail += (f" | {shared_count} other local bill(s) share this "
-                               f"signature on {date}")
-                report.record(WARN, f"{label}: vote tally differs on {date}", detail)
+                               f"signature on {where}")
+                report.record(WARN, f"{label}: vote tally differs on {where}", detail)
         if len(lvs) != len(rvs):
-            report.record(WARN, f"{label}: vote count on {date} differs",
+            report.record(WARN, f"{label}: vote count on {where} differs",
                           f"local={len(lvs)} live={len(rvs)}")
 
     # Sponsorship count (allow ±1 — upstream may have added one since our scrape)
