@@ -159,13 +159,74 @@ check "a stray inherited DATABASE_URL is ignored, not adopted" \
 
 echo "== run-scrape.sh refuses a real run from a non-production checkout =="
 
+# OPEN-164: build a sandboxed copy of the checkout whose idea of "production" is a
+# throwaway directory. Shared by run_guard() and the LOG_DIR block further down.
+#
+# Echoes the sandbox path.
+make_sandbox() {   # <fake-production-dir> [production-checkout-override]
+    local fake_prod="$1"
+    local prod_constant="${2:-$fake_prod}"
+    local sandbox; sandbox=$(mktemp -d "$TMP_ROOT/sandbox.XXXXXX")
+    mkdir -p "$fake_prod/logs/last-run"
+    # ONLY run-scrape.sh is rewritten. activate.sh is copied verbatim on purpose: its
+    # production fallbacks are INPUTS (the venv, the scrapers tree, the people checkout)
+    # and OPEN-159's rule explicitly permits those -- pointing them at an empty fake
+    # directory would break the run for an unrelated reason. What must be neutralised is
+    # every production path in run-scrape.sh, because those are the OUTPUT ones.
+    sed "s|/Users/agentsmith/Developer/repos/ddp-open-states|$prod_constant|g" \
+        "$SCRIPT_DIR/run-scrape.sh" > "$sandbox/run-scrape.sh"
+    cp "$SCRIPT_DIR/activate.sh" "$SCRIPT_DIR/import-summary.sh" "$sandbox/"
+    chmod +x "$sandbox/run-scrape.sh"
+
+    # DEFENCE IN DEPTH (pm-review round 1, and its strongest point). Everything above
+    # depends on run-scrape.sh's refusal guard firing. If that guard is ever reordered or
+    # broken -- exactly the regression this suite exists to catch -- the sandbox alone would
+    # not stop a real scrape, because DATABASE_URL_OVERRIDE is deliberately unset here (it
+    # has to be: its absence is what the refusal is being tested for).
+    #
+    # So the sandbox gets its own venv holding a SENTINEL os-update. activate.sh prefers a
+    # checkout-local .venv, so this is what any scrape or import would actually execute. It
+    # cannot reach a database or a legislature site; it records that it was reached and
+    # fails. Callers assert the marker never appears.
+    mkdir -p "$sandbox/.venv/bin"
+    cat > "$sandbox/.venv/bin/os-update" <<SENTINEL
+#!/usr/bin/env bash
+echo "REACHED" >> "$TMP_ROOT/sentinel-os-update-was-run"
+echo "SENTINEL: a real os-update would have run here" >&2
+exit 87
+SENTINEL
+    chmod +x "$sandbox/.venv/bin/os-update"
+    # Creating a .venv makes activate.sh prefer it over production's, so the interpreter
+    # run-scrape.sh uses to inspect which scrapers a jurisdiction registers has to exist
+    # too. Symlinked to the real one: running python is harmless, and it is os-update --
+    # the thing that reaches a database and a legislature site -- that must stay a sentinel.
+    if [ -x "$PRODUCTION_CHECKOUT/.venv/bin/python" ]; then
+        ln -sf "$PRODUCTION_CHECKOUT/.venv/bin/python" "$sandbox/.venv/bin/python"
+    fi
+    echo "$sandbox"
+}
+
 run_guard() {
-    # Runs this worktree's run-scrape.sh, which is by definition not the production checkout.
-    # LOG_DIR is redirected so nothing is written to production's scraper.log.
+    # OPEN-164: runs a SANDBOXED COPY, not $SCRIPT_DIR/run-scrape.sh directly.
+    #
+    # The old comment here read "this worktree's run-scrape.sh, which is by definition not
+    # the production checkout" -- and that assumption inverts the moment somebody runs this
+    # suite from the production checkout, which is the ordinary place to run a repo's own
+    # tests. There run-scrape.sh does NOT refuse: it starts a REAL Virginia scrape, against
+    # the live site and the production database, because DATABASE_URL_OVERRIDE is unset.
+    # A test asserting "a real scrape is refused" would have performed one.
+    #
+    # A sandbox fixes it structurally rather than by asking the operator to remember: the
+    # copy is never the production checkout, wherever this suite is run from, so the refusal
+    # the assertions below expect is the real behaviour rather than an accident of location.
     local logdir="$TMP_ROOT/logs-$RANDOM"
     mkdir -p "$logdir/last-run"
+    local sandbox; sandbox=$(make_sandbox "$TMP_ROOT/fake-prod-$RANDOM")
+    # Recorded to a file, not a variable: run_guard is called inside $( ), so any
+    # assignment it makes dies with the subshell.
+    echo "$sandbox" > "$TMP_ROOT/last-guard-checkout"
     env LOG_DIR="$logdir" SKIP_PATCHES=1 "$@" \
-        bash "$SCRIPT_DIR/run-scrape.sh" va >"$logdir/out" 2>&1
+        bash "$sandbox/run-scrape.sh" va >"$logdir/out" 2>&1
     local rc=$?
     printf '%s|%s' "$rc" "$(cat "$logdir/out")"
 }
@@ -173,7 +234,9 @@ run_guard() {
 out=$(run_guard); rc="${out%%|*}"; body="${out#*|}"
 check "refuses with EXIT_DO_NOT_RETRY (90)" "90" "$rc"
 assert_contains "says why" "refusing to run from a non-production checkout" "$body"
-assert_contains "names the checkout it is in" "$SCRIPT_DIR" "$body"
+# The property is "the message names the checkout the run happened in", which is the
+# sandbox now, not $SCRIPT_DIR. Same assertion, correct subject.
+assert_contains "names the checkout it is in" "$(cat "$TMP_ROOT/last-guard-checkout")" "$body"
 # The message has to say what to DO, not just that it stopped — this fires on a machine where
 # somebody is trying to test something and needs the next step, not a diagnosis.
 assert_contains "says how to proceed" "DATABASE_URL_OVERRIDE" "$body"
@@ -216,20 +279,11 @@ echo "== OPEN-172: LOG_DIR follows the checkout, so a dev run cannot touch produ
 # production's real va.ts on 2026-08-26, which had to be recovered from scraper.log. A test
 # whose entire purpose is preventing production-state corruption must not be able to cause
 # it, on any version of the code it might be pointed at.
-SANDBOX="$TMP_ROOT/sandbox-checkout"
 FAKE_PROD="$TMP_ROOT/fake-production"
-# NOTE: deliberately NOT creating $SANDBOX/logs -- run-scrape.sh must create it
-# itself, which is a real requirement now that LOG_DIR follows the checkout.
-mkdir -p "$SANDBOX" "$FAKE_PROD/logs/last-run" "$SANDBOX/data/va" "$SANDBOX/cache"
-# ONLY run-scrape.sh is rewritten. activate.sh is copied verbatim on purpose: its
-# production fallbacks are INPUTS (the venv, the scrapers tree, the people checkout) and
-# OPEN-159's rule explicitly permits those -- redirecting them at an empty fake directory
-# would just break the run for an unrelated reason. What must be neutralised is every
-# production path in run-scrape.sh, because those are the OUTPUT ones.
-sed "s|/Users/agentsmith/Developer/repos/ddp-open-states|$FAKE_PROD|g" \
-    "$SCRIPT_DIR/run-scrape.sh" > "$SANDBOX/run-scrape.sh"
-cp "$SCRIPT_DIR/activate.sh" "$SCRIPT_DIR/import-summary.sh" "$SANDBOX/"
-chmod +x "$SANDBOX/run-scrape.sh"
+SANDBOX=$(make_sandbox "$FAKE_PROD")
+# Deliberately NOT creating $SANDBOX/logs -- run-scrape.sh must create it itself, which is
+# a real requirement now that LOG_DIR follows the checkout.
+mkdir -p "$SANDBOX/data/va" "$SANDBOX/cache"
 
 OK_STUB="$TMP_ROOT/stub-os-update-ok"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$OK_STUB"
@@ -271,6 +325,96 @@ if [ "$STRAY" -eq 0 ]; then
     PASS=$((PASS + 1)); echo "  ok   the only absolute production path is PRODUCTION_CHECKOUT itself"
 else
     FAIL=$((FAIL + 1)); echo "  FAIL $STRAY absolute production path(s) outside PRODUCTION_CHECKOUT"
+fi
+
+echo "== OPEN-164: this suite is safe to run from the production checkout =="
+
+# The bug: run_guard used to invoke $SCRIPT_DIR/run-scrape.sh directly, on the assumption
+# that it was "by definition not the production checkout". Run this suite from the
+# production checkout -- the ordinary place to run a repo's own tests -- and that inverts.
+# There run-scrape.sh does not refuse, so the test asserting "a real scrape is refused"
+# would instead have STARTED one: a real Virginia scrape against the live site and the
+# production database, since DATABASE_URL_OVERRIDE is unset.
+#
+# Asserted against the source, because the failure only manifests in the one location this
+# suite cannot safely be run in to demonstrate it.
+GUARD_BODY=$(sed -n '/^run_guard()/,/^}/p' "$SCRIPT_DIR/test-checkout-isolation.sh")
+case "$GUARD_BODY" in
+    *'bash "$SCRIPT_DIR/run-scrape.sh"'*)
+        FAIL=$((FAIL + 1))
+        echo "  FAIL run_guard invokes \$SCRIPT_DIR/run-scrape.sh — starts a REAL scrape in production" ;;
+    *)
+        PASS=$((PASS + 1))
+        echo "  ok   run_guard does not invoke this checkout's run-scrape.sh directly" ;;
+esac
+
+case "$GUARD_BODY" in
+    *make_sandbox*)
+        PASS=$((PASS + 1)); echo "  ok   run_guard runs a sandboxed copy instead" ;;
+    *)
+        FAIL=$((FAIL + 1)); echo "  FAIL run_guard no longer uses a sandbox" ;;
+esac
+
+# And the sandbox's own production constant must not be the real one, or the sandbox is
+# cosmetic.
+SB=$(make_sandbox "$TMP_ROOT/fake-prod-assert")
+if grep -q "^PRODUCTION_CHECKOUT=.*$TMP_ROOT/fake-prod-assert" "$SB/run-scrape.sh"; then
+    PASS=$((PASS + 1)); echo "  ok   the sandbox's PRODUCTION_CHECKOUT is a throwaway directory"
+else
+    FAIL=$((FAIL + 1)); echo "  FAIL the sandbox still points at the real production checkout"
+fi
+
+# The behavioural proof this ticket actually wants, obtained safely. A sandbox whose
+# PRODUCTION_CHECKOUT is ITSELF is, from run-scrape.sh's own point of view, the production
+# checkout -- which is the situation that inverts the old assumption. Running it here
+# reproduces "the suite launched from production" without going near the real one.
+# Assert here, BEFORE the deliberate simulation below: no guard test may have reached a
+# scraper at all. Counting afterwards is wrong -- the simulation legitimately invokes
+# os-update more than once, because run-scrape.sh retries with --fastmode.
+if [ -f "$TMP_ROOT/sentinel-os-update-was-run" ]; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL a guard test reached os-update — it attempted a real scrape"
+else
+    PASS=$((PASS + 1))
+    echo "  ok   no guard test reached os-update"
+fi
+
+PROD_SIM=$(mktemp -d "$TMP_ROOT/prodsim.XXXXXX")
+SB_PROD=$(make_sandbox "$TMP_ROOT/fake-prod-sim" "$PROD_SIM")
+# Move it so its own path IS the production constant it was built with.
+rm -rf "$PROD_SIM"; mv "$SB_PROD" "$PROD_SIM"
+mkdir -p "$TMP_ROOT/prodsim-data/va" "$TMP_ROOT/prodsim-cache"
+
+env LOG_DIR="$TMP_ROOT/prodsim-logs" SKIP_PATCHES=1 \
+    SCRAPED_DATA_DIR_OVERRIDE="$TMP_ROOT/prodsim-data" \
+    CACHE_DIR_OVERRIDE="$TMP_ROOT/prodsim-cache" \
+    SUPPRESS_FAILURE_ALERT=1 \
+    bash "$PROD_SIM/run-scrape.sh" va > "$TMP_ROOT/prodsim.out" 2>&1
+
+# It does NOT refuse here -- that is the whole point, and why the old run_guard was unsafe.
+if grep -q "refusing to run from a non-production checkout" "$TMP_ROOT/prodsim.out"; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL a checkout that IS production refused -- the premise of this ticket is wrong"
+else
+    PASS=$((PASS + 1))
+    echo "  ok   a checkout that IS production does not refuse (this is why run_guard had to change)"
+fi
+
+# (The sentinel's own stderr goes into scraper.log via run-scrape.sh's tee pipeline, not
+# into the captured stdout, so the marker file below -- not this output -- is what proves
+# os-update was reached.)
+
+# And it must have been the simulation that reached it -- otherwise the simulation proved
+# nothing, and the sentinel would be passing for the wrong reason. This is also the
+# assertion showing what the old run_guard would have cost: from a checkout that IS
+# production, run-scrape.sh goes straight on to os-update, which in the real one is a live
+# Virginia scrape against the production database.
+if [ -f "$TMP_ROOT/sentinel-os-update-was-run" ]; then
+    PASS=$((PASS + 1))
+    echo "  ok   the simulation reached os-update, so the sentinel is what stopped a real scrape"
+else
+    FAIL=$((FAIL + 1))
+    echo "  FAIL the simulation never reached os-update — it is not exercising the risk"
 fi
 
 echo
