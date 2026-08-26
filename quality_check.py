@@ -558,17 +558,43 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
     # live > local means we're missing votes — that's the real problem.
     local_votes = local.get("votes") or []
     live_votes  = live.get("votes") or []
-    lv_count, rv_count = len(local_votes), len(live_votes)
+
+    # OPEN-169: compare vote events that actually carry a vote, not raw list length.
+    # The live API returns placeholder vote events with no counts and no per-voter
+    # rows -- an event that records only that a vote happened, with none of its
+    # content. Counting those made us look behind on data we in fact hold: across
+    # the six MA bills this check reported as "missing Senate votes", ALL 14 of
+    # live's extra events were empty, and we held the real roll calls. That is a
+    # defect in the comparison, not a gap in the data, and it made a clean MA run
+    # impossible -- the gate could never be met however good the scraper got.
+    #
+    # Deliberately not filtering the LOCAL side by the same rule. An empty event on
+    # our side is a real defect worth surfacing (see the MA House votes that
+    # imported with correct tallies and zero voters), and the tally comparison below
+    # is what catches it. Here we only stop crediting live for content it does not
+    # have.
+    def _carries_a_vote(v):
+        return bool(v.get("counts")) or bool(v.get("votes"))
+
+    live_substantive = [v for v in live_votes if _carries_a_vote(v)]
+    live_empty = len(live_votes) - len(live_substantive)
+
+    lv_count, rv_count = len(local_votes), len(live_substantive)
     if lv_count == rv_count:
-        report.record(PASS, f"{label}: vote event count matches ({lv_count})")
+        msg = f"{label}: vote event count matches ({lv_count})"
+        if live_empty:
+            msg += f" — ignoring {live_empty} empty live event(s)"
+        report.record(PASS, msg)
     elif lv_count > rv_count:
         # We have more votes than upstream — likely our scraper fix is better
         report.record(WARN, f"{label}: local has MORE votes than live (our fix not merged?)",
-                      f"local={lv_count} live={rv_count}")
+                      f"local={lv_count} live={rv_count}"
+                      + (f" (+{live_empty} empty live event(s) ignored)" if live_empty else ""))
     else:
-        # Live has more votes than us — we're behind
+        # Live has more real votes than us — we're behind
         report.record(FAIL, f"{label}: local is MISSING votes vs live",
-                      f"local={lv_count} live={rv_count}")
+                      f"local={lv_count} live={rv_count}"
+                      + (f" (+{live_empty} empty live event(s) ignored)" if live_empty else ""))
 
     # Vote tallies — match same-day votes between local and live before
     # comparing counts. Comparing by list position (local_votes[0] vs
