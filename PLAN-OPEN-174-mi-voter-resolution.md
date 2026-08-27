@@ -107,9 +107,22 @@ the Ballotpedia, Wikipedia and House Democrats URLs already listed under `source
 | `Tonya Myers Phillips` | 1 |
 | `Phillips` (bare) | **0** |
 
-Exactly one match is what `resolve_person()` needs — it errors on zero and on more than one — and
-the bare-surname row confirms nothing was made ambiguous. `os-people lint mi` passes. No
-production database was touched.
+Exactly one match is what `resolve_person()` needs — it errors on zero and on more than one.
+`os-people lint mi` passes. No production database was touched.
+
+**The bare-`Phillips` row deserves a word, because zero could mean either "safe" or "regression".**
+Her `family_name` changes from `Phillips` to `Myers Phillips`, so a journal writing a bare
+`Phillips` would stop resolving to her. It would be a regression if Michigan ever wrote her that
+way. It does not — there is not a single Michigan vote row whose voter name is `Phillips`:
+
+```sql
+SELECT DISTINCT pv.voter_name FROM opencivicdata_personvote pv ... 
+ WHERE j.id LIKE '%state:mi%' AND lower(pv.voter_name) = 'phillips';
+-- (none)
+```
+
+Every Michigan vote naming her spells it `Myers-Phillips`, all 680 of them. The zero is the safe
+kind.
 
 ---
 
@@ -131,22 +144,64 @@ on `Digital-Democracy-Project/people` is therefore **not in the production path 
 DDP fork exists but nothing reads it. So "carry the fix on our fork" is not currently a stopgap;
 it is a change to how the pipeline gets its roster.
 
-Three real options, for you to choose:
+Three real options:
 
 | option | effect | cost |
 |---|---|---|
 | **A. Wait for upstream** | correct everywhere, no local divergence | unbounded — the precedent is a month and counting |
-| **B. Re-point production's `people` at the DDP fork**, carry this fix there, merge upstream regularly | DDP roster corrections take effect within one weekly refresh | a real fork to maintain; `--ff-only` will need care |
-| **C. Targeted backfill of `voter_id`** on the 680 rows, leaving the roster alone | fixes today's data | does not survive the next import; needs redoing each time |
+| **B. Re-point production's `people` at the DDP fork**, carry this fix there, merge upstream regularly | DDP roster corrections take effect within one weekly refresh | a standing fork to own, sync and eventually exit |
+| **C. Targeted backfill of `voter_id`** on the 680 rows | repairs the data now, with the roster fix landing separately | none that survives, once the roster is right — see below |
 
-My recommendation is **B**, but it is a standing-cost decision rather than a technical one, and it
-is genuinely yours. Note that B also pays for itself against the three defects in §6 below, which
-are all roster-adjacent and all currently blocked behind the same upstream queue.
+**I originally recommended B. On the evidence below I now recommend C for the repair, and treat B
+as a separate decision that is not this ticket's to make.**
 
-Whichever you pick, **recovery of the 680 needs a re-import, not just a roster load.**
-`voter_id` is resolved at vote-import time, so `os-people to-database mi` alone changes nothing
-about rows already stored — the votes have to be re-imported (or the column backfilled) for the
-existing 680 to resolve. That is a production write and is left for you.
+Two things changed my mind.
+
+**C's stated weakness does not actually hold.** The objection to a backfill is that it "does not
+survive the next import". That is true only while the roster is still wrong. Once
+openstates/people#4036 (or an equivalent) is in the pipeline, a re-import resolves her correctly
+by itself — so a backfilled row is either left alone or rewritten to the same value. The backfill
+stops being a recurring chore and becomes a one-off catch-up.
+
+**B is not a stopgap, it is a platform decision.** Re-pointing production's roster source changes
+where the pipeline's people data comes from, permanently, and needs answers this ticket has no
+business settling: who owns the fork, how often it merges upstream, what is allowed onto it, what
+reviews it, and what event moves production back to upstream. Those are OPEN-38-level questions —
+they apply to every future roster correction, not to one surname — and they should be decided as
+policy rather than inherited from a bug fix. Worth deciding soon, since §6 shows a lot of
+roster-shaped work queued behind the same upstream wait.
+
+### How the repair actually behaves, since the plan rests on it
+
+`PersonVote` is registered in the vote-event importer's `related_models`
+(`vote_events.py:15-17`) with no merge key, which puts it on `_update_related()`'s default path:
+
+```python
+# default logic is to just wipe and recreate subobjects
+if do_delete:
+    getattr(obj, field).all().delete()
+if do_update:
+    self._create_related(obj, {field: items}, subfield_dict)
+```
+
+`items_differ()` compares the incoming rows — which carry a freshly resolved `voter_id` — against
+the stored ones, which carry NULL. They differ, so the rows are deleted and recreated. **A
+re-import repairs the NULLs and cannot duplicate them.** That is a code-level guarantee rather
+than an assumption, and it is worth stating because "re-import to fix it" would be a bad plan if
+the importer merged rather than replaced.
+
+### But a re-import cannot reach most of the 680, and that is the real constraint
+
+`run-scrape.sh`'s `do_scrape()` wipes `$SCRAPED_DATA_DIR/$STATE` at the start of every run, so
+`openstates-scrapers/_data/mi` holds only the **last** run's output — today, 398 bill files from
+the 2026-08-24 incremental. An import-only pass (`os-update mi --import`) would therefore repair
+only the vote events in that partial set, not the eighteen months of rows.
+
+Reaching all 680 by re-import means a **full Michigan re-scrape** — roughly 3,800 requests over
+7–8 hours against the fleet's most WAF-sensitive jurisdiction. That is a large price for a
+column update whose correct value is already known and unambiguous.
+
+Hence the recommendation: **backfill the column, and let the roster fix prevent recurrence.**
 
 ---
 
@@ -269,15 +324,94 @@ under a ticket about one name.
 
 ## What you need to do
 
-1. **Choose a stopgap route** — §4, options A/B/C. Nothing else here is blocked on it, but the
-   680 rows stay broken until one is picked.
-2. **Re-import Michigan votes** (or backfill `voter_id`) once the corrected roster is in the
-   production path — the roster load alone will not repair rows already stored.
+1. **Backfill `voter_id` for the 680 rows** (§4). This is the repair, and it is a production
+   write, so it is yours. Before/after checks below.
+2. **Decide separately** whether production's roster source moves to the DDP fork (§4, option B).
+   Not required for the repair; it decides how fast the *next* roster correction lands.
 3. **Re-run** `python manage.py report_unmatched_voters --jurisdiction MI` and expect the 30
    motions to clear. Per the ticket: motions that do not clear are a second cause, and §5 already
    names it.
-4. **File two tickets** if you agree with them: the MI merged-surname parser defect (§5), and the
-   fleet-wide unresolved-voter epic (§6).
+4. **File two tickets** if you agree with them — drafts in §8, so it is a paste rather than a
+   writing job.
+
+### Acceptance, measured at the replica
+
+The ticket's own criterion is the broker's 30 motions, but this plan argues the replica's 680 rows
+are the impact that matters — so that is where it should be checked. Before and after:
+
+```sql
+-- expect 680 before, 0 after
+SELECT count(*) AS unresolved
+FROM opencivicdata_personvote pv
+JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
+JOIN opencivicdata_legislativesession s ON ve.legislative_session_id = s.id
+JOIN opencivicdata_jurisdiction j ON s.jurisdiction_id = j.id
+WHERE j.id LIKE '%state:mi%' AND pv.voter_name = 'Myers-Phillips'
+  AND pv.voter_id IS NULL;
+
+-- expect 0 before, 680 after, ALL pointing at the one existing identity
+SELECT pv.voter_id, count(*)
+FROM opencivicdata_personvote pv
+JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
+JOIN opencivicdata_legislativesession s ON ve.legislative_session_id = s.id
+JOIN opencivicdata_jurisdiction j ON s.jurisdiction_id = j.id
+WHERE j.id LIKE '%state:mi%' AND pv.voter_name = 'Myers-Phillips'
+GROUP BY 1;
+-- expected: one row, ocd-person/787d9bda-d4dd-47fe-aaf0-348c505211e4, 680
+
+-- expect 1,427 before and 747 after -- nothing but her rows should move
+SELECT count(*) FROM opencivicdata_personvote pv
+JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
+JOIN opencivicdata_legislativesession s ON ve.legislative_session_id = s.id
+JOIN opencivicdata_jurisdiction j ON s.jurisdiction_id = j.id
+WHERE j.id LIKE '%state:mi%' AND pv.voter_id IS NULL;
+-- 1,427 before; 747 after (1,427 - 680), all of them the §6 causes
+```
+
+And the total number of Michigan person-vote rows (**91,524**) must be identical before and after
+— a backfill sets a column and must not change how many vote rows exist. If that number moves,
+something other than the backfill ran.
+
+## 8. Draft tickets, so these are not lost
+
+I have not filed these. Filing was not part of what I was asked to do, and this repo's convention
+wants a parent epic and labels copied from sibling tickets rather than invented — that is your
+call to place. Both are written to be pasted.
+
+**Ticket 1 — MI: the journal parser merges adjacent legislators' surnames into one voter name**
+
+> Labels: `local-openstates-migration`, `data-quality`. Parent: OPEN-38 (or wherever the MI
+> scraper defects sit).
+>
+> Michigan roll calls produce voter names that are two legislators joined into one string —
+> `Theis Victory`, `Bellino Bumstead`, `Hauck Hoitenga`, `Lindsey Outman`, and 140 others.
+> They match no roster entry, resolve to nobody, and are silently dropped, leaving the motion's
+> attached votes short of its stated tally. 144 distinct merged names across 300 vote rows in
+> Michigan. Root-caused in OPEN-174 §5 while explaining broker motions 4165/4166 (the ticket's
+> original 4161/4162), where the effect is a Senate motion 26 votes short of its own text.
+> The defect is in the vote-column parsing in `openstates-scrapers/scrapers/mi/`; it is not a
+> roster problem and no roster fix will touch it.
+
+**Ticket 2 — Fleet-wide: 69,445 vote records name a person and resolve to nobody**
+
+> Labels: `data-quality`, `local-openstates-migration`. Parent: likely its own epic.
+>
+> Across all seven tracked jurisdictions, 69,445 of 1,790,625 person-vote rows (3.88%) have a
+> voter name and a NULL `voter_id` — 623 distinct names. Virginia 35,240; US 22,279;
+> Massachusetts 6,180. Utah is zero, so this is not inherent to the pipeline. At least six
+> distinct causes are already visible (roster name mismatch, curly apostrophes, mojibake, merged
+> surnames, non-person entries like `Mr. Speaker`, chamber-suffixed forms like `Banks (R-IN)`).
+> Bears directly on OPEN-38: the case for serving the replica rather than the public API is that
+> its per-voter records are better, and these are records where we have a name and no person.
+> Measured in OPEN-174 §6; not investigated further there deliberately.
+>
+> Recommended first step: classify Virginia's 14 names carrying 35,240 rows. That is half the
+> total and the smallest number of distinct causes.
+
+**Does this block the MA/MI production flips?** My read is that it **informs** rather than blocks:
+these rows carry a voter name, so nothing is silently wrong on the page in the way OPEN-1 was —
+a tally is short, which reads as an absence. But it is a launch-risk decision rather than a
+technical one, and it should be recorded on OPEN-38 either way rather than left implicit.
 
 No production data was written, and no live requests were made to any legislature site.
 
