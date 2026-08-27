@@ -110,12 +110,50 @@ All of the above describes **the 24 bills that failed comparison**, not MA 194th
 here establishes how many House roll calls are missing across the full session — only that on the
 bills where we already knew something was wrong, the House is absent 20 times out of 24.
 
-### What this does not establish
+### Answered, later the same day
 
-Whether the House votes are absent because the scraper never requests the House roll-call pages, or
-requests them and fails to parse them — and separately, what causes the six Senate-side gaps, which
-may or may not share a cause. Both distinctions decide the fix and **need the scraper run against
-these bills**, not more database comparison. That is the next step, deliberately not guessed at here.
+The scraper was run against these bills, and both questions have answers.
+
+**The House gap was neither a fetch failure nor a parse failure — the scraper never tried.** House
+votes were only created when an action description contained `"Supplement"`, and Massachusetts
+stopped using that word. Across the 24 bills, `"Supplement"` occurs **0** times while
+`"YEA and NAY"` occurs **57** and `"Roll Call"` — the Senate trigger — occurs **41**. The Senate
+branch matched reality and the House branch matched nothing, which is exactly why the symptom read
+as "Senate votes but no House votes" rather than an obvious blank.
+
+Behind it, a second bug: the House roll-call URL interpolated the session as `194th`, giving a 404
+that `urlretrieve` saved, `convert_pdf` turned into junk, and a bare `return` reported as success —
+so a vote event was yielded with correct counts and zero voters. Tallies looked right while every
+individual House vote was dropped.
+
+**The six "Senate-side gaps" were not gaps.** All 14 of live's extra Senate vote events on those
+bills are empty — no counts, no voters. We held the real roll calls; live held placeholders. The
+coverage check counted vote events rather than content, which is a defect in the check and is now
+fixed. The four bills with no House vote in either source collapse entirely into this, so what
+looked like three problems was one.
+
+### The number that actually measures completeness
+
+This is the part worth keeping, because it is not the coverage run.
+
+**The coverage check cannot measure this class of gap at all.** It compares us against live, and
+public OpenStates has both of the same bugs — verified against their `main`. So a bill where both
+sides lack the House votes never fails a check. The 24 that failed were only the ones where live
+happened to have the votes from some other route.
+
+The real measure is internal: *how many MA bills cite a House roll call in their actions, and how
+many actually hold one?*
+
+```
+                                       before      after
+bills citing a House roll call            117        117
+bills holding a House vote                 66        122
+bills still missing them                   51          0
+```
+
+293 House vote events and 40,649 individual voter records, none of which were being collected.
+Contributed upstream as openstates/openstates-scrapers#5776, since the bug affects every consumer
+of the public scraper and encodes no DDP-specific tradeoff.
 
 ## Reproducing
 
