@@ -36,7 +36,10 @@ Myers-Phillips        680          0    2025-01-08   2026-07-03
 ```
 
 Every vote the Michigan House journal records for her fails to resolve, across eighteen months.
-She is the single largest unmatched name in Michigan — larger than the other 153 combined.
+She is the single largest unmatched name in Michigan by a wide margin — 680 rows against 379
+for the next largest, `O’Neal`. Michigan holds 1,427 unresolved rows across 154 names, so she is
+not larger than the other 153 combined (680 against 747); §9's acceptance query states the same
+two numbers.
 
 The roster row is exactly as the ticket describes, and there is no duplicate:
 
