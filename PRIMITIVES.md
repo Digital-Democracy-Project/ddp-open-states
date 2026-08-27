@@ -214,6 +214,60 @@ agent tasks die on session teardown, this does not. If you add a backfill for an
 jurisdiction, copy this script's shape (marker-check loop + smallest-first ordering), don't
 build a new state-tracking mechanism.
 
+## `fix-open*.py` — one-off `personvote` repair scripts (repo root)
+
+Seven of these now exist and they are a family, not seven unrelated scripts. All of them repair
+`opencivicdata_personvote` in the replica, and all share the same shape — **copy the nearest one
+rather than starting from psycopg2**:
+
+- **Wrong person** (`voter_id` set, pointing at the wrong legislator): `fix-grijalva-*`,
+  `fix-open110-fl-smith-*`, `fix-open113-wa-cortes-valdez-*`, `fix-open114-mi-outman-*`,
+  `fix-open115-fl-smith-senate-*`. Completion record for the whole 2026-08-19 batch:
+  `vote-misattribution-backfills-completed-20260819.md`.
+- **No person** (`voter_id IS NULL`, resolved to nobody): `fix-open116-blank-voter-id-*` (bare
+  surnames that were ambiguous), `fix-open174-mi-myers-phillips-*` (a journal name the roster
+  spells differently). Completion record:
+  `OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`.
+
+The conventions every one of them follows, and a new one must:
+
+- **`--dry-run` that actually rehearses the write**, printing the exact counts the real run will
+  report. The established collaboration pattern for a production write is dry-run → agree the
+  real numbers → commit, so a dry run that does not produce the final numbers is not useful.
+- **Re-derive the correct person per row, date-anchored, from `opencivicdata_membership`** — who
+  held a matching-chamber seat in this jurisdiction *on that vote's own date*. Never
+  `resolve_person()`'s opinion, never "currently seated". `fix-open116`'s
+  `find_unambiguous_person()` is the reference implementation; `fix-open174` adds an assertion
+  that the single candidate found is a specific expected `ocd-person` id, which is worth copying
+  whenever the target identity is known in advance.
+- **Fill only the provably unambiguous rows.** Anything with 0 or 2+ candidates on its date is
+  left alone and reported, never guessed.
+- **Idempotent by predicate**, not by bookkeeping: match on `voter_id IS NULL` (or the specific
+  wrong id) and re-check that condition in the `UPDATE`'s own `WHERE`, so a second run is a
+  no-op without needing to remember it already ran.
+- **Abort without committing if the rows actually updated ≠ the rows expected.** `autocommit =
+  False`, one transaction, `conn.rollback()` and `SystemExit` on mismatch.
+- **Write a dated completion record at the repo root** when it runs for real — what changed, the
+  before/after verification numbers, and the revert statement. Capture the affected row ids to a
+  file *before* writing, so the revert is a paste rather than a reconstruction.
+
+**Two duplicate checks are needed, not one — found the hard way on 2026-08-27 (OPEN-174).** The
+obvious check asks whether the target vote event *already* has a row for this person, which is
+what `fix-open116` does. That is necessary and not sufficient: if one roll call carries **two**
+blank rows for the same voter, the check passes for both and filling both makes the roll call
+count that legislator twice. The first OPEN-174 production run did exactly this to three Michigan
+roll calls before it was caught and reverted. So also **track `(vote_event_id, person_id)` pairs
+already queued within the run** and skip repeats — `fix-open174`'s `queued` set. A backfill whose
+whole purpose is correct attribution must not be the thing that double-counts a vote.
+
+Worth knowing before reaching for one of these at all: **a re-import would also repair these
+rows**, since `PersonVote` sits on `_update_related()`'s wipe-and-recreate path
+(`openstates-core/openstates/importers/base.py`) and `items_differ()` sees a resolved id against
+a stored NULL. It is usually not available in practice — `do_scrape()` wipes
+`$SCRAPED_DATA_DIR/$STATE` at the start of every run, so only the last run's bills are on disk,
+and covering a whole session means a full re-scrape. Check how much is in `_data/<state>` before
+concluding a backfill is the only option.
+
 ## `activate.sh` — environment setup (repo root, sourced not executed)
 
 Single source of truth for every env var the toolchain needs: `DATABASE_URL` (dedicated
