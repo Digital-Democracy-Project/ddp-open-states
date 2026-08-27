@@ -5,9 +5,10 @@ and no live requests were made.
 
 **Recommendation: do not delete. Re-sync instead, and fix the voter resolution first.**
 
-The case against deleting is stronger than the ticket's own "against" column, for a reason the
-ticket did not have: **the 41 residuals are not a separate mystery, and deleting the 182 would
-destroy the evidence of the defect that produced them.**
+The case rests on two things the ticket did not have: **its central factual claim about
+`eligible_for_scorecard` is wrong for 71 of the 223 rows**, and **the 41 "residuals" are not a
+separate mystery but duplicates whose twin is short exactly one voter** — a live defect that will
+move rows between the two cohorts once fixed. Deciding now means deciding twice.
 
 ---
 
@@ -61,19 +62,40 @@ return _recorded_vote_count(motion) > 0
 All 71 are `is_passage = True`, so they clear the first gate. They are excluded **only** by the
 final line — having zero recorded votes.
 
-So the ticket's conclusion survives (nothing reaches a scorecard, and I confirmed the built
-output agrees), but the reason is different for a third of the rows, and the margin is thinner
-than "by construction" suggests. That last guard was added for an unrelated purpose — a VA
-documentation motion carrying `is_passage=True` with no real vote, found 2026-08-10 — and its own
-comment describes it as narrowing "the degraded fallback path". **71 rows are one guard away from
-being scored, and that guard is not there to protect them.**
+So the ticket's conclusion survives — nothing reaches a scorecard — but the reason is different
+for a third of the rows.
 
-That is a stronger reason to *resolve* their status than the ticket had, and a weaker reason to
-resolve it by deletion.
+**Stated precisely, and no more strongly than the evidence allows:** those 71 are excluded solely
+by the zero-recorded-votes condition, having already passed the `is_passage` gate. That guard was
+added for an unrelated purpose (a VA documentation motion carrying `is_passage=True` with no real
+vote, 2026-08-10) and its own comment describes it as narrowing "the degraded fallback path".
+
+What that does **not** establish: that these rows are at any real risk of being scored. The guard
+is deliberate, current production behaviour, and nothing suggests it is going away. Nor have I
+shown what a scorecard would do with an eligible motion that has zero voters, so "one guard away"
+describes the distance, not a likelihood.
+
+The honest weight of it is this: the ticket rests its "inert data" verdict on a property (`false`)
+that a third of the rows do not have, and their actual exclusion depends on a line written for a
+different problem. That is a reason to give them an explicit verdict. It is not, on its own, a
+reason to delete them.
 
 ---
 
-## The finding that decides it: the 41 residuals are one dropped voter away
+## How the cohorts actually overlap
+
+Everything below turns on this, and the totals alone hide it:
+
+| | `eligible=false` (all voice votes) | `eligible=NULL` (all non-voice) | total |
+|---|---|---|---|
+| **182 with an exact same-date twin** — what the command deletes | 147 | **35** | 182 |
+| **41 residuals** — what it leaves behind | 5 | **36** | 41 |
+| total | 152 | 71 | 223 |
+
+So the deletion would remove 35 of the 71 verdict-less rows by removing the rows, and leave the
+other **36** — which are precisely the ones that need something else done to them.
+
+## The finding that reframes it: the 41 residuals are one dropped voter away
 
 The ticket asks for "a decision on the 41 residuals — vote-bearing siblings but no exact
 same-date tally match, possibly the same off-by-one class as OPEN-94."
@@ -102,9 +124,27 @@ person-vote rows across 43 distinct names, led by `Valdés` (914), `Cassel` (914
 and `Rayner-Goolsby` (466) — diacritics and hyphenated surnames, the same family of failure as
 Michigan's `Myers-Phillips` and `O’Neal`.
 
-So the residuals are evidence of a live, unfixed defect. Delete the 182 now and the 41 stay
-behind as an unexplained remainder that nobody can interpret, because the population they were a
-remainder *of* is gone.
+**A correction to an earlier draft of this memo.** It argued that deleting the 182 would destroy
+the evidence the residuals carry. That is wrong, and the cross-tab above shows why: the 41
+residuals are by definition the rows *without* an exact twin, so the command does not touch them.
+They would survive the deletion intact. The argument was reviewed, and it did not hold.
+
+What the finding actually changes is subtler, and it is about sequencing rather than evidence.
+
+**The 182/41 partition is not a stable property of the data.** It is a snapshot of which rows
+currently have an exact-tally twin — and "exact" is measured against sibling votes that are
+missing a voter. Repair Florida's voter resolution and 36 of the 41 residuals gain their missing
+vote, their sibling's tally becomes exact, and they *become* deletable by the same predicate.
+
+That turns one decision into two if taken in the wrong order:
+
+- **Delete now** → 182 rows go, 41 remain, 36 of them still verdict-less. Then fix the voter
+  resolution, watch 36 rows become exact twins, and hold the same conversation again about them.
+- **Fix first** → the population settles at ~218 exact twins and ~5 genuine residuals, and one
+  decision covers all of it.
+
+Neither order loses evidence. The second is simply one decision instead of two, taken on a
+population that has stopped moving.
 
 ---
 
@@ -156,14 +196,22 @@ superseded = (
 retired = superseded.update(eligible_for_scorecard=False)
 ```
 
-So the non-destructive path needs no extension at all. A sync of the affected Florida bills will
+So the non-destructive path needs no extension at all. A sync of the affected Florida bills should
 either re-produce these motions as candidates and give them a real computed verdict, or not
 produce them — in which case they are retired to `eligible_for_scorecard = False` automatically,
 by the code path that already runs on every sync.
 
-That satisfies the genuine harm (an unresolved verdict on 71 rows that are one guard from being
-scored) without an irreversible one-off deletion, and it matches the standing preference against
-correcting production data with commands that delete rows.
+**What I verified and what I did not.** I verified that the predicate *applies* to all 71 rows:
+they are non-voice, not already false, and therefore not excluded by either `.exclude()` clause. I
+did **not** verify that a sync run will actually reach these particular historical bills — that
+depends on which bills a sync pass visits, which I have not traced. So this is the right mechanism
+rather than a guaranteed outcome, and step 3 below should be checked by measurement rather than
+assumed. If a re-sync turns out not to revisit them, that is worth knowing on its own: it would
+mean stale motions can sit indefinitely with no verdict, which is a more general problem than
+these 71 rows.
+
+That path resolves the verdict question without an irreversible one-off deletion, and it matches
+the standing preference against correcting production data with commands that delete rows.
 
 ---
 
@@ -186,9 +234,52 @@ correcting production data with commands that delete rows.
    evidence that should be at most the 5 voice-vote residuals, and 2 of those have no same-date
    sibling at all — which is a different question again, and a small one.
 
-**If you want them gone anyway**, the command is sound and the case for it is real; I would just
-ask that the 36 residuals be recorded somewhere first, since after the deletion nothing will
-explain why they were off by one.
+### The durable policy this implies, stated plainly
+
+**Retirement is the intended end state, not a step on the way to deletion.** A motion marked
+`eligible_for_scorecard = False` is excluded everywhere that matters, keeps its lineage, and costs
+a row. Once all 223 carry an explicit verdict there is no remaining harm to fix, so deletion would
+be tidying rather than correcting.
+
+The exception worth naming in advance, so this is not reopened from scratch: delete only a row
+that is **both** provably redundant **and** actively misleading somewhere the verdict does not
+reach. Nothing in this population currently meets that bar.
+
+### What to check after each step, per cohort
+
+Aggregate totals will hide partial processing here, so check the cohorts rather than the headline:
+
+- **After the voter fix:** the 36 off-by-one residuals should have moved into the exact-twin set.
+  Expect roughly `218 twins / 5 residuals`, not merely "fewer residuals".
+- **After the re-sync:** all **71** previously-NULL rows should carry an explicit `true` or
+  `false` — checked as a count of NULLs going to zero, split by whether the row was one of the 35
+  inside the 182 or one of the 36 residuals, since those reach the retirement path by different
+  routes.
+- **Throughout:** the count of FL motions with a tally in their text and zero attached votes
+  should not *rise*. If it does, something is re-minting them and the staleness finding above is
+  wrong.
+
+**If you want them gone anyway**, the command is sound and the case for it is real. The cost is
+not lost evidence — the 41 residuals survive it — but a second conversation later, when the voter
+fix turns 36 of them into exact twins and the same question comes back for them.
+
+## Review responses
+
+**Acted on, and it was a real error.** The reviewer pointed out that the 41 residuals are by
+definition outside the 182, so deleting the 182 cannot erase them — which was the central claim of
+the first draft. It was wrong. The section is rewritten: the argument is now about sequencing (one
+decision on a settled population rather than two on a moving one), and the memo says plainly that
+neither order loses evidence. The cross-tab that makes the overlap visible is new, and it is the
+thing whose absence let the mistake through.
+
+Also narrowed the "one guard away" claim to what the code actually shows, added the durable-policy
+statement (retirement is the end state, not a stage before deletion), added cohort-specific
+acceptance checks, and marked the re-sync's reach as verified-in-principle but not traced.
+
+**Considered and not acted on.** *"Justify whether the exact 182 must wait for the voter fix at
+all."* They need not, and the memo no longer implies a hard dependency — the sequencing argument
+is about avoiding a repeat decision, not a blocker. Splitting them into two independently-decided
+cohorts would be defensible; it just costs the thing the sequencing buys.
 
 ---
 
