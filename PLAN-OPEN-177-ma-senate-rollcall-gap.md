@@ -64,6 +64,13 @@ alternative is discarding a real 39-0 roll call whose PDF is available and reada
 records the second number as the nay count and takes the voters from the PDF, which is
 authoritative regardless of what the action text says.
 
+**And it says that it inferred it.** The second label is captured rather than discarded, and a
+vote whose nay count was labelled "Yeas" carries `extras["tally_label_inferred"]`. This matters
+most in combination with the other half of the fix: once a vote is recorded even when its PDF
+cannot be read, an inferred tally with no voters to corroborate it would otherwise look identical
+to a sourced one — which is the same silent ambiguity this ticket exists to remove. The number is
+still recorded; it is simply not presented as something Massachusetts said.
+
 ## Cause 2 — a failed fetch discarded the whole vote (2 bills)
 
 H 4530 and S 2903 parse fine. Their votes were created, and then thrown away:
@@ -92,10 +99,12 @@ and it was discarded because a separate document could not be downloaded. Nothin
 nothing recorded that a vote had been dropped; the only trace is one `warning` line in a log that
 rotates.
 
-Note also that 18 roll calls failed that night while only 2 bills show as missing. The other 16
-were recovered by a later run or belong to bills that hold another Senate vote. **The audit is
-per-bill, so it under-reports**: it cannot see a bill that lost one of its several roll calls.
-The true number of dropped votes is higher than 6, and this measure will not tell you what it is.
+Note also that **18 distinct roll-call URLs** failed that night — each appears once in the log,
+so these are 18 different documents rather than repeated attempts at a few — while only 2 bills
+show as missing. The other 16 were recovered by a later run or belong to bills that hold another
+Senate vote. **The audit is per-bill, so it under-reports**: it cannot see a bill that lost one
+of its several roll calls. The number of votes dropped this way is therefore larger than 6, and
+this measure will not tell you what it is.
 
 ---
 
@@ -123,9 +132,32 @@ action text and is real whatever the PDF does.**
 A labelled gap can be found again with one query. A silent absence can only be found by someone
 thinking to run a per-bill audit, which is how this ticket came to exist a full session late.
 
-**Tests:** 18 in `tests/test_ma_rollcall_recovery.py`, including one per spelling above and one
-asserting the typo form still parses. All pass. Six pre-existing failures in
-`test_classify_motion.py` are unrelated — confirmed by re-running on the base commit.
+**Tests:** 23 in `tests/test_ma_rollcall_recovery.py` — one per spelling above, one asserting the
+typo form parses *and* reports itself as inferred, and four pinning `scrape_senate_vote()`'s
+return value on every path (readable roll call, HTML error page, empty document, fetch that
+raises). That last group exists because the caller now tests `not read_voters` rather than
+`is False`, which is only safe if there is no third answer — the old code's third answer is what
+let 152 empty votes through, so it is worth a test rather than an assumption.
+
+All pass. Six pre-existing failures in `test_classify_motion.py` are unrelated — confirmed by
+re-running on the base commit.
+
+## Review responses
+
+**Acted on.** *"The duplicated-Yeas form is silently treated as a valid tally, and with the new
+always-record behaviour it could be stored with no PDF to corroborate it."* Right, and it is the
+same failure mode as the ticket itself. Now marked — see above.
+
+*"What does `scrape_senate_vote` return on every successful path?"* A strict boolean, but the
+assumption was untested. Now pinned by four tests.
+
+*"Are the 18 skipped entries distinct roll calls or repeated attempts?"* Distinct — each URL
+appears once. The plan now says so rather than leaving it to be assumed.
+
+**Considered and not acted on.** *"Preserve the explicit `is False` check unless tests confirm a
+strict boolean."* The tests now confirm it, which is the better resolution: `not read_voters` is
+what expresses the actual rule ("did we get any voters"), and reverting to `is False` would
+reinstate the exact distinction — falsy-but-not-False — that caused this defect.
 
 ---
 
