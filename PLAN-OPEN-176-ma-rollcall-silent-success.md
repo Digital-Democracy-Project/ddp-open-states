@@ -114,11 +114,18 @@ _ROLLCALL_NUMBER_RE = re.compile(r"Roll\s+Call\s+#\s*(\d+)", re.I)
 This is not a guess. It is the rule the working data already follows, and it was checked both
 ways before being relied on:
 
-- Of the **110** Senate events that did import voters, **109** have a `Roll Call #<n>` in their
-  bill's action text whose number equals the number in the URL that worked (99.1%).
-- Of the **115** broken events, **115** have such a number available on a same-date action.
+- Of the **110** Senate events that did import voters, **110** cite a `Roll Call #<n>` whose
+  number equals the number in the URL that worked. Reconstruction reproduces every URL that
+  currently succeeds, which is what makes it safe to apply to all of them rather than only to the
+  broken ones.
+- Of the **236** roll-call actions in the 194th, 2 are quorum calls (excluded below) and **all
+  234** that would produce a vote carry the number **in their own text**. So the number is always
+  available at the point the code reads it, and no same-date sibling lookup is needed.
 
-So the rule predicts the successes and covers every failure.
+An earlier draft of this plan reported the first figure as 109 of 110. That was an artifact of the
+checking query, not a real counterexample: S 2710 writes `Roll Call # 97` with a space after the
+hash, which the implementation's `#\s*` allows and the stricter verification SQL did not. The
+three URL pairs behind this — including the spaced form — are now pinned as a regression test.
 
 **2. An unreadable roll call is now loud, and the vote is still recorded.**
 
@@ -143,12 +150,14 @@ NAYS (See YEA and NAY No. 249 )` is a count of who is present, not a vote on the
 two in this session are *House* counts. They are the 2 Senate events whose source URL points at
 a House roll-call PDF.
 
-**Tests:** 18 new in `tests/test_ma_rollcall_recovery.py`, covering every parse shape and every
-failure path's return value. They pin the rules rather than a scraped snapshot, because a
-snapshot would not have caught any of this — all of it produced well-formed output.
+**Tests:** 19 new in `tests/test_ma_rollcall_recovery.py`, covering every parse shape, every
+failure path's return value, and — as a regression guard on the 110 events that already work —
+that reconstruction reproduces three real known-good URLs exactly. They pin the rules rather than
+a scraped snapshot, because a snapshot would not have caught any of this: all of it produced
+well-formed output.
 
 ```
-18 passed
+19 passed
 ```
 
 Six pre-existing failures in `tests/test_classify_motion.py` (UT/MI/VA motion classification) are
@@ -281,6 +290,38 @@ GROUP BY 1;
 ```
 
 ---
+
+## Review responses
+
+This plan and its diff went through a PM review. Recording what changed and what did not, so the
+reasoning is not lost:
+
+**Acted on.**
+
+- *"The rule disagrees with 1 of 110 currently-working events — reconstructing for all of them
+  risks a regression."* The mismatch was not real; see above. Corrected the figure to 110/110 and
+  added the regression test the concern implies, which is worth having either way.
+- *"The evidence says the number is on a same-date action, but the code reads only the current
+  action."* A fair catch — those are not the same guarantee. Measured directly: 234 of 234
+  vote-producing actions carry the number themselves. No code change needed, but the plan now
+  states the right fact.
+- *"The fallback dedupe key can collide."* Correct and worth fixing. Source + date + yes-count
+  does not identify a roll call — two votes on one bill on one day can share a tally, and the key
+  would have merged them. It now folds in the action text.
+
+**Considered and not acted on.**
+
+- *"Prove importers tolerate a vote with zero voters."* Already proven by the data this ticket is
+  about: the 152 tally-only events were imported by this pipeline and are sitting in the
+  production database. The change makes such an event *marked*, not newly possible.
+- *"Retain a valid `SenateRollCall` href and reconstruct only when it is absent or malformed."*
+  This would keep the defective link-picking as the primary path, and its failure mode is silent —
+  it produced 115 broken events without anyone noticing. Reconstruction reproduces all 110 working
+  URLs, so the hybrid adds a branch and a second thing to keep correct in exchange for nothing.
+- *"Confirm session-identifier assumptions for other formats."* The `re.sub(r"\D+$", "")`
+  transform is copied from the House URL construction that OPEN-169 shipped and verified live.
+  Introducing a second, different session transform in the same file would be the risk, not the
+  mitigation.
 
 ## Reference
 
