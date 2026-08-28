@@ -16,25 +16,97 @@ ticket can never create an IAM role or touch a security group, even by mistake:*
 ## Setup — do this part yourself first
 
 Three resources, by CLI (or console, or your own Terraform elsewhere — whichever you already
-have set up). Fill in `<region>`/`<account-id>`/`<vpc-id>`.
+have set up). Fill in `<region>`/`<account-id>`/`<vpc-id>` throughout.
+
+Both roles share one trust policy, written to a file once rather than repeated inline. It
+grants `sts:AssumeRole` to the ECS tasks service **only for tasks in this account** — the
+`Condition` block is AWS's own recommended fix for the "confused deputy" problem: without it,
+any ECS task anywhere that happened to reference one of these role ARNs could assume it, not
+just tasks belonging to this account.
 
 ```bash
-# 1. Execution role — pulls the image, writes logs. Nothing about the scraper's own data.
-aws iam create-role --role-name ddp-scraper-ecs-execution-role \
-  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
-aws iam attach-role-policy --role-name ddp-scraper-ecs-execution-role \
-  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+cat > /tmp/ddp-scraper-trust-policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "ecs-tasks.amazonaws.com" },
+    "Action": "sts:AssumeRole",
+    "Condition": {
+      "ArnLike": { "aws:SourceArn": "arn:aws:ecs:<region>:<account-id>:*" },
+      "StringEquals": { "aws:SourceAccount": "<account-id>" }
+    }
+  }]
+}
+EOF
+```
 
-# 2. Task role — what cloud_collector.py's boto3 client actually runs as. Scoped to one bucket.
+**1. Execution role** — pulls *this one image* from ECR, writes to *this one* log group.
+Deliberately **not** the AWS-managed `AmazonECSTaskExecutionRolePolicy` — that policy's own
+`Resource` is `"*"` for both the ECR pull and the log write, meaning a role using it could pull
+any repo and write to any log group in the account. A custom policy scoped to just this repo
+and this log group is tighter for the same job:
+
+```bash
+aws iam create-role --role-name ddp-scraper-ecs-execution-role \
+  --assume-role-policy-document file:///tmp/ddp-scraper-trust-policy.json
+
+cat > /tmp/ddp-scraper-execution-policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ECRAuth",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECRPullOneRepo",
+      "Effect": "Allow",
+      "Action": ["ecr:BatchCheckLayerAvailability", "ecr:GetDownloadUrlForLayer", "ecr:BatchGetImage"],
+      "Resource": "arn:aws:ecr:<region>:<account-id>:repository/ddp-scrapers"
+    },
+    {
+      "Sid": "WriteOneLogGroup",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:<region>:<account-id>:log-group:/aws/ecs/ddp-scrapers*"
+    }
+  ]
+}
+EOF
+aws iam put-role-policy --role-name ddp-scraper-ecs-execution-role \
+  --policy-name ddp-scraper-execution-access --policy-document file:///tmp/ddp-scraper-execution-policy.json
+```
+
+`ecr:GetAuthorizationToken` is the one action here that can't be scoped tighter than
+`Resource: "*"` — it's account-level by design (AWS limitation, not a gap: the token it
+returns is only *usable* against the one repo the next statement allows). `logs:CreateLogGroup`
+is deliberately absent — that's this module's job (`logging.tf`), not the execution role's; the
+role only ever writes to a log group that already exists by the time a task starts.
+
+**2. Task role** — what `cloud_collector.py`'s `boto3` client actually runs as. Scoped to one
+S3 bucket, nothing else:
+
+```bash
 aws iam create-role --role-name ddp-scraper-task-role \
-  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+  --assume-role-policy-document file:///tmp/ddp-scraper-trust-policy.json
+
 aws iam put-role-policy --role-name ddp-scraper-task-role --policy-name ddp-scraper-memory-access \
   --policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"MemoryAndWorkingTierReadWrite","Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::ddp-prod-s3-openstates-backups","arn:aws:s3:::ddp-prod-s3-openstates-backups/*"]}]}'
-# If that bucket uses a customer-managed KMS key (check its default encryption setting), this
-# role also needs kms:Decrypt/kms:GenerateDataKey scoped to the key's ARN, or every GetObject/
-# PutObject fails with AccessDenied for a reason this policy alone won't explain.
+```
 
-# 3. Security group — outbound HTTPS only, no inbound. The one new network resource this spike needs.
+If that bucket uses a customer-managed KMS key (check its default encryption setting), this
+role also needs `kms:Decrypt`/`kms:GenerateDataKey` scoped to the key's ARN, or every
+`GetObject`/`PutObject` fails with `AccessDenied` for a reason this policy alone won't explain.
+
+**3. Security group** — outbound HTTPS only, no inbound. Its own VPC, not the one the two
+existing production EC2 instances live in (see this ticket's discussion for why — no
+technical need to share it, and separation keeps this prototype's blast radius and teardown
+independent of anything production depends on):
+
+```bash
 aws ec2 create-security-group --group-name ddp-scraper-task --vpc-id <vpc-id> \
   --description "OPEN-200 prototype Fargate task -- outbound HTTPS only, no inbound"
 aws ec2 authorize-security-group-egress --group-id <output sg-id> \
