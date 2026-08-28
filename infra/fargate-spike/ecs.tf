@@ -21,8 +21,11 @@ resource "aws_ecs_task_definition" "scraper_prototype" {
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
+  # Plain input variables, not managed resources -- see variables.tf. This credential has no
+  # iam:CreateRole/PutRolePolicy/AttachRolePolicy at all, only iam:PassRole scoped to these two
+  # exact ARNs (required for RegisterTaskDefinition to attach them, and nothing more).
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   # pm-review: Fargate does not support linuxParameters.tmpfs at all (EC2-launch-type only) --
   # an earlier version of this file would have failed task registration or execution outright.

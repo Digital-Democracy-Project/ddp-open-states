@@ -10,8 +10,10 @@ output "task_definition_arn" {
   value = aws_ecs_task_definition.scraper_prototype.arn
 }
 
+# Pass-through of the input, not a managed resource -- see variables.tf. Kept as an output
+# purely so the README's run-task example has one canonical place to read it from.
 output "security_group_id" {
-  value = aws_security_group.scraper_task.id
+  value = var.security_group_id
 }
 
 output "log_group_name" {

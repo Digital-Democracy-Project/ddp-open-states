@@ -3,11 +3,27 @@ variable "aws_region" {
   type        = string
 }
 
-variable "vpc_id" {
+variable "execution_role_arn" {
   description = <<-EOT
-    VPC the prototype task runs in. Not defaulted on purpose -- this is a real choice (share
-    the VPC an existing DDP resource lives in, or an isolated prototype VPC) that should be
-    made explicitly, not inherited from whatever Terraform finds first.
+    ARN of ddp-scraper-ecs-execution-role, created OUT OF BAND by whoever holds broader AWS
+    access -- deliberately not a resource this module manages. Role creation (and the PassRole
+    grant it needs) is IAM-privileged in a way that "apply this Terraform" should not casually
+    be. See README.md's setup recipe.
+  EOT
+  type        = string
+}
+
+variable "task_role_arn" {
+  description = "ARN of ddp-scraper-task-role -- same reasoning as execution_role_arn above."
+  type        = string
+}
+
+variable "security_group_id" {
+  description = <<-EOT
+    ID of a pre-created security group (outbound HTTPS only, no inbound) in the target VPC --
+    also created out of band. This module has no ec2:* permissions at all and never touches a
+    security group, existing or new; this is a plain string used only in the README's
+    `aws ecs run-task` example.
   EOT
   type        = string
 }
