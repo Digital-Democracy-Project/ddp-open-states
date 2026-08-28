@@ -1,0 +1,256 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - link "Skip to content" [ref=f2e3] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - heading [level=1] [ref=f2e6]:
+          - link "Michigan Legislature" [ref=f2e7] [cursor=pointer]:
+            - /url: /
+        - generic [ref=f2e8]: Michigan Compiled Laws Complete Through PA 20 of 2026
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]: Senate adjourned until Wednesday, August 12, 2026 10:00 AM
+        - generic [ref=f2e11]: House adjourned until Tuesday, August 11, 2026 1:30 PM
+    - navigation [ref=f2e12]:
+      - generic [ref=f2e14]:
+        - list [ref=f2e15]:
+          - listitem [ref=f2e16]:
+            - link "Home" [ref=f2e17] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f2e18]:
+            - button "Legislature" [ref=f2e19] [cursor=pointer]
+          - listitem [ref=f2e20]:
+            - button "Laws" [ref=f2e21] [cursor=pointer]
+          - listitem [ref=f2e22]:
+            - button "More" [ref=f2e23] [cursor=pointer]
+        - list [ref=f2e25]:
+          - listitem [ref=f2e26]:
+            - link "Toggle Theme" [ref=f2e27] [cursor=pointer]:
+              - /url: /Home/ToggleTheme?ReturnUrl=%2FSearch%2FExecuteSearch%3Fchamber%3D%26docTypesList%3DHB%252CSB%26docTypesList%3DHR%252CSR%26docTypesList%3DHCR%252CSCR%26docTypesList%3DHJR%252CSJR%26sessions%3D2025-2026%26sponsor%3D%26number%3D%26dateFrom%3D2026-07-26%26dateTo%3D%26contentFullText%3D
+          - listitem [ref=f2e30]:
+            - link "Sign Up" [ref=f2e31] [cursor=pointer]:
+              - /url: /Account/SignUp?ReturnUrl=%2FSearch%2FExecuteSearch%3Fchamber%3D%26docTypesList%3DHB%252CSB%26docTypesList%3DHR%252CSR%26docTypesList%3DHCR%252CSCR%26docTypesList%3DHJR%252CSJR%26sessions%3D2025-2026%26sponsor%3D%26number%3D%26dateFrom%3D2026-07-26%26dateTo%3D%26contentFullText%3D
+          - listitem [ref=f2e32]:
+            - link "Log In" [ref=f2e33] [cursor=pointer]:
+              - /url: /Account/LogIn?ReturnUrl=%2FSearch%2FExecuteSearch%3Fchamber%3D%26docTypesList%3DHB%252CSB%26docTypesList%3DHR%252CSR%26docTypesList%3DHCR%252CSCR%26docTypesList%3DHJR%252CSJR%26sessions%3D2025-2026%26sponsor%3D%26number%3D%26dateFrom%3D2026-07-26%26dateTo%3D%26contentFullText%3D
+  - main [ref=f2e34]:
+    - heading "Search Results" [level=1] [ref=f2e35]
+    - link "Printer Friendly" [ref=f2e40] [cursor=pointer]:
+      - /url: /Search/ExecuteSearch?printerFriendly=true&chamber=&docTypes=HB,SB,HR,SR,HCR,SCR,HJR,SJR&sessions=2025-2026&sponsor=&number=&dateFrom=2026-07-26&dateTo=&contentFullText=
+    - generic [ref=f2e42]:
+      - generic [ref=f2e43]:
+        - strong [ref=f2e44]: "Document Type(s):"
+        - text: HB, SB, HR, SR, HCR, SCR, HJR, SJR
+      - generic [ref=f2e45]:
+        - strong [ref=f2e46]: "Legislative Session(s):"
+        - text: 2025-2026
+      - generic [ref=f2e47]:
+        - strong [ref=f2e48]: "Date From:"
+        - text: 2026-07-26
+    - generic [ref=f2e51]:
+      - text: Didn't find what you were looking for? Try the
+      - link "Legislative Document Search" [ref=f2e52] [cursor=pointer]:
+        - /url: /Search/LegDocSearch
+      - text: .
+    - generic [ref=f2e53]: (27 results found)
+    - generic [ref=f2e59]:
+      - textbox "Search within these documents" [ref=f2e60]
+      - button [ref=f2e61] [cursor=pointer]
+    - table [ref=f2e67]:
+      - rowgroup [ref=f2e68]:
+        - row [ref=f2e69]:
+          - columnheader "Document" [ref=f2e70]
+          - columnheader "Type" [ref=f2e71]
+          - columnheader "Description" [ref=f2e72]
+      - rowgroup [ref=f2e73]:
+        - row [ref=f2e74]:
+          - cell [ref=f2e75]:
+            - link "SR 0135 of 2026" [ref=f2e76] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SR-0135
+          - cell "Senate Resolution" [ref=f2e77]
+          - 'cell "A resolution to recognize and celebrate the 250th anniversary of the founding of the United States of America. Last Action: ADOPTED" [ref=f2e78]': "A resolution to recognize and celebrate the 250th anniversary of the founding of the United States of America.Last Action: ADOPTED"
+        - row [ref=f2e79]:
+          - cell [ref=f2e80]:
+            - link "SB 1123 of 2026" [ref=f2e81] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1123
+          - cell "Senate Bill" [ref=f2e82]
+          - 'cell "Civil rights: disabilities discrimination; medical treatment discrimination on the basis of disability; prohibit. Amends 1976 PA 220 (MCL 37.1101 - 37.1607) by adding sec. 302a. Last Action: REFERRED TO COMMITTEE ON HEALTH POLICY" [ref=f2e83]'
+        - row [ref=f2e84]:
+          - cell [ref=f2e85]:
+            - link "SB 1124 of 2026" [ref=f2e86] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1124
+          - cell "Senate Bill" [ref=f2e87]
+          - 'cell "Children: other; limited emancipation of a minor who is homeless; provide for. Creates new act. Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES" [ref=f2e88]'
+        - row [ref=f2e89]:
+          - cell [ref=f2e90]:
+            - link "SB 1125 of 2026" [ref=f2e91] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1125
+          - cell "Senate Bill" [ref=f2e92]
+          - 'cell "Housing: residential; limitations on rental property owned by certain businesses; provide for. Amends title of 1972 PA 284 (MCL 450.1101 - 450.2098) & adds sec. 262. TIE BAR WITH: SB 1127''26 Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES" [ref=f2e93]': "Housing: residential; limitations on rental property owned by certain businesses; provide for. Amends title of 1972 PA 284 (MCL 450.1101 - 450.2098) & adds sec. 262. TIE BAR WITH: SB 1127'26Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES"
+        - row [ref=f2e94]:
+          - cell [ref=f2e95]:
+            - link "SB 1126 of 2026" [ref=f2e96] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1126
+          - cell "Senate Bill" [ref=f2e97]
+          - 'cell "Housing: residential; limitations on rental property owned by certain limited liability companies; provide for. Amends title of 1993 PA 23 (MCL 450.4101 - 450.5200) & adds sec. 217. TIE BAR WITH: SB 1127''26 Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES" [ref=f2e98]': "Housing: residential; limitations on rental property owned by certain limited liability companies; provide for. Amends title of 1993 PA 23 (MCL 450.4101 - 450.5200) & adds sec. 217. TIE BAR WITH: SB 1127'26Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES"
+        - row [ref=f2e99]:
+          - cell [ref=f2e100]:
+            - link "SB 1127 of 2026" [ref=f2e101] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1127
+          - cell "Senate Bill" [ref=f2e102]
+          - 'cell "Housing: housing development authority; first-time home buyers fund; create. Amends 1966 PA 346 (MCL 125.1401 - 125.1499c) by adding sec. 49w. TIE BAR WITH: SB 1125''26, SB 1126''26 Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES" [ref=f2e103]': "Housing: housing development authority; first-time home buyers fund; create. Amends 1966 PA 346 (MCL 125.1401 - 125.1499c) by adding sec. 49w. TIE BAR WITH: SB 1125'26, SB 1126'26Last Action: REFERRED TO COMMITTEE ON HOUSING AND HUMAN SERVICES"
+        - row [ref=f2e104]:
+          - cell [ref=f2e105]:
+            - link "SB 1128 of 2026" [ref=f2e106] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1128
+          - cell "Senate Bill" [ref=f2e107]
+          - 'cell "Insurance: property and casualty; grants for certain properties to resist loss due to common weather-related perils; provide for. Amends 1956 PA 218 (MCL 500.100 - 500.8302) by adding ch. 29A. Last Action: REFERRED TO COMMITTEE ON FINANCE, INSURANCE, AND CONSUMER PROTECTION" [ref=f2e108]'
+        - row [ref=f2e109]:
+          - cell [ref=f2e110]:
+            - link "SB 1129 of 2026" [ref=f2e111] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1129
+          - cell "Senate Bill" [ref=f2e112]
+          - 'cell "Insurance: property and casualty; premium discounts; require insurance companies to offer under certain circumstances. Amends 1956 PA 218 (MCL 500.100 - 500.8302) by adding sec. 2132a. Last Action: REFERRED TO COMMITTEE ON FINANCE, INSURANCE, AND CONSUMER PROTECTION" [ref=f2e113]'
+        - row [ref=f2e114]:
+          - cell [ref=f2e115]:
+            - link "SB 1130 of 2026" [ref=f2e116] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1130
+          - cell "Senate Bill" [ref=f2e117]
+          - 'cell "Insurance: property and casualty; fortified roof endorsement; require insurance companies to offer. Amends 1956 PA 218 (MCL 500.100 - 500.8302) by adding sec. 2132. Last Action: REFERRED TO COMMITTEE ON FINANCE, INSURANCE, AND CONSUMER PROTECTION" [ref=f2e118]'
+        - row [ref=f2e119]:
+          - cell [ref=f2e120]:
+            - link "SB 1131 of 2026" [ref=f2e121] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1131
+          - cell "Senate Bill" [ref=f2e122]
+          - 'cell "Law enforcement: other; guidelines for use of registration plate reader systems; provide for. Creates new act. Last Action: REFERRED TO COMMITTEE ON CIVIL RIGHTS, JUDICIARY, AND PUBLIC SAFETY" [ref=f2e123]'
+        - row [ref=f2e124]:
+          - cell [ref=f2e125]:
+            - link "SB 1132 of 2026" [ref=f2e126] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1132
+          - cell "Senate Bill" [ref=f2e127]
+          - 'cell "Military affairs: other; Camp Grayling improvement fund; establish. Amends 1967 PA 150 (MCL 32.501 - 32.851) & adds secs. 388a, 388b, 388c, 388d, 388e & 388f. Last Action: REFERRED TO COMMITTEE ON VETERANS AND EMERGENCY SERVICES" [ref=f2e128]'
+        - row [ref=f2e129]:
+          - cell [ref=f2e130]:
+            - link "SB 1133 of 2026" [ref=f2e131] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1133
+          - cell "Senate Bill" [ref=f2e132]
+          - 'cell "Retirement: state police; membership in the retirement system of certain law enforcement officers first hired after certain date; provide for, and allow for purchasing service credit for certain law enforcement officers'' service under the state employees'' retirement system. Amends secs. 3 & 4 of 1986 PA 182 (MCL 38.1609 & 38.1604). TIE BAR WITH: SB 1134''26, SB 1135''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e133]': "Retirement: state police; membership in the retirement system of certain law enforcement officers first hired after certain date; provide for, and allow for purchasing service credit for certain law enforcement officers' service under the state employees' retirement system. Amends secs. 3 & 4 of 1986 PA 182 (MCL 38.1609 & 38.1604). TIE BAR WITH: SB 1134'26, SB 1135'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e134]:
+          - cell [ref=f2e135]:
+            - link "SB 1134 of 2026" [ref=f2e136] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1134
+          - cell "Senate Bill" [ref=f2e137]
+          - 'cell "Retirement: state employees; election process to transfer certain law enforcement officers to the Michigan state police retirement system; provide for. Amends sec. 55 of 1943 PA 240 (MCL 38.55) & adds secs. 50b, 50c, 50d, 64a, 64b & 64c. TIE BAR WITH: SB 1133''26, SB 1135''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e138]': "Retirement: state employees; election process to transfer certain law enforcement officers to the Michigan state police retirement system; provide for. Amends sec. 55 of 1943 PA 240 (MCL 38.55) & adds secs. 50b, 50c, 50d, 64a, 64b & 64c. TIE BAR WITH: SB 1133'26, SB 1135'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e139]:
+          - cell [ref=f2e140]:
+            - link "SB 1135 of 2026" [ref=f2e141] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1135
+          - cell "Senate Bill" [ref=f2e142]
+          - 'cell "Retirement: state employees; membership in the retirement system of certain law enforcement officers first hired after certain date; provide for, and allow for purchasing service credit for certain law enforcement officers'' service under the state employees'' retirement system. Amends 1986 PA 182 (MCL 38.1601 - 38.1674) & adds secs. 24c, 24d, 24e & 24f. TIE BAR WITH: SB 1133''26, SB 1134''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e143]': "Retirement: state employees; membership in the retirement system of certain law enforcement officers first hired after certain date; provide for, and allow for purchasing service credit for certain law enforcement officers' service under the state employees' retirement system. Amends 1986 PA 182 (MCL 38.1601 - 38.1674) & adds secs. 24c, 24d, 24e & 24f. TIE BAR WITH: SB 1133'26, SB 1134'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e144]:
+          - cell [ref=f2e145]:
+            - link "SB 1136 of 2026" [ref=f2e146] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1136
+          - cell "Senate Bill" [ref=f2e147]
+          - 'cell "Public employees and officers: compensation and benefits; public employer contribution to medical benefit plan; modify. Amends title & secs. 3, 4 & 5 of 2011 PA 152 (MCL 15.563 et seq.) & adds secs. 3a & 4a. Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e148]'
+        - row [ref=f2e149]:
+          - cell [ref=f2e150]:
+            - link "SB 1137 of 2026" [ref=f2e151] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1137
+          - cell "Senate Bill" [ref=f2e152]
+          - 'cell "Civil procedure: execution; procedures for collection of judgments; revise. Amends & adds (See bill). Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e153]'
+        - row [ref=f2e154]:
+          - cell [ref=f2e155]:
+            - link "SB 1138 of 2026" [ref=f2e156] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1138
+          - cell "Senate Bill" [ref=f2e157]
+          - 'cell "Civil procedure: bankruptcy; bankruptcy exemptions; modify. Amends sec. 5451 of 1961 PA 236 (MCL 600.5451). Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e158]'
+        - row [ref=f2e159]:
+          - cell [ref=f2e160]:
+            - link "SB 1139 of 2026" [ref=f2e161] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1139
+          - cell "Senate Bill" [ref=f2e162]
+          - 'cell "History and arts: other; history museum authorities act; create. Creates new act. TIE BAR WITH: SB 1140''26, SB 1141''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e163]': "History and arts: other; history museum authorities act; create. Creates new act. TIE BAR WITH: SB 1140'26, SB 1141'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e164]:
+          - cell [ref=f2e165]:
+            - link "SB 1140 of 2026" [ref=f2e166] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1140
+          - cell "Senate Bill" [ref=f2e167]
+          - 'cell "Economic development: brownfield redevelopment authority; brownfield redevelopment financing act; amend to exempt museum authorities. Amends sec. 2 of 1996 PA 381 (MCL 125.2652). TIE BAR WITH: SB 1139''26, SB 1141''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e168]': "Economic development: brownfield redevelopment authority; brownfield redevelopment financing act; amend to exempt museum authorities. Amends sec. 2 of 1996 PA 381 (MCL 125.2652). TIE BAR WITH: SB 1139'26, SB 1141'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e169]:
+          - cell [ref=f2e170]:
+            - link "SB 1141 of 2026" [ref=f2e171] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SB-1141
+          - cell "Senate Bill" [ref=f2e172]
+          - 'cell "Economic development: tax increment financing; definition of tax increment revenues; exclude taxes levied under history museum authorities act. Amends secs. 201, 301, 402, 523, 603, 703 & 803 of 2018 PA 57 (MCL 125.4201 et seq.). TIE BAR WITH: SB 1139''26, SB 1140''26 Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=f2e173]': "Economic development: tax increment financing; definition of tax increment revenues; exclude taxes levied under history museum authorities act. Amends secs. 201, 301, 402, 523, 603, 703 & 803 of 2018 PA 57 (MCL 125.4201 et seq.). TIE BAR WITH: SB 1139'26, SB 1140'26Last Action: SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW"
+        - row [ref=f2e174]:
+          - cell [ref=f2e175]:
+            - link "HB 6224 of 2026" [ref=f2e176] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6224
+          - cell "House Bill" [ref=f2e177]
+          - 'cell "Marihuana: taxation; comprehensive road funding tax act; repeal. Last Action: bill electronically reproduced 07/29/2026" [ref=f2e178]': "Marihuana: taxation; comprehensive road funding tax act; repeal.Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e179]:
+          - cell [ref=f2e180]:
+            - link "HB 6225 of 2026" [ref=f2e181] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6225
+          - cell "House Bill" [ref=f2e182]
+          - 'cell "Individual income tax: rate; rollback of rate to 3.9% and elimination of rollback trigger; provide for. Last Action: bill electronically reproduced 07/29/2026" [ref=f2e183]': "Individual income tax: rate; rollback of rate to 3.9% and elimination of rollback trigger; provide for.Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e184]:
+          - cell [ref=f2e185]:
+            - link "HB 6226 of 2026" [ref=f2e186] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6226
+          - cell "House Bill" [ref=f2e187]
+          - 'cell "History and arts: other; history museum authorities act; create. TIE BAR WITH: HB 6227''26, HB 6228''26 Last Action: bill electronically reproduced 07/29/2026" [ref=f2e188]': "History and arts: other; history museum authorities act; create. TIE BAR WITH: HB 6227'26, HB 6228'26Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e189]:
+          - cell [ref=f2e190]:
+            - link "HB 6227 of 2026" [ref=f2e191] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6227
+          - cell "House Bill" [ref=f2e192]
+          - 'cell "Economic development: brownfield redevelopment authority; brownfield redevelopment financing act; amend to exempt museum authorities. TIE BAR WITH: HB 6226''26, HB 6228''26 Last Action: bill electronically reproduced 07/29/2026" [ref=f2e193]': "Economic development: brownfield redevelopment authority; brownfield redevelopment financing act; amend to exempt museum authorities. TIE BAR WITH: HB 6226'26, HB 6228'26Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e194]:
+          - cell [ref=f2e195]:
+            - link "HB 6228 of 2026" [ref=f2e196] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6228
+          - cell "House Bill" [ref=f2e197]
+          - 'cell "Economic development: tax increment financing; tax increment financing act; amend to exempt museum authorities. TIE BAR WITH: HB 6226''26, HB 6227''26 Last Action: bill electronically reproduced 07/29/2026" [ref=f2e198]': "Economic development: tax increment financing; tax increment financing act; amend to exempt museum authorities. TIE BAR WITH: HB 6226'26, HB 6227'26Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e199]:
+          - cell [ref=f2e200]:
+            - link "HB 6229 of 2026" [ref=f2e201] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6229
+          - cell "House Bill" [ref=f2e202]
+          - 'cell "Civil procedure: bankruptcy; bankruptcy exemptions; modify. Last Action: bill electronically reproduced 07/29/2026" [ref=f2e203]': "Civil procedure: bankruptcy; bankruptcy exemptions; modify.Last Action: bill electronically reproduced 07/29/2026"
+        - row [ref=f2e204]:
+          - cell [ref=f2e205]:
+            - link "HB 6230 of 2026" [ref=f2e206] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-HB-6230
+          - cell "House Bill" [ref=f2e207]
+          - 'cell "Civil procedure: execution; procedures for collection of judgments; revise. Last Action: bill electronically reproduced 07/29/2026" [ref=f2e208]': "Civil procedure: execution; procedures for collection of judgments; revise.Last Action: bill electronically reproduced 07/29/2026"
+  - contentinfo [ref=f2e209]:
+    - generic [ref=f2e210]:
+      - generic [ref=f2e213]:
+        - link "Acceptable Use Policy" [ref=f2e214] [cursor=pointer]:
+          - /url: /Home/AcceptableUse
+        - link "Privacy Policy" [ref=f2e215] [cursor=pointer]:
+          - /url: /Home/Privacy
+        - link "DMCA Policy" [ref=f2e216] [cursor=pointer]:
+          - /url: /Home/DMCA
+        - link "Comment Form" [ref=f2e217] [cursor=pointer]:
+          - /url: /Home/CommentForm
+        - link "Legislative Directory" [ref=f2e218] [cursor=pointer]:
+          - /url: /Legislature/Directory
+        - link "Accessibility" [ref=f2e219] [cursor=pointer]:
+          - /url: /Home/Accessibility
+        - link "Site Map" [ref=f2e220] [cursor=pointer]:
+          - /url: /Home/SiteMap
+      - generic [ref=f2e223]:
+        - link "Bills" [ref=f2e224] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/billupdate.xml
+        - link "Meetings" [ref=f2e227] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/comschedule.xml
+        - link "Laws" [ref=f2e230] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/MCLupdate.xml
+      - paragraph [ref=f2e234]:
+        - text: The Michigan Legislature Website is a free service of the Legislative Service Bureau in cooperation with the Michigan Legislative Council, the Michigan House of Representatives, the Michigan Senate, and the Library of Michigan. This site is intended to provide accurate and timely legislative information to the citizens of the State of Michigan and other interested parties. Additional historical documents can be found at
+        - link "https://www.michigan.gov/libraryofmichigan" [ref=f2e235] [cursor=pointer]:
+          - /url: https://www.michigan.gov/libraryofmichigan
+        - text: . The information obtained from this site is not intended to replace official versions of that information and is subject to revision. The Legislature presents this information, without warranties, express or implied, regarding the accuracy of the information, timeliness, or completeness. If you believe the information is inaccurate, out-of-date, or incomplete or if you have problems accessing or reading the information, please send your concerns to the appropriate agency using the online Comment Form in the bar above this text.

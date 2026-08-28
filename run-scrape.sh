@@ -1187,6 +1187,21 @@ echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
 # run silently re-collects a window it was told had been done. That is not data loss -- the
 # import already happened, and §3 is explicit that `failed` does not promise nothing changed --
 # but a memory layer that fails silently is the exact failure this ticket exists to remove.
+# THE INVARIANT THAT MAKES THE OTHER ORDER SAFE, stated because it is load-bearing and was
+# not obvious: BOTH persist calls sit on the success path, after the import's exit status has
+# been checked. Nothing here is reachable from a failed scrape or a failed import -- those exit
+# earlier and publish nothing at all. So a baseline can only reach the store once every bill it
+# describes has been scraped AND loaded into the database.
+#
+# That is what answers the obvious objection to publishing the baseline first. A fresh baseline
+# beside a stale watermark looks alarming -- Michigan builds its fetch set by comparing the site
+# against the baseline (mi/bills.py: `if bill_no_key not in changed_nos: continue`), so a bill
+# already recorded in the baseline is not re-fetched. But it does not need to be: it was fetched
+# and imported by the run that wrote that baseline. The stale watermark then only widens the
+# next run's window, which is free for MI because its skip decision is baseline-driven rather
+# than cutoff-driven. The reverse pairing -- fresh watermark, stale baseline -- is the one that
+# loses bills, and the order below makes it unreachable.
+#
 # ORDER MATTERS HERE, and it is the only safety this store can offer. The wrapper has no
 # transaction and no rollback, so these objects cannot be published together. The baseline goes
 # FIRST because it is what makes an incremental run safe, and the watermark goes LAST because it

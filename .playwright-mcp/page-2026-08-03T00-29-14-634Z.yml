@@ -1,0 +1,789 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading [level=1] [ref=e6]:
+          - link "Michigan Legislature" [ref=e7] [cursor=pointer]:
+            - /url: /
+        - generic [ref=e8]: Michigan Compiled Laws Complete Through PA 20 of 2026
+      - generic [ref=e9]:
+        - generic [ref=e10]: Senate adjourned until Wednesday, August 12, 2026 10:00 AM
+        - generic [ref=e11]: House adjourned until Tuesday, August 11, 2026 1:30 PM
+    - navigation [ref=e12]:
+      - generic [ref=e14]:
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - link "Home" [ref=e17] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e18]:
+            - button "Legislature" [ref=e19] [cursor=pointer]
+          - listitem [ref=e20]:
+            - button "Laws" [ref=e21] [cursor=pointer]
+          - listitem [ref=e22]:
+            - button "More" [ref=e23] [cursor=pointer]
+        - list [ref=e25]:
+          - listitem [ref=e26]:
+            - link "Toggle Theme" [ref=e27] [cursor=pointer]:
+              - /url: /Home/ToggleTheme?ReturnUrl=%2F
+          - listitem [ref=e30]:
+            - link "Sign Up" [ref=e31] [cursor=pointer]:
+              - /url: /Account/SignUp?ReturnUrl=%2F
+          - listitem [ref=e32]:
+            - link "Log In" [ref=e33] [cursor=pointer]:
+              - /url: /Account/LogIn?ReturnUrl=%2F
+  - main [ref=e34]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - heading "Quick Search" [level=2] [ref=e38]
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]:
+                - text: 2025-2026 Bills
+                - superscript [ref=e44]:
+                  - img "This search bar accepts Full-Text and Numeric queries" [ref=e45]
+              - generic [ref=e49]:
+                - textbox "2025-2026 Bills" [ref=e50]:
+                  - /placeholder: Bill Number or Bill Content
+                - button [ref=e51] [cursor=pointer]
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - text: Michigan Compiled Laws
+                - superscript [ref=e57]:
+                  - img "This search bar accepts Full-Text and Numeric queries" [ref=e58]
+              - generic [ref=e62]:
+                - textbox "Michigan Compiled Laws" [ref=e63]:
+                  - /placeholder: Section Number or Content
+                - button [ref=e64] [cursor=pointer]
+          - link "Search Help" [ref=e69] [cursor=pointer]:
+            - /url: /Home/Help#searchHelp
+      - generic [ref=e70]:
+        - heading "Senate" [level=2] [ref=e72]
+        - list [ref=e74]:
+          - listitem [ref=e75]:
+            - link "Michigan Senate" [ref=e76] [cursor=pointer]:
+              - /url: https://senate.michigan.gov/
+          - listitem [ref=e77]:
+            - link "Senate Video" [ref=e78] [cursor=pointer]:
+              - /url: https://cloud.castus.tv/vod/misenate?page=HOME
+          - listitem [ref=e79]:
+            - link "Senate Fiscal Agency" [ref=e80] [cursor=pointer]:
+              - /url: https://sfa.senate.michigan.gov/
+          - listitem [ref=e81]:
+            - link "Find your Senator" [ref=e82] [cursor=pointer]:
+              - /url: https://senate.michigan.gov/senators/all-senators/
+          - listitem [ref=e83]:
+            - link "Contact your Senator" [ref=e84] [cursor=pointer]:
+              - /url: https://senate.michigan.gov/senators/senators
+      - generic [ref=e85]:
+        - heading "House" [level=2] [ref=e87]
+        - list [ref=e89]:
+          - listitem [ref=e90]:
+            - link "Michigan House" [ref=e91] [cursor=pointer]:
+              - /url: https://www.house.mi.gov/Index
+          - listitem [ref=e92]:
+            - link "House Video" [ref=e93] [cursor=pointer]:
+              - /url: https://house.mi.gov/Calendar
+          - listitem [ref=e94]:
+            - link "House Fiscal Agency" [ref=e95] [cursor=pointer]:
+              - /url: https://www.house.mi.gov/hfa/home.asp
+          - listitem [ref=e96]:
+            - link "Find your Representative" [ref=e97] [cursor=pointer]:
+              - /url: https://www.house.mi.gov/#findARepresentativeForm
+          - listitem [ref=e98]:
+            - link "Contact your Representative" [ref=e99] [cursor=pointer]:
+              - /url: https://www.house.mi.gov/AllRepresentatives
+    - generic [ref=e100]:
+      - generic [ref=e103]:
+        - heading "Quick Links" [level=2] [ref=e105]
+        - generic [ref=e107]:
+          - list [ref=e109]:
+            - listitem [ref=e110]:
+              - link "Bills" [ref=e111] [cursor=pointer]:
+                - /url: /Bills/Bills
+            - listitem [ref=e112]:
+              - link "Resolutions" [ref=e113] [cursor=pointer]:
+                - /url: /Bills/Resolutions
+            - listitem [ref=e114]:
+              - link "Joint Resolutions" [ref=e115] [cursor=pointer]:
+                - /url: /Bills/JointResolutions
+            - listitem [ref=e116]:
+              - link "Concurrent Resolutions" [ref=e117] [cursor=pointer]:
+                - /url: /Bills/ConcurrentResolutions
+            - listitem [ref=e118]:
+              - link "Journals" [ref=e119] [cursor=pointer]:
+                - /url: /Legislature/Journals
+            - listitem [ref=e120]:
+              - link "Calendars" [ref=e121] [cursor=pointer]:
+                - /url: /Legislature/Calendars
+            - listitem [ref=e122]:
+              - link "Executive Orders" [ref=e123] [cursor=pointer]:
+                - /url: /Laws/ExecutiveOrders
+            - listitem [ref=e124]:
+              - link "MCL Search" [ref=e125] [cursor=pointer]:
+                - /url: /Laws/MCLSearch
+          - list [ref=e127]:
+            - listitem [ref=e128]:
+              - link "Daily Bill Status Report" [ref=e129] [cursor=pointer]:
+                - /url: /Bills/DailyReport
+            - listitem [ref=e130]:
+              - link "Today's Bill Activity" [ref=e131] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?dateFromStr=today&docTypes=Bills&dailyReport=todaysbillactivity
+            - listitem [ref=e132]:
+              - link "Today's Calendars" [ref=e133] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=House%20Calendar,Senate%20Calendar&dateFromStr=today
+            - listitem [ref=e134]:
+              - link "Legislators" [ref=e135] [cursor=pointer]:
+                - /url: /Legislature/Legislators
+            - listitem [ref=e136]:
+              - link "Committee Bill Records" [ref=e137] [cursor=pointer]:
+                - /url: /Committees/CBRs
+            - listitem [ref=e138]:
+              - link "Committee Meetings" [ref=e139] [cursor=pointer]:
+                - /url: /Committees/Meetings
+            - listitem [ref=e140]:
+              - link "Help" [ref=e141] [cursor=pointer]:
+                - /url: /Home/Help
+            - listitem [ref=e142]:
+              - link "Advanced Search" [ref=e143] [cursor=pointer]:
+                - /url: /Search/LegDocSearch
+      - generic [ref=e144]:
+        - heading "Recent Activity" [level=2] [ref=e146]
+        - table [ref=e149]:
+          - rowgroup [ref=e150]:
+            - row [ref=e151]:
+              - columnheader "Bill" [ref=e152]
+              - columnheader "Date" [ref=e153]
+              - columnheader "Action" [ref=e154]
+          - rowgroup [ref=e155]:
+            - row [ref=e156]:
+              - cell [ref=e157]:
+                - link "SB 1134" [ref=e158] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1134
+              - cell "Aug. 12" [ref=e159]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e160]'
+            - row [ref=e161]:
+              - cell [ref=e162]:
+                - link "SB 1135" [ref=e163] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1135
+              - cell "Aug. 12" [ref=e164]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e165]'
+            - row [ref=e166]:
+              - cell [ref=e167]:
+                - link "SB 1136" [ref=e168] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1136
+              - cell "Aug. 12" [ref=e169]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e170]'
+            - row [ref=e171]:
+              - cell [ref=e172]:
+                - link "SB 1137" [ref=e173] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1137
+              - cell "Aug. 12" [ref=e174]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e175]'
+            - row [ref=e176]:
+              - cell [ref=e177]:
+                - link "SB 1138" [ref=e178] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1138
+              - cell "Aug. 12" [ref=e179]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e180]'
+            - row [ref=e181]:
+              - cell [ref=e182]:
+                - link "SB 1139" [ref=e183] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1139
+              - cell "Aug. 12" [ref=e184]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e185]'
+            - row [ref=e186]:
+              - cell [ref=e187]:
+                - link "SB 1140" [ref=e188] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1140
+              - cell "Aug. 12" [ref=e189]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e190]'
+            - row [ref=e191]:
+              - cell [ref=e192]:
+                - link "SB 1141" [ref=e193] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1141
+              - cell "Aug. 12" [ref=e194]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e195]'
+            - row [ref=e196]:
+              - cell [ref=e197]:
+                - link "SB 1133" [ref=e198] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-SB-1133
+              - cell "Aug. 12" [ref=e199]
+              - 'cell "SENATE CO-SPONSOR(S) NAMED: MALLORY MCMORROW" [ref=e200]'
+            - row [ref=e201]:
+              - cell [ref=e202]:
+                - link "HB 6224" [ref=e203] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6224
+              - cell "Aug. 11" [ref=e204]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e205]
+            - row [ref=e206]:
+              - cell [ref=e207]:
+                - link "HB 6225" [ref=e208] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6225
+              - cell "Aug. 11" [ref=e209]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e210]
+            - row [ref=e211]:
+              - cell [ref=e212]:
+                - link "HB 6226" [ref=e213] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6226
+              - cell "Aug. 11" [ref=e214]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e215]
+            - row [ref=e216]:
+              - cell [ref=e217]:
+                - link "HB 6227" [ref=e218] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6227
+              - cell "Aug. 11" [ref=e219]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e220]
+            - row [ref=e221]:
+              - cell [ref=e222]:
+                - link "HB 6228" [ref=e223] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6228
+              - cell "Aug. 11" [ref=e224]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e225]
+            - row [ref=e226]:
+              - cell [ref=e227]:
+                - link "HB 6229" [ref=e228] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6229
+              - cell "Aug. 11" [ref=e229]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e230]
+            - row [ref=e231]:
+              - cell [ref=e232]:
+                - link "HB 6230" [ref=e233] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6230
+              - cell "Aug. 11" [ref=e234]
+              - cell "bill electronically reproduced 07/29/2026" [ref=e235]
+            - row [ref=e236]:
+              - cell [ref=e237]:
+                - link "HB 6074" [ref=e238] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6074
+              - cell "Jul. 29" [ref=e239]
+              - cell "assigned PA 32'26 with immediate effect" [ref=e240]
+            - row [ref=e241]:
+              - cell [ref=e242]:
+                - link "HB 6074" [ref=e243] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6074
+              - cell "Jul. 29" [ref=e244]
+              - cell "filed with Secretary of State 07/21/2026 03:00 PM" [ref=e245]
+            - row [ref=e246]:
+              - cell [ref=e247]:
+                - link "HB 6074" [ref=e248] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6074
+              - cell "Jul. 29" [ref=e249]
+              - cell "approved by the Governor 07/21/2026 02:56 PM" [ref=e250]
+            - row [ref=e251]:
+              - cell [ref=e252]:
+                - link "HB 5807" [ref=e253] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5807
+              - cell "Jul. 29" [ref=e254]
+              - cell "assigned PA 31'26 with immediate effect" [ref=e255]
+            - row [ref=e256]:
+              - cell [ref=e257]:
+                - link "HB 5807" [ref=e258] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5807
+              - cell "Jul. 29" [ref=e259]
+              - cell "filed with Secretary of State 07/21/2026 02:40 PM" [ref=e260]
+            - row [ref=e261]:
+              - cell [ref=e262]:
+                - link "HB 5807" [ref=e263] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5807
+              - cell "Jul. 29" [ref=e264]
+              - cell "approved by the Governor 07/21/2026 02:00 PM" [ref=e265]
+            - row [ref=e266]:
+              - cell [ref=e267]:
+                - link "HB 5806" [ref=e268] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5806
+              - cell "Jul. 29" [ref=e269]
+              - cell "assigned PA 30'26 with immediate effect" [ref=e270]
+            - row [ref=e271]:
+              - cell [ref=e272]:
+                - link "HB 5806" [ref=e273] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5806
+              - cell "Jul. 29" [ref=e274]
+              - cell "filed with Secretary of State 07/21/2026 02:38 PM" [ref=e275]
+            - row [ref=e276]:
+              - cell [ref=e277]:
+                - link "HB 5806" [ref=e278] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5806
+              - cell "Jul. 29" [ref=e279]
+              - cell "approved by the Governor 07/21/2026 01:58 PM" [ref=e280]
+            - row [ref=e281]:
+              - cell [ref=e282]:
+                - link "HB 5571" [ref=e283] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5571
+              - cell "Jul. 29" [ref=e284]
+              - cell "assigned PA 29'26 with immediate effect" [ref=e285]
+            - row [ref=e286]:
+              - cell [ref=e287]:
+                - link "HB 5571" [ref=e288] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5571
+              - cell "Jul. 29" [ref=e289]
+              - cell "filed with Secretary of State 07/21/2026 02:36 PM" [ref=e290]
+            - row [ref=e291]:
+              - cell [ref=e292]:
+                - link "HB 5571" [ref=e293] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5571
+              - cell "Jul. 29" [ref=e294]
+              - cell "approved by the Governor 07/21/2026 01:56 PM" [ref=e295]
+            - row [ref=e296]:
+              - cell [ref=e297]:
+                - link "HB 5570" [ref=e298] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5570
+              - cell "Jul. 29" [ref=e299]
+              - cell "assigned PA 28'26 with immediate effect" [ref=e300]
+            - row [ref=e301]:
+              - cell [ref=e302]:
+                - link "HB 5570" [ref=e303] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5570
+              - cell "Jul. 29" [ref=e304]
+              - cell "filed with Secretary of State 07/21/2026 02:34 PM" [ref=e305]
+            - row [ref=e306]:
+              - cell [ref=e307]:
+                - link "HB 5570" [ref=e308] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5570
+              - cell "Jul. 29" [ref=e309]
+              - cell "approved by the Governor 07/21/2026 01:54 PM" [ref=e310]
+            - row [ref=e311]:
+              - cell [ref=e312]:
+                - link "HB 5646" [ref=e313] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5646
+              - cell "Jul. 29" [ref=e314]
+              - cell "assigned PA 27'26 with immediate effect" [ref=e315]
+            - row [ref=e316]:
+              - cell [ref=e317]:
+                - link "HB 5646" [ref=e318] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5646
+              - cell "Jul. 29" [ref=e319]
+              - cell "filed with Secretary of State 07/21/2026 02:32 PM" [ref=e320]
+            - row [ref=e321]:
+              - cell [ref=e322]:
+                - link "HB 5646" [ref=e323] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5646
+              - cell "Jul. 29" [ref=e324]
+              - cell "approved by the Governor 07/21/2026 01:52 PM" [ref=e325]
+            - row [ref=e326]:
+              - cell [ref=e327]:
+                - link "HB 5697" [ref=e328] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5697
+              - cell "Jul. 29" [ref=e329]
+              - cell "assigned PA 26'26 with immediate effect" [ref=e330]
+            - row [ref=e331]:
+              - cell [ref=e332]:
+                - link "HB 5697" [ref=e333] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5697
+              - cell "Jul. 29" [ref=e334]
+              - cell "filed with Secretary of State 07/21/2026 02:30 PM" [ref=e335]
+            - row [ref=e336]:
+              - cell [ref=e337]:
+                - link "HB 5697" [ref=e338] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5697
+              - cell "Jul. 29" [ref=e339]
+              - cell "approved by the Governor 07/21/2026 01:50 PM" [ref=e340]
+            - row [ref=e341]:
+              - cell [ref=e342]:
+                - link "HB 5630" [ref=e343] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5630
+              - cell "Jul. 29" [ref=e344]
+              - cell "assigned PA 25'26 with immediate effect" [ref=e345]
+            - row [ref=e346]:
+              - cell [ref=e347]:
+                - link "HB 5630" [ref=e348] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5630
+              - cell "Jul. 29" [ref=e349]
+              - cell "filed with Secretary of State 07/21/2026 02:28 PM" [ref=e350]
+            - row [ref=e351]:
+              - cell [ref=e352]:
+                - link "HB 5630" [ref=e353] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-5630
+              - cell "Jul. 29" [ref=e354]
+              - cell "approved by the Governor 07/21/2026 01:48 PM" [ref=e355]
+            - row [ref=e356]:
+              - cell [ref=e357]:
+                - link "HB 4415" [ref=e358] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4415
+              - cell "Jul. 29" [ref=e359]
+              - cell "assigned PA 91'26 with immediate effect" [ref=e360]
+            - row [ref=e361]:
+              - cell [ref=e362]:
+                - link "HB 4415" [ref=e363] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4415
+              - cell "Jul. 29" [ref=e364]
+              - cell "filed with Secretary of State 07/27/2026 12:22 PM" [ref=e365]
+            - row [ref=e366]:
+              - cell [ref=e367]:
+                - link "HB 4415" [ref=e368] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4415
+              - cell "Jul. 29" [ref=e369]
+              - cell "approved by the Governor 07/21/2026 03:06 PM" [ref=e370]
+            - row [ref=e371]:
+              - cell [ref=e372]:
+                - link "HB 5249" [ref=e373] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-5249
+              - cell "Jul. 29" [ref=e374]
+              - cell "assigned PA 90'26 with immediate effect" [ref=e375]
+            - row [ref=e376]:
+              - cell [ref=e377]:
+                - link "HB 5249" [ref=e378] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-5249
+              - cell "Jul. 29" [ref=e379]
+              - cell "filed with Secretary of State 07/27/2026 12:20 PM" [ref=e380]
+            - row [ref=e381]:
+              - cell [ref=e382]:
+                - link "HB 5249" [ref=e383] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-5249
+              - cell "Jul. 29" [ref=e384]
+              - cell "approved by the Governor 07/21/2026 02:50 PM" [ref=e385]
+            - row [ref=e386]:
+              - cell [ref=e387]:
+                - link "HB 4042" [ref=e388] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4042
+              - cell "Jul. 29" [ref=e389]
+              - cell "assigned PA 89'26" [ref=e390]
+            - row [ref=e391]:
+              - cell [ref=e392]:
+                - link "HB 4042" [ref=e393] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4042
+              - cell "Jul. 29" [ref=e394]
+              - cell "filed with Secretary of State 07/27/2026 12:18 PM" [ref=e395]
+            - row [ref=e396]:
+              - cell [ref=e397]:
+                - link "HB 4042" [ref=e398] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4042
+              - cell "Jul. 29" [ref=e399]
+              - cell "approved by the Governor 07/21/2026 02:24 PM" [ref=e400]
+            - row [ref=e401]:
+              - cell [ref=e402]:
+                - link "HB 4350" [ref=e403] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4350
+              - cell "Jul. 29" [ref=e404]
+              - cell "assigned PA 86'26 with immediate effect" [ref=e405]
+            - row [ref=e406]:
+              - cell [ref=e407]:
+                - link "HB 4350" [ref=e408] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4350
+              - cell "Jul. 29" [ref=e409]
+              - cell "filed with Secretary of State 07/27/2026 12:12 PM" [ref=e410]
+            - row [ref=e411]:
+              - cell [ref=e412]:
+                - link "HB 4350" [ref=e413] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4350
+              - cell "Jul. 29" [ref=e414]
+              - cell "approved by the Governor 07/21/2026 03:02 PM" [ref=e415]
+            - row [ref=e416]:
+              - cell [ref=e417]:
+                - link "HB 4100" [ref=e418] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4100
+              - cell "Jul. 29" [ref=e419]
+              - cell "assigned PA 84'26 with immediate effect" [ref=e420]
+            - row [ref=e421]:
+              - cell [ref=e422]:
+                - link "HB 4100" [ref=e423] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4100
+              - cell "Jul. 29" [ref=e424]
+              - cell "filed with Secretary of State 07/27/2026 12:08 PM" [ref=e425]
+            - row [ref=e426]:
+              - cell [ref=e427]:
+                - link "HB 4100" [ref=e428] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4100
+              - cell "Jul. 29" [ref=e429]
+              - cell "approved by the Governor 07/21/2026 02:46 PM" [ref=e430]
+            - row [ref=e431]:
+              - cell [ref=e432]:
+                - link "HB 4824" [ref=e433] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4824
+              - cell "Jul. 29" [ref=e434]
+              - cell "assigned PA 83'26 with immediate effect" [ref=e435]
+            - row [ref=e436]:
+              - cell [ref=e437]:
+                - link "HB 4824" [ref=e438] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4824
+              - cell "Jul. 29" [ref=e439]
+              - cell "filed with Secretary of State 07/27/2026 12:06 PM" [ref=e440]
+            - row [ref=e441]:
+              - cell [ref=e442]:
+                - link "HB 4824" [ref=e443] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4824
+              - cell "Jul. 29" [ref=e444]
+              - cell "approved by the Governor 07/21/2026 02:52 PM" [ref=e445]
+            - row [ref=e446]:
+              - cell [ref=e447]:
+                - link "HB 4187" [ref=e448] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4187
+              - cell "Jul. 29" [ref=e449]
+              - cell "assigned PA 82'26 with immediate effect" [ref=e450]
+            - row [ref=e451]:
+              - cell [ref=e452]:
+                - link "HB 4187" [ref=e453] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4187
+              - cell "Jul. 29" [ref=e454]
+              - cell "filed with Secretary of State 07/27/2026 12:04 PM" [ref=e455]
+            - row [ref=e456]:
+              - cell [ref=e457]:
+                - link "HB 4187" [ref=e458] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4187
+              - cell "Jul. 29" [ref=e459]
+              - cell "approved by the Governor 07/21/2026 02:28 PM" [ref=e460]
+            - row [ref=e461]:
+              - cell [ref=e462]:
+                - link "HB 4724" [ref=e463] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4724
+              - cell "Jul. 29" [ref=e464]
+              - cell "assigned PA 81'26 with immediate effect" [ref=e465]
+            - row [ref=e466]:
+              - cell [ref=e467]:
+                - link "HB 4724" [ref=e468] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4724
+              - cell "Jul. 29" [ref=e469]
+              - cell "filed with Secretary of State 07/27/2026 12:02 PM" [ref=e470]
+            - row [ref=e471]:
+              - cell [ref=e472]:
+                - link "HB 4724" [ref=e473] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4724
+              - cell "Jul. 29" [ref=e474]
+              - cell "approved by the Governor 07/21/2026 02:54 PM" [ref=e475]
+            - row [ref=e476]:
+              - cell [ref=e477]:
+                - link "HB 4023" [ref=e478] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4023
+              - cell "Jul. 29" [ref=e479]
+              - cell "assigned PA 80'26 with immediate effect" [ref=e480]
+            - row [ref=e481]:
+              - cell [ref=e482]:
+                - link "HB 4023" [ref=e483] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4023
+              - cell "Jul. 29" [ref=e484]
+              - cell "filed with Secretary of State 07/27/2026 12:00 PM" [ref=e485]
+            - row [ref=e486]:
+              - cell [ref=e487]:
+                - link "HB 4023" [ref=e488] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4023
+              - cell "Jul. 29" [ref=e489]
+              - cell "approved by the Governor 07/21/2026 02:36 PM" [ref=e490]
+            - row [ref=e491]:
+              - cell [ref=e492]:
+                - link "HB 4064" [ref=e493] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4064
+              - cell "Jul. 29" [ref=e494]
+              - cell "assigned PA 76'26 with immediate effect" [ref=e495]
+            - row [ref=e496]:
+              - cell [ref=e497]:
+                - link "HB 4064" [ref=e498] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4064
+              - cell "Jul. 29" [ref=e499]
+              - cell "filed with Secretary of State 07/27/2026 11:52 AM" [ref=e500]
+            - row [ref=e501]:
+              - cell [ref=e502]:
+                - link "HB 4064" [ref=e503] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4064
+              - cell "Jul. 29" [ref=e504]
+              - cell "approved by the Governor 07/21/2026 02:32 PM" [ref=e505]
+            - row [ref=e506]:
+              - cell [ref=e507]:
+                - link "HB 4063" [ref=e508] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4063
+              - cell "Jul. 29" [ref=e509]
+              - cell "assigned PA 75'26 with immediate effect" [ref=e510]
+            - row [ref=e511]:
+              - cell [ref=e512]:
+                - link "HB 4063" [ref=e513] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4063
+              - cell "Jul. 29" [ref=e514]
+              - cell "filed with Secretary of State 07/27/2026 11:50 PM" [ref=e515]
+            - row [ref=e516]:
+              - cell [ref=e517]:
+                - link "HB 4063" [ref=e518] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4063
+              - cell "Jul. 29" [ref=e519]
+              - cell "approved by the Governor 07/21/2026 02:30 PM" [ref=e520]
+            - row [ref=e521]:
+              - cell [ref=e522]:
+                - link "HB 4062" [ref=e523] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4062
+              - cell "Jul. 29" [ref=e524]
+              - cell "assigned PA 74'26 with immediate effect" [ref=e525]
+            - row [ref=e526]:
+              - cell [ref=e527]:
+                - link "HB 4062" [ref=e528] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4062
+              - cell "Jul. 29" [ref=e529]
+              - cell "filed with Secretary of State 07/27/2026 11:48 AM" [ref=e530]
+            - row [ref=e531]:
+              - cell [ref=e532]:
+                - link "HB 4062" [ref=e533] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4062
+              - cell "Jul. 29" [ref=e534]
+              - cell "approved by the Governor 07/21/2026 03:10 PM" [ref=e535]
+            - row [ref=e536]:
+              - cell [ref=e537]:
+                - link "HB 4644" [ref=e538] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4644
+              - cell "Jul. 29" [ref=e539]
+              - cell "assigned PA 73'26 with immediate effect" [ref=e540]
+            - row [ref=e541]:
+              - cell [ref=e542]:
+                - link "HB 4644" [ref=e543] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4644
+              - cell "Jul. 29" [ref=e544]
+              - cell "filed with Secretary of State 07/27/2026 11:46 PM" [ref=e545]
+            - row [ref=e546]:
+              - cell [ref=e547]:
+                - link "HB 4644" [ref=e548] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4644
+              - cell "Jul. 29" [ref=e549]
+              - cell "approved by the Governor 07/21/2026 03:00 PM" [ref=e550]
+            - row [ref=e551]:
+              - cell [ref=e552]:
+                - link "HB 4072" [ref=e553] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2025-HB-4072
+              - cell "Jul. 29" [ref=e554]
+              - cell "assigned PA 41'26" [ref=e555]
+            - row [ref=e556]:
+              - cell [ref=e557]:
+                - link "HB 6230" [ref=e558] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6230
+              - cell "Jul. 29" [ref=e559]
+              - cell "introduced by Representative Rep. Kara Hope" [ref=e560]
+            - row [ref=e561]:
+              - cell [ref=e562]:
+                - link "HB 6230" [ref=e563] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6230
+              - cell "Jul. 29" [ref=e564]
+              - cell "read a first time" [ref=e565]
+            - row [ref=e566]:
+              - cell [ref=e567]:
+                - link "HB 6230" [ref=e568] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6230
+              - cell "Jul. 29" [ref=e569]
+              - cell "referred to Committee on Government Operations" [ref=e570]
+            - row [ref=e571]:
+              - cell [ref=e572]:
+                - link "HB 6229" [ref=e573] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6229
+              - cell "Jul. 29" [ref=e574]
+              - cell "introduced by Representative Rep. Brenda Carter" [ref=e575]
+            - row [ref=e576]:
+              - cell [ref=e577]:
+                - link "HB 6229" [ref=e578] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6229
+              - cell "Jul. 29" [ref=e579]
+              - cell "read a first time" [ref=e580]
+            - row [ref=e581]:
+              - cell [ref=e582]:
+                - link "HB 6229" [ref=e583] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6229
+              - cell "Jul. 29" [ref=e584]
+              - cell "referred to Committee on Government Operations" [ref=e585]
+            - row [ref=e586]:
+              - cell [ref=e587]:
+                - link "HB 6228" [ref=e588] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6228
+              - cell "Jul. 29" [ref=e589]
+              - cell "introduced by Representative Rep. Tyrone Carter" [ref=e590]
+            - row [ref=e591]:
+              - cell [ref=e592]:
+                - link "HB 6228" [ref=e593] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6228
+              - cell "Jul. 29" [ref=e594]
+              - cell "read a first time" [ref=e595]
+            - row [ref=e596]:
+              - cell [ref=e597]:
+                - link "HB 6228" [ref=e598] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6228
+              - cell "Jul. 29" [ref=e599]
+              - cell "referred to Committee on Government Operations" [ref=e600]
+            - row [ref=e601]:
+              - cell [ref=e602]:
+                - link "HB 6227" [ref=e603] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6227
+              - cell "Jul. 29" [ref=e604]
+              - cell "read a first time" [ref=e605]
+            - row [ref=e606]:
+              - cell [ref=e607]:
+                - link "HB 6227" [ref=e608] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6227
+              - cell "Jul. 29" [ref=e609]
+              - cell "referred to Committee on Government Operations" [ref=e610]
+            - row [ref=e611]:
+              - cell [ref=e612]:
+                - link "HB 6227" [ref=e613] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6227
+              - cell "Jul. 29" [ref=e614]
+              - cell "introduced by Representative Rep. Samantha Steckloff" [ref=e615]
+            - row [ref=e616]:
+              - cell [ref=e617]:
+                - link "HB 6226" [ref=e618] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6226
+              - cell "Jul. 29" [ref=e619]
+              - cell "introduced by Representative Rep. Tyrone Carter" [ref=e620]
+            - row [ref=e621]:
+              - cell [ref=e622]:
+                - link "HB 6226" [ref=e623] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6226
+              - cell "Jul. 29" [ref=e624]
+              - cell "read a first time" [ref=e625]
+            - row [ref=e626]:
+              - cell [ref=e627]:
+                - link "HB 6226" [ref=e628] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6226
+              - cell "Jul. 29" [ref=e629]
+              - cell "referred to Committee on Government Operations" [ref=e630]
+            - row [ref=e631]:
+              - cell [ref=e632]:
+                - link "HB 6225" [ref=e633] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6225
+              - cell "Jul. 29" [ref=e634]
+              - cell "introduced by Representative Rep. David Martin" [ref=e635]
+            - row [ref=e636]:
+              - cell [ref=e637]:
+                - link "HB 6225" [ref=e638] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6225
+              - cell "Jul. 29" [ref=e639]
+              - cell "read a first time" [ref=e640]
+            - row [ref=e641]:
+              - cell [ref=e642]:
+                - link "HB 6225" [ref=e643] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6225
+              - cell "Jul. 29" [ref=e644]
+              - cell "referred to Committee on Finance" [ref=e645]
+            - row [ref=e646]:
+              - cell [ref=e647]:
+                - link "HB 6224" [ref=e648] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6224
+              - cell "Jul. 29" [ref=e649]
+              - cell "introduced by Representative Rep. James DeSana" [ref=e650]
+            - row [ref=e651]:
+              - cell [ref=e652]:
+                - link "HB 6224" [ref=e653] [cursor=pointer]:
+                  - /url: /Home/GetObject?ObjectName=2026-HB-6224
+              - cell "Jul. 29" [ref=e654]
+              - cell "read a first time" [ref=e655]
+  - contentinfo [ref=e656]:
+    - generic [ref=e657]:
+      - generic [ref=e660]:
+        - link "Acceptable Use Policy" [ref=e661] [cursor=pointer]:
+          - /url: /Home/AcceptableUse
+        - link "Privacy Policy" [ref=e662] [cursor=pointer]:
+          - /url: /Home/Privacy
+        - link "DMCA Policy" [ref=e663] [cursor=pointer]:
+          - /url: /Home/DMCA
+        - link "Comment Form" [ref=e664] [cursor=pointer]:
+          - /url: /Home/CommentForm
+        - link "Legislative Directory" [ref=e665] [cursor=pointer]:
+          - /url: /Legislature/Directory
+        - link "Accessibility" [ref=e666] [cursor=pointer]:
+          - /url: /Home/Accessibility
+        - link "Site Map" [ref=e667] [cursor=pointer]:
+          - /url: /Home/SiteMap
+      - generic [ref=e670]:
+        - link "Bills" [ref=e671] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/billupdate.xml
+        - link "Meetings" [ref=e674] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/comschedule.xml
+        - link "Laws" [ref=e677] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/MCLupdate.xml
+      - paragraph [ref=e681]:
+        - text: The Michigan Legislature Website is a free service of the Legislative Service Bureau in cooperation with the Michigan Legislative Council, the Michigan House of Representatives, the Michigan Senate, and the Library of Michigan. This site is intended to provide accurate and timely legislative information to the citizens of the State of Michigan and other interested parties. Additional historical documents can be found at
+        - link "https://www.michigan.gov/libraryofmichigan" [ref=e682] [cursor=pointer]:
+          - /url: https://www.michigan.gov/libraryofmichigan
+        - text: . The information obtained from this site is not intended to replace official versions of that information and is subject to revision. The Legislature presents this information, without warranties, express or implied, regarding the accuracy of the information, timeliness, or completeness. If you believe the information is inaccurate, out-of-date, or incomplete or if you have problems accessing or reading the information, please send your concerns to the appropriate agency using the online Comment Form in the bar above this text.

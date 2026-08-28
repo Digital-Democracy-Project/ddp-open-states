@@ -1,0 +1,22 @@
+- generic [active] [ref=e1]:
+  - heading "User validation required to continue.." [level=3] [ref=e2]
+  - separator [ref=e3]
+  - text: Please type the text you see in the image into the text box and submit
+  - paragraph [ref=e4]
+  - generic [ref=e6]:
+    - textbox [ref=e7]
+    - button "Submit" [ref=e8]
+  - paragraph
+  - paragraph [ref=e9]: "[ Refresh the page to generate a new image. ]"
+  - paragraph [ref=e10]: "Note:"
+  - list [ref=e11]:
+    - listitem [ref=e12]: If you get here while trying to submit a form, you may have to re-submit the form.
+    - listitem [ref=e13]: Access to this domain may need the browser to have javascript and cookie support enabled.
+  - paragraph
+  - separator [ref=e14]
+  - emphasis [ref=e15]:
+    - text: "Validation needed due to the detection of invalid input from this client IP address, error code :"
+    - generic [ref=e16]: "426"
+  - emphasis [ref=e17]:
+    - text: "Number of attempts left :"
+    - generic [ref=e18]: "5"

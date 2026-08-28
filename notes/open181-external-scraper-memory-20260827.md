@@ -103,6 +103,26 @@ was and the next run re-collects a window that was already collected.
 **The claim is precise: publication is ordered, not atomic.** Every failure mode it leaves behind
 is one where a window gets re-collected, never one where a window gets skipped.
 
+### The invariant that makes cache-first safe, which is not obvious
+
+Publishing the baseline *first* looks alarming on its own: Michigan builds its fetch set by
+comparing the site against the baseline (`mi/bills.py`: `if bill_no_key not in changed_nos:
+continue`), so a bill already recorded there is not re-fetched. A fresh baseline beside a stale
+cutoff would seem to hide bills that moved.
+
+It does not, and the reason is worth writing down because nothing said it before: **both persist
+calls sit on the success path, after the import's exit status has been checked.** A failed scrape
+and a failed import each exit earlier and publish nothing at all — not the baseline, not the
+markers. So a baseline can only reach the store once every bill it describes has been scraped
+*and loaded into the database*. Michigan's own code reinforces this: `scraped_actions[bill_no] =
+...` is set only after `yield from self.scrape_bill(...)`, and the saved baseline is
+`baseline + scraped_actions`, so it advances only for bills actually collected.
+
+The stale watermark then costs nothing: it widens the next run's window, and for Michigan a wider
+window is free because the skip decision is baseline-driven rather than cutoff-driven. Asserted
+directly — a run whose import fails publishes nothing, even with a fresh baseline sitting in its
+cache directory.
+
 ## Validation — live, against the real bucket
 
 Two real Utah scrapes from the dev checkout against the isolated `openstates_dev` database, with

@@ -1,0 +1,350 @@
+- generic [active] [ref=f6e1]:
+  - banner [ref=f6e2]:
+    - link "Skip to content" [ref=f6e3] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=f6e4]:
+      - generic [ref=f6e5]:
+        - heading [level=1] [ref=f6e6]:
+          - link "Michigan Legislature" [ref=f6e7] [cursor=pointer]:
+            - /url: /
+        - generic [ref=f6e8]: Michigan Compiled Laws Complete Through PA 20 of 2026
+      - generic [ref=f6e9]:
+        - generic [ref=f6e10]: Senate adjourned until Wednesday, August 12, 2026 10:00 AM
+        - generic [ref=f6e11]: House adjourned until Tuesday, August 11, 2026 1:30 PM
+    - navigation [ref=f6e12]:
+      - generic [ref=f6e14]:
+        - list [ref=f6e15]:
+          - listitem [ref=f6e16]:
+            - link "Home" [ref=f6e17] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f6e18]:
+            - button "Legislature" [ref=f6e19] [cursor=pointer]
+          - listitem [ref=f6e20]:
+            - button "Laws" [ref=f6e21] [cursor=pointer]
+          - listitem [ref=f6e22]:
+            - button "More" [ref=f6e23] [cursor=pointer]
+        - list [ref=f6e25]:
+          - listitem [ref=f6e26]:
+            - link "Toggle Theme" [ref=f6e27] [cursor=pointer]:
+              - /url: /Home/ToggleTheme?ReturnUrl=%2FSearch%2FLegDocSearch
+          - listitem [ref=f6e31]:
+            - link "Sign Up" [ref=f6e32] [cursor=pointer]:
+              - /url: /Account/SignUp?ReturnUrl=%2FSearch%2FLegDocSearch
+          - listitem [ref=f6e33]:
+            - link "Log In" [ref=f6e34] [cursor=pointer]:
+              - /url: /Account/LogIn?ReturnUrl=%2FSearch%2FLegDocSearch
+  - main [ref=f6e35]:
+    - heading "Legislative Document Search" [level=1] [ref=f6e36]
+    - paragraph [ref=f6e39]: This page allows you to keyword search multiple types of documents.
+    - generic [ref=f6e40]:
+      - generic [ref=f6e41]:
+        - heading "Basic Search" [level=2] [ref=f6e42]
+        - generic [ref=f6e43]:
+          - generic [ref=f6e44]:
+            - generic [ref=f6e45]: Chamber
+            - generic [ref=f6e46]:
+              - generic [ref=f6e47]:
+                - radio "Senate" [ref=f6e48]
+                - text: Senate
+              - generic [ref=f6e49]:
+                - radio "House" [ref=f6e50]
+                - text: House
+              - generic [ref=f6e51]:
+                - radio "Both" [checked] [ref=f6e52]
+                - text: Both
+          - generic [ref=f6e53]:
+            - generic [ref=f6e54]: Document Type(s)
+            - generic [ref=f6e55]:
+              - generic [ref=f6e56]:
+                - checkbox "Bills" [ref=f6e57]
+                - text: Bills
+              - generic [ref=f6e58]:
+                - checkbox "Resolutions" [ref=f6e59]
+                - text: Resolutions
+              - generic [ref=f6e60]:
+                - checkbox "Concurrent Resolutions" [ref=f6e61]
+                - text: Concurrent Resolutions
+              - generic [ref=f6e62]:
+                - checkbox "Joint Resolutions" [ref=f6e63]
+                - text: Joint Resolutions
+              - generic [ref=f6e64]:
+                - checkbox "Calendars" [ref=f6e65]
+                - text: Calendars
+              - generic [ref=f6e66]:
+                - checkbox "Journals" [ref=f6e67]
+                - text: Journals
+          - generic [ref=f6e68]:
+            - generic [ref=f6e69]: Session
+            - combobox "Session" [ref=f6e72]:
+              - option "All"
+              - option "2025-2026" [selected]
+              - option "2023-2024"
+              - option "2021-2022"
+              - option "2019-2020"
+              - option "2017-2018"
+              - option "2015-2016"
+              - option "2013-2014"
+              - option "2011-2012"
+              - option "2009-2010"
+              - option "2007-2008"
+              - option "2005-2006"
+              - option "2003-2004"
+              - option "2001-2002"
+              - option "1999-2000"
+              - option "1997-1998"
+              - option "1995-1996"
+              - option "1993-1994"
+              - option "1991-1992"
+              - option "1989-1990"
+          - generic [ref=f6e73]:
+            - generic [ref=f6e74]: Sponsor
+            - combobox "Sponsor" [ref=f6e77]:
+              - option [selected]
+          - generic [ref=f6e78]:
+            - generic [ref=f6e79]: Sponsor Type(s)
+            - generic [ref=f6e80]:
+              - generic [ref=f6e81]:
+                - checkbox "Primary Sponsor" [checked] [ref=f6e82]
+                - text: Primary Sponsor
+              - generic [ref=f6e83]:
+                - checkbox "Co-Sponsor" [checked] [ref=f6e84]
+                - text: Co-Sponsor
+          - generic [ref=f6e85]:
+            - generic [ref=f6e87]:
+              - text: Number / Letter
+              - superscript [ref=f6e89]:
+                - img "This search bar accepts Numeric queries" [ref=f6e90]
+            - textbox "Number / Letter" [ref=f6e94]
+          - generic [ref=f6e95]:
+            - generic [ref=f6e97]:
+              - text: Date From
+              - superscript [ref=f6e99]:
+                - img "For Bills and Resolutions, this field applies to the Introduction Date" [ref=f6e100]
+            - textbox "Date From" [ref=f6e104]
+          - generic [ref=f6e105]:
+            - generic [ref=f6e107]:
+              - text: Date To
+              - superscript [ref=f6e109]:
+                - img "For Bills and Resolutions, this field applies to the Introduction Date" [ref=f6e110]
+            - textbox "Date To" [ref=f6e114]
+          - generic [ref=f6e115]:
+            - generic [ref=f6e117]:
+              - text: Key Words
+              - superscript [ref=f6e119]:
+                - img "This search bar accepts Full-Text queries" [ref=f6e120]
+            - textbox "Key Words" [ref=f6e124]
+          - link "Search Help" [ref=f6e128] [cursor=pointer]:
+            - /url: /Home/Help#searchHelp
+          - button "Submit" [ref=f6e131] [cursor=pointer]
+      - generic [ref=f6e132]:
+        - heading "Advanced Search" [level=2] [ref=f6e133]
+        - generic [ref=f6e134]:
+          - group [ref=f6e135]:
+            - generic [ref=f6e136]: Calendars
+            - generic [ref=f6e138]:
+              - generic [ref=f6e139]:
+                - checkbox "Senate" [ref=f6e140]
+                - text: Senate
+              - generic [ref=f6e141]:
+                - checkbox "House" [ref=f6e142]
+                - text: House
+          - group [ref=f6e143]:
+            - generic [ref=f6e144]: Journals
+            - generic [ref=f6e146]:
+              - generic [ref=f6e147]:
+                - checkbox "Senate" [ref=f6e148]
+                - text: Senate
+              - generic [ref=f6e149]:
+                - checkbox "House" [ref=f6e150]
+                - text: House
+          - group [ref=f6e151]:
+            - generic [ref=f6e152]: Introduced Bills
+            - generic [ref=f6e154]:
+              - generic [ref=f6e155]:
+                - checkbox "Senate" [ref=f6e156]
+                - text: Senate
+              - generic [ref=f6e157]:
+                - checkbox "House" [ref=f6e158]
+                - text: House
+          - group [ref=f6e159]:
+            - generic [ref=f6e160]: As Passed By Bills
+            - generic [ref=f6e162]:
+              - generic [ref=f6e163]:
+                - checkbox "Senate" [ref=f6e164]
+                - text: Senate
+              - generic [ref=f6e165]:
+                - checkbox "House" [ref=f6e166]
+                - text: House
+          - group [ref=f6e167]:
+            - generic [ref=f6e168]: Conference Reports
+            - generic [ref=f6e170]:
+              - generic [ref=f6e171]:
+                - checkbox "Senate" [ref=f6e172]
+                - text: Senate
+              - generic [ref=f6e173]:
+                - checkbox "House" [ref=f6e174]
+                - text: House
+          - group [ref=f6e175]:
+            - generic [ref=f6e176]: Enrolled Bills
+            - generic [ref=f6e178]:
+              - generic [ref=f6e179]:
+                - checkbox "Senate" [ref=f6e180]
+                - text: Senate
+              - generic [ref=f6e181]:
+                - checkbox "House" [ref=f6e182]
+                - text: House
+          - group [ref=f6e183]:
+            - generic [ref=f6e184]: Public Acts
+            - generic [ref=f6e187]:
+              - checkbox "Both Chambers" [ref=f6e188]
+              - text: Both Chambers
+          - group [ref=f6e189]:
+            - generic [ref=f6e190]: Introduced Concurrent Resolutions
+            - generic [ref=f6e192]:
+              - generic [ref=f6e193]:
+                - checkbox "Senate" [ref=f6e194]
+                - text: Senate
+              - generic [ref=f6e195]:
+                - checkbox "House" [ref=f6e196]
+                - text: House
+          - group [ref=f6e197]:
+            - generic [ref=f6e198]: Adopted Concurrent Resolutions
+            - generic [ref=f6e200]:
+              - generic [ref=f6e201]:
+                - checkbox "Senate" [ref=f6e202]
+                - text: Senate
+              - generic [ref=f6e203]:
+                - checkbox "House" [ref=f6e204]
+                - text: House
+          - group [ref=f6e205]:
+            - generic [ref=f6e206]: Introduced Joint Resolutions
+            - generic [ref=f6e208]:
+              - generic [ref=f6e209]:
+                - checkbox "Senate" [ref=f6e210]
+                - text: Senate
+              - generic [ref=f6e211]:
+                - checkbox "House" [ref=f6e212]
+                - text: House
+          - group [ref=f6e213]:
+            - generic [ref=f6e214]: Engrossed Joint Resolutions
+            - generic [ref=f6e216]:
+              - generic [ref=f6e217]:
+                - checkbox "Senate" [ref=f6e218]
+                - text: Senate
+              - generic [ref=f6e219]:
+                - checkbox "House" [ref=f6e220]
+                - text: House
+          - group [ref=f6e221]:
+            - generic [ref=f6e222]: Enrolled Joint Resolutions
+            - generic [ref=f6e224]:
+              - generic [ref=f6e225]:
+                - checkbox "Senate" [ref=f6e226]
+                - text: Senate
+              - generic [ref=f6e227]:
+                - checkbox "House" [ref=f6e228]
+                - text: House
+          - group [ref=f6e229]:
+            - generic [ref=f6e230]: Concurred Joint Resolutions
+            - generic [ref=f6e232]:
+              - generic [ref=f6e233]:
+                - checkbox "Senate" [ref=f6e234]
+                - text: Senate
+              - generic [ref=f6e235]:
+                - checkbox "House" [ref=f6e236]
+                - text: House
+          - group [ref=f6e237]:
+            - generic [ref=f6e238]: Introduced Resolutions
+            - generic [ref=f6e240]:
+              - generic [ref=f6e241]:
+                - checkbox "Senate" [ref=f6e242]
+                - text: Senate
+              - generic [ref=f6e243]:
+                - checkbox "House" [ref=f6e244]
+                - text: House
+          - group [ref=f6e245]:
+            - generic [ref=f6e246]: Adopted Resolutions
+            - generic [ref=f6e248]:
+              - generic [ref=f6e249]:
+                - checkbox "Senate" [ref=f6e250]
+                - text: Senate
+              - generic [ref=f6e251]:
+                - checkbox "House" [ref=f6e252]
+                - text: House
+          - group [ref=f6e253]:
+            - generic [ref=f6e254]: Enrolled Resolutions
+            - generic [ref=f6e256]:
+              - generic [ref=f6e257]:
+                - checkbox "Senate" [ref=f6e258]
+                - text: Senate
+              - generic [ref=f6e259]:
+                - checkbox "House" [ref=f6e260]
+                - text: House
+          - group [ref=f6e261]:
+            - generic [ref=f6e262]: House Legislative Analysis
+            - generic [ref=f6e265]:
+              - checkbox "Both Chambers" [ref=f6e266]
+              - text: Both Chambers
+          - group [ref=f6e267]:
+            - generic [ref=f6e268]: Senate Fiscal Analysis
+            - generic [ref=f6e271]:
+              - checkbox "Both Chambers" [ref=f6e272]
+              - text: Both Chambers
+          - generic [ref=f6e273]:
+            - generic [ref=f6e274]: Session
+            - combobox "Session" [ref=f6e277]:
+              - option "All"
+              - option "2025-2026" [selected]
+              - option "2023-2024"
+              - option "2021-2022"
+              - option "2019-2020"
+              - option "2017-2018"
+              - option "2015-2016"
+              - option "2013-2014"
+              - option "2011-2012"
+              - option "2009-2010"
+              - option "2007-2008"
+              - option "2005-2006"
+              - option "2003-2004"
+              - option "2001-2002"
+              - option "1999-2000"
+              - option "1997-1998"
+              - option "1995-1996"
+              - option "1993-1994"
+              - option "1991-1992"
+              - option "1989-1990"
+          - generic [ref=f6e278]:
+            - generic [ref=f6e280]:
+              - text: Key Words
+              - superscript [ref=f6e282]:
+                - img "This search bar accepts Full-Text queries" [ref=f6e283]
+            - textbox "Key Words" [ref=f6e287]
+          - button "Search" [ref=f6e288] [cursor=pointer]
+  - contentinfo [ref=f6e289]:
+    - generic [ref=f6e290]:
+      - generic [ref=f6e293]:
+        - link "Acceptable Use Policy" [ref=f6e294] [cursor=pointer]:
+          - /url: /Home/AcceptableUse
+        - link "Privacy Policy" [ref=f6e295] [cursor=pointer]:
+          - /url: /Home/Privacy
+        - link "DMCA Policy" [ref=f6e296] [cursor=pointer]:
+          - /url: /Home/DMCA
+        - link "Comment Form" [ref=f6e297] [cursor=pointer]:
+          - /url: /Home/CommentForm
+        - link "Legislative Directory" [ref=f6e298] [cursor=pointer]:
+          - /url: /Legislature/Directory
+        - link "Accessibility" [ref=f6e299] [cursor=pointer]:
+          - /url: /Home/Accessibility
+        - link "Site Map" [ref=f6e300] [cursor=pointer]:
+          - /url: /Home/SiteMap
+      - generic [ref=f6e303]:
+        - link "Bills" [ref=f6e304] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/billupdate.xml
+        - link "Meetings" [ref=f6e307] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/comschedule.xml
+        - link "Laws" [ref=f6e310] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/MCLupdate.xml
+      - paragraph [ref=f6e314]:
+        - text: The Michigan Legislature Website is a free service of the Legislative Service Bureau in cooperation with the Michigan Legislative Council, the Michigan House of Representatives, the Michigan Senate, and the Library of Michigan. This site is intended to provide accurate and timely legislative information to the citizens of the State of Michigan and other interested parties. Additional historical documents can be found at
+        - link "https://www.michigan.gov/libraryofmichigan" [ref=f6e315] [cursor=pointer]:
+          - /url: https://www.michigan.gov/libraryofmichigan
+        - text: . The information obtained from this site is not intended to replace official versions of that information and is subject to revision. The Legislature presents this information, without warranties, express or implied, regarding the accuracy of the information, timeliness, or completeness. If you believe the information is inaccurate, out-of-date, or incomplete or if you have problems accessing or reading the information, please send your concerns to the appropriate agency using the online Comment Form in the bar above this text.

@@ -233,7 +233,11 @@ echo "== a partial publication must never leave the watermark ahead =="
 # arranged is the order: the reporting markers first, the authorising watermark last, stopping at
 # the first failure. So a partial publication leaves the cutoff where it was and the next run
 # re-collects -- wasteful, never skipped bills.
-rm -rf "$ROOT/bucket/ordering"; mkdir -p "$ROOT/lr2"
+rm -rf "$ROOT/bucket/ordering"; mkdir -p "$ROOT/lr2" "$ROOT/bucket/ordering/va/va"
+# A PRE-EXISTING stored watermark, so this asserts the real production state -- the previous
+# run's cutoff surviving a failed publication -- rather than merely the absence of a new object
+# on an empty prefix.
+printf 'PREVIOUS-RUN-WATERMARK' > "$ROOT/bucket/ordering/va/va/va.ts"
 printf 'OLD-WATERMARK'   > "$ROOT/lr2/va.ts"
 printf '5:full'          > "$ROOT/lr2/va.count"
 printf 'ok:5:0:0:full'   > "$ROOT/lr2/va.imported"
@@ -242,13 +246,16 @@ ordering() {
         SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" FAKE_S3_ROOT="$ROOT/bucket" \
         bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; $2; echo \$?" 2>/dev/null
 }
-check "persist stops at the first failure" "1" "$(ordering '.count' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
-check "a failure on .count leaves NO watermark published" "no"     "$([ -f "$ROOT/bucket/ordering/va/va/va.ts" ] && echo yes || echo no)"
+stored_ordering() { cat "$ROOT/bucket/ordering/va/va/va.ts" 2>/dev/null || echo "<absent>"; }
 
-rm -rf "$ROOT/bucket/ordering"
-check "a failure on .ts itself also publishes no watermark" "1"     "$(ordering '.ts' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
-check "  ... while the reporting markers did land" "yes"     "$([ -f "$ROOT/bucket/ordering/va/va/va.count" ] && echo yes || echo no)"
-check "  ... and the watermark did not" "no"     "$([ -f "$ROOT/bucket/ordering/va/va/va.ts" ] && echo yes || echo no)"
+check "persist stops at the first failure" "1" "$(ordering '.count' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
+check "a failure on .count leaves the PREVIOUS cutoff in place" "PREVIOUS-RUN-WATERMARK" "$(stored_ordering)"
+
+rm -rf "$ROOT/bucket/ordering"; mkdir -p "$ROOT/bucket/ordering/va/va"
+printf 'PREVIOUS-RUN-WATERMARK' > "$ROOT/bucket/ordering/va/va/va.ts"
+check "a failure on .ts itself also fails the publication" "1" "$(ordering '.ts' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
+check "  ... while the reporting markers did land" "yes" "$([ -f "$ROOT/bucket/ordering/va/va/va.count" ] && echo yes || echo no)"
+check "  ... and the cutoff is still the previous run's" "PREVIOUS-RUN-WATERMARK" "$(stored_ordering)"
 
 echo "== end to end: a run with NO local memory still knows where it left off =="
 
@@ -303,6 +310,32 @@ check "local memory deleted: it read the cutoff from the store" "yes" \
 # a coin flip. The mode in the count changes deterministically and says the same thing -- the
 # store now holds THIS run's memory, not the previous one's.
 check "second run: the store now holds the second run's memory" "1:incremental" "$(stored_count)"
+
+echo "== nothing is published at all unless the import succeeded =="
+
+# The invariant that makes publishing the baseline BEFORE the watermark safe, and the one worth
+# pinning down. Michigan builds its fetch set by comparing the site against the baseline, so a
+# bill already recorded there is not re-fetched -- which is only sound if a baseline can never
+# reach the store describing bills that were not loaded into the database. Both persist calls
+# sit after the import's exit status is checked, so a failed import publishes NOTHING.
+STORE_BEFORE=$(find "$ROOT/bucket/e2ens" -type f 2>/dev/null | sort | md5)
+printf '{"HB4001": "an action from a run whose import will fail"}' > "$RUN_ROOT/cache/mi_last_actions_2025-2026.json"
+cat > "$RUN_ROOT/bin/os-update" <<STUB
+#!/usr/bin/env bash
+for a in "\$@"; do
+    if [ "\$a" = "--import" ]; then
+        echo "psycopg2.OperationalError: could not connect to server"
+        exit 1
+    fi
+done
+printf '{}' > "$RUN_ROOT/data/va/bill_stub9.json"
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+e2e ""
+check "import failed: the run fails" "failed" "$(status)"
+check "import failed: NOTHING was published" "$STORE_BEFORE" "$(find "$ROOT/bucket/e2ens" -type f 2>/dev/null | sort | md5)"
+rm -f "$RUN_ROOT/cache/mi_last_actions_2025-2026.json"
 
 echo "== a store that will not answer must stop the run, not start a full collection =="
 

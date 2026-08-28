@@ -1,0 +1,266 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - link "Skip to content" [ref=f2e3] [cursor=pointer]:
+      - /url: "#main"
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - heading [level=1] [ref=f2e6]:
+          - link "Michigan Legislature" [ref=f2e7] [cursor=pointer]:
+            - /url: /
+        - generic [ref=f2e8]: Michigan Compiled Laws Complete Through PA 20 of 2026
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]: Senate adjourned until Wednesday, August 12, 2026 10:00 AM
+        - generic [ref=f2e11]: House adjourned until Tuesday, August 11, 2026 1:30 PM
+    - navigation [ref=f2e12]:
+      - generic [ref=f2e14]:
+        - list [ref=f2e15]:
+          - listitem [ref=f2e16]:
+            - link "Home" [ref=f2e17] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f2e18]:
+            - button "Legislature" [ref=f2e19] [cursor=pointer]
+          - listitem [ref=f2e20]:
+            - button "Laws" [ref=f2e21] [cursor=pointer]
+          - listitem [ref=f2e22]:
+            - button "More" [ref=f2e23] [cursor=pointer]
+        - list [ref=f2e25]:
+          - listitem [ref=f2e26]:
+            - link "Toggle Theme" [ref=f2e27] [cursor=pointer]:
+              - /url: /Home/ToggleTheme?ReturnUrl=%2FBills%2FBill%3FObjectName%3D2025-SB-0001
+          - listitem [ref=f2e31]:
+            - link "Sign Up" [ref=f2e32] [cursor=pointer]:
+              - /url: /Account/SignUp?ReturnUrl=%2FBills%2FBill%3FObjectName%3D2025-SB-0001
+          - listitem [ref=f2e33]:
+            - link "Log In" [ref=f2e34] [cursor=pointer]:
+              - /url: /Account/LogIn?ReturnUrl=%2FBills%2FBill%3FObjectName%3D2025-SB-0001
+  - main [ref=f2e35]:
+    - heading "Senate Bill 1 of 2025" [level=1] [ref=f2e36]
+    - generic [ref=f2e37]:
+      - link "rss" [ref=f2e38] [cursor=pointer]:
+        - /url: /Home/GetRSSFile?objectName=2025-SB-0001
+      - text: "|"
+      - link "Printer Friendly" [ref=f2e42] [cursor=pointer]:
+        - /url: /Bills/Bill?ObjectName=2025-SB-0001&printerFriendly=true
+    - generic [ref=f2e43]:
+      - link "Previous Bill" [ref=f2e45] [cursor=pointer]:
+        - /url: /Bills/Bill?ObjectName=2024-SB-1199
+      - link "Next Bill" [ref=f2e49] [cursor=pointer]:
+        - /url: /Bills/Bill?ObjectName=2025-SB-0002
+    - generic [ref=f2e52]:
+      - generic [ref=f2e53]:
+        - heading "Sponsors" [level=2] [ref=f2e54]
+        - list [ref=f2e56]:
+          - listitem "View sponsored legislation" [ref=f2e57]:
+            - link "Jeremy Moss (District 7)" [ref=f2e58] [cursor=pointer]:
+              - /url: /Search/ExecuteSearch?sessions=2025-2026&docTypes=Bills&sponsor=Jeremy Moss&sponsorTypesList=primary&sponsorTypesList=cosponsor
+          - listitem "View sponsored legislation" [ref=f2e59]:
+            - link "Edward W. McBroom (District 38)" [ref=f2e60] [cursor=pointer]:
+              - /url: /Search/ExecuteSearch?sessions=2025-2026&docTypes=Bills&sponsor=Edward W. McBroom&sponsorTypesList=primary&sponsorTypesList=cosponsor
+          - listitem "View sponsored legislation" [ref=f2e61]:
+            - link "Stephanie Chang (District 3)" [ref=f2e62] [cursor=pointer]:
+              - /url: /Search/ExecuteSearch?sessions=2025-2026&docTypes=Bills&sponsor=Stephanie Chang&sponsorTypesList=primary&sponsorTypesList=cosponsor
+          - listitem "View sponsored legislation" [ref=f2e63]:
+            - link "John Cherry (District 27)" [ref=f2e64] [cursor=pointer]:
+              - /url: /Search/ExecuteSearch?sessions=2025-2026&docTypes=Bills&sponsor=John Cherry&sponsorTypesList=primary&sponsorTypesList=cosponsor
+      - generic [ref=f2e65]:
+        - heading "Categories" [level=2] [ref=f2e66]
+        - 'link "Civil rights: public records" [ref=f2e68] [cursor=pointer]':
+          - /url: "/Search/ExecuteSearch?docTypes=Bills&sessions=2025-2026&detailedCategory=Civil rights: public records"
+        - generic [ref=f2e69]:
+          - text: "Civil rights: public records; applicability of the freedom of information act to the legislature and governor's office; provide for. Amends sec. 2 of"
+          - link "1976 PA 442" [ref=f2e70] [cursor=pointer]:
+            - /url: /Laws/MCL?objectName=mcl-act-442-of-1976
+          - text: (MCL
+          - link "15.232" [ref=f2e71] [cursor=pointer]:
+            - /url: /Search/ExecuteSearch?sectionNumbers=15.232&docTypes=Section
+          - text: "). TIE BAR WITH:"
+          - link "SB 0002'25" [ref=f2e72] [cursor=pointer]:
+            - /url: /Search/ExecuteSearch?docTypes=House Bill,Senate Bill&sessions=2025-2026&number=0002
+    - generic [ref=f2e73]:
+      - heading "Documents" [level=2] [ref=f2e74]
+      - link [ref=f2e76] [cursor=pointer]:
+        - /url: javascript:void(0)
+        - strong [ref=f2e77]: Bill Document Formatting Information
+      - generic [ref=f2e78]:
+        - generic [ref=f2e79]:
+          - link [ref=f2e81] [cursor=pointer]:
+            - /url: /documents/2025-2026/billintroduced/Senate/pdf/2025-SIB-0001.pdf
+          - link [ref=f2e85] [cursor=pointer]:
+            - /url: /documents/2025-2026/billintroduced/Senate/htm/2025-SIB-0001.htm
+          - generic [ref=f2e88]:
+            - strong [ref=f2e90]: Senate Introduced Bill
+            - text: Introduced bills appear as they were introduced and reflect no subsequent amendments or changes
+        - generic [ref=f2e91]:
+          - link [ref=f2e93] [cursor=pointer]:
+            - /url: /documents/2025-2026/billengrossed/Senate/pdf/2025-SEBS-0001.pdf
+          - link [ref=f2e97] [cursor=pointer]:
+            - /url: /documents/2025-2026/billengrossed/Senate/htm/2025-SEBS-0001.htm
+          - generic [ref=f2e100]:
+            - strong [ref=f2e102]: As Passed by the Senate
+            - text: The As Passed by the Senate version is the bill, as introduced, that includes any adoped Senate amendments
+    - heading "Analysis" [level=2] [ref=f2e103]
+    - generic [ref=f2e105]:
+      - heading "Senate Fiscal Agency Analysis" [level=3] [ref=f2e106]
+      - generic [ref=f2e107]:
+        - generic [ref=f2e108]:
+          - link [ref=f2e110] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/pdf/2025-SFA-0001-G.pdf
+          - link [ref=f2e114] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/htm/2025-SFA-0001-G.htm
+          - generic [ref=f2e117]:
+            - strong [ref=f2e119]: "SUMMARY OF INTRODUCED BILL IN COMMITTEE (Date Completed: 1-14-25)"
+            - generic [ref=f2e120]:
+              - text: This document analyzes
+              - link "SB2" [ref=f2e121] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=2
+              - text: ","
+              - link "SB1" [ref=f2e122] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=1
+        - generic [ref=f2e123]:
+          - link [ref=f2e125] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/pdf/2025-SFA-0002-G.pdf
+          - link [ref=f2e129] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/htm/2025-SFA-0002-G.htm
+          - generic [ref=f2e132]:
+            - strong [ref=f2e134]: "SUMMARY OF INTRODUCED BILL IN COMMITTEE (Date Completed: 1-14-25)"
+            - generic [ref=f2e135]:
+              - text: This document analyzes
+              - link "SB2" [ref=f2e136] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=2
+              - text: ","
+              - link "SB1" [ref=f2e137] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=1
+        - generic [ref=f2e138]:
+          - link [ref=f2e140] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/pdf/2025-SFA-0002-U.pdf
+          - link [ref=f2e144] [cursor=pointer]:
+            - /url: /documents/2025-2026/billanalysis/Senate/htm/2025-SFA-0002-U.htm
+          - generic [ref=f2e147]:
+            - strong [ref=f2e149]: "ANALYSIS AS PASSED BY THE SENATE (Date Completed: 2-10-25)"
+            - generic [ref=f2e150]:
+              - text: This document analyzes
+              - link "SB2" [ref=f2e151] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=2
+              - text: ","
+              - link "SB1" [ref=f2e152] [cursor=pointer]:
+                - /url: /Search/ExecuteSearch?docTypes=Senate Bill&sessions=2025-2026&number=1
+    - heading "History" [level=2] [ref=f2e153]
+    - text: "(House actions in lowercase, Senate actions in UPPERCASE) Note: A page number of 0 indicates that the page number is coming soon"
+    - table [ref=f2e155]:
+      - rowgroup [ref=f2e156]:
+        - row [ref=f2e157]:
+          - columnheader "Date" [ref=f2e158]
+          - columnheader "Journal" [ref=f2e159]
+          - columnheader "Action" [ref=f2e160]
+      - rowgroup [ref=f2e161]:
+        - row [ref=f2e162]:
+          - cell "1/08/2025" [ref=f2e163]
+          - cell [ref=f2e164]:
+            - link "SJ 1" [ref=f2e165] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-08-001
+            - text: Pg. 22
+          - cell "INTRODUCED BY SENATOR JEREMY MOSS" [ref=f2e166]
+        - row [ref=f2e167]:
+          - cell "1/08/2025" [ref=f2e168]
+          - cell [ref=f2e169]:
+            - link "SJ 1" [ref=f2e170] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-08-001
+            - text: Pg. 22
+          - cell "RULES SUSPENDED" [ref=f2e171]
+        - row [ref=f2e172]:
+          - cell "1/08/2025" [ref=f2e173]
+          - cell [ref=f2e174]:
+            - link "SJ 1" [ref=f2e175] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-08-001
+            - text: Pg. 22
+          - cell "REFERRED TO COMMITTEE OF THE WHOLE" [ref=f2e176]
+        - row [ref=f2e177]:
+          - cell "6/30/2026" [ref=f2e178]
+          - cell [ref=f2e179]:
+            - link "SJ 6" [ref=f2e180] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2026-SJ-06-30-006
+            - text: Pg. 46
+          - 'cell "SENATE CO-SPONSOR(S) NAMED: STEPHANIE CHANG" [ref=f2e181]'
+        - row [ref=f2e182]:
+          - cell "1/23/2025" [ref=f2e183]
+          - cell [ref=f2e184]:
+            - link "SJ 6" [ref=f2e185] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-23-006
+            - text: Pg. 46
+          - cell "REPORTED BY COMMITTEE OF THE WHOLE FAVORABLY WITHOUT AMENDMENT(S)" [ref=f2e186]
+        - row [ref=f2e187]:
+          - cell "1/23/2025" [ref=f2e188]
+          - cell [ref=f2e189]:
+            - link "SJ 6" [ref=f2e190] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-23-006
+            - text: Pg. 46
+          - cell "PLACED ON ORDER OF THIRD READING" [ref=f2e191]
+        - row [ref=f2e192]:
+          - cell "1/29/2025" [ref=f2e193]
+          - cell [ref=f2e194]:
+            - link "SJ 8" [ref=f2e195] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-29-008
+            - text: Pg. 52
+          - cell [ref=f2e196]:
+            - link "SUBSTITUTE (S-1) DEFEATED" [ref=f2e197] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SCVBS-0001-0J218.pdf
+        - row [ref=f2e198]:
+          - cell "1/29/2025" [ref=f2e199]
+          - cell [ref=f2e200]:
+            - link "SJ 8" [ref=f2e201] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-SJ-01-29-008
+            - text: Pg. 52
+          - 'cell "PASSED ROLL CALL # 1 YEAS 33 NAYS 2 EXCUSED 2 NOT VOTING 0" [ref=f2e202]'
+        - row [ref=f2e203]:
+          - cell "1/29/2025" [ref=f2e204]
+          - cell [ref=f2e205]:
+            - link "HJ 9" [ref=f2e206] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-HJ-01-29-009
+            - text: Pg. 77
+          - cell "received on 01/29/2025" [ref=f2e207]
+        - row [ref=f2e208]:
+          - cell "1/29/2025" [ref=f2e209]
+          - cell [ref=f2e210]:
+            - link "HJ 9" [ref=f2e211] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-HJ-01-29-009
+            - text: Pg. 77
+          - cell "read a first time" [ref=f2e212]
+        - row [ref=f2e213]:
+          - cell "1/29/2025" [ref=f2e214]
+          - cell [ref=f2e215]:
+            - link "HJ 9" [ref=f2e216] [cursor=pointer]:
+              - /url: /Home/GetObject?objectName=2025-HJ-01-29-009
+            - text: Pg. 77
+          - cell [ref=f2e217]:
+            - text: referred to Committee on
+            - link "Government Operations" [ref=f2e218] [cursor=pointer]:
+              - /url: /Committees/CBR?committeeID=1973
+  - contentinfo [ref=f2e219]:
+    - generic [ref=f2e220]:
+      - generic [ref=f2e223]:
+        - link "Acceptable Use Policy" [ref=f2e224] [cursor=pointer]:
+          - /url: /Home/AcceptableUse
+        - link "Privacy Policy" [ref=f2e225] [cursor=pointer]:
+          - /url: /Home/Privacy
+        - link "DMCA Policy" [ref=f2e226] [cursor=pointer]:
+          - /url: /Home/DMCA
+        - link "Comment Form" [ref=f2e227] [cursor=pointer]:
+          - /url: /Home/CommentForm
+        - link "Legislative Directory" [ref=f2e228] [cursor=pointer]:
+          - /url: /Legislature/Directory
+        - link "Accessibility" [ref=f2e229] [cursor=pointer]:
+          - /url: /Home/Accessibility
+        - link "Site Map" [ref=f2e230] [cursor=pointer]:
+          - /url: /Home/SiteMap
+      - generic [ref=f2e233]:
+        - link "Bills" [ref=f2e234] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/billupdate.xml
+        - link "Meetings" [ref=f2e237] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/comschedule.xml
+        - link "Laws" [ref=f2e240] [cursor=pointer]:
+          - /url: /documents/publications/RssFeeds/MCLupdate.xml
+      - paragraph [ref=f2e244]:
+        - text: The Michigan Legislature Website is a free service of the Legislative Service Bureau in cooperation with the Michigan Legislative Council, the Michigan House of Representatives, the Michigan Senate, and the Library of Michigan. This site is intended to provide accurate and timely legislative information to the citizens of the State of Michigan and other interested parties. Additional historical documents can be found at
+        - link "https://www.michigan.gov/libraryofmichigan" [ref=f2e245] [cursor=pointer]:
+          - /url: https://www.michigan.gov/libraryofmichigan
+        - text: . The information obtained from this site is not intended to replace official versions of that information and is subject to revision. The Legislature presents this information, without warranties, express or implied, regarding the accuracy of the information, timeliness, or completeness. If you believe the information is inaccurate, out-of-date, or incomplete or if you have problems accessing or reading the information, please send your concerns to the appropriate agency using the online Comment Form in the bar above this text.
