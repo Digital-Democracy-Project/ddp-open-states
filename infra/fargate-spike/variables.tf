@@ -27,6 +27,12 @@ variable "memory_bucket_arn" {
   type        = string
 }
 
+variable "image_tag" {
+  description = "The ECR tag this task definition points at. ecr.tf sets the repository to IMMUTABLE tags, so a rebuilt image during the spike needs a new value here (a git sha, a timestamp -- anything but reusing the last one, which ECR will simply refuse)."
+  type        = string
+  default     = "prototype"
+}
+
 variable "ecr_repository_name" {
   description = "Matches the fargate draft's suggested name."
   type        = string

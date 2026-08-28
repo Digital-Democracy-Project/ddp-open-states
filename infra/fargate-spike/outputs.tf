@@ -17,3 +17,11 @@ output "security_group_id" {
 output "log_group_name" {
   value = aws_cloudwatch_log_group.scrapers.name
 }
+
+# Surfaced rather than left as an unused input: assignPublicIp and subnet selection are
+# `run-task`-time arguments, not task-definition fields (pm-review's point), so this is where
+# an operator actually needs var.public_subnet_ids again when following the README's manual
+# `aws ecs run-task` example.
+output "public_subnet_ids" {
+  value = var.public_subnet_ids
+}

@@ -46,14 +46,38 @@ call this document's own author should not make silently.
 
 ## After `apply`
 
+The task definition declares `runtime_platform.cpu_architecture = "ARM64"`, matching the image
+actually built and run locally during this PR's validation -- build for the same architecture,
+or change that block (and rebuild on x86_64) first. ECR's tags are IMMUTABLE (`ecr.tf`), so
+each rebuild during the spike needs a new tag, matched with `-var image_tag=<same tag>` on the
+next `terraform apply` (`variables.tf` explains why this is a variable rather than convenience
+`:prototype` reuse).
+
 ```
-docker build -t ddp-scraper:prototype .
-docker tag ddp-scraper:prototype <output.ecr_repository_url>:prototype
+docker build --platform linux/arm64 -t ddp-scraper:<tag> .
+docker tag ddp-scraper:<tag> <output.ecr_repository_url>:<tag>
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
-docker push <output.ecr_repository_url>:prototype
+docker push <output.ecr_repository_url>:<tag>
+terraform apply -var image_tag=<tag>   # updates the task definition to point at it
 aws ecs run-task --cluster <output.cluster_name> --task-definition <output.task_definition_arn> \
-    --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[<subnet>],securityGroups=[<output.security_group_id>],assignPublicIp=ENABLED}"
+    --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[<output.public_subnet_ids>],securityGroups=[<output.security_group_id>],assignPublicIp=ENABLED}"
 ```
+
+`assignPublicIp=ENABLED` and the subnet list are `run-task`-time arguments, not task-definition
+fields -- there is nothing to misconfigure in Terraform here, only to remember at launch time,
+which is why `public_subnet_ids` is surfaced as an output rather than only an input.
 
 Then watch CloudWatch Logs under `/aws/ecs/ddp-scrapers`, exactly as the draft's Milestone 3
 describes.
+
+## Before trusting `readonlyRootFilesystem`
+
+A plain local `docker run` does not enforce it. Before the first real AWS task, run the image
+locally the way Fargate will actually run it:
+
+```
+docker run --rm --read-only --tmpfs /tmp <image> <source> [key=value ...]
+```
+
+If it fails somewhere other than `/tmp`, that is a second writable path this container
+actually needs and this task definition does not yet grant.

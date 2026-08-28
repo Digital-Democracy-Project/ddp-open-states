@@ -27,6 +27,12 @@ resource "aws_iam_role_policy_attachment" "execution_managed" {
 # This is the "role-based credentials" cloud_collector.py's S3Memory expects (OPEN-201): read/
 # write scoped to the one bucket OPEN-181/183 already use, not a bucket-wide "*" grant and not
 # access to any other bucket in the account.
+#
+# UNKNOWN, flagged rather than guessed: if that bucket uses a customer-managed KMS key (versus
+# S3-managed or no) encryption, this task role also needs kms:Decrypt/kms:GenerateDataKey
+# scoped to that key's ARN, or every GetObject/PutObject here will fail with AccessDenied for
+# a reason this policy alone cannot explain. Not knowable from this environment -- check the
+# bucket's default encryption setting before applying.
 data "aws_iam_policy_document" "task_memory_access" {
   statement {
     sid = "MemoryAndWorkingTierReadWrite"

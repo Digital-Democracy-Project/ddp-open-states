@@ -50,21 +50,38 @@ RUN python3 -m venv /opt/venv \
 # to one, but checked 2026-08-28 against both live DDP forks -- neither has ever had a branch
 # by that name, and the checkout actually installed from is on `main`. That comment is stale;
 # worth a one-line fix there too, noted rather than silently carried forward here.
+# Cloned straight to /opt, the SAME path they live at in the final image below -- not /build.
+# pm-review caught two real bugs in the earlier version of this step, both from cloning to a
+# builder-only path and copying the checkout (not just the installed package) across stages:
+#   1. A PEP 660 editable install of openstates-core records an absolute path back to its
+#      source checkout (a .pth/finder, not a copy of the code). If that path is /build/... and
+#      the final image only has /opt/..., the import silently breaks in the stage that matters.
+#      Cloning to the final path directly makes the recorded path correct by construction,
+#      rather than trusting a path rewrite that has to be remembered forever.
+#   2. `git clone` records the token-bearing HTTPS URL in .git/config. The secret mount keeps
+#      the token out of the RUN layer itself, but the CHECKOUT it produces still contains it --
+#      and the previous version of this file copied the whole checkout, .git included, into
+#      the final image. Removing .git right after the install (still in the builder stage, so
+#      it never occupies a final-image layer) is what actually keeps the token out, not the
+#      secret mount alone.
 ARG OPENSTATES_CORE_REF=main
 ARG OPENSTATES_SCRAPERS_REF=main
 RUN --mount=type=secret,id=github_token \
     TOKEN=$(cat /run/secrets/github_token) && \
     git clone --branch "$OPENSTATES_CORE_REF" --depth 1 \
         "https://x-access-token:${TOKEN}@github.com/Digital-Democracy-Project/openstates-core.git" \
-        /build/openstates-core && \
+        /opt/openstates-core && \
     git clone --branch "$OPENSTATES_SCRAPERS_REF" --depth 1 \
         "https://x-access-token:${TOKEN}@github.com/Digital-Democracy-Project/openstates-scrapers.git" \
-        /build/openstates-scrapers
+        /opt/openstates-scrapers && \
+    rm -rf /opt/openstates-core/.git /opt/openstates-scrapers/.git
 
 # Editable install for openstates-core only (so DDP's patches take effect, exactly as this
 # repo's own venv does it -- see requirements-openstates.txt's header). Verified 2026-08-28:
-# builds and installs cleanly, `os-update --help` runs from it immediately afterward.
-RUN /opt/venv/bin/pip install --no-cache-dir --no-deps -e /build/openstates-core
+# builds and installs cleanly, `os-update --help` runs from it immediately afterward -- and,
+# after this fix, verified again from the FINAL stage specifically (see PR), since that is the
+# copy that matters and the earlier verification only checked the builder stage.
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps -e /opt/openstates-core
 
 
 FROM python:3.9-slim
@@ -72,8 +89,8 @@ FROM python:3.9-slim
 RUN groupadd --gid 1000 scraper && useradd --uid 1000 --gid scraper --shell /bin/bash --create-home scraper
 
 COPY --from=builder /opt/venv /opt/venv
-COPY --from=builder /build/openstates-core /opt/openstates-core
-COPY --from=builder /build/openstates-scrapers /opt/openstates-scrapers
+COPY --from=builder /opt/openstates-core /opt/openstates-core
+COPY --from=builder /opt/openstates-scrapers /opt/openstates-scrapers
 
 WORKDIR /app
 COPY cloud_collector.py import-summary.sh docker-entrypoint.sh ./
