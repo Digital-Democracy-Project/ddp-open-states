@@ -34,3 +34,13 @@ __pycache__/
 # Internal ops docs — not for public repo (RUNBOOK.md itself was redacted and made public
 # 2026-07-30; this supplement holds what got pulled out of it)
 RUNBOOK.internal.md
+
+# Dev-checkout scratch that has now been swept into two PRs by `git add -A`
+# (OPEN-181 committed 73,549 lines of it; SYNC-41 committed a probe file).
+# None of this belongs in the source tree.
+.DS_Store
+.playwright-mcp/
+_archive_scratch/
+.sandbox-write-probe*
+logs/
+activate-dev.sh

@@ -124,6 +124,24 @@ should reuse rather than reimplement:
   `unreachable`, `failed`) before exiting. Leaving it unset yields `failed`, which is the right
   default. **Do not compute the status inside the emitter** — it reports the decision the run
   already made, and a second derivation of it would drift from the marker file.
+- **External per-source memory (OPEN-181, 2026-08-27)** — `scraper-memory.sh`, sourced by
+  `run-scrape.sh`, syncs the watermark markers and any jurisdiction's cache-resident memory
+  (today only Michigan's last-action baseline) with S3 through the existing
+  `ddp-prod-s3-openstates-backups` wrapper. It is `PLAN-scraper-execution-contract.md` §4.
+  **Off unless `SCRAPER_MEMORY_BACKEND=s3`**, in which case `SCRAPER_MEMORY_PREFIX` is
+  mandatory — there is deliberately no default, because an object key has no checkout to follow
+  and OPEN-159/OPEN-172 were both "a dev run wrote production's markers".
+  **Three things not to undo:** (a) `scraper_memory_fetch` returns *three* values — fetched,
+  absent, and could-not-tell — and the caller refuses to run on the third; collapsing it to two
+  turns an S3 blip into a ~3,900-request full walk of Michigan, which is the outage §4 warns
+  about. (b) The per-jurisdiction cache entry is a **glob**, not a filename template: production
+  runs MI with no session argument, so the session in `mi_last_actions_<session>.json` is the
+  scraper's, and a template yields `mi_last_actions_.json`. (c) The sync lives in the runner, not
+  in the scraper — `openstates-scrapers` is a fork of a public project, and an S3 client inside
+  `mi/bills.py` would conflict with every future upstream merge.
+  `migrate-scraper-memory.sh --prefix <ns>` moves an existing checkout's memory into the store;
+  dry run unless `--commit`. **The 2.8 GB HTTP cache is deliberately not part of this** — see the
+  bottom of `scraper-memory.sh` for that decision and what it costs on a first cloud run.
 - **`SKIP_PATCHES=1`** env var — skips the `apply-local-patches.sh` call entirely. Set by
   ddp-sync's scheduler (each jurisdiction's own scheduled run doesn't re-run the patch step; a
   separate `openstates_patch_refresh` cron job does it once). Also the escape hatch when
@@ -680,10 +698,11 @@ first credentialed onboarding DDP actually does is more likely Indiana than DC.
   in one of these shapes, not a new top-level directory.
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
-  assertions)` and exit 0 or the first failing assertion and exit 1. Six of these now exist
+  assertions)` and exit 0 or the first failing assertion and exit 1. Seven of these now exist
   (`test-import-summary.sh`, `test-check-scrape-staleness.sh`, `test-scrape-outcome.sh`,
-  `test-no-op-side-effects.sh`, `test-scrape-lock.sh`, `test-completion-record.sh`) and they all
-  share that shape — copy the nearest one rather than introducing a runner. Three of them drive
+  `test-no-op-side-effects.sh`, `test-scrape-lock.sh`, `test-completion-record.sh`,
+  `test-scraper-memory.sh`) and they all share that shape — copy the nearest one rather than
+  introducing a runner. Four of them drive
   **`run-scrape.sh` itself** against a stub `os-update`, which is the only way to assert what the
   script *does* with a decision rather than just what a matcher returns.
 - **Testing `run-scrape.sh` requires overriding `activate.sh` (OPEN-152, 2026-08-25)** — the
