@@ -148,11 +148,18 @@ def test_unreachable_matcher_respects_negation(tmp_path):
 
 # ── main(): the end-to-end paths ────────────────────────────────────────────────────────────
 
-def _fake_os_update(tmp_path, *, exit_code=0, stderr_text="", bill_files=1):
+def _fake_os_update(tmp_path, *, exit_code=0, stderr_text="", bill_files=1, argv_file=None):
     """A stand-in for the real os-update binary, matching run-scrape.sh's own
-    OS_UPDATE_OVERRIDE convention for driving this script without the real toolchain."""
+    OS_UPDATE_OVERRIDE convention for driving this script without the real toolchain.
+
+    When `argv_file` is given, records the exact argv this invocation received -- one per
+    line -- so a test can assert on the command cloud_collector actually built rather than
+    only on its externally-visible effects.
+    """
     script = tmp_path / "fake_os_update.sh"
     lines = ["#!/usr/bin/env bash", "set -e"]
+    if argv_file:
+        lines.append(f'printf "%s\\n" "$@" > {str(argv_file)!r}')
     if stderr_text:
         lines.append(f"echo {stderr_text!r} 1>&2")
     # `--datadir DIR` is always the last two arguments in cloud_collector's invocation.
@@ -192,7 +199,8 @@ def test_main_full_run_ok(tmp_path, monkeypatch, capsys):
 def test_main_second_run_is_incremental(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
-    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
     client = FakeS3Client()
     client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.ts"] = b"2026-08-28T00:00:00"
 
@@ -200,6 +208,108 @@ def test_main_second_run_is_incremental(tmp_path, monkeypatch, capsys):
     assert rc == 0
     record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert record["mode"] == "incremental"
+
+    # pm-review: an "incremental" label with no effect on the scraper is not incremental --
+    # confirm the actual argv includes both the derived start= cutoff and a --cachedir so
+    # mi/bills.py-style per-jurisdiction cache reads have somewhere real to look.
+    argv = argv_file.read_text().splitlines()
+    assert any(a.startswith("start=2026-08-27T23:00:00") for a in argv), argv
+    assert "--cachedir" in argv, argv
+
+
+def test_main_mode_requires_ts_specifically_not_any_marker(tmp_path, monkeypatch, capsys):
+    """pm-review's sharpest correctness finding: a `.count` present without a `.ts` must
+    still be a full run. `.ts` is published last precisely so a partial publish leaves it
+    absent -- reading "any marker present" as "incremental" defeats that on the way back in.
+    """
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FakeS3Client()
+    # .count and .imported exist (a prior partial publish); .ts does not.
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.count"] = b"5:full"
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.imported"] = b"ok:5:0:0:full"
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["mode"] == "full"
+
+
+def test_main_drops_stale_imported_marker_from_a_collect_only_run(tmp_path, monkeypatch):
+    """A collect-only run must never republish someone else's `.imported` -- it describes a
+    LOAD outcome this runner did not produce."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.imported"] = b"ok:1:0:0:full"
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+    assert rc == 0
+    assert not any(k.endswith(".imported") for k in client.put_calls), client.put_calls
+
+
+def test_main_michigan_baseline_vanishing_between_list_and_fetch_still_refuses(tmp_path, monkeypatch, capsys):
+    """pm-review's race: the object is listed but gone by download time. Must refuse exactly
+    as if it had never been listed at all -- not treated as present."""
+    class VanishingClient(FakeS3Client):
+        def download_file(self, bucket, key, dest):
+            raise ClientError({"Error": {"Code": "404", "Message": "Not Found"}}, "GetObject")
+
+    client = VanishingClient()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+
+    rc = cc.main(["mi"], s3_client=client)
+
+    assert rc == cc.EXIT_DO_NOT_RETRY
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+
+
+def test_main_manifest_not_published_if_memory_persist_fails(tmp_path, monkeypatch):
+    """The completion marker must not become visible while memory publication can still
+    fail -- pm-review's ordering finding. A loader must never see a run as complete while
+    the watermark that run should have advanced might not have."""
+    class FailsOnWatermark(FakeS3Client):
+        def upload_file(self, local_path, bucket, key):
+            if key.endswith(".ts"):
+                raise RuntimeError("simulated S3 outage")
+            super().upload_file(local_path, bucket, key)
+
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FailsOnWatermark()
+
+    with pytest.raises(RuntimeError):
+        cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert not any(k.endswith("_manifest.json") for k in client.put_calls), (
+        "a run whose watermark failed to publish must not leave a completion marker behind"
+    )
+
+
+def test_main_unexpected_exception_still_emits_a_completion_record(tmp_path, monkeypatch, capsys):
+    """Contract SS2: only a killed process may emit no record at all. An unhandled exception
+    with no more specific handler -- here, an upload failure for the raw scraped output,
+    which nothing in _collect wraps -- must still report `failed` before it propagates."""
+    class ExplodesOnUpload(FakeS3Client):
+        def upload_file(self, local_path, bucket, key):
+            raise RuntimeError("boom")
+
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+
+    with pytest.raises(RuntimeError):
+        cc.main(["ut", "session=2025S2"], s3_client=ExplodesOnUpload())
+
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
 
 
 def test_main_michigan_refuses_without_baseline(tmp_path, monkeypatch, capsys):
