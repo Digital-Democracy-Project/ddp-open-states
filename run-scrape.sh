@@ -79,7 +79,13 @@ COUNT_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.count"
 # JSON files the scrape wrote (.count above). These are not the same number and the difference
 # is the whole point: AZ ran 14 days dead writing 895 files a night while the import reported
 # "0 new 0 updated 895 noop" every time. The file count said healthy; only the import knew.
-# Format: new:updated:noop:mode
+# Format: status:new:updated:noop:mode -- FIVE fields, with a leading status.
+# e.g. `ok:5:0:0:full`, or `unparsed::::incremental` when the import ran but printed no
+# countable bill line. The reader below relies on this: `cut -f1` is the status and
+# `cut -f5` is the mode. Corrected 2026-08-27 -- this comment had said `new:updated:noop:mode`
+# since OPEN-139, omitting the status, and OPEN-165's contract (§2) is what caught it.
+# (`parse_import_bill_counts` in import-summary.sh echoes the middle three; the status and
+# mode are added here at the write sites below.)
 IMPORTED_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.imported"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"; }
