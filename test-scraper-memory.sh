@@ -52,6 +52,12 @@ if [ "${FAKE_S3_FAIL:-0}" = "1" ]; then
 fi
 case "$1" in
     put)
+        # Targeted failure, so a PARTIAL publication can be exercised.
+        case "$3" in
+            *${FAKE_S3_FAIL_PUT_MATCH:-__never__}*)
+                echo "An error occurred (SlowDown) when calling the PutObject operation" >&2
+                exit 1 ;;
+        esac
         mkdir -p "$(dirname "$BUCKET/$3")"
         cp "$2" "$BUCKET/$3"
         ;;
@@ -59,11 +65,23 @@ case "$1" in
         if [ -f "$BUCKET/$2" ]; then
             cp "$BUCKET/$2" "$3"
         else
-            echo "download failed: An error occurred (404) when calling the HeadObject operation: Not Found" >&2
+            # A failing download that WRITES TO ITS DESTINATION FIRST. The real wrapper does not
+            # do this, but scraper_memory_fetch must not depend on that -- it is a property of a
+            # script in ~/bin that this repo does not own.
+            [ "${FAKE_S3_GET_CORRUPTS:-0}" = "1" ] && printf 'HALF A FIL' > "$3"
+            if [ "${FAKE_S3_GET_VAGUE_404:-0}" = "1" ]; then
+                # No "(404)", just the words. A proxy or captive portal can produce this, and
+                # reading it as "no memory" is the expensive direction to be wrong in.
+                echo "<html><title>404 Not Found</title></html>" >&2
+            else
+                echo "download failed: An error occurred (404) when calling the HeadObject operation: Not Found" >&2
+            fi
             exit 1
         fi
         ;;
     ls)
+        # 137 is what a SIGKILLed wrapper looks like: non-zero, and silent.
+        [ -n "${FAKE_S3_LS_EXIT:-}" ] && exit "$FAKE_S3_LS_EXIT"
         found=0
         while IFS= read -r f; do
             [ -n "$f" ] || continue
@@ -150,15 +168,15 @@ BASELINE_MD5=$(md5 -q "$ROOT/cache/mi_last_actions_2025-2026.json")
 BASELINE_ENTRIES=$(python3 -c "import json; print(len(json.load(open('$ROOT/cache/mi_last_actions_2025-2026.json'))))")
 check "baseline fixture is full size" "3924" "$BASELINE_ENTRIES"
 
-helper 'scraper_memory_persist_cache mi mi '"$ROOT"'/cache'
+helper 'scraper_memory_persist_cache mi '"$ROOT"'/cache'
 check "persist_cache: the baseline is stored under its own name" "yes" \
-    "$([ -f "$ROOT/bucket/testns/mi/mi/mi_last_actions_2025-2026.json" ] && echo yes || echo no)"
+    "$([ -f "$ROOT/bucket/testns/mi/_cache/mi_last_actions_2025-2026.json" ] && echo yes || echo no)"
 
 # Something else living under the same prefix must not be pulled into $CACHE_DIR.
 printf 'not memory' > "$ROOT/decoy.txt"
-helper 'scraper_memory_store '"$ROOT"'/decoy.txt testns/mi/mi/unrelated-object.txt'
+helper 'scraper_memory_store '"$ROOT"'/decoy.txt testns/mi/_cache/unrelated-object.txt'
 rm -rf "$ROOT/cache2"; mkdir -p "$ROOT/cache2"
-helper 'scraper_memory_hydrate_cache mi mi '"$ROOT"'/cache2'
+helper 'scraper_memory_hydrate_cache mi '"$ROOT"'/cache2'
 check "hydrate_cache: round-trips at full size, byte for byte" "$BASELINE_MD5" \
     "$(md5 -q "$ROOT/cache2/mi_last_actions_2025-2026.json" 2>/dev/null)"
 check "hydrate_cache: ignores objects that are not this jurisdiction's memory" "no" \
@@ -174,6 +192,63 @@ helper 'scraper_memory_hydrate_markers az az '"$ROOT"'/lr'
 check "hydrate: an empty store does not erase local memory" "2026-01-01T00:00:00" "$(cat "$ROOT/lr/az.ts")"
 
 # ------------------------------------------------------------------ through the real script
+
+echo "== a failed download must not damage the copy already on disk =="
+
+mkdir -p "$ROOT/keep"
+printf 'GOOD-EXISTING-MEMORY' > "$ROOT/keep/va.ts"
+rc=$( FAKE_S3_GET_CORRUPTS=1 SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=testns \
+      SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_fetch testns/va/va/gone.ts $ROOT/keep/va.ts; echo \$?" 2>/dev/null )
+check "failed get: still reports absent" "1" "$rc"
+# The store wrote to the destination and then failed. The local copy must be untouched, because
+# the fetch lands in a temporary file and is renamed only on success.
+check "failed get: the existing local copy is intact" "GOOD-EXISTING-MEMORY" "$(cat "$ROOT/keep/va.ts")"
+check "failed get: no temporary file left behind" "0" \
+    "$(find "$ROOT/keep" -name 'va.ts.fetch.*' | wc -l | tr -d ' ')"
+
+echo "== absence is recognised narrowly, and silence is never absence =="
+
+rc=$( FAKE_S3_GET_VAGUE_404=1 SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=testns \
+      SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_fetch testns/va/va/gone.ts $ROOT/x2; echo \$?" 2>/dev/null )
+# A page that merely says "404 Not Found" in prose is not the store telling us the key is absent.
+check "a vague 'Not Found' is unreadable (2), not absent (1)" "2" "$rc"
+
+rc=$( FAKE_S3_LS_EXIT=137 SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=testns \
+      SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_list testns/mi/_cache/ >/dev/null; echo \$?" 2>/dev/null )
+# A killed wrapper is also non-zero and silent. Only the verified empty-prefix shape (exit 1,
+# no output) may be read as "nothing there".
+check "a killed listing (137, silent) is unreadable, not empty" "2" "$rc"
+
+rc=$( FAKE_S3_LS_EXIT=1 SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=testns \
+      SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_list testns/mi/_cache/ >/dev/null; echo \$?" 2>/dev/null )
+check "the verified empty-prefix shape (1, silent) is still empty" "0" "$rc"
+
+echo "== a partial publication must never leave the watermark ahead =="
+
+# The wrapper has no transaction, so several objects cannot be published together. What IS
+# arranged is the order: the reporting markers first, the authorising watermark last, stopping at
+# the first failure. So a partial publication leaves the cutoff where it was and the next run
+# re-collects -- wasteful, never skipped bills.
+rm -rf "$ROOT/bucket/ordering"; mkdir -p "$ROOT/lr2"
+printf 'OLD-WATERMARK'   > "$ROOT/lr2/va.ts"
+printf '5:full'          > "$ROOT/lr2/va.count"
+printf 'ok:5:0:0:full'   > "$ROOT/lr2/va.imported"
+ordering() {
+    env FAKE_S3_FAIL_PUT_MATCH="$1" SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=ordering \
+        SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" FAKE_S3_ROOT="$ROOT/bucket" \
+        bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; $2; echo \$?" 2>/dev/null
+}
+check "persist stops at the first failure" "1" "$(ordering '.count' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
+check "a failure on .count leaves NO watermark published" "no"     "$([ -f "$ROOT/bucket/ordering/va/va/va.ts" ] && echo yes || echo no)"
+
+rm -rf "$ROOT/bucket/ordering"
+check "a failure on .ts itself also publishes no watermark" "1"     "$(ordering '.ts' 'scraper_memory_persist_markers va va '"$ROOT"'/lr2')"
+check "  ... while the reporting markers did land" "yes"     "$([ -f "$ROOT/bucket/ordering/va/va/va.count" ] && echo yes || echo no)"
+check "  ... and the watermark did not" "no"     "$([ -f "$ROOT/bucket/ordering/va/va/va.ts" ] && echo yes || echo no)"
 
 echo "== end to end: a run with NO local memory still knows where it left off =="
 
@@ -206,14 +281,15 @@ e2e() {  # $1 extra env assignments, evaluated; echoes exit code into RUN_RC
 }
 status() { tail -1 "$RUN_ROOT/stdout.log" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])' 2>/dev/null || echo "<none>"; }
 mode()   { tail -1 "$RUN_ROOT/stdout.log" | python3 -c 'import json,sys; print(json.load(sys.stdin)["mode"])'   2>/dev/null || echo "<none>"; }
-stored() { cat "$ROOT/bucket/e2ens/va/va/va.ts" 2>/dev/null || echo "<absent>"; }
+stored()       { cat "$ROOT/bucket/e2ens/va/va/va.ts" 2>/dev/null || echo "<absent>"; }
+stored_count() { cat "$ROOT/bucket/e2ens/va/va/va.count" 2>/dev/null || echo "<absent>"; }
 
 e2e ""
 check "first run: full, because neither disk nor store remembers anything" "full" "$(mode)"
 check "first run: succeeds" "ok" "$(status)"
 check "first run: memory is now in the store" "yes" \
     "$([ "$(stored)" != "<absent>" ] && echo yes || echo no)"
-FIRST_WATERMARK="$(stored)"
+check "first run: the stored count records a full run" "1:full" "$(stored_count)"
 
 # THE acceptance criterion. Everything this machine knew is deleted; the only surviving copy of
 # the watermark is the object in the store.
@@ -222,8 +298,11 @@ e2e ""
 check "local memory deleted: the run is STILL incremental" "incremental" "$(mode)"
 check "local memory deleted: it read the cutoff from the store" "yes" \
     "$(grep -q "cutoff=" "$RUN_LOG_DIR/scraper.log" && echo yes || echo no)"
-check "second run: the store advanced" "yes" \
-    "$([ "$(stored)" != "$FIRST_WATERMARK" ] && echo yes || echo no)"
+# Asserted on the count rather than the timestamp: with a stub scraper both runs finish inside
+# the same second, and the watermark has one-second resolution, so comparing timestamps would be
+# a coin flip. The mode in the count changes deterministically and says the same thing -- the
+# store now holds THIS run's memory, not the previous one's.
+check "second run: the store now holds the second run's memory" "1:incremental" "$(stored_count)"
 
 echo "== a store that will not answer must stop the run, not start a full collection =="
 
@@ -255,6 +334,8 @@ check "unreachable: status"                     "unreachable" "$(status)"
 check "unreachable: stored watermark NOT advanced" "$BEFORE"  "$(stored)"
 
 # unparsed: the collection and load both worked, only the counting failed -- §3 says it advances.
+# One second of real time so the watermark, which has one-second resolution, must visibly tick.
+sleep 1
 cat > "$RUN_ROOT/bin/os-update" <<STUB
 #!/usr/bin/env bash
 for a in "\$@"; do

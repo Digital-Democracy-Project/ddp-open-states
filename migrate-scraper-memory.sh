@@ -103,22 +103,28 @@ echo "== cache-resident memory =="
 # Driven off the marker inventory rather than a hardcoded list, so this stays correct if a second
 # jurisdiction ever gets an entry in SCRAPER_MEMORY_CACHE_FILES. The file names itself -- see the
 # comment on that variable for why a template cannot work here.
+# One pass per SOURCE, not per scrape key: cache-resident memory is keyed on the source alone
+# (the filename carries the session), so a state with eight session keys must not upload its
+# baseline eight times.
+SEEN_STATES=","
 for f in "$LAST_RUN_DIR"/*.ts; do
     [ -e "$f" ] || continue
     name=$(basename "$f")
     case "$name" in *.bak-*|--help.*) continue ;; esac
     key="${name%.ts}"
     state="${key%%_*}"
+    case "$SEEN_STATES" in *",$state,"*) continue ;; esac
+    SEEN_STATES="$SEEN_STATES$state,"
     glob=$(scraper_memory_cache_glob "$state")
     [ -n "$glob" ] || continue
     found=0
     for c in "$CACHE_DIR"/$glob; do
         [ -f "$c" ] || continue
         found=1
-        upload "$c" "$(scraper_memory_key "$state" "$key" "$(basename "$c")")"
+        upload "$c" "$(scraper_memory_cache_key "$state" "$(basename "$c")")"
     done
     if [ "$found" = "0" ]; then
-        echo "  absent        $glob (nothing to migrate for $key)"
+        echo "  absent        $glob (nothing to migrate for $state)"
         SKIPPED=$((SKIPPED + 1))
     fi
 done

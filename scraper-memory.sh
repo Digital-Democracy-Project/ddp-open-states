@@ -95,6 +95,22 @@ scraper_memory_check_config() {
     return 1
 }
 
+# scraper_memory_cache_key <source> <filename>
+# Where cache-resident memory lives: `<prefix>/<source>/_cache/<filename>`, keyed on the SOURCE
+# and not on the scrape key. §4 requires the key to include every parameter whose change
+# invalidates the memory, and for these files the filename already carries it -- Michigan's
+# baseline is `mi_last_actions_<session>.json`, so the session is in the name.
+#
+# Keying it on the scrape key as well was the first version and it was fragile in a way worth
+# recording: production invokes Michigan with no session argument, so the key is a bare `mi`,
+# and a one-off manual run with an explicit session would have written its baseline to a
+# different prefix -- where the next scheduled run would not find it, and MI would refuse to run
+# incrementally for a reason nobody could see. The scrape key adds nothing here and takes that
+# away.
+scraper_memory_cache_key() {
+    echo "${SCRAPER_MEMORY_PREFIX}/${1}/_cache/${2}"
+}
+
 # scraper_memory_key <source> <scrape-key> <filename>
 # The object layout. Keyed on the scrape key, not the bare source, for the §4 reason above --
 # `usa` runs lower and upper separately and FL runs eight sessions, and their memories are not
@@ -114,16 +130,31 @@ scraper_memory_key() {
 # fleet's most block-sensitive site -- precisely the self-inflicted outage §4 warns about. The
 # caller fails the run on 2 instead, which writes no markers and leaves the window eligible.
 #
-# Absence is therefore matched POSITIVELY, on the 404 the wrapper reports for a missing key
-# (verified 2026-08-27: `get` on a missing key exits 1 with "An error occurred (404) ... Not
-# Found" and leaves no destination file). Anything else -- a timeout, a credential failure, a
-# refused connection -- falls through to 2.
+# Absence is therefore matched POSITIVELY and NARROWLY, on the shapes the store actually emits
+# for a missing key: the `(404)` of a HeadObject miss, or an explicit NoSuchKey (verified
+# 2026-08-27 -- `get` on a missing key exits 1 with "An error occurred (404) when calling the
+# HeadObject operation: Not Found"). A bare "Not Found" is deliberately NOT matched: it is
+# ordinary English that a proxy, a VPN captive page or a future wrapper message could easily
+# contain, and reading one of those as "this source has no memory" is the expensive direction to
+# be wrong in. Anything unrecognised -- a timeout, a credential failure, a refused connection --
+# falls through to 2.
+#
+# The fetch lands in a temporary file and is renamed over the destination only on success, so a
+# failed or interrupted download CANNOT damage the copy already on disk. The real wrapper happens
+# to do this internally too, but relying on that would make the safety of this function a
+# property of a script in ~/bin that this repo does not own.
 scraper_memory_fetch() {
-    local key="$1" dest="$2" out rc
-    out=$("$SCRAPER_MEMORY_S3_CMD" get "$key" "$dest" 2>&1); rc=$?
-    [ "$rc" -eq 0 ] && return 0
+    local key="$1" dest="$2" tmp="${2}.fetch.$$" out rc
+    out=$("$SCRAPER_MEMORY_S3_CMD" get "$key" "$tmp" 2>&1); rc=$?
+    if [ "$rc" -eq 0 ]; then
+        mv "$tmp" "$dest" && return 0
+        rm -f "$tmp"
+        echo "fetched $key but could not move it into place at $dest" >&2
+        return 2
+    fi
+    rm -f "$tmp"
     case "$out" in
-        *"(404)"*|*"Not Found"*|*"NoSuchKey"*) return 1 ;;
+        *"(404)"*|*NoSuchKey*) return 1 ;;
     esac
     echo "$out" >&2
     return 2
@@ -158,14 +189,18 @@ scraper_memory_cache_glob() {
 # scraper_memory_list <object-prefix>
 # The object keys under a prefix, one per line. 0 = listed (possibly empty), 2 = could not tell.
 #
-# Same three-way discipline as scraper_memory_fetch, and the same reason. The wrapper exits
-# non-zero with NO output for a prefix that holds nothing (verified 2026-08-27), so an empty
-# failure is "nothing there" and a failure that said something is a failure.
+# Same three-way discipline as scraper_memory_fetch, and the same reason. Empty is recognised
+# only as the EXACT shape the wrapper produces for a prefix that holds nothing -- exit 1 with no
+# output (verified 2026-08-27; a prefix that does hold something exits 0). Any other non-zero
+# status is unreadable, including the 128+N of a signalled process: a wrapper killed mid-list
+# also produces no output, and "the process was killed" must not read as "this source has no
+# memory".
 scraper_memory_list() {
     local prefix="$1" out rc
     out=$("$SCRAPER_MEMORY_S3_CMD" ls "$prefix" 2>&1); rc=$?
-    if [ "$rc" -ne 0 ] && [ -n "$out" ]; then
-        echo "$out" >&2
+    if [ "$rc" -ne 0 ] && { [ -n "$out" ] || [ "$rc" -ne 1 ]; }; then
+        [ -n "$out" ] && echo "$out" >&2
+        [ -n "$out" ] || echo "listing $prefix exited $rc with no output" >&2
         return 2
     fi
     # `ls` prints `<date> <time> <size> <key>`; the key is the last field.
@@ -197,18 +232,39 @@ scraper_memory_hydrate_markers() {
 }
 
 # scraper_memory_persist_markers <state> <scrape-key> <last-run-dir>
-# Non-zero if anything that exists locally could not be stored.
+# Non-zero as soon as anything that exists locally could not be stored.
+#
+# THE ORDER IS THE SAFETY PROPERTY, AND IT IS NOT ATOMICITY. The wrapper offers put/get/ls/info
+# and nothing else -- no transaction, no conditional put, no delete -- so several objects cannot
+# be published together and a failure part way through cannot be rolled back. What can be
+# arranged is WHICH object is exposed last, and that turns a partial failure from dangerous into
+# merely wasteful:
+#
+#   * `.ts` is the authorising object. Its presence is what makes the next run incremental, and
+#     an incremental run skips everything before its cutoff. So it goes LAST, after the two
+#     reporting markers, and this function returns at the first failure rather than pressing on.
+#     A partial publication therefore leaves the watermark where it was, and the next run
+#     re-collects a window that was already collected -- duplicated work, never skipped bills.
+#   * Cache-resident memory (Michigan's baseline) is published EARLIER STILL, by
+#     run-scrape.sh calling scraper_memory_persist_cache first. The baseline is what makes an
+#     incremental run SAFE, and the combination to avoid is a new cutoff sitting beside an old
+#     baseline: MI would then run incrementally, compare against stale actions, and silently skip
+#     bills that had moved. Publishing the baseline before the watermark makes that combination
+#     unreachable -- if the baseline fails to store, the watermark never advances at all.
+#
+# So the claim this file makes is precise: publication is ordered, not atomic, and every failure
+# mode it leaves behind is one where a window gets re-collected rather than skipped.
 scraper_memory_persist_markers() {
-    local state="$1" key="$2" dir="$3" name failed=0
+    local state="$1" key="$2" dir="$3" name
     scraper_memory_enabled || return 0
-    for name in "${key}.ts" "${key}.count" "${key}.imported"; do
+    for name in "${key}.count" "${key}.imported" "${key}.ts"; do
         [ -f "$dir/$name" ] || continue
-        scraper_memory_store "$dir/$name" "$(scraper_memory_key "$state" "$key" "$name")" || failed=1
+        scraper_memory_store "$dir/$name" "$(scraper_memory_key "$state" "$key" "$name")" || return 1
     done
-    return "$failed"
+    return 0
 }
 
-# scraper_memory_hydrate_cache <state> <scrape-key> <cache-dir>
+# scraper_memory_hydrate_cache <state> <cache-dir>
 # The per-jurisdiction memory file that lives in $CACHE_DIR -- today only Michigan's last-action
 # baseline. 0 = done (including "this jurisdiction has none"), 2 = the store could not be read.
 #
@@ -218,11 +274,11 @@ scraper_memory_persist_markers() {
 # DDP does not control, so an S3 client inside mi/bills.py is a permanent merge conflict against
 # every future upstream pull. The scraper keeps reading the same path it always has.
 scraper_memory_hydrate_cache() {
-    local state="$1" key="$2" cache_dir="$3" glob objkey base listing rc=0
+    local state="$1" cache_dir="$2" glob objkey base listing rc=0
     scraper_memory_enabled || return 0
     glob=$(scraper_memory_cache_glob "$state")
     [ -n "$glob" ] || return 0
-    listing=$(scraper_memory_list "$(scraper_memory_key "$state" "$key" "")") || return 2
+    listing=$(scraper_memory_list "$(scraper_memory_cache_key "$state" "")") || return 2
     mkdir -p "$cache_dir"
     for objkey in $listing; do
         base=$(basename "$objkey")
@@ -239,17 +295,19 @@ scraper_memory_hydrate_cache() {
     return 0
 }
 
-# scraper_memory_persist_cache <state> <scrape-key> <cache-dir>
+# scraper_memory_persist_cache <state> <cache-dir>
+# Called BEFORE the watermark is published -- see the ordering note on
+# scraper_memory_persist_markers, which is where the reasoning lives.
 scraper_memory_persist_cache() {
-    local state="$1" key="$2" cache_dir="$3" glob f failed=0
+    local state="$1" cache_dir="$2" glob f
     scraper_memory_enabled || return 0
     glob=$(scraper_memory_cache_glob "$state")
     [ -n "$glob" ] || return 0
     for f in "$cache_dir"/$glob; do
         [ -f "$f" ] || continue
-        scraper_memory_store "$f" "$(scraper_memory_key "$state" "$key" "$(basename "$f")")" || failed=1
+        scraper_memory_store "$f" "$(scraper_memory_cache_key "$state" "$(basename "$f")")" || return 1
     done
-    return "$failed"
+    return 0
 }
 
 # THE HTTP CACHE -- decided, not forgotten (OPEN-181 acceptance criterion).

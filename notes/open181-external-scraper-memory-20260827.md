@@ -9,9 +9,19 @@ without reading this machine's disk.
 
 | Kind | Where | Size | Migrated? |
 |---|---|---|---|
-| Watermarks (`.ts`, `.count`, `.imported`) | `logs/last-run/` | 252 KB, 333 files | **Yes** |
+| Watermarks (`.ts`, `.count`, `.imported`) | `logs/last-run/` | **56 files** | **Yes** |
 | Michigan's last-action baseline | `_cache/mi_last_actions_2025-2026.json` | 202 KB, 3,924 entries | **Yes** |
 | scrapelib HTTP cache | `openstates-scrapers/_cache/` | 2.8 GB, ~105k entries | **No — see below** |
+
+**`logs/last-run/` holds 333 files, and only 56 of them are memory.** Worth stating because the
+difference is not obvious and an earlier draft of this note quoted the 333: **270 are `*.done`
+files belonging to the staleness watchdog** (`check-scrape-staleness.sh`), which are
+alert-suppression state on the monitoring side and have no bearing on what a scrape collects; one
+more is its `.schedule-unreadable-alerted` sentinel; 4 are `.bak-*` copies of deliberately
+superseded watermarks; and 2 are `--help.ts`/`--help.count`, junk left by an old mis-invocation.
+The migration script reports `uploaded=57` — the 56 markers plus Michigan's baseline — and
+`skipped=2`, the `--help` pair. The `.bak-*` files never enter the loop, because a name ending
+`.ts.bak-pre-waf-rescrape-20260730` does not match the `*.ts` glob.
 
 ## The store: S3, through the wrapper that already exists
 
@@ -72,6 +82,26 @@ after a failed scrape — has nothing to read and will not rescue a failed run t
 here. The first run on any new runner fetches everything from the source site. That matters most
 for Michigan: ~3,900 fetches against a hard 10 requests/minute cap, so roughly 6.5 hours. A
 throughput cost on cutover, not a correctness one.
+
+## Ordering, which is the only safety this store can offer
+
+The wrapper exposes `put` / `get` / `ls` / `info` and nothing else — no transaction, no
+conditional put, no delete. So several objects cannot be published together, and a failure part
+way through cannot be rolled back. What *can* be arranged is which object becomes visible last,
+and that turns every partial failure from dangerous into merely wasteful:
+
+1. **Michigan's baseline is published first.** It is what makes an incremental run *safe*.
+2. **`.count` and `.imported` next.** Reporting only; nothing reads them to decide what to collect.
+3. **`.ts` last.** It is what *authorises* an incremental run, and an incremental run skips
+   everything before its cutoff.
+
+Persistence stops at the first failure. So the combination to avoid — a fresh cutoff sitting
+beside a stale baseline, which would make Michigan run incrementally against stale actions and
+silently skip bills that had moved — is unreachable. Any failure leaves the watermark where it
+was and the next run re-collects a window that was already collected.
+
+**The claim is precise: publication is ordered, not atomic.** Every failure mode it leaves behind
+is one where a window gets re-collected, never one where a window gets skipped.
 
 ## Validation — live, against the real bucket
 

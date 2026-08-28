@@ -720,7 +720,7 @@ fi
 # activate.sh, and before the scrape because that is who reads it. No-op for every jurisdiction
 # that keeps no such file, which today is all of them but MI.
 _MEMORY_RC=0
-scraper_memory_hydrate_cache "$STATE" "$SCRAPE_KEY" "$CACHE_DIR" || _MEMORY_RC=$?
+scraper_memory_hydrate_cache "$STATE" "$CACHE_DIR" || _MEMORY_RC=$?
 if [ "$_MEMORY_RC" = "2" ]; then
     log "ERROR: could not read $STATE ${SESSION_ARG} cache-resident memory from the external store — refusing to run (OPEN-181)"
     COMPLETION_STATUS="failed"
@@ -1187,14 +1187,21 @@ echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
 # run silently re-collects a window it was told had been done. That is not data loss -- the
 # import already happened, and §3 is explicit that `failed` does not promise nothing changed --
 # but a memory layer that fails silently is the exact failure this ticket exists to remove.
-if ! scraper_memory_persist_markers "$STATE" "$SCRAPE_KEY" "$LAST_RUN_DIR"; then
-    log "ERROR: $STATE ${SESSION_ARG} scraped and imported successfully but could not persist its memory to the external store — reporting the run as failed so this is not silent (OPEN-181)"
+# ORDER MATTERS HERE, and it is the only safety this store can offer. The wrapper has no
+# transaction and no rollback, so these objects cannot be published together. The baseline goes
+# FIRST because it is what makes an incremental run safe, and the watermark goes LAST because it
+# is what AUTHORISES one. The combination to make unreachable is a fresh cutoff sitting beside a
+# stale baseline -- Michigan would then run incrementally against stale actions and silently skip
+# bills that had moved. This ordering means a failure anywhere leaves the watermark where it was,
+# so the next run re-collects a window rather than skipping one. Wasteful, never lossy.
+if ! scraper_memory_persist_cache "$STATE" "$CACHE_DIR"; then
+    log "ERROR: $STATE ${SESSION_ARG} could not persist its cache-resident memory to the external store — the watermark has deliberately NOT been published, so the next run re-collects this window rather than running incrementally against a stale baseline (OPEN-181)"
     trap - ERR
     on_failure
     exit 1
 fi
-if ! scraper_memory_persist_cache "$STATE" "$SCRAPE_KEY" "$CACHE_DIR"; then
-    log "ERROR: $STATE ${SESSION_ARG} could not persist its cache-resident memory to the external store (OPEN-181)"
+if ! scraper_memory_persist_markers "$STATE" "$SCRAPE_KEY" "$LAST_RUN_DIR"; then
+    log "ERROR: $STATE ${SESSION_ARG} scraped and imported successfully but could not persist its memory to the external store — reporting the run as failed so this is not silent (OPEN-181)"
     trap - ERR
     on_failure
     exit 1
