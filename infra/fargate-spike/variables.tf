@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "Region already hosting ddp-prod-s3-openstates-backups and the memory store."
+  description = "Region already hosting ddp-openstates-backups and the memory store."
   type        = string
 }
 
@@ -39,7 +39,7 @@ variable "public_subnet_ids" {
 }
 
 variable "memory_bucket_arn" {
-  description = "ARN of ddp-prod-s3-openstates-backups (or wherever OPEN-181/183's store and working tier live) -- scopes the task role rather than granting broad S3 access."
+  description = "ARN of ddp-openstates-backups (or wherever OPEN-181/183's store and working tier live) -- scopes the task role rather than granting broad S3 access."
   type        = string
 }
 
@@ -56,13 +56,15 @@ variable "ecr_repository_name" {
 }
 
 variable "cluster_name" {
-  type    = string
-  default = "ddp-scrapers-prototype"
+  description = "Matches the cluster Ramon actually created (2026-08-28) -- named without a '-prototype' suffix on purpose, since Fargate may end up the long-running answer rather than a throwaway."
+  type        = string
+  default     = "ddp-scrapers"
 }
 
 variable "task_family" {
-  type    = string
-  default = "ddp-scraper-prototype"
+  description = "Matches the task-definition family name Ramon settled on (2026-08-28) -- ddp-scrapers, same as the cluster and log group, not the earlier ddp-scraper-prototype/ddp-scraper guesses."
+  type        = string
+  default     = "ddp-scrapers"
 }
 
 variable "task_cpu" {

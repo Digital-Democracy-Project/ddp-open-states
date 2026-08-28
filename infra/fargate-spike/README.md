@@ -94,7 +94,7 @@ aws iam create-role --role-name ddp-scraper-task-role \
   --assume-role-policy-document file:///tmp/ddp-scraper-trust-policy.json
 
 aws iam put-role-policy --role-name ddp-scraper-task-role --policy-name ddp-scraper-memory-access \
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"MemoryAndWorkingTierReadWrite","Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::ddp-prod-s3-openstates-backups","arn:aws:s3:::ddp-prod-s3-openstates-backups/*"]}]}'
+  --policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"MemoryAndWorkingTierReadWrite","Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::ddp-openstates-backups","arn:aws:s3:::ddp-openstates-backups/*"]}]}'
 ```
 
 If that bucket uses a customer-managed KMS key (check its default encryption setting), this

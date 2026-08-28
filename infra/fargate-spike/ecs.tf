@@ -27,15 +27,6 @@ resource "aws_ecs_task_definition" "scraper_prototype" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = var.task_role_arn
 
-  # pm-review: Fargate does not support linuxParameters.tmpfs at all (EC2-launch-type only) --
-  # an earlier version of this file would have failed task registration or execution outright.
-  # An ECS "volume" of the ephemeral/ANONYMOUS shape (no host_path, no docker_volume_configuration)
-  # backed by the task's own ephemeral storage IS Fargate-supported, and mountPoints wires it to
-  # the container the same way ordinary Docker volumes would.
-  volume {
-    name = "tmp"
-  }
-
   # Built and verified locally on Apple Silicon (arm64) -- Graviton/ARM64 Fargate is also the
   # cheaper option per vCPU-hour, which OPEN-200's own cost-comparison criterion cares about.
   # Declared explicitly rather than left to Fargate's x86_64 default, which would silently
@@ -55,15 +46,18 @@ resource "aws_ecs_task_definition" "scraper_prototype" {
       # MUTABLE for it.
       image     = "${aws_ecr_repository.scrapers.repository_url}:${var.image_tag}"
       essential = true
-      # A writable /tmp for cloud_collector.py's tempfile.TemporaryDirectory() staging area,
-      # or "readonlyRootFilesystem: true where practical" silently becomes "not practical" the
-      # first time a run tries to write. 1 GiB is a starting size for the prototype's first
-      # (small) jurisdiction, not a sized answer for MA-scale output -- OPEN-189's long-run
-      # test should report whether this needs to grow.
-      readonlyRootFilesystem = true
-      mountPoints = [
-        { sourceVolume = "tmp", containerPath = "/tmp", readOnly = false }
-      ]
+      # readonlyRootFilesystem + a mounted /tmp volume was the design here, and it was wrong in
+      # practice, found by running a real task rather than by reasoning about it: Fargate's
+      # plain ECS "volume" type (no docker_volume_configuration) does not default to the
+      # world-writable permissions a local `docker run --tmpfs /tmp` gives you, and this
+      # container deliberately runs as non-root -- so tempfile.TemporaryDirectory() found
+      # nowhere writable at all and crashed before doing anything. Local testing with
+      # `--read-only --tmpfs` did not catch this because that flag isn't what this task
+      # definition actually configures. Dropped read-only-root entirely for now, matching every
+      # earlier *non*-read-only local test, which all worked -- re-adding it properly (fixing
+      # the volume's ownership, or finding another Fargate-supported writable mount that
+      # respects a non-root user) is a real hardening step, just not one worth blocking the
+      # actual spike question on.
       environment = [
         { name = "MEMORY_BUCKET", value = regex("arn:aws:s3:::([^/]+)", var.memory_bucket_arn)[0] },
         { name = "MEMORY_PREFIX", value = "prod" },
