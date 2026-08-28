@@ -922,6 +922,7 @@ if [ "$rc" -ne 0 ]; then
     # cookie re-warm ... consecutive blocks: N"). It is duplicated from ddp-sync's
     # WAF_BLOCK_MARKERS rather than shared, because the two live in different repos and
     # languages; called out in the PR so the operator can decide whether that's worth fixing.
+
     # OPEN-182: which of §3's two collection failures this run was. It asks the SAME matcher the
     # no-op branch above already consulted -- not a second rule of its own -- so the record can
     # never disagree with the decision the script actually made. The matcher is a pure grep over
