@@ -88,6 +88,18 @@ COUNT_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.count"
 # mode are added here at the write sites below.)
 IMPORTED_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.imported"
 
+# OPEN-182 / contract §2: this run's identity and its clock, for the completion record below.
+#
+# RUN_ID is overridable because the contract's §5 addresses raw copies by `<source-id>` and
+# `run_id`, so a cloud runner that has already minted an id for a run needs this script to
+# report that id rather than a second one it invented. Locally nothing supplies it, so the
+# default is what production will use: the scrape key (state + session + chamber, the same key
+# the .ts/.count/.imported markers are keyed on), a UTC timestamp, and the pid. That combination
+# is what makes two runs distinguishable -- `usa lower` and `usa upper` share $STATE, and FL's
+# sessions share it too, so $STATE alone would not be an identity.
+RUN_ID="${RUN_ID:-${SCRAPE_KEY}-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
+RUN_STARTED_EPOCH=$(date +%s)
+
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"; }
 
 # App-managed log rotation (mirrors the CAMS/broker convention — no newsyslog/logrotate, no sudo).
@@ -119,6 +131,90 @@ except Exception:
         INCREMENTAL_FLAG="start=$START_ARG"
     fi
 fi
+
+# OPEN-182: MODE is derived here, immediately after the watermark read that determines it,
+# rather than ~240 lines further down where it used to sit. Nothing in between touches
+# $INCREMENTAL_FLAG, so this is a move rather than a change -- but the completion record has to
+# report `mode` on *every* run including the early refusals above and below, and those all
+# happen before the old assignment. A record that said `mode=full` for a refused incremental run
+# would be a wrong answer to the one question a caller asks first.
+MODE="full"
+[ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
+
+# OPEN-182 / contract §2: the machine-readable result of this run -- a single JSON object on the
+# last line of stdout. Every other thing this script writes to stdout is a human log line, so a
+# caller that reads only the last line gets the whole result without parsing the log.
+#
+# Emitted from the EXIT trap rather than from each of the nine exit sites, deliberately. §2
+# requires a record from every *handled* failure, and a missing record means something much
+# worse than an untidy log: §2 tells callers to read no-record as a dead runner. A tenth exit
+# path added later that forgot its own emit call would therefore report a working run as a
+# crashed one, silently. From the trap it cannot be forgotten, and an unclassified death under
+# `set -e` still reports `failed`, which is exactly what §3 defines `failed` to be --
+# everything else that went wrong. Only a SIGKILL leaves no record, which §2 explicitly calls a
+# real and expected case (OPEN-155's stall watchdog) rather than a contract violation.
+#
+# $COMPLETION_STATUS is set at each point where this script *decides* an outcome, and is never
+# recomputed here. That is the ticket's own constraint, and it is the whole reason the record is
+# safe to add: a JSON line that re-derived status from the exit code would become a second
+# source of truth for the one thing the contract exists to pin down, and the two would drift.
+#
+# §2's `requests` / `refused_403` / `refused_429` are omitted, not overlooked. They are optional
+# ("reported when known") and this pipeline does not know them -- scrapelib emits no per-request
+# line at the level this script captures, so there is nothing here to count. Producing them
+# would mean adding request accounting inside openstates-core, which is a different change in a
+# different repo, not "the wrapper emits one line".
+_COMPLETION_RECORD_EMITTED=0
+emit_completion_record() {
+    [ "$_COMPLETION_RECORD_EMITTED" = "1" ] && return 0
+    _COMPLETION_RECORD_EMITTED=1
+    # python3 rather than printf: $SESSION_ARG is caller-supplied free text ("session=119
+    # chamber=lower") and json.dumps is the only escaping here that is right by construction.
+    # It is already a hard dependency of this script -- the incremental cutoff arithmetic above
+    # and report_failure_to_cams below both use it -- so this adds no new requirement.
+    python3 -c '
+import json, sys
+status, mode = sys.argv[1], sys.argv[2]
+rec = {"source": sys.argv[3], "run_id": sys.argv[4], "mode": mode, "status": status}
+# Not one of the fields §2 lists. Added because in this pipeline a run is identified by
+# source AND session -- `usa` runs lower and upper separately, FL runs eight sessions -- so a
+# record carrying source alone could not be matched back to the run that made it. Every other
+# output line here already carries it, and the .imported marker is keyed on it.
+if sys.argv[5]:
+    rec["session"] = sys.argv[5]
+
+def num(v):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+found = num(sys.argv[6])
+if found is not None:
+    rec["found"] = found
+# §2 requires new/updated/noop only when status is ok, and only ok guarantees they were
+# measured. Emitting them as zeros on a failed run would state a measurement that never
+# happened -- the same confusion between "measured zero" and "did not measure" that OPEN-152
+# was about.
+if status == "ok":
+    for key, raw in zip(("new", "updated", "noop"), sys.argv[7:10]):
+        n = num(raw)
+        rec[key] = 0 if n is None else n
+duration = num(sys.argv[10])
+if duration is not None:
+    rec["duration_s"] = duration
+print(json.dumps(rec))
+' "${COMPLETION_STATUS:-failed}" "${MODE:-full}" "$STATE" "$RUN_ID" "$SESSION_ARG" \
+  "${SCRAPED_BILLS:-}" "${NEW_BILLS:-}" "${UPDATED_BILLS:-}" "${NOOP_BILLS:-}" \
+  "$(( $(date +%s) - RUN_STARTED_EPOCH ))" || true
+}
+
+# Registered here, before the first exit path below, and REPLACED further down by the fuller
+# EXIT trap that also does lock and marker cleanup -- bash keeps only the last EXIT trap
+# registered, so that one has to (and does) call this function as its final statement. Two
+# registrations rather than one because the fuller trap cannot be moved up here: it references
+# markers and locks that do not exist yet.
+trap 'emit_completion_record' EXIT
 
 # OPEN-159: this checkout's own activate.sh, not the production one by absolute path. Same
 # reasoning as import-summary.sh at the top of this file -- "so a worktree/checkout runs its own
@@ -185,6 +281,7 @@ if [ "$_THIS_CHECKOUT" != "$PRODUCTION_CHECKOUT" ] \
     log "       or run from the production checkout. See OPEN-159."
     # Same idiom as the other two call sites: the flag is set by run-scrape-retrying.sh, not here.
     [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
+    COMPLETION_STATUS="failed"
     exit "$EXIT_DO_NOT_RETRY"
 fi
 
@@ -277,7 +374,8 @@ touch "$READER_MARKER"
 # exit before the lock block below runs.
 trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true;
       [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR";
-      [ "${SCRAPE_LOCK_HELD:-0}" = "1" ] && rm -rf "$SCRAPE_LOCK_DIR"' EXIT
+      [ "${SCRAPE_LOCK_HELD:-0}" = "1" ] && rm -rf "$SCRAPE_LOCK_DIR";
+      emit_completion_record' EXIT
 
 # OPEN-154: refuse to run two scrapes of the same jurisdiction at once.
 #
@@ -304,6 +402,7 @@ trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEE
 case "$STATE" in
     *[!a-z0-9_]*|"")
         log "ERROR: refusing to run with a non-alphanumeric jurisdiction key: '$STATE' (OPEN-154)"
+        COMPLETION_STATUS="failed"
         exit 1
         ;;
 esac
@@ -358,14 +457,16 @@ if [ "$SCRAPE_LOCK_HELD" != "1" ]; then
     # which is precisely what this ticket exists to stop. Same two-part signal the WAF branch
     # uses further down, for the same reason.
     [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
+    # §3 puts lock contention squarely in `failed`, not `unreachable`: the source was never
+    # asked. Its exit code and its do-not-retry flag are unchanged by this line.
+    COMPLETION_STATUS="failed"
     trap - ERR
     on_failure
     exit "$EXIT_DO_NOT_RETRY"
 fi
 
-MODE="full"
-[ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
-log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${INCREMENTAL_FLAG#start=}})"
+# MODE is derived far above, next to the watermark read (OPEN-182).
+log "Starting scrape: $STATE $SESSION_ARG ($MODE${INCREMENTAL_FLAG:+ cutoff=${INCREMENTAL_FLAG#start=}}) run_id=$RUN_ID"
 
 # Pass cache/data dirs explicitly so os-update doesn't fall back to
 # os.getcwd()/_cache — which resolves to /_cache (read-only) under launchd.
@@ -435,6 +536,7 @@ PY
     log "ERROR: could not determine which scrapers $STATE registers: $PROBE_TAIL"
     FAILURE_ERROR_TYPE="ScraperProbeFailure"
     FAILURE_MESSAGE="could not import jurisdiction $STATE to check for a votes scraper: $PROBE_TAIL"
+    COMPLETION_STATUS="failed"
     trap - ERR
     on_failure
     exit 1
@@ -448,6 +550,7 @@ if [ -n "$VOTES_SCRAPER" ] && [ "$VOTES_SCRAPER" != "votes" ]; then
     log "ERROR: unexpected scraper-probe output for $STATE: '$VOTES_SCRAPER'"
     FAILURE_ERROR_TYPE="ScraperProbeFailure"
     FAILURE_MESSAGE="scraper probe for $STATE returned unexpected output: '$VOTES_SCRAPER'"
+    COMPLETION_STATUS="failed"
     trap - ERR
     on_failure
     exit 1
@@ -621,6 +724,11 @@ finish_no_op() {
     # bills — an `ok` measurement of zero, not a failure to measure. Recorded rather than skipped
     # so the series has no holes; see import-summary.sh for the file's format and guarantees.
     echo "ok:0:0:0:incremental" > "$IMPORTED_FILE"
+    # OPEN-182: the same `ok` measurement of zero the marker records, reported the same way.
+    # The counts are set explicitly rather than left empty because §2 requires them whenever
+    # status is ok, and here they are genuinely known to be zero.
+    COMPLETION_STATUS="ok"
+    SCRAPED_BILLS=0; NEW_BILLS=0; UPDATED_BILLS=0; NOOP_BILLS=0
     rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
     exit 0
 }
@@ -814,6 +922,21 @@ if [ "$rc" -ne 0 ]; then
     # cookie re-warm ... consecutive blocks: N"). It is duplicated from ddp-sync's
     # WAF_BLOCK_MARKERS rather than shared, because the two live in different repos and
     # languages; called out in the PR so the operator can decide whether that's worth fixing.
+    # OPEN-182: which of §3's two collection failures this run was. It asks the SAME matcher the
+    # no-op branch above already consulted -- not a second rule of its own -- so the record can
+    # never disagree with the decision the script actually made. The matcher is a pure grep over
+    # $SCRAPE_OUT (import-summary.sh), so calling it here has no side effect, and it must run
+    # before the `rm -f "$SCRAPE_OUT"` below.
+    #
+    # §3's dividing line is "did the run get any usable data from the source?" A collection that
+    # started and then broke is `failed`, not `unreachable`; the markers this matcher looks for
+    # are positive statements that the site could not be read at all, so a partial collection
+    # correctly falls through to `failed`.
+    if scrape_output_shows_unreachable_site "$SCRAPE_OUT"; then
+        COMPLETION_STATUS="unreachable"
+    else
+        COMPLETION_STATUS="failed"
+    fi
     SCRAPE_EXIT_CODE=1
     if grep -qiE 'waf block detected|consecutive waf blocks' "$SCRAPE_OUT" 2>/dev/null; then
         log "Failure for $STATE classified as a WAF block — terminal, will not be retried (OPEN-53)"
@@ -921,6 +1044,11 @@ cat "$IMPORT_OUT" >> "$LOG_DIR/scraper.log"
 if [ "${IMPORT_RC:-0}" -ne 0 ]; then
     # Same shape as the scrape-failure path above: disable the ERR trap so it cannot double-fire,
     # alert once, and exit with the import's real status.
+    #
+    # `failed`, never `unparsed`: §3 is explicit that `unparsed` is only ever a reporting failure
+    # after collection AND load both succeeded. The load is what just failed here, so claiming
+    # `unparsed` would advance a watermark over work that never happened.
+    COMPLETION_STATUS="failed"
     rm -f "$IMPORT_OUT"
     trap - ERR
     on_failure
@@ -950,6 +1078,7 @@ if [ -n "$IMPORT_COUNTS" ]; then
     NOOP_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f3)
     log "=== IMPORT SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_new=$NEW_BILLS | bills_updated=$UPDATED_BILLS | bills_noop=$NOOP_BILLS ==="
     echo "ok:${IMPORT_COUNTS}:${MODE}" > "$IMPORTED_FILE"
+    COMPLETION_STATUS="ok"
 
     if import_looks_stuck "$MODE" "${SCRAPED_BILLS:-0}" "$NEW_BILLS" "$UPDATED_BILLS"; then
         log "WARNING: $STATE ${SESSION_ARG} scraped $SCRAPED_BILLS bill files but the import found 0 new and 0 updated — the incremental cutoff is probably stuck re-scraping one frozen window (OPEN-139)"
@@ -966,6 +1095,9 @@ else
     # measurement failure look like a quiet week. Neither is acceptable; `unparsed` says which.
     log "WARNING: could not parse an import bill-count line for $STATE ${SESSION_ARG} — recording this run as unmeasured (OPEN-139)"
     echo "unparsed::::${MODE}" > "$IMPORTED_FILE"
+    # Success path, exit 0, watermark advances -- see §3. The record says the same thing the
+    # marker written on the line above says.
+    COMPLETION_STATUS="unparsed"
 fi
 
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
