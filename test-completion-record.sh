@@ -182,6 +182,18 @@ check "unreachable (full): status" "unreachable" "$(field status)"
 check "unreachable (full): mode"   "full"        "$(field mode)"
 rm -rf "$RUN_ROOT"
 
+# The boundary §3 actually cares about, and the one the matcher alone cannot see. Michigan's
+# circuit breaker raises its block message AFTER the run has already collected hundreds of bills,
+# so "the output says the site could not be read" and "the run got no usable data" are different
+# questions. A window that was started and not completed is `failed`; only a run that measured
+# nothing is `unreachable`. Same fixture as the case above -- the ONLY difference is that two
+# bill files were collected first.
+run_with_stub "$UNREACHABLE" 1 "" 2 ""
+check "partial collection: status is failed, not unreachable" "failed" "$(field status)"
+check "partial collection: reports what it did collect"       "2"      "$(field found)"
+check "partial collection: no marker written"          "<absent>" "$(marker va.imported)"
+rm -rf "$RUN_ROOT"
+
 echo "== an ordinary scrape failure is failed, not unreachable =="
 
 run_with_stub "ValueError: something broke while parsing bill HB 1" 1 "" 0 ""
@@ -226,6 +238,45 @@ RUN_RC=$?
 check "import failure: exits non-zero" "yes" "$([ "$RUN_RC" != "0" ] && echo yes || echo no)"
 check "import failure: status" "failed" "$(field status)"
 check "import failure: no marker written" "<absent>" "$(marker va.imported)"
+rm -rf "$RUN_ROOT"
+
+echo "== a success status must not survive a failure of the final marker writes =="
+
+# §3 ties `ok` and `unparsed` to exit 0. The last thing a successful run does is write its
+# watermark and count files, and both are fallible -- a full disk, or a marker file that lost its
+# write permission. If the status were published in the branch that chose it rather than after
+# those writes, such a failure would exit non-zero carrying `ok`: a record contradicting its own
+# exit code, and claiming a watermark advance that did not happen.
+#
+# Reproduced by making the watermark file itself unwritable. The scrape and import both succeed,
+# the .imported marker is written, and then the watermark write fails.
+RUN_ROOT=$(mktemp -d /tmp/completion-record.XXXXXX)
+RUN_LOG_DIR="$RUN_ROOT/logs"
+mkdir -p "$RUN_LOG_DIR/last-run" "$RUN_ROOT/bin" "$RUN_ROOT/data/va"
+printf '2026-01-01T00:00:00' > "$RUN_LOG_DIR/last-run/va.ts"
+chmod 444 "$RUN_LOG_DIR/last-run/va.ts"
+cat > "$RUN_ROOT/bin/os-update" <<STUB
+#!/usr/bin/env bash
+for a in "\$@"; do
+    if [ "\$a" = "--import" ]; then
+        printf '%s\n' "$OK_IMPORT"
+        exit 0
+    fi
+done
+printf '{}' > "$RUN_ROOT/data/va/bill_stub1.json"
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+LOG_DIR="$RUN_LOG_DIR" OS_UPDATE_OVERRIDE="$RUN_ROOT/bin/os-update" SUPPRESS_FAILURE_ALERT=1 \
+SKIP_PATCHES=1 SCRAPED_DATA_DIR_OVERRIDE="$RUN_ROOT/data" CACHE_DIR_OVERRIDE="$RUN_ROOT/cache" \
+    bash "$SCRIPT_DIR/run-scrape.sh" va > "$RUN_ROOT/stdout.log" 2> "$RUN_ROOT/stderr.log"
+RUN_RC=$?
+check "watermark write fails: exits non-zero" "yes" \
+    "$([ "$RUN_RC" != "0" ] && echo yes || echo "no (rc=$RUN_RC)")"
+check "watermark write fails: status is NOT a success" "failed" "$(field status)"
+check "watermark write fails: watermark really did not advance" \
+    "2026-01-01T00:00:00" "$(marker va.ts)"
+chmod 644 "$RUN_LOG_DIR/last-run/va.ts"
 rm -rf "$RUN_ROOT"
 
 echo "== a refusal that fires before the script is fully set up still emits a record =="

@@ -196,10 +196,16 @@ if found is not None:
 # measured. Emitting them as zeros on a failed run would state a measurement that never
 # happened -- the same confusion between "measured zero" and "did not measure" that OPEN-152
 # was about.
+#
+# An unreadable value is omitted rather than defaulted to 0, for the same reason. Every ok path
+# supplies real integers today, so this cannot fire now; if a future change breaks that, the
+# record comes out visibly missing a field §2 requires, which a consumer rejects. A 0 would
+# instead be accepted as a measured zero, and that is the one wrong answer here.
 if status == "ok":
     for key, raw in zip(("new", "updated", "noop"), sys.argv[7:10]):
         n = num(raw)
-        rec[key] = 0 if n is None else n
+        if n is not None:
+            rec[key] = n
 duration = num(sys.argv[10])
 if duration is not None:
     rec["duration_s"] = duration
@@ -929,11 +935,23 @@ if [ "$rc" -ne 0 ]; then
     # $SCRAPE_OUT (import-summary.sh), so calling it here has no side effect, and it must run
     # before the `rm -f "$SCRAPE_OUT"` below.
     #
-    # §3's dividing line is "did the run get any usable data from the source?" A collection that
-    # started and then broke is `failed`, not `unreachable`; the markers this matcher looks for
-    # are positive statements that the site could not be read at all, so a partial collection
-    # correctly falls through to `failed`.
-    if scrape_output_shows_unreachable_site "$SCRAPE_OUT"; then
+    # §3's dividing line is "did the run get any usable data from the source?", and the matcher
+    # alone cannot answer that -- it only reports that the output SAYS the site could not be
+    # read. Those are different questions, and Michigan is the case where they come apart: its
+    # circuit breaker raises a WAF-block message after the run has already collected hundreds of
+    # bills, so the marker is present on a run that plainly did get usable data. §3 calls that
+    # `failed` (a window that was started and not completed), not `unreachable`.
+    #
+    # So ask what was actually collected first. This is the same `find ... -newer "$SCRAPE_MARKER"`
+    # the success path below uses to count bills, run against the marker file that is still
+    # present at this point -- not a new measurement, just the existing one taken on a path that
+    # never took it before. It also lets `found` be reported on a partial run, which is the
+    # number an operator most wants from one.
+    SCRAPED_BILLS=$(find "$SCRAPED_DATA_DIR/$STATE" -name "bill_*.json" -newer "$SCRAPE_MARKER" \
+        2>/dev/null | wc -l | tr -d ' ')
+    if [ "${SCRAPED_BILLS:-0}" -gt 0 ]; then
+        COMPLETION_STATUS="failed"
+    elif scrape_output_shows_unreachable_site "$SCRAPE_OUT"; then
         COMPLETION_STATUS="unreachable"
     else
         COMPLETION_STATUS="failed"
@@ -1079,7 +1097,7 @@ if [ -n "$IMPORT_COUNTS" ]; then
     NOOP_BILLS=$(echo "$IMPORT_COUNTS" | cut -d: -f3)
     log "=== IMPORT SUMMARY: $STATE ${SESSION_ARG} | mode=$MODE | bills_new=$NEW_BILLS | bills_updated=$UPDATED_BILLS | bills_noop=$NOOP_BILLS ==="
     echo "ok:${IMPORT_COUNTS}:${MODE}" > "$IMPORTED_FILE"
-    COMPLETION_STATUS="ok"
+    _FINAL_STATUS="ok"
 
     if import_looks_stuck "$MODE" "${SCRAPED_BILLS:-0}" "$NEW_BILLS" "$UPDATED_BILLS"; then
         log "WARNING: $STATE ${SESSION_ARG} scraped $SCRAPED_BILLS bill files but the import found 0 new and 0 updated — the incremental cutoff is probably stuck re-scraping one frozen window (OPEN-139)"
@@ -1098,8 +1116,17 @@ else
     echo "unparsed::::${MODE}" > "$IMPORTED_FILE"
     # Success path, exit 0, watermark advances -- see §3. The record says the same thing the
     # marker written on the line above says.
-    COMPLETION_STATUS="unparsed"
+    _FINAL_STATUS="unparsed"
 fi
 
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
+
+# OPEN-182: the success status is published HERE, not up in the branch that chose it, and the
+# ordering is the whole point. §3 ties `ok` and `unparsed` to exit 0; both writes above are
+# fallible (a full disk, a marker file that lost its write permission), and under `set -e` a
+# failure of either exits through the trap. Assigning COMPLETION_STATUS in the branch would
+# leave that exit carrying a success status out of a non-zero run -- a record that contradicts
+# both its own exit code and the watermark it claims to have advanced. Unset until here means
+# any such failure falls to the trap default, `failed`, which is what it is.
+COMPLETION_STATUS="$_FINAL_STATUS"
