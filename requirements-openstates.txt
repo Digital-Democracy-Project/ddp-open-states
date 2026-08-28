@@ -1,6 +1,8 @@
 # Frozen dependency closure for the OpenStates toolchain venv (see RUNBOOK.md → "OpenStates
 # toolchain venv"). `openstates` itself is deliberately NOT pinned here — it's installed
-# separately, in editable mode, from the local openstates-core checkout (local-patches branch),
+# separately, in editable mode, from the local openstates-core checkout (its fork's `main`,
+# since PLAN-fork-management.md §6 retired the old ephemeral `local-patches` branch model
+# 2026-08-01 -- this comment was not updated then and said so until OPEN-200 caught it),
 # so DDP's patches actually take effect. Pinning a release here (as this file did until
 # 2026-07-19) silently installs upstream's unpatched code instead — this file's job is only to
 # freeze *openstates' dependencies*, not openstates itself.
