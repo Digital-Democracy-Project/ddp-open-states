@@ -110,6 +110,20 @@ should reuse rather than reimplement:
 - **`--allow_duplicates` states** — `mi`, `fl`, `va` pass this to `os-update --import` (pagination
   overlap produces duplicate bill JSON; see openstates-scrapers issue #5697). Check this list
   before assuming a new state needs the same flag — most don't.
+- **JSON completion record on the last line of stdout (OPEN-182, 2026-08-27)** — one object
+  carrying `source`, `run_id`, `mode`, `status` and, on an `ok` run, `new`/`updated`/`noop`. It is
+  `PLAN-scraper-execution-contract.md` §2, and it exists so a caller that cannot keep this
+  machine's log files — a cloud runner — can still report what a run did. **It is additive**: the
+  `SCRAPE SUMMARY` / `IMPORT SUMMARY` lines and the `.imported` marker are unchanged and still
+  have live consumers (ddp-sync's failure classifier reads the log; `run-scrape.sh` reads
+  `.imported` back on the next run).
+  **Emitted from the EXIT trap, not from each exit site, and that is load-bearing** — the contract
+  tells callers to read a missing record as a dead runner, so an exit path that forgot to emit
+  would report a working run as a crash. A new exit path therefore needs **no** emit call of its
+  own; it needs to set `COMPLETION_STATUS` to one of §3's four values (`ok`, `unparsed`,
+  `unreachable`, `failed`) before exiting. Leaving it unset yields `failed`, which is the right
+  default. **Do not compute the status inside the emitter** — it reports the decision the run
+  already made, and a second derivation of it would drift from the marker file.
 - **`SKIP_PATCHES=1`** env var — skips the `apply-local-patches.sh` call entirely. Set by
   ddp-sync's scheduler (each jurisdiction's own scheduled run doesn't re-run the patch step; a
   separate `openstates_patch_refresh` cron job does it once). Also the escape hatch when
@@ -666,12 +680,12 @@ first credentialed onboarding DDP actually does is more likely Indiana than DC.
   in one of these shapes, not a new top-level directory.
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
-  assertions)` and exit 0 or the first failing assertion and exit 1. Five of these now exist
+  assertions)` and exit 0 or the first failing assertion and exit 1. Six of these now exist
   (`test-import-summary.sh`, `test-check-scrape-staleness.sh`, `test-scrape-outcome.sh`,
-  `test-no-op-side-effects.sh`, `test-scrape-lock.sh`) and they all share that shape — copy the
-  nearest one rather than introducing a runner. Two of them drive **`run-scrape.sh` itself**
-  against a stub `os-update`, which is the only way to assert what the script *does* with a
-  decision rather than just what a matcher returns.
+  `test-no-op-side-effects.sh`, `test-scrape-lock.sh`, `test-completion-record.sh`) and they all
+  share that shape — copy the nearest one rather than introducing a runner. Three of them drive
+  **`run-scrape.sh` itself** against a stub `os-update`, which is the only way to assert what the
+  script *does* with a decision rather than just what a matcher returns.
 - **Testing `run-scrape.sh` requires overriding `activate.sh` (OPEN-152, 2026-08-25)** — the
   script sources `activate.sh`, which **unconditionally exports** `OS_UPDATE`,
   `SCRAPED_DATA_DIR`, `CACHE_DIR` and `SCRAPELIB_RPM`, clobbering anything the caller set and
