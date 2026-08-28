@@ -6,6 +6,12 @@ type: reference
 
 # READ THIS FIRST — BEFORE WRITING NEW SCRIPTS
 
+> **Sibling document: `LESSONS.md`.** This file catalogs the scripts that exist and the conventions
+> they share. `LESSONS.md` records **what went wrong, what it cost, and the rule that came out of
+> it** — written for whoever rebuilds the scrape path somewhere else (OPEN-180/OPEN-201). If you are
+> replacing code rather than adding to it, read that one first: the code is replaceable and the
+> incidents behind it are not.
+
 Everything DDP-owned in this repo lives at the root (shell scripts + a few Python tools) plus
 `deploy/`. `openstates-scrapers/`, `openstates-core/`, `api-v3/`, `people/`, etc. are gitignored
 upstream/fork checkouts — code changes there go through their own repos/PRs, not this file.
