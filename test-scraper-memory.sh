@@ -289,6 +289,13 @@ e2e() {  # $1 extra env assignments, evaluated; echoes exit code into RUN_RC
 status() { tail -1 "$RUN_ROOT/stdout.log" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])' 2>/dev/null || echo "<none>"; }
 mode()   { tail -1 "$RUN_ROOT/stdout.log" | python3 -c 'import json,sys; print(json.load(sys.stdin)["mode"])'   2>/dev/null || echo "<none>"; }
 stored()       { cat "$ROOT/bucket/e2ens/va/va/va.ts" 2>/dev/null || echo "<absent>"; }
+# CONTENTS, not the list of paths. A path listing is unchanged when an object is overwritten in
+# place, which is exactly the regression these assertions exist to catch.
+store_snapshot() {
+    find "$ROOT/bucket/e2ens" -type f 2>/dev/null | sort | while read -r f; do
+        printf '%s %s\n' "${f#$ROOT/bucket/}" "$(md5 -q "$f")"
+    done | md5
+}
 stored_count() { cat "$ROOT/bucket/e2ens/va/va/va.count" 2>/dev/null || echo "<absent>"; }
 
 e2e ""
@@ -318,8 +325,13 @@ echo "== nothing is published at all unless the import succeeded =="
 # bill already recorded there is not re-fetched -- which is only sound if a baseline can never
 # reach the store describing bills that were not loaded into the database. Both persist calls
 # sit after the import's exit status is checked, so a failed import publishes NOTHING.
-STORE_BEFORE=$(find "$ROOT/bucket/e2ens" -type f 2>/dev/null | sort | md5)
-printf '{"HB4001": "an action from a run whose import will fail"}' > "$RUN_ROOT/cache/mi_last_actions_2025-2026.json"
+# Seed the exact cache key with KNOWN OLD BYTES, so an in-place overwrite is detectable rather
+# than invisible. $SCRAPER_MEMORY_CACHE_FILES is pointed at va for these cases -- the mechanism
+# is jurisdiction-agnostic and the e2e harness drives va.
+mkdir -p "$ROOT/bucket/e2ens/va/_cache"
+printf 'OLD-BASELINE-BYTES' > "$ROOT/bucket/e2ens/va/_cache/va_baseline_2026.json"
+printf 'NEW-BASELINE-BYTES' > "$RUN_ROOT/cache/va_baseline_2026.json"
+STORE_BEFORE=$(store_snapshot)
 cat > "$RUN_ROOT/bin/os-update" <<STUB
 #!/usr/bin/env bash
 for a in "\$@"; do
@@ -334,8 +346,47 @@ STUB
 chmod +x "$RUN_ROOT/bin/os-update"
 e2e ""
 check "import failed: the run fails" "failed" "$(status)"
-check "import failed: NOTHING was published" "$STORE_BEFORE" "$(find "$ROOT/bucket/e2ens" -type f 2>/dev/null | sort | md5)"
-rm -f "$RUN_ROOT/cache/mi_last_actions_2025-2026.json"
+check "import failed: NOTHING was published, byte for byte" "$STORE_BEFORE" "$(store_snapshot)"
+check "import failed: the old baseline was not overwritten" "OLD-BASELINE-BYTES" \
+    "$(cat "$ROOT/bucket/e2ens/va/_cache/va_baseline_2026.json")"
+
+echo "== a cache-publication failure must block every marker write =="
+
+# Fail-closed, not merely ordered: run-scrape.sh guards the cache call with `if ! ...; then exit`,
+# so a failure there returns before any marker can advance. Without that guard, ordering alone
+# would still permit the one pairing that loses bills.
+# The stub rewrites the baseline during its scrape pass, which is what the real scraper does --
+# and it has to, because hydration legitimately pulls the stored copy down over any local one
+# before the scrape runs. Without this the "new baseline" under test would be the old one.
+cat > "$RUN_ROOT/bin/os-update" <<STUB
+#!/usr/bin/env bash
+for a in "\$@"; do
+    if [ "\$a" = "--import" ]; then echo "import:"; echo "  bill: 1 new 0 updated 0 noop"; exit 0; fi
+done
+printf '{}' > "$RUN_ROOT/data/va/bill_stub7.json"
+printf 'NEW-BASELINE-BYTES' > "$RUN_ROOT/cache/va_baseline_2026.json"
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+MARKERS_BEFORE=$(store_snapshot)
+e2e "FAKE_S3_FAIL_PUT_MATCH=_cache SCRAPER_MEMORY_CACHE_FILES=va:va_baseline_*.json"
+check "cache put fails: the run fails"  "failed" "$(status)"
+check "cache put fails: NO marker advanced, byte for byte" "$MARKERS_BEFORE" "$(store_snapshot)"
+
+echo "== the reachable partial state is the safe pairing, not the unsafe one =="
+
+# Cache publication succeeds and the watermark write then fails. This IS reachable, and it is the
+# state the ordering deliberately chooses: a NEW baseline beside the PREVIOUS cutoff. Safe,
+# because the run that wrote that baseline had already scraped and imported successfully -- so
+# the next run re-collects a wider window rather than skipping anything.
+OLD_TS="$(stored)"
+e2e "FAKE_S3_FAIL_PUT_MATCH=va.ts SCRAPER_MEMORY_CACHE_FILES=va:va_baseline_*.json"
+check "watermark put fails: the run fails" "failed" "$(status)"
+check "watermark put fails: the NEW baseline did land" "NEW-BASELINE-BYTES" \
+    "$(cat "$ROOT/bucket/e2ens/va/_cache/va_baseline_2026.json")"
+check "watermark put fails: the cutoff is still the previous run's" "$OLD_TS" "$(stored)"
+
+rm -f "$RUN_ROOT/cache/va_baseline_2026.json"
 
 echo "== a store that will not answer must stop the run, not start a full collection =="
 

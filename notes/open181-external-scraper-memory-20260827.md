@@ -113,15 +113,27 @@ cutoff would seem to hide bills that moved.
 It does not, and the reason is worth writing down because nothing said it before: **both persist
 calls sit on the success path, after the import's exit status has been checked.** A failed scrape
 and a failed import each exit earlier and publish nothing at all — not the baseline, not the
-markers. So a baseline can only reach the store once every bill it describes has been scraped
-*and loaded into the database*. Michigan's own code reinforces this: `scraped_actions[bill_no] =
-...` is set only after `yield from self.scrape_bill(...)`, and the saved baseline is
-`baseline + scraped_actions`, so it advances only for bills actually collected.
+markers. Michigan's own code lines up with that: `scraped_actions[bill_no]` is assigned only
+after `yield from self.scrape_bill(...)`, and the saved baseline is `baseline + scraped_actions`,
+so on an incremental run it advances only for bills the run actually fetched.
 
-The stale watermark then costs nothing: it widens the next run's window, and for Michigan a wider
-window is free because the skip decision is baseline-driven rather than cutoff-driven. Asserted
-directly — a run whose import fails publishes nothing, even with a fresh baseline sitting in its
-cache directory.
+**Stated no more strongly than that, deliberately.** On a *full* run MI replaces the baseline with
+the whole page (`merged = dict(site_actions)`) — its own pre-existing OPEN-134 design, not changed
+or relied on here — and a zero exit from the importer is the importer's own report rather than an
+independent durability proof. The claim this ordering needs is only: *the run's scrape and import
+both reported success before anything was published.*
+
+The stale watermark then costs a re-collected window rather than a skipped one. For Michigan that
+costs little, since its skip decision is baseline-driven rather than cutoff-driven — but "little"
+is not "nothing" for a jurisdiction that does filter on the cutoff, and the honest general
+statement is duplicated work, not free.
+
+All three boundaries are asserted rather than argued: a run whose import fails publishes nothing
+even with a fresh baseline in its cache directory; a cache-publication failure blocks every marker
+write (fail-closed, not merely ordered — verified by removing the guard and watching the test
+fail); and a watermark failure after a successful cache publication leaves the new baseline beside
+the *previous* cutoff, which is the safe pairing. The store snapshots compare file **contents**,
+because a path listing is unchanged when an object is overwritten in place.
 
 ## Validation — live, against the real bucket
 
