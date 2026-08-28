@@ -71,6 +71,13 @@ _OVERRIDE_CACHE_DIR="${CACHE_DIR_OVERRIDE:-}"
 # shellcheck source=import-summary.sh
 . "$SCRIPT_DIR/import-summary.sh"
 
+# OPEN-181: per-source memory, contract §4. Same sourcing rule and the same hard-failure
+# reasoning as the line above -- this checkout's copy, not an absolute path, and absent is fatal
+# rather than silently skipped. Every function in it is a no-op unless SCRAPER_MEMORY_BACKEND is
+# set to `s3`, which nothing does by default, so sourcing it changes no behaviour on its own.
+# shellcheck source=scraper-memory.sh
+. "$SCRIPT_DIR/scraper-memory.sh"
+
 LAST_RUN_DIR="$LOG_DIR/last-run"
 SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')
 TS_FILE="$LAST_RUN_DIR/${SCRAPE_KEY}.ts"
@@ -115,31 +122,6 @@ rotate_scraper_log() {
     ls -1t "$f".*.gz 2>/dev/null | tail -n +8 | xargs rm -f 2>/dev/null || true
 }
 rotate_scraper_log
-
-INCREMENTAL_FLAG=""
-if [ -f "$TS_FILE" ]; then
-    LAST_RUN=$(cat "$TS_FILE")
-    START_ARG=$(python3 -c "
-import datetime, sys
-try:
-    dt = datetime.datetime.strptime('$LAST_RUN', '%Y-%m-%dT%H:%M:%S')
-    print((dt - datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S'))
-except Exception:
-    sys.exit(0)
-" 2>/dev/null)
-    if [ -n "$START_ARG" ]; then
-        INCREMENTAL_FLAG="start=$START_ARG"
-    fi
-fi
-
-# OPEN-182: MODE is derived here, immediately after the watermark read that determines it,
-# rather than ~240 lines further down where it used to sit. Nothing in between touches
-# $INCREMENTAL_FLAG, so this is a move rather than a change -- but the completion record has to
-# report `mode` on *every* run including the early refusals above and below, and those all
-# happen before the old assignment. A record that said `mode=full` for a refused incremental run
-# would be a wrong answer to the one question a caller asks first.
-MODE="full"
-[ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
 
 # OPEN-182 / contract §2: the machine-readable result of this run -- a single JSON object on the
 # last line of stdout. Every other thing this script writes to stdout is a human log line, so a
@@ -221,6 +203,57 @@ print(json.dumps(rec))
 # registrations rather than one because the fuller trap cannot be moved up here: it references
 # markers and locks that do not exist yet.
 trap 'emit_completion_record' EXIT
+
+# OPEN-181 / contract §4: bring this source's memory down from the external store BEFORE the
+# watermark below is read, because that read is what decides full versus incremental. Every line
+# here is a no-op unless SCRAPER_MEMORY_BACKEND=s3.
+#
+# Placed after the completion-record trap on purpose: both refusals below are handled failures,
+# and §2 requires a record from those too.
+if ! _MEMORY_CONFIG_ERROR=$(scraper_memory_check_config); then
+    log "ERROR: scraper memory is misconfigured: $_MEMORY_CONFIG_ERROR"
+    COMPLETION_STATUS="failed"
+    exit 1
+fi
+_MEMORY_RC=0
+scraper_memory_hydrate_markers "$STATE" "$SCRAPE_KEY" "$LAST_RUN_DIR" || _MEMORY_RC=$?
+if [ "$_MEMORY_RC" = "2" ]; then
+    # REFUSE, do not guess. §4 says absent memory means a full collection -- and for Michigan it
+    # means refusing to run at all -- so treating "the store did not answer" as "absent" would
+    # turn a momentary S3 failure into a ~3,900-request full walk of the fleet's most
+    # block-sensitive site. That is the self-inflicted outage §4 explicitly warns about. §3 lists
+    # exactly this under `failed`: a refusal to run incrementally. No markers are written, so the
+    # window stays eligible for the next run.
+    log "ERROR: could not read $STATE ${SESSION_ARG} memory from the external store — refusing to run rather than assuming a first-ever run and collecting everything (OPEN-181)"
+    COMPLETION_STATUS="failed"
+    exit 1
+fi
+
+INCREMENTAL_FLAG=""
+if [ -f "$TS_FILE" ]; then
+    LAST_RUN=$(cat "$TS_FILE")
+    START_ARG=$(python3 -c "
+import datetime, sys
+try:
+    dt = datetime.datetime.strptime('$LAST_RUN', '%Y-%m-%dT%H:%M:%S')
+    print((dt - datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S'))
+except Exception:
+    sys.exit(0)
+" 2>/dev/null)
+    if [ -n "$START_ARG" ]; then
+        INCREMENTAL_FLAG="start=$START_ARG"
+    fi
+fi
+
+# OPEN-182: MODE is derived here, immediately after the watermark read that determines it, rather
+# than ~240 lines further down where it used to sit. Nothing in between touches $INCREMENTAL_FLAG,
+# so this is a move rather than a change -- but the completion record has to report `mode` on
+# *every* run including the early refusals below, and those all happen before the old assignment.
+# A record that said `mode=full` for a refused incremental run would be a wrong answer to the one
+# question a caller asks first.
+MODE="full"
+[ -n "$INCREMENTAL_FLAG" ] && MODE="incremental"
+
 
 # OPEN-159: this checkout's own activate.sh, not the production one by absolute path. Same
 # reasoning as import-summary.sh at the top of this file -- "so a worktree/checkout runs its own
@@ -681,6 +714,21 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
 fi
 
 # Marker file so we can count only files written by this scrape, not leftovers.
+# OPEN-181 / contract §4: Michigan's last-action baseline, which lives in $CACHE_DIR rather than
+# in logs/last-run and is a HARD input -- mi/bills.py refuses to run incrementally without it.
+# Fetched here rather than next to the watermark above because $CACHE_DIR is only known after
+# activate.sh, and before the scrape because that is who reads it. No-op for every jurisdiction
+# that keeps no such file, which today is all of them but MI.
+_MEMORY_RC=0
+scraper_memory_hydrate_cache "$STATE" "$SCRAPE_KEY" "$CACHE_DIR" || _MEMORY_RC=$?
+if [ "$_MEMORY_RC" = "2" ]; then
+    log "ERROR: could not read $STATE ${SESSION_ARG} cache-resident memory from the external store — refusing to run (OPEN-181)"
+    COMPLETION_STATUS="failed"
+    trap - ERR
+    on_failure
+    exit 1
+fi
+
 SCRAPE_MARKER=$(mktemp)
 
 # First attempt: normal scrape.
@@ -733,6 +781,17 @@ finish_no_op() {
     # OPEN-182: the same `ok` measurement of zero the marker records, reported the same way.
     # The counts are set explicitly rather than left empty because §2 requires them whenever
     # status is ok, and here they are genuinely known to be zero.
+    # OPEN-181: push the markers this branch just wrote. A no-op is a run that collected
+    # successfully, so §4 says its memory advances -- and it has to advance in the store, not
+    # only on this disk, or the next run reads a stale watermark and re-collects the window.
+    if ! scraper_memory_persist_markers "$STATE" "$SCRAPE_KEY" "$LAST_RUN_DIR"; then
+        log "ERROR: $STATE ${SESSION_ARG} could not persist its memory to the external store (OPEN-181)"
+        rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
+        COMPLETION_STATUS="failed"
+        trap - ERR
+        on_failure
+        exit 1
+    fi
     COMPLETION_STATUS="ok"
     SCRAPED_BILLS=0; NEW_BILLS=0; UPDATED_BILLS=0; NOOP_BILLS=0
     rm -f "$SCRAPE_OUT" "$SCRAPE_MARKER" "$IMPORT_OUT"
@@ -1121,6 +1180,25 @@ fi
 
 date -u +%Y-%m-%dT%H:%M:%S > "$TS_FILE"
 echo "${SCRAPED_BILLS}:${MODE}" > "$COUNT_FILE"
+
+# OPEN-181: the run is only finished once its memory is durable somewhere a disposable runner can
+# read it. Failing the run here is deliberate and it is the loud choice over the quiet one: the
+# alternative is reporting `ok` while the store still holds the previous watermark, so the next
+# run silently re-collects a window it was told had been done. That is not data loss -- the
+# import already happened, and §3 is explicit that `failed` does not promise nothing changed --
+# but a memory layer that fails silently is the exact failure this ticket exists to remove.
+if ! scraper_memory_persist_markers "$STATE" "$SCRAPE_KEY" "$LAST_RUN_DIR"; then
+    log "ERROR: $STATE ${SESSION_ARG} scraped and imported successfully but could not persist its memory to the external store — reporting the run as failed so this is not silent (OPEN-181)"
+    trap - ERR
+    on_failure
+    exit 1
+fi
+if ! scraper_memory_persist_cache "$STATE" "$SCRAPE_KEY" "$CACHE_DIR"; then
+    log "ERROR: $STATE ${SESSION_ARG} could not persist its cache-resident memory to the external store (OPEN-181)"
+    trap - ERR
+    on_failure
+    exit 1
+fi
 
 # OPEN-182: the success status is published HERE, not up in the branch that chose it, and the
 # ordering is the whole point. §3 ties `ok` and `unparsed` to exit 0; both writes above are
