@@ -94,8 +94,15 @@ aws iam create-role --role-name ddp-scraper-task-role \
   --assume-role-policy-document file:///tmp/ddp-scraper-trust-policy.json
 
 aws iam put-role-policy --role-name ddp-scraper-task-role --policy-name ddp-scraper-memory-access \
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"MemoryAndWorkingTierReadWrite","Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::ddp-openstates-backups","arn:aws:s3:::ddp-openstates-backups/*"]}]}'
+  --policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"MemoryAndWorkingTierReadWrite","Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:ListBucket"],"Resource":["arn:aws:s3:::ddp-openstates-scraper-memory","arn:aws:s3:::ddp-openstates-scraper-memory/*"]}]}'
 ```
+
+**Not `ddp-openstates-backups`.** That bucket carries a bucket-wide (`Filter: Prefix ""`) 30-day
+`Expiration` rule set up for Postgres dumps under `db/`, before this working tier existed —
+everything this task writes would have hard-deleted around day 31 regardless of scrape
+frequency. `ddp-openstates-scraper-memory` is a dedicated bucket for exactly this, moved
+2026-08-29, with no lifecycle rule and Object Lock enabled (Governance mode, 1-year default
+retention) so a future rule applied to the wrong bucket can't silently repeat this.
 
 If that bucket uses a customer-managed KMS key (check its default encryption setting), this
 role also needs `kms:Decrypt`/`kms:GenerateDataKey` scoped to the key's ARN, or every
