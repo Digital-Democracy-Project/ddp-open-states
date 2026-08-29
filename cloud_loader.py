@@ -34,6 +34,20 @@ Known gap, not yet handled: run-scrape.sh's IMPORT_FLAGS (`--allow_duplicates` f
 jurisdiction allowlist, run-scrape.sh:572-574) has no equivalent here. OPEN-190's rollout is
 one jurisdiction at a time, smallest first -- add that flag when (and if) a jurisdiction that
 actually needs it is rolled out, rather than guessing at its scope now.
+
+Known trust boundary: the manifest cloud_collector.py writes does not carry `session` (only
+run_id/source/objects), so this runner cannot independently verify a caller-supplied
+`session=` argument against the run it names -- the caller (whatever launches this loader) is
+trusted to pass the same session the collection was actually launched with, exactly as
+cloud_collector.py's own `session=` argument is trusted today. A wrong session here would
+still refuse to load the wrong DATA (run_id/source are checked), but would acquire the OPEN-203
+import lock under the wrong key and pass the wrong `session=` to os-update -- both are launch-
+time correctness properties this file cannot check for itself.
+
+Rollout gate: this file's cross-machine exclusion (below) only actually excludes a mac-side
+`run-scrape.sh` import if OPEN-203's matching bash-side lock (scraper-memory.sh's
+scraper_memory_import_lock_key) is merged AND deployed first. Do not run this loader against a
+jurisdiction still eligible for a local import until that is true.
 """
 
 import json
@@ -93,21 +107,51 @@ def _fetch_manifest(memory, work_prefix, source, run_id):
             os.remove(tmp_path)
 
 
+def _validate_manifest(manifest):
+    """pm-review: a manifest that is valid JSON but not the expected shape (not an object, no
+    `objects` list, or an `objects` entry that isn't a string) must not be silently treated as
+    an empty or best-effort run -- that is the same "collapse an unexpected shape into a
+    convenient default" mistake OPEN-152 already cost this project once. Returns a reason
+    string, or None if the shape is acceptable."""
+    if not isinstance(manifest, dict):
+        return f"manifest is not a JSON object (got {type(manifest).__name__})"
+    objects = manifest.get("objects")
+    if not isinstance(objects, list):
+        return f"manifest has no 'objects' list (got {type(objects).__name__})"
+    for entry in objects:
+        if not isinstance(entry, str):
+            return f"manifest 'objects' contains a non-string entry: {entry!r}"
+    return None
+
+
 def _fetch_run_objects(memory, work_prefix, source, run_id, manifest, data_dir):
     """Downloads every object the manifest names into data_dir, reconstructing the exact
     <module>/... layout os-update --scrape originally wrote it in (each key's suffix, after
     the run's own prefix, IS that relative path). Returns None on success, or a reason string
     on the first object that cannot be fetched intact -- refusing a partial load rather than
-    importing whatever happened to arrive."""
+    importing whatever happened to arrive.
+
+    pm-review: `object_key.startswith(run_prefix)` alone does not make the derived local path
+    safe -- a key like `<run_prefix>../../etc/cron.d/evil` still starts with `run_prefix` as a
+    string, and a key like `<run_prefix>/etc/passwd` (note the doubled slash) produces a `rel`
+    beginning with `/`, which `os.path.join` treats as absolute and silently discards data_dir
+    entirely. The manifest is written by cloud_collector.py, not user input directly, but nothing
+    stops it (or the object this function reads) from carrying a corrupted or tampered key --
+    and the failure mode is an on-prem file write outside the staging directory, so this is
+    checked explicitly rather than trusted."""
     run_prefix = f"{work_prefix}/{source}/{run_id}/"
+    data_root = Path(data_dir).resolve()
     for object_key in manifest.get("objects", []):
         if not object_key.startswith(run_prefix):
             return (f"manifest lists {object_key!r}, outside this run's own prefix "
                      f"{run_prefix!r} -- refusing to fetch it")
         rel = object_key[len(run_prefix):]
-        dest = os.path.join(data_dir, rel)
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        status = memory.fetch(object_key, dest)
+        dest = (data_root / rel).resolve()
+        if data_root != dest and data_root not in dest.parents:
+            return (f"manifest lists {object_key!r}, which resolves outside the staging "
+                     f"directory -- refusing to fetch it")
+        os.makedirs(dest.parent, exist_ok=True)
+        status = memory.fetch(object_key, str(dest))
         if status != "found":
             return (f"manifest names {object_key!r} but it could not be fetched "
                      f"({status}) -- refusing a partial load")
@@ -200,6 +244,12 @@ def main(argv, s3_client=None):
     manifest, err = _fetch_manifest(memory, work_prefix, source, run_id)
     if err is not None:
         print(f"ERROR: {err}", file=sys.stderr)
+        emit_completion_record(status="failed", source=source, run_id=run_id, session=session)
+        return 1
+
+    shape_err = _validate_manifest(manifest)
+    if shape_err is not None:
+        print(f"ERROR: {shape_err}", file=sys.stderr)
         emit_completion_record(status="failed", source=source, run_id=run_id, session=session)
         return 1
 

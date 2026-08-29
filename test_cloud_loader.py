@@ -130,6 +130,71 @@ def test_refuses_an_object_outside_the_runs_own_prefix(env, capsys):
     assert "outside this run's own prefix" in capsys.readouterr().err
 
 
+def test_refuses_a_manifest_key_that_escapes_the_staging_directory_via_dotdot(env, capsys):
+    """pm-review: startswith(run_prefix) alone does not make the derived path safe -- a key
+    with a `../` component after the run's own prefix still starts with that prefix as a
+    string, but resolves outside the staging directory this loader is about to write into."""
+    client = FakeS3Client()
+    sneaky = "working-tier/mi/mi-run1/../../../etc/cron.d/evil"
+    client.objects[sneaky] = b"payload"
+    _seed_manifest(client, "prod", "mi", "mi-run1", [sneaky])
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "resolves outside the staging directory" in capsys.readouterr().err
+
+
+def test_refuses_a_manifest_key_whose_suffix_is_absolute(env, capsys):
+    """A doubled slash right after the run's own prefix produces a `rel` beginning with `/`,
+    which os.path.join would otherwise treat as absolute and silently discard data_dir."""
+    client = FakeS3Client()
+    sneaky = "working-tier/mi/mi-run1//etc/passwd"
+    client.objects[sneaky] = b"payload"
+    _seed_manifest(client, "prod", "mi", "mi-run1", [sneaky])
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "resolves outside the staging directory" in capsys.readouterr().err
+
+
+# ── manifest schema validation ──────────────────────────────────────────────────────────────
+
+
+def test_refuses_a_manifest_that_is_not_a_json_object(env, capsys):
+    client = FakeS3Client()
+    client.objects["working-tier/mi/mi-run1/_manifest.json"] = json.dumps(["not", "an",
+                                                                            "object"]).encode()
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "not a JSON object" in capsys.readouterr().err
+
+
+def test_refuses_a_manifest_missing_the_objects_list(env, capsys):
+    client = FakeS3Client()
+    client.objects["working-tier/mi/mi-run1/_manifest.json"] = json.dumps(
+        {"run_id": "mi-run1", "source": "mi"}).encode()
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "no 'objects' list" in capsys.readouterr().err
+
+
+def test_refuses_a_manifest_with_a_non_string_object_entry(env, capsys):
+    client = FakeS3Client()
+    client.objects["working-tier/mi/mi-run1/_manifest.json"] = json.dumps(
+        {"run_id": "mi-run1", "source": "mi", "objects": [123]}).encode()
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "non-string entry" in capsys.readouterr().err
+
+
 # ── the successful path ──────────────────────────────────────────────────────────────────────
 
 
