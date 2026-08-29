@@ -454,6 +454,31 @@ def test_mi_waf_cookies_are_fresh_rejects_empty_cookie_set(tmp_path):
     assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
 
 
+def test_mi_waf_cookies_are_fresh_rejects_nan_expires(tmp_path):
+    """pm-review: json.loads accepts the non-standard NaN literal, and float("nan") < x is
+    always False -- so this must be checked explicitly rather than relying on the comparison
+    alone to reject it."""
+    path = tmp_path / "mi_waf_cookies.json"
+    # json.dumps also emits NaN for float("nan") -- write the literal directly rather than
+    # relying on that, so this test exercises exactly what a real (malformed) file looks like.
+    path.write_text('{"x": {"value": "y", "expires": NaN}}')
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_rejects_infinite_expires(tmp_path):
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_text('{"x": {"value": "y", "expires": Infinity}}')
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_rejects_boolean_expires(tmp_path):
+    """bool is a subclass of int in Python -- True/False must not be accepted as a numeric
+    expires just because isinstance(x, (int, float)) is technically satisfied."""
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_text(json.dumps({"x": {"value": "y", "expires": True}}))
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
 def test_mi_waf_cookies_are_fresh_accepts_a_genuinely_fresh_file(tmp_path):
     now = time.time()
     path = tmp_path / "mi_waf_cookies.json"

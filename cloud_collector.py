@@ -35,6 +35,7 @@ credentials came from.
 """
 
 import json
+import math
 import os
 import subprocess
 import sys
@@ -105,7 +106,15 @@ def _mi_waf_cookies_are_fresh(cache_dir, filename, now, min_remaining_seconds):
         if not isinstance(entry, dict):
             return False
         expires = entry.get("expires")
-        if not isinstance(expires, (int, float)) or expires < now + min_remaining_seconds:
+        # pm-review: json.loads accepts the non-standard `NaN`/`Infinity` literals, and
+        # `float("nan") < x` is always False -- so a NaN expires would have passed this
+        # check silently without math.isfinite() ruling it out explicitly first.
+        if (
+            not isinstance(expires, (int, float))
+            or isinstance(expires, bool)
+            or not math.isfinite(expires)
+            or expires < now + min_remaining_seconds
+        ):
             return False
     return True
 
