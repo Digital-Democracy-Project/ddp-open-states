@@ -242,6 +242,12 @@ class SourceLock:
         # OPEN-203 is expected to reuse this exact class for an import lock, and a caller that
         # acquires one lock, then attempts (and fails) to acquire a second, must not have the
         # second's release silently reuse the first's leftover etag.
+        #
+        # One held lock at a time per instance -- a SUCCESSFUL second acquire (a different key,
+        # or the same one renewed) still replaces this tracking, by design: this class does not
+        # support one instance holding two locks concurrently. A caller needing two concurrent
+        # locks (a scrape lock and an import lock, say) uses two instances, each with its own
+        # independent _key/_etag -- not one instance juggling both.
         self._key = None
         self._etag = None
 

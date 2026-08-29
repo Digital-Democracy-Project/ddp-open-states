@@ -369,9 +369,17 @@ scraper_memory_lock_key() {
 # same shell that already holds (or failed to acquire) a scrape lock -- a real call pattern,
 # not a hypothetical one -- so a bare etag left over from one key could otherwise be handed to
 # lock-reclaim against a DIFFERENT key's current object. SCRAPER_LOCK_HELD_KEY is what release
-# checks before ever using the etag: cleared at the start of every acquire attempt (success or
-# failure), and release refuses (silently, matching its existing best-effort contract) unless
-# the key it is asked to release matches the key currently held.
+# checks before ever using the etag: set only on a SUCCESSFUL lock-acquire/lock-reclaim (never
+# cleared on a failed attempt -- an earlier version of this fix did that unconditionally and
+# introduced a worse bug, leaving a still-held first lock unreleasable after an unrelated
+# second lock's acquire failed), and release refuses (silently, matching its existing
+# best-effort contract) unless the key it is asked to release matches the key currently held.
+#
+# One held lock at a time per shell -- a SUCCESSFUL second lock-acquire/lock-reclaim (a
+# different key, or the same one renewed) still overwrites these globals, by design: this
+# mechanism does not support one shell holding two locks concurrently through the same pair of
+# globals. A caller needing two concurrent locks would need two independently-named variable
+# pairs, not this one reused for both.
 SCRAPER_LOCK_HELD_KEY=""
 SCRAPER_LOCK_HELD_ETAG=""
 
