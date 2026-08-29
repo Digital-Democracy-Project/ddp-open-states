@@ -70,6 +70,45 @@ _MI_BASELINE_GLOB = "mi_last_actions_*.json"
 # unit (OPEN-23), which is why this is a plain file fetch and not two separate values.
 _MI_WAF_COOKIE_GLOB = "mi_waf_cookies.json"
 
+# OPEN-188's own gated half, cleared 2026-08-29 (OPEN-200 answered the runtime question this
+# was waiting on). How much life a published cookie must still have left before this runner
+# will trust it -- not a guess at the mac's own publish cadence (mi_cookie_publish.py,
+# ddp-sync, default every 6h), just a floor against a cookie that is technically not-yet-
+# expired but only by seconds. A cookie expiring mid-scrape is a separate problem this value
+# does not claim to solve -- Michigan's existing resilience/retry path is what handles a
+# cookie going bad partway through a run; this only gates whether to START one at all.
+_MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS = int(
+    os.environ.get("MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS", 600)
+)
+
+
+def _mi_waf_cookies_are_fresh(cache_dir, filename, now, min_remaining_seconds):
+    """OPEN-188 acceptance criterion: "stale-beyond-threshold produces a loud skip." Refuses
+    -- returns False -- on anything short of a parsed file naming at least one cookie whose
+    `expires` is still `min_remaining_seconds` or more in the future: missing file,
+    unparsable JSON, an empty cookie set, or a malformed/missing `expires` on any entry all
+    count as not fresh. This is a shape check on write_cookie_cache's own format
+    (scrapebot_client.py, ddp-sync): `{cookie_name: {value, expires}, "_meta": {...}}`.
+    """
+    path = os.path.join(cache_dir, filename)
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    cookies = {k: v for k, v in data.items() if k != "_meta"}
+    if not cookies:
+        return False
+    for entry in cookies.values():
+        if not isinstance(entry, dict):
+            return False
+        expires = entry.get("expires")
+        if not isinstance(expires, (int, float)) or expires < now + min_remaining_seconds:
+            return False
+    return True
+
 
 class MemoryUnavailable(Exception):
     """The store could not be read (found/absent could not be determined). Never guess."""
@@ -537,18 +576,30 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
                     touch_do_not_retry()
                     return EXIT_DO_NOT_RETRY
 
-                # Opportunistic, not required: unlike the baseline, an absent cookie is not
-                # this runner's call to refuse on -- that is a design question OPEN-188 owns
-                # (does a stale/missing cookie fail loudly, same as Michigan's baseline, or
-                # fall through to a local mint attempt). Fetching it if present is what this
-                # spike needs today; the refusal policy is deliberately not decided here.
+                # OPEN-188: a bare run (no usable published cookie) must be impossible by
+                # construction, not convention -- exactly what produced the block and the
+                # laundered "measured zero" on 2026-08-24 (OPEN-152/OPEN-153). Refuses loudly
+                # on anything short of a fresh, parsed cookie file, rather than falling
+                # through to a local mint attempt (this runner deliberately never mints its
+                # own -- see _MI_WAF_COOKIE_GLOB's own comment) or proceeding cookie-less.
                 cookie_fetched = memory.hydrate_cache(source, cache_dir, _MI_WAF_COOKIE_GLOB)
-                if not cookie_fetched:
+                if not cookie_fetched or not _mi_waf_cookies_are_fresh(
+                    cache_dir, _MI_WAF_COOKIE_GLOB, time.time(),
+                    _MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS,
+                ):
                     print(
-                        "WARNING: no published Michigan WAF cookie found in the memory store "
-                        "-- proceeding without one (OPEN-188's publish side is not built yet)",
+                        "ERROR: no fresh published Michigan WAF cookie in the memory store "
+                        "-- refusing to attempt a bare run (OPEN-188)",
                         file=sys.stderr,
                     )
+                    # `failed`, not `unreachable`: the source was never asked. Retryable
+                    # (no touch_do_not_retry/EXIT_DO_NOT_RETRY) -- unlike the baseline case
+                    # above, this is expected to self-heal at the mac's own next scheduled
+                    # publish tick (mi_cookie_publish.py, default every 6h), not something an
+                    # operator has to intervene on.
+                    emit_completion_record(status="failed", mode="full", source=source,
+                                            run_id=run_id, session=session)
+                    return 1
 
             found_watermark = memory.hydrate_markers(source, scrape_key, last_run_dir)
         except MemoryUnavailable as e:
