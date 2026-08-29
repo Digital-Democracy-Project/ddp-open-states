@@ -171,18 +171,24 @@ def _fetch_run_objects(memory, work_prefix, source, run_id, manifest, data_dir):
     return None
 
 
-def _run_import(source, session, params, data_dir, cache_dir):
+def _run_import(source, data_dir, cache_dir):
     """Invokes os-update --import, streamed line-by-line rather than buffered -- the same
     CloudWatch-observability lesson cloud_collector.py's own scrape invocation learned the
     hard way (a killed or long-running process leaves zero trail otherwise). Mirrors
     run-scrape.sh's own default (non-sweep) import invocation: `$OS_UPDATE $STATE --import
     $IMPORT_FLAGS $DIR_FLAGS` (run-scrape.sh:1126-1129), with IMPORT_FLAGS empty here (see
-    module docstring) and DIR_FLAGS as --cachedir/--datadir."""
+    module docstring) and DIR_FLAGS as --cachedir/--datadir.
+
+    Deliberately does NOT pass `session=...` as a positional argument -- caught live, running
+    this for real: update.py's `key=value` grammar is `(scraper_type (k:v)+)+`
+    (openstates/cli/update.py's do_update(), "argument {} before scraper name"), so a bare
+    `session=X` with no preceding scraper-type token raises CommandError. That grammar is
+    for --scrape's own params (cloud_collector.py's own invocation passes `bills` as the
+    scraper type before any k=v). run-scrape.sh's real --import invocation never passes
+    session= at all -- --import determines what to load purely from what is under --datadir,
+    not from a session argument -- and this now matches that exactly."""
     cmd = [os.environ.get("OS_UPDATE", "os-update"), source, "--import",
            "--cachedir", cache_dir, "--datadir", data_dir]
-    session_arg = params.get("session")
-    if session_arg:
-        cmd.append(f"session={session_arg}")
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                              text=True, bufsize=1)
@@ -205,7 +211,7 @@ def _load(source, scrape_key, session, params, run_id, manifest, memory, work_pr
             emit_completion_record(status="failed", source=source, run_id=run_id, session=session)
             return 1
 
-        returncode = _run_import(source, session, params, data_dir, cache_dir)
+        returncode = _run_import(source, data_dir, cache_dir)
         duration_s = int(time.time() - started)
 
         if returncode != 0:

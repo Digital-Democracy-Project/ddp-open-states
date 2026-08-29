@@ -255,7 +255,13 @@ def test_successful_load_fetches_objects_and_invokes_os_update(env, monkeypatch,
                        "duration_s": record["duration_s"]}
 
 
-def test_successful_load_passes_session_through(env, monkeypatch):
+def test_successful_load_does_not_forward_session_to_os_update(env, monkeypatch):
+    """Caught live, running this for real against openstates-core: update.py's `key=value`
+    grammar for --import is `(scraper_type (k:v)+)+` -- a bare `session=X` with no preceding
+    scraper-type token raises CommandError('argument session=X before scraper name'). session=
+    is still meaningful to cloud_loader.py itself (it's part of the scrape_key the import lock
+    uses), just never forwarded to the os-update command line -- run-scrape.sh's own --import
+    invocation never passes it either; --import determines what to load from --datadir alone."""
     monkeypatch.setenv("OS_UPDATE", "fake-os-update")
     client = FakeS3Client()
     _seed_manifest(client, "prod", "mi", "mi-run1", [])
@@ -269,7 +275,7 @@ def test_successful_load_passes_session_through(env, monkeypatch):
         rc = cl.main(["mi", "mi-run1", "session=2025-2026"], s3_client=client)
 
     assert rc == 0
-    assert "session=2025-2026" in captured["cmd"]
+    assert not any("session=" in arg for arg in captured["cmd"])
 
 
 def test_import_failure_reports_failed_status_and_still_releases_the_lock(env, monkeypatch, capsys):
