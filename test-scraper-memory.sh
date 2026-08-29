@@ -538,12 +538,20 @@ check "default import path: a normal run succeeds once the lock is free again" "
 # lock-acquire against an _import_lock key with a genuine (non-precondition) backend error,
 # while leaving the SCRAPE lock's own keys working normally so the run reaches the import
 # phase at all.
+rm -f "$ROOT/import-outage-marker"
 cat > "$ROOT/bin/fake-lock-import-outage" <<STUB
 #!/usr/bin/env bash
 BUCKET="\$FAKE_LOCK_ROOT"
 case "\$2" in
     */_import_lock)
-        [ "\$1" = "lock-acquire" ] && { echo "Could not connect to the endpoint URL" >&2; exit 1; }
+        if [ "\$1" = "lock-acquire" ]; then
+            # Proves the outage branch was actually hit for the import lock specifically,
+            # rather than the test passing for some other, earlier reason (pm-review's own
+            # point: the three outcome assertions alone don't positively place execution here).
+            echo "hit for \$2" >> "$ROOT/import-outage-marker"
+            echo "Could not connect to the endpoint URL" >&2
+            exit 1
+        fi
         ;;
 esac
 exec "$ROOT/bin/fake-lock" "\$@"
@@ -558,6 +566,10 @@ echo "scraped fine"
 STUB
 chmod +x "$RUN_ROOT/bin/os-update"
 e2e "SCRAPER_LOCK_S3_CMD=$ROOT/bin/fake-lock-import-outage LOCK_WAIT_TIMEOUT_SECS=1"
+check "import lock backend outage: the scrape phase completed first (this isn't an earlier failure)" \
+    "yes" "$(grep -q 'Scrape done: va. Starting import' "$RUN_ROOT/stdout.log" && echo yes || echo no)"
+check "import lock backend outage: the wrapper's outage branch was actually hit for an _import_lock key" \
+    "yes" "$([ -s "$ROOT/import-outage-marker" ] && grep -q '_import_lock' "$ROOT/import-outage-marker" && echo yes || echo no)"
 check "import lock backend outage (rc=2) after local acquire: run fails cleanly" "failed" "$(status)"
 check "import lock backend outage: os-update --import was never actually invoked" "no" \
     "$(grep -q 'SHOULD NEVER RUN' "$RUN_ROOT/stdout.log" "$RUN_LOG_DIR/scraper.log" 2>/dev/null && echo yes || echo no)"
