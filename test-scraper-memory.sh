@@ -486,6 +486,96 @@ check "unparsed: status"                        "unparsed" "$(status)"
 check "unparsed: stored watermark DID advance"  "yes" \
     "$([ "$(stored)" != "$BEFORE" ] && echo yes || echo no)"
 
+echo "== OPEN-203: the DEFAULT (non-sweep) import path is actually protected, not just the sweep one =="
+
+# THE gap this ticket exists to close, exercised through the real run-scrape.sh code path, not
+# just the underlying lock functions in isolation: SWEEP_IMPORT_ENABLED defaults to 0, which is
+# what every non-canary jurisdiction runs today, and that `else` branch used to call os-update
+# --import directly with no lock of any kind. Simulating "a cloud loader is currently importing
+# this exact jurisdiction" by pre-seeding a live import lock, then confirming a real run-scrape.sh
+# invocation now refuses rather than racing it.
+BEFORE_IMPORT_LOCK_TEST="$(stored)"
+mkdir -p "$ROOT/lockbucket/e2ens/va"
+python3 -c "
+import json, time
+open('$ROOT/lockbucket/e2ens/va/_import_lock', 'w').write(json.dumps({'holder': 'other-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+"
+echo 1 > "$ROOT/lockbucket/e2ens/va/_import_lock.etag"
+cat > "$RUN_ROOT/bin/os-update" <<'STUB'
+#!/usr/bin/env bash
+for a in "$@"; do
+    if [ "$a" = "--import" ]; then echo "SHOULD NEVER RUN -- the import lock should have refused first"; exit 1; fi
+done
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+# LOCK_WAIT_TIMEOUT_SECS overridden short -- require_import_lock's real default (180s) is
+# correct production behaviour but would make this specific test take three minutes to fail.
+e2e "LOCK_WAIT_TIMEOUT_SECS=1"
+check "default import path: refuses when another run holds the import lock" "failed" "$(status)"
+check "default import path: the watermark did not advance" "$BEFORE_IMPORT_LOCK_TEST" "$(stored)"
+check "default import path: os-update --import was never actually invoked" "no" \
+    "$(grep -q 'SHOULD NEVER RUN' "$RUN_ROOT/stdout.log" "$RUN_LOG_DIR/scraper.log" 2>/dev/null && echo yes || echo no)"
+
+# Clear it and confirm a normal run succeeds again -- proves the refusal above was specifically
+# about the held lock, not some other break in the new code path.
+rm -f "$ROOT/lockbucket/e2ens/va/_import_lock" "$ROOT/lockbucket/e2ens/va/_import_lock.etag"
+cat > "$RUN_ROOT/bin/os-update" <<STUB
+#!/usr/bin/env bash
+for a in "\$@"; do
+    if [ "\$a" = "--import" ]; then echo "import:"; echo "  bill: 1 new 0 updated 0 noop"; exit 0; fi
+done
+printf '{}' > "$RUN_ROOT/data/va/bill_stub_after_lock.json"
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+e2e ""
+check "default import path: a normal run succeeds once the lock is free again" "ok" "$(status)"
+
+# pm-review's specific ask: the shared import lock's "could not tell" result (2), reached
+# AFTER the local mkdir already succeeded, must release that local lock and fail the run
+# cleanly -- not invoke os-update, not leave anything held. A wrapper that fails every
+# lock-acquire against an _import_lock key with a genuine (non-precondition) backend error,
+# while leaving the SCRAPE lock's own keys working normally so the run reaches the import
+# phase at all.
+rm -f "$ROOT/import-outage-marker"
+cat > "$ROOT/bin/fake-lock-import-outage" <<STUB
+#!/usr/bin/env bash
+BUCKET="\$FAKE_LOCK_ROOT"
+case "\$2" in
+    */_import_lock)
+        if [ "\$1" = "lock-acquire" ]; then
+            # Proves the outage branch was actually hit for the import lock specifically,
+            # rather than the test passing for some other, earlier reason (pm-review's own
+            # point: the three outcome assertions alone don't positively place execution here).
+            echo "hit for \$2" >> "$ROOT/import-outage-marker"
+            echo "Could not connect to the endpoint URL" >&2
+            exit 1
+        fi
+        ;;
+esac
+exec "$ROOT/bin/fake-lock" "\$@"
+STUB
+chmod +x "$ROOT/bin/fake-lock-import-outage"
+cat > "$RUN_ROOT/bin/os-update" <<'STUB'
+#!/usr/bin/env bash
+for a in "$@"; do
+    if [ "$a" = "--import" ]; then echo "SHOULD NEVER RUN -- the import lock outage should have refused first"; exit 1; fi
+done
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+e2e "SCRAPER_LOCK_S3_CMD=$ROOT/bin/fake-lock-import-outage LOCK_WAIT_TIMEOUT_SECS=1"
+check "import lock backend outage: the scrape phase completed first (this isn't an earlier failure)" \
+    "yes" "$(grep -q 'Scrape done: va. Starting import' "$RUN_ROOT/stdout.log" && echo yes || echo no)"
+check "import lock backend outage: the wrapper's outage branch was actually hit for an _import_lock key" \
+    "yes" "$([ -s "$ROOT/import-outage-marker" ] && grep -q '_import_lock' "$ROOT/import-outage-marker" && echo yes || echo no)"
+check "import lock backend outage (rc=2) after local acquire: run fails cleanly" "failed" "$(status)"
+check "import lock backend outage: os-update --import was never actually invoked" "no" \
+    "$(grep -q 'SHOULD NEVER RUN' "$RUN_ROOT/stdout.log" "$RUN_LOG_DIR/scraper.log" 2>/dev/null && echo yes || echo no)"
+check "import lock backend outage: the local import lock dir was released, not left held" "no" \
+    "$([ -d "/tmp/ddp-openstates-import-locks/va" ] && echo yes || echo no)"
+
 rm -rf "$RUN_ROOT"
 
 echo "== OPEN-187: the shared cross-machine lock =="
@@ -661,6 +751,47 @@ SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
 MI11_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi11/_lock'))['expires_at'])")"
 check "release survives a failed same-key reacquire attempt" "yes" \
     "$(python3 -c "import time; print('yes' if $MI11_EXPIRES < time.time() else 'no')")"
+
+echo "== OPEN-203: the shared cross-machine import lock =="
+
+check "import lock is keyed on the scrape key, in its own namespace" \
+    "testns/mi_2025-2026/_import_lock" \
+    "$(lock_helper 'scraper_memory_import_lock_key mi_2025-2026')"
+
+rc=$(lock_helper 'scraper_memory_acquire_import_lock mi12_2025-2026 run-a; echo $?')
+check "import lock: a free lock succeeds" "0" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_import_lock mi13_2025-2026 run-a >/dev/null;
+                scraper_memory_acquire_import_lock mi13_2025-2026 run-b; echo \$?" 2>/dev/null )
+check "import lock: a second run is refused (1)" "1" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_import_lock mi14_2025-2026 run-a >/dev/null;
+                scraper_memory_release_import_lock mi14_2025-2026 run-a;
+                scraper_memory_acquire_import_lock mi14_2025-2026 run-b; echo \$?" 2>/dev/null )
+check "import lock: release then acquire succeeds" "0" "$rc"
+
+# THE reason this ticket built a separate tracking pair rather than reusing OPEN-187's: this is
+# run-scrape.sh's REAL call pattern -- one shell acquires the scrape lock, does the scrape, and
+# LATER, still in the same process, acquires the import lock too. If both locks shared one
+# tracking pair, acquiring the import lock would overwrite the scrape lock's held key/etag,
+# and releasing the scrape lock afterward would silently find a key mismatch and no-op --
+# leaving it alive for its full 24h TTL despite this process legitimately still holding it.
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              scraper_memory_acquire_lock mi15 run-a >/dev/null;
+              scraper_memory_acquire_import_lock mi15_2025-2026 run-a >/dev/null;
+              scraper_memory_release_lock mi15 run-a;
+              scraper_memory_release_import_lock mi15_2025-2026 run-a" 2>/dev/null
+SCRAPE_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi15/_lock'))['expires_at'])")"
+IMPORT_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi15_2025-2026/_import_lock'))['expires_at'])")"
+check "one shell holding BOTH a scrape lock and an import lock: scrape lock releases correctly" \
+    "yes" "$(python3 -c "import time; print('yes' if $SCRAPE_EXPIRES < time.time() else 'no')")"
+check "one shell holding BOTH a scrape lock and an import lock: import lock releases correctly" \
+    "yes" "$(python3 -c "import time; print('yes' if $IMPORT_EXPIRES < time.time() else 'no')")"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

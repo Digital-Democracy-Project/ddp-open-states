@@ -412,6 +412,7 @@ touch "$READER_MARKER"
 # someone else held the lock can never release the holder's. `${SCRAPE_LOCK_HELD:-0}` covers an
 # exit before the lock block below runs.
 trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true;
+      [ "${SHARED_IMPORT_LOCK_HELD:-0}" = "1" ] && scraper_memory_release_import_lock "$SCRAPE_KEY" "mac:$$";
       [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR";
       [ "${SCRAPE_LOCK_HELD:-0}" = "1" ] && rm -rf "$SCRAPE_LOCK_DIR";
       [ "${SHARED_LOCK_HELD:-0}" = "1" ] && scraper_memory_release_lock "$STATE" "mac:$$";
@@ -654,6 +655,11 @@ SWEEP_STAGING_DIR="/tmp/ddp-openstates-sweep-staging/$SCRAPE_KEY"
 SWEEP_INTERVAL_SECS="${SWEEP_INTERVAL_SECS:-120}"
 LOCK_WAIT_TIMEOUT_SECS="${LOCK_WAIT_TIMEOUT_SECS:-180}"
 IMPORT_LOCK_HELD=0
+# OPEN-203: tracks the SHARED (cross-machine) import lock separately from IMPORT_LOCK_HELD
+# (the local mkdir above), for the same reason OPEN-187 tracks SHARED_LOCK_HELD apart from
+# SCRAPE_LOCK_HELD -- one is this machine's own exclusion, the other is visible to a cloud
+# loader too, and a process can hold (or fail to hold) either independently of the other.
+SHARED_IMPORT_LOCK_HELD=0
 
 # mkdir is atomic — either it succeeds (we now own the lock) or it fails (someone else does).
 #
@@ -672,21 +678,52 @@ acquire_import_lock() {
     if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
         sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"
         IMPORT_LOCK_HELD=1
-        return 0
-    fi
-    local holder; holder=$(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null)
-    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
-        log "Import lock for $STATE held by dead pid $holder — reclaiming"
-        rm -rf "$IMPORT_LOCK_DIR"
-        if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
-            sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"
-            IMPORT_LOCK_HELD=1
-            return 0
+    else
+        local holder; holder=$(cat "$IMPORT_LOCK_DIR/pid" 2>/dev/null)
+        if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+            log "Import lock for $STATE held by dead pid $holder — reclaiming"
+            rm -rf "$IMPORT_LOCK_DIR"
+            if mkdir "$IMPORT_LOCK_DIR" 2>/dev/null; then
+                sh -c 'echo $PPID' > "$IMPORT_LOCK_DIR/pid"
+                IMPORT_LOCK_HELD=1
+            fi
         fi
     fi
-    return 1
+    [ "$IMPORT_LOCK_HELD" = "1" ] || return 1
+
+    # OPEN-203: the local lock above only ever protects against a second import ON THIS
+    # MACHINE -- OPEN-187's own gap, but for the import half. A cloud-side loader (OPEN-190)
+    # invokes `os-update --import` directly, bypassing this script (and its local lock)
+    # entirely, so nothing before this stopped a local and a cloud import racing the same
+    # jurisdiction's data. Gated on scraper_memory_enabled() for the identical reason the
+    # scrape lock above is: a jurisdiction still local-only cannot collide with a cloud import
+    # that does not exist for it yet.
+    if scraper_memory_enabled; then
+        local rc=0
+        scraper_memory_acquire_import_lock "$SCRAPE_KEY" "mac:$$" || rc=$?
+        if [ "$rc" != "0" ]; then
+            # Busy (1) or could not tell (2) -- either way we are not proceeding, so release
+            # the local lock we just took rather than hold it uselessly. try_import_lock/
+            # require_import_lock already have their own retry/timeout handling built on this
+            # function's plain 0/1 contract (a local mkdir failure was never itself
+            # distinguishable into "busy" vs "could not tell" either), so folding both shared
+            # outcomes into "acquire failed" here is consistent with what callers already do,
+            # rather than threading a second three-way result through a contract that has
+            # never carried one.
+            [ "$rc" = "2" ] && log "could not confirm the shared import lock for $SCRAPE_KEY is free -- treating as held"
+            rm -rf "$IMPORT_LOCK_DIR"
+            IMPORT_LOCK_HELD=0
+            return 1
+        fi
+        SHARED_IMPORT_LOCK_HELD=1
+    fi
+    return 0
 }
 release_import_lock() {
+    if [ "$SHARED_IMPORT_LOCK_HELD" = "1" ]; then
+        scraper_memory_release_import_lock "$SCRAPE_KEY" "mac:$$"
+        SHARED_IMPORT_LOCK_HELD=0
+    fi
     [ "$IMPORT_LOCK_HELD" = "1" ] || return 0
     rm -rf "$IMPORT_LOCK_DIR"
     IMPORT_LOCK_HELD=0
@@ -1126,8 +1163,18 @@ if [ "$SWEEP_IMPORT_ENABLED" = "1" ]; then
     require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS > \"$IMPORT_OUT\" 2>&1" \
         || IMPORT_RC=$?
 else
-    $OS_UPDATE "$STATE" --import $IMPORT_FLAGS $DIR_FLAGS \
-        > "$IMPORT_OUT" 2>&1 || IMPORT_RC=$?
+    # OPEN-203: this branch used to call $OS_UPDATE directly, with NO import lock at all --
+    # not even the pre-existing local one, since that only ever mattered for the sweep case
+    # above (a background sweep import racing this final one). That is exactly the gap this
+    # ticket exists to close, and it is the path that actually matters most: sweep-import is
+    # an opt-in per-jurisdiction rollout (SWEEP_IMPORT_ENABLED defaults to 0), so this `else`
+    # is what every non-canary jurisdiction runs today. A cloud loader (OPEN-190) invoking
+    # `os-update --import` directly races this exact call regardless of whether sweep-import
+    # is on, so it needs the shared lock precisely here. Routed through require_import_lock
+    # for the identical reason the sweep branch is -- it already acquires both the local lock
+    # (harmless here; nothing else takes it in this branch) and, since OPEN-187, the shared one.
+    require_import_lock "\$OS_UPDATE $STATE --import $IMPORT_FLAGS $DIR_FLAGS > \"$IMPORT_OUT\" 2>&1" \
+        || IMPORT_RC=$?
 fi
 
 # OPEN-139: the import's own output lands in a per-run file first, then gets appended to
