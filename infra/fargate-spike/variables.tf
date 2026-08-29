@@ -39,7 +39,17 @@ variable "public_subnet_ids" {
 }
 
 variable "memory_bucket_arn" {
-  description = "ARN of ddp-openstates-backups (or wherever OPEN-181/183's store and working tier live) -- scopes the task role rather than granting broad S3 access."
+  description = <<-EOT
+    ARN of ddp-openstates-scraper-memory -- a dedicated bucket, not ddp-openstates-backups.
+    Moved 2026-08-29: ddp-openstates-backups carries a bucket-wide (Filter: Prefix "") 30-day
+    Expiration + 1-day NoncurrentVersionExpiration rule, set up for Postgres dumps under db/
+    before OPEN-183's working-tier decision existed. OPEN-183 assumed "there is no lifecycle
+    to separate" -- that assumption was wrong, and everything this task writes (working-tier
+    documents, per-source memory/cache) would have hard-deleted around day 31 regardless of
+    scrape frequency. The new bucket has no lifecycle rule and Object Lock enabled (Governance
+    mode, 1-year default retention) so a future rule applied to the wrong bucket can't silently
+    repeat this. Scopes the task role rather than granting broad S3 access.
+  EOT
   type        = string
 }
 

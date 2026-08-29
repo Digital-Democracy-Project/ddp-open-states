@@ -417,20 +417,27 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # file that was hydrated to the right directory on disk.
         scrape_env = dict(os.environ, CACHE_DIR=cache_dir)
 
+        # Streamed line-by-line to stderr as it's produced, not buffered to a file and only
+        # printed afterward. A buffer-then-print (even one printed unconditionally rather than
+        # only on failure) is still invisible to CloudWatch for a run an operator has to
+        # `ecs stop-task`: SIGTERM has no handler here, so the process dies inside
+        # subprocess.run() before any code after it ever executes, and everything the scraper
+        # had already logged is lost with the container. Found the hard way twice in one
+        # session -- once on a run that succeeded quietly (the MI cookie test: nothing but the
+        # final completion record, no way to see whether the cache was actually read), once on
+        # a run that had to be killed after running far longer than expected (no evidence of
+        # what it had been doing at all). Streaming means whatever ran before a kill already
+        # reached CloudWatch, since the awslogs driver ships stdout/stderr continuously rather
+        # than only at container exit.
         with open(scrape_output, "w") as f:
-            proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, env=scrape_env)
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                     env=scrape_env, text=True, bufsize=1)
+            for line in proc.stdout:
+                f.write(line)
+                print(line, end="", file=sys.stderr)
+            proc.wait()
 
         duration_s = int(time.time() - started)
-
-        if proc.returncode != 0:
-            # Printed here, not left as a "see {path}" pointer: scrape_output lives inside
-            # the TemporaryDirectory this whole block is under, which is gone the moment this
-            # process exits. In a container, "check the file" is not an option the next
-            # person has -- CloudWatch only has stdout/stderr, so the diagnosis has to be
-            # inline or it is lost with the container. Tailed rather than dumped whole to
-            # avoid flooding the log on a failure that produced a lot of output before dying.
-            tail = subprocess.run(["tail", "-n", "40", scrape_output], capture_output=True, text=True).stdout
-            print(f"--- last 40 lines of {source} scrape output ---\n{tail}", file=sys.stderr)
 
         if proc.returncode != 0 and scrape_output_shows_unreachable_site(scrape_output):
             # OPEN-53: retrying a block makes it worse. Terminal, not retryable.
