@@ -492,6 +492,30 @@ def test_lock_malformed_body_is_unavailable_not_reclaimed():
         lock.acquire("mi")
 
 
+def test_lock_leftover_etag_not_reused_across_a_second_failed_acquire():
+    """Second pm-review round's finding: an etag alone is not bound to which key it was
+    acquired for. One SourceLock instance acquires "mi" successfully, then attempts (and
+    fails) to acquire "fl" -- release("fl") must not reuse "mi"'s leftover etag against "fl"'s
+    key, and release("mi") must not succeed either, since acquire()'s own entry clears state
+    unconditionally before the "fl" attempt ever runs."""
+    client = FakeS3Client()
+    other_holder = cc.SourceLock(client, "bucket", "dev-open187", holder="run-other")
+    assert other_holder.acquire("fl") is True  # someone else already holds "fl" live
+
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    assert lock.acquire("mi") is True
+    mi_body_before = client.objects["dev-open187/mi/_lock"]
+
+    assert lock.acquire("fl") is False  # "fl" is live-held by someone else -- refused
+
+    fl_body_before = client.objects["dev-open187/fl/_lock"]
+    lock.release("fl")  # must be a no-op: this instance never actually held "fl"
+    assert client.objects["dev-open187/fl/_lock"] == fl_body_before
+
+    lock.release("mi")  # must also be a no-op: acquire("fl")'s entry cleared "mi"'s state
+    assert client.objects["dev-open187/mi/_lock"] == mi_body_before
+
+
 def test_lock_stale_owner_release_does_not_clobber_a_reclaimed_lock():
     """THE regression for pm-review's core finding, on the Python side (which was already
     correct): if A's lock expires, B reclaims it, and A then releases using the ETag captured

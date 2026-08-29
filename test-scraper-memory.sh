@@ -608,11 +608,41 @@ open('$ROOT/lockbucket/testns/mi9/_lock', 'w').write(json.dumps({'holder': 'run-
 echo 1 > "$ROOT/lockbucket/testns/mi9/_lock.etag"   # A's original lock: etag-1, already expired
 lock_helper 'scraper_memory_acquire_lock mi9 run-b' >/dev/null  # B reclaims for real: now etag-2
 B_BODY_BEFORE="$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
-# A calls release using the etag IT held (etag-1) -- never re-read at release time.
+# A calls release using the KEY and etag IT held (etag-1) -- never re-read at release time.
+# Both must be set for this to reach the conditional-write protection at all: release() also
+# refuses on a key mismatch alone (the next test below), so this one is specifically exercising
+# "correct key, stale etag" -- the conditional write itself is what has to fail harmlessly here.
 SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
-    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; SCRAPER_LOCK_HELD_ETAG='\"etag-1\"'; scraper_memory_release_lock mi9 run-a" 2>/dev/null
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              SCRAPER_LOCK_HELD_KEY='testns/mi9/_lock'; SCRAPER_LOCK_HELD_ETAG='\"etag-1\"';
+              scraper_memory_release_lock mi9 run-a" 2>/dev/null
 check "stale owner's release does not clobber a successor's reclaimed lock" "$B_BODY_BEFORE" \
     "$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
+
+# Second pm-review round's finding: an etag alone is not bound to which key it was acquired
+# for. A single shell that successfully acquires "mi10a" and then attempts (and fails) to
+# acquire a live "mi10b" must not have mi10b's release reuse mi10a's leftover state -- and
+# acquire()'s own unconditional clear-on-entry means mi10a's own release is a no-op too, since
+# by the time release runs, SCRAPER_LOCK_HELD_KEY/ETAG belong to the failed mi10b attempt (both
+# empty), not to mi10a.
+mkdir -p "$ROOT/lockbucket/testns/mi10b"
+python3 -c "
+import json, time
+open('$ROOT/lockbucket/testns/mi10b/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi10b/_lock.etag"
+MI10A_BEFORE="" MI10B_BEFORE="$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              scraper_memory_acquire_lock mi10a run-a >/dev/null;
+              MI10A_BEFORE=\$(cat \"$ROOT/lockbucket/testns/mi10a/_lock\");
+              scraper_memory_acquire_lock mi10b run-a >/dev/null;
+              scraper_memory_release_lock mi10b run-a;
+              scraper_memory_release_lock mi10a run-a;
+              echo \"\$MI10A_BEFORE\" > \"$ROOT/mi10a-before.txt\"" 2>/dev/null
+check "a second failed acquire's leftover state does not leak into either release" \
+    "$(cat "$ROOT/mi10a-before.txt")|$MI10B_BEFORE" \
+    "$(cat "$ROOT/lockbucket/testns/mi10a/_lock")|$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

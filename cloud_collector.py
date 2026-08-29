@@ -234,6 +234,15 @@ class SourceLock:
         self.bucket = bucket
         self.prefix = prefix
         self.holder = holder
+        # Set together, only on a successful acquire/reclaim, and checked together in
+        # release() -- a second pm-review round on this same design (in scraper-memory.sh,
+        # its bash counterpart) caught that an etag alone is not bound to which key it was
+        # acquired for. Not yet reachable through this class's own current caller (main()
+        # constructs one SourceLock per run and always acquires/releases the same source), but
+        # OPEN-203 is expected to reuse this exact class for an import lock, and a caller that
+        # acquires one lock, then attempts (and fails) to acquire a second, must not have the
+        # second's release silently reuse the first's leftover etag.
+        self._key = None
         self._etag = None
 
     def key(self, source):
@@ -252,11 +261,17 @@ class SourceLock:
         (a credential problem, a timeout) -- distinct from False, which means "asked, and the
         answer was no"."""
         key = self.key(source)
+        # Cleared unconditionally at the start of every attempt -- a prior call's leftover
+        # state (for this key or a different one) must never survive into this one, success
+        # or failure alike. See __init__'s comment.
+        self._key = None
+        self._etag = None
         for _attempt in range(2):
             now = time.time()
             try:
                 resp = self.client.put_object(Bucket=self.bucket, Key=key,
                                                Body=self._lock_body(now), IfNoneMatch="*")
+                self._key = key
                 self._etag = resp["ETag"]
                 return True
             except ClientError as e:
@@ -274,15 +289,18 @@ class SourceLock:
 
             # pm-review: a lock body this process cannot parse at all (malformed, truncated,
             # or some future shape neither client writes today) must not be treated as "not
-            # live" and reclaimed -- json.JSONDecodeError/AttributeError/TypeError are not
-            # ClientErrors, so without this they would propagate as a raw, uncaught exception
-            # out of acquire() entirely, past the LockUnavailable handling in main() and past
-            # contract SS2's "every setup failure still emits a completion record" guarantee.
+            # live" and reclaimed -- json.JSONDecodeError/AttributeError/TypeError (and, for
+            # invalid UTF-8 bytes specifically, UnicodeDecodeError -- a second pm-review round
+            # caught this one wasn't covered) are not ClientErrors, so without this they would
+            # propagate as a raw, uncaught exception out of acquire() entirely, past the
+            # LockUnavailable handling in main() and past contract SS2's "every setup failure
+            # still emits a completion record" guarantee.
             try:
                 data = json.loads(existing["Body"].read())
                 expires_at = data["expires_at"]
                 is_live = now <= expires_at
-            except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
+            except (json.JSONDecodeError, KeyError, TypeError, AttributeError,
+                     UnicodeDecodeError) as e:
                 raise LockUnavailable(f"could not parse {source}'s lock contents: {e}")
 
             if is_live:
@@ -291,6 +309,7 @@ class SourceLock:
             try:
                 resp = self.client.put_object(Bucket=self.bucket, Key=key,
                                                Body=self._lock_body(now), IfMatch=etag)
+                self._key = key
                 self._etag = resp["ETag"]
                 return True
             except ClientError as e:
@@ -300,17 +319,22 @@ class SourceLock:
         return False
 
     def release(self, source):
-        if self._etag is None:
+        """Refuses unless self._key matches this call's key -- a caller that acquired one
+        lock, then attempted (and failed) a second, must not have the second's release
+        silently reuse the first's leftover etag against the wrong key. See __init__."""
+        key = self.key(source)
+        if self._etag is None or self._key != key:
             return
         try:
             now = time.time()
             body = json.dumps({
                 "holder": self.holder, "acquired_at": now, "expires_at": now - 1,
             }).encode()
-            self.client.put_object(Bucket=self.bucket, Key=self.key(source), Body=body,
-                                    IfMatch=self._etag)
+            self.client.put_object(Bucket=self.bucket, Key=key, Body=body, IfMatch=self._etag)
         except ClientError:
             pass
+        self._key = None
+        self._etag = None
 
 
 def scrape_output_shows_unreachable_site(output_path):

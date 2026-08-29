@@ -353,7 +353,7 @@ scraper_memory_lock_key() {
 }
 
 # scraper_memory_acquire_lock <source> <holder-id>
-# The ETag of THIS process's own successful acquire/reclaim, set only by
+# The KEY and ETag of THIS process's own successful acquire/reclaim, set only by
 # scraper_memory_acquire_lock on success and consumed only by scraper_memory_release_lock.
 # pm-review caught a real bug in an earlier version: release() used to re-read the lock's
 # CURRENT etag at release time instead of remembering the one this process's own write
@@ -363,6 +363,16 @@ scraper_memory_lock_key() {
 # then releases using whatever etag it finds "current" at that moment, it clobbers the SECOND
 # holder's live lock. Binding release to the specific etag this process itself received is
 # what makes its conditional write fail harmlessly in that case instead of succeeding.
+#
+# A SECOND pm-review round caught the follow-on: an etag alone is not bound to which key it
+# was acquired for. This function is meant to be reused for OPEN-203's import lock too, in the
+# same shell that already holds (or failed to acquire) a scrape lock -- a real call pattern,
+# not a hypothetical one -- so a bare etag left over from one key could otherwise be handed to
+# lock-reclaim against a DIFFERENT key's current object. SCRAPER_LOCK_HELD_KEY is what release
+# checks before ever using the etag: cleared at the start of every acquire attempt (success or
+# failure), and release refuses (silently, matching its existing best-effort contract) unless
+# the key it is asked to release matches the key currently held.
+SCRAPER_LOCK_HELD_KEY=""
 SCRAPER_LOCK_HELD_ETAG=""
 
 # 0 = acquired (including reclaiming a stale lock), 1 = another live holder has it,
@@ -382,9 +392,15 @@ scraper_memory_acquire_lock() {
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
 
+    # Cleared unconditionally at the start of every attempt -- see the variables' own comment.
+    # A prior call's leftover state must never survive into this one, success or failure alike.
+    SCRAPER_LOCK_HELD_KEY=""
+    SCRAPER_LOCK_HELD_ETAG=""
+
     out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
     if [ "$rc" -eq 0 ]; then
         rm -f "$body_file"
+        SCRAPER_LOCK_HELD_KEY="$key"
         SCRAPER_LOCK_HELD_ETAG="$out"
         return 0
     fi
@@ -411,6 +427,7 @@ scraper_memory_acquire_lock() {
                 out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
                 rm -f "$body_file"
                 if [ "$rc" -eq 0 ]; then
+                    SCRAPER_LOCK_HELD_KEY="$key"
                     SCRAPER_LOCK_HELD_ETAG="$out"
                     return 0
                 fi
@@ -457,6 +474,7 @@ scraper_memory_acquire_lock() {
     out=$("$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" 2>&1); rc=$?
     rm -f "$body_file"
     if [ "$rc" -eq 0 ]; then
+        SCRAPER_LOCK_HELD_KEY="$key"
         SCRAPER_LOCK_HELD_ETAG="$out"
         return 0
     fi
@@ -474,16 +492,21 @@ scraper_memory_acquire_lock() {
 #
 # Uses SCRAPER_LOCK_HELD_ETAG -- the etag THIS process's own successful acquire/reclaim
 # produced -- never a fresh read of whatever is current. See that variable's own comment for
-# the failure mode a fresh read would reopen.
+# the failure mode a fresh read would reopen. Also refuses unless SCRAPER_LOCK_HELD_KEY matches
+# the key this call is asked to release: a caller that acquired lock A and then attempted (and
+# failed) to acquire lock B must not have B's release silently reuse A's leftover etag against
+# A's key, or worse, be handed a caller-supplied source that doesn't match what was held at all.
 scraper_memory_release_lock() {
     local source="$1" holder="$2" key body_file now
-    [ -n "$SCRAPER_LOCK_HELD_ETAG" ] || return 0
     key=$(scraper_memory_lock_key "$source")
+    [ -n "$SCRAPER_LOCK_HELD_ETAG" ] || return 0
+    [ "$SCRAPER_LOCK_HELD_KEY" = "$key" ] || return 0
     now=$(date +%s)
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$((now - 1))" > "$body_file"
     "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$SCRAPER_LOCK_HELD_ETAG" >/dev/null 2>&1 || true
     rm -f "$body_file"
+    SCRAPER_LOCK_HELD_KEY=""
     SCRAPER_LOCK_HELD_ETAG=""
     return 0
 }
