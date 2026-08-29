@@ -86,11 +86,36 @@ RUN /opt/venv/bin/pip install --no-cache-dir --no-deps -e /opt/openstates-core
 
 FROM python:3.9-slim
 
+# poppler-utils: provides `pdftotext`, invoked as a subprocess at RUNTIME by spatula (fl/bills.py's
+# SubjectPDF page, openstates-scrapers) -- not a build-time dependency, so it belongs in this final
+# stage, not the builder's apt-get above. Found missing by actually running a real FL scrape here
+# (2026-08-29): FileNotFoundError: 'pdftotext', after do_update() got past every network call
+# cleanly -- the fetch worked, the CLI to parse what it fetched was simply never installed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --gid 1000 scraper && useradd --uid 1000 --gid scraper --shell /bin/bash --create-home scraper
 
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /opt/openstates-core /opt/openstates-core
 COPY --from=builder /opt/openstates-scrapers /opt/openstates-scrapers
+
+# fl_cookies.py's WAF warm-up launches a real Chromium via Playwright IN this same process
+# (unlike MI's design, which only ever reads a cookie someone else already minted -- see
+# cloud_collector.py's own _MI_WAF_COOKIE_GLOB comment -- FL has no such external-mint path).
+# `playwright==1.60.0` (requirements-openstates.txt) installs the PYTHON PACKAGE only; the
+# actual browser binary is a separate download this Dockerfile never ran, found missing by
+# actually launching FL here (2026-08-29): `BrowserType.launch: Executable doesn't exist`.
+# PLAYWRIGHT_BROWSERS_PATH is set explicitly (rather than the default ~/.cache/ms-playwright)
+# because this install runs as root, before USER scraper below switches to the uid the browser
+# actually launches under later -- the default path would install into /root's cache, which
+# the non-root runtime user can't read. --with-deps pulls Chromium's own OS-level shared
+# libraries (fonts, NSS, etc.) that python:3.9-slim does not carry, so the binary can actually
+# start rather than fail on a missing .so a moment after this step reports success.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+RUN /opt/venv/bin/playwright install --with-deps chromium \
+    && chmod -R a+rX /opt/pw-browsers
 
 WORKDIR /app
 COPY cloud_collector.py import-summary.sh docker-entrypoint.sh ./
