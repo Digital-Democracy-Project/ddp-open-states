@@ -195,6 +195,112 @@ class S3Memory:
                 self.store(path, self.key(source, scrape_key, name))
 
 
+class LockUnavailable(Exception):
+    """The lock's held/free state could not be determined -- never guessed (same discipline
+    as MemoryUnavailable). A lock this process cannot confirm is free is not one it should
+    treat as free."""
+
+
+class SourceLock:
+    """Cross-machine mutual exclusion for one jurisdiction's collection (OPEN-187), backed by
+    S3 conditional writes rather than run-scrape.sh's local `mkdir` (OPEN-154) -- a directory
+    on one machine's /tmp is invisible to a Fargate task and vice versa, so the two runners
+    coexisting (OPEN-201) silently stopped protecting against a double collection the moment
+    either one could run somewhere the other couldn't see.
+
+    Keyed on SOURCE ALONE, not the scrape key -- matching OPEN-154's own reasoning exactly:
+    the hazard is the shared data directory openstates-core wipes at scrape start, and FL's
+    eight sessions share one, so a per-scrape-key lock would let them race each other.
+
+    Age-based expiry only, not liveness. run-scrape.sh's local lock can ask the OS "is this
+    pid still alive" (`kill -0`) because a dead local process and a live one are both visible
+    to it; nothing here is comparably checkable across a Mac and a Fargate task, so "the
+    holder is gone" can only ever mean "past its own stated expiry". LOCK_TTL_SECONDS matches
+    the local lock's existing 24h dead-holder threshold for the same reason it was chosen
+    there: deliberately far longer than any real scrape (MA's full walk measured 8.2h) so
+    reclaiming can only ever fire on a genuinely abandoned lock, never a slow, healthy one.
+
+    Release marks the lock immediately expired rather than deleting it, so this never needs
+    s3:DeleteObject at all -- the next acquire() sees an expired lock and reclaims it exactly
+    as it would after a real timeout. A release that fails to land (a dead network on the way
+    out, say) costs nothing beyond the lock living out its TTL, the same outcome as today's
+    genuinely-abandoned case.
+    """
+
+    LOCK_TTL_SECONDS = 24 * 60 * 60
+
+    def __init__(self, client, bucket, prefix, holder):
+        self.client = client
+        self.bucket = bucket
+        self.prefix = prefix
+        self.holder = holder
+        self._etag = None
+
+    def key(self, source):
+        return f"{self.prefix}/{source}/_lock"
+
+    def _lock_body(self, now):
+        return json.dumps({
+            "holder": self.holder,
+            "acquired_at": now,
+            "expires_at": now + self.LOCK_TTL_SECONDS,
+        }).encode()
+
+    def acquire(self, source):
+        """True if acquired (including reclaiming a stale lock), False if another live holder
+        has it. Raises LockUnavailable if the held/free state could not be determined at all
+        (a credential problem, a timeout) -- distinct from False, which means "asked, and the
+        answer was no"."""
+        key = self.key(source)
+        for _attempt in range(2):
+            now = time.time()
+            try:
+                resp = self.client.put_object(Bucket=self.bucket, Key=key,
+                                               Body=self._lock_body(now), IfNoneMatch="*")
+                self._etag = resp["ETag"]
+                return True
+            except ClientError as e:
+                if e.response.get("Error", {}).get("Code") not in ("PreconditionFailed", "412"):
+                    raise LockUnavailable(f"could not acquire {source}'s lock: {e}")
+
+            try:
+                existing = self.client.get_object(Bucket=self.bucket, Key=key)
+                data = json.loads(existing["Body"].read())
+                etag = existing["ETag"]
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code in ("404", "NoSuchKey"):
+                    continue  # raced a release/expiry between the PUT and this GET -- retry
+                raise LockUnavailable(f"could not read {source}'s lock: {e}")
+
+            if now <= data.get("expires_at", 0):
+                return False  # a live holder
+
+            try:
+                resp = self.client.put_object(Bucket=self.bucket, Key=key,
+                                               Body=self._lock_body(now), IfMatch=etag)
+                self._etag = resp["ETag"]
+                return True
+            except ClientError as e:
+                if e.response.get("Error", {}).get("Code") in ("PreconditionFailed", "412"):
+                    return False  # someone else reclaimed it first
+                raise LockUnavailable(f"could not reclaim {source}'s lock: {e}")
+        return False
+
+    def release(self, source):
+        if self._etag is None:
+            return
+        try:
+            now = time.time()
+            body = json.dumps({
+                "holder": self.holder, "acquired_at": now, "expires_at": now - 1,
+            }).encode()
+            self.client.put_object(Bucket=self.bucket, Key=self.key(source), Body=body,
+                                    IfMatch=self._etag)
+        except ClientError:
+            pass
+
+
 def scrape_output_shows_unreachable_site(output_path):
     """Shells out to import-summary.sh's own matcher rather than re-deriving the marker list
     in Python -- PLAN-scraper-execution-migration.md's rule 1: a judgement call lives in one
@@ -303,13 +409,38 @@ def main(argv, s3_client=None):
                                 session=session)
         return 1
 
+    client = s3_client or boto3.client("s3")
+    prefix = os.environ.get("MEMORY_PREFIX", "")
     try:
-        memory = S3Memory(s3_client or boto3.client("s3"), bucket, os.environ.get("MEMORY_PREFIX", ""))
+        memory = S3Memory(client, bucket, prefix)
     except ValueError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
                                 session=session)
         return 1
+
+    # OPEN-187: acquired before anything else touches memory or the source site, released in
+    # `finally` regardless of how _collect() exits. Keyed on `source` alone, matching
+    # run-scrape.sh's local lock (OPEN-154) -- see SourceLock's own docstring for why.
+    lock = SourceLock(client, bucket, prefix, holder=run_id)
+    try:
+        acquired = lock.acquire(source)
+    except LockUnavailable as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
+                                session=session)
+        touch_do_not_retry()
+        return EXIT_DO_NOT_RETRY
+    if not acquired:
+        # Same classification run-scrape.sh's local lock uses for the identical situation
+        # (OPEN-154): `failed`, not `unreachable` -- the source was never asked -- and
+        # EXIT_DO_NOT_RETRY so a retrying wrapper does not collide again on every attempt.
+        print(f"ERROR: another run of {source} already holds the lock -- refusing to start "
+              f"a second one (OPEN-187)", file=sys.stderr)
+        emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
+                                session=session)
+        touch_do_not_retry()
+        return EXIT_DO_NOT_RETRY
 
     # pm-review: every setup/publish failure must still leave a completion record, matching
     # run-scrape.sh's EXIT-trap guarantee (contract SS2 -- "no record" is reserved for the
@@ -317,12 +448,15 @@ def main(argv, s3_client=None):
     # A bare `except Exception` at the top level is the Python analogue of that trap: it can
     # only fire once, after which the crash is re-raised so the exit code still reflects it.
     try:
-        return _collect(source, scrape_key, session, params, run_id, started, memory)
-    except Exception:
-        print(f"ERROR: unhandled exception during {source} collection", file=sys.stderr)
-        emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
-                                session=session)
-        raise
+        try:
+            return _collect(source, scrape_key, session, params, run_id, started, memory)
+        except Exception:
+            print(f"ERROR: unhandled exception during {source} collection", file=sys.stderr)
+            emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
+                                    session=session)
+            raise
+    finally:
+        lock.release(source)
 
 
 def _collect(source, scrape_key, session, params, run_id, started, memory):

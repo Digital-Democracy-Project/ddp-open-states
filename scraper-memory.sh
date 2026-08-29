@@ -89,10 +89,20 @@ scraper_memory_check_config() {
             return 1
             ;;
     esac
-    command -v "$SCRAPER_MEMORY_S3_CMD" >/dev/null 2>&1 && return 0
-    [ -x "$SCRAPER_MEMORY_S3_CMD" ] && return 0
-    echo "SCRAPER_MEMORY_BACKEND=s3 but '$SCRAPER_MEMORY_S3_CMD' is not executable"
-    return 1
+    if ! command -v "$SCRAPER_MEMORY_S3_CMD" >/dev/null 2>&1 && [ ! -x "$SCRAPER_MEMORY_S3_CMD" ]; then
+        echo "SCRAPER_MEMORY_BACKEND=s3 but '$SCRAPER_MEMORY_S3_CMD' is not executable"
+        return 1
+    fi
+    # OPEN-187: the shared lock is mandatory whenever memory is externalised, not a separate
+    # opt-in -- a jurisdiction reachable from S3 is a jurisdiction reachable from both runners,
+    # and running without the lock is worse than not externalising memory at all (OPEN-201's
+    # coexistence is exactly the situation it exists to protect). See
+    # OPEN-187-scraper-lock-wrapper-setup.md for how to install it.
+    if ! command -v "$SCRAPER_LOCK_S3_CMD" >/dev/null 2>&1 && [ ! -x "$SCRAPER_LOCK_S3_CMD" ]; then
+        echo "SCRAPER_MEMORY_BACKEND=s3 but '$SCRAPER_LOCK_S3_CMD' is not executable -- see OPEN-187-scraper-lock-wrapper-setup.md"
+        return 1
+    fi
+    return 0
 }
 
 # scraper_memory_cache_key <source> <filename>
@@ -307,6 +317,132 @@ scraper_memory_persist_cache() {
         [ -f "$f" ] || continue
         scraper_memory_store "$f" "$(scraper_memory_cache_key "$state" "$(basename "$f")")" || return 1
     done
+    return 0
+}
+
+# --- OPEN-187: the shared, cross-machine scrape lock -----------------------------------------
+#
+# run-scrape.sh's existing per-source lock (OPEN-154) is a `mkdir` on THIS machine's /tmp --
+# invisible to a Fargate task, and a Fargate task's own lock (cloud_collector.py's SourceLock)
+# is invisible here. Once a jurisdiction can run on either path (OPEN-201's coexistence), that
+# silently stopped protecting against a double collection.
+#
+# A SEPARATE command from SCRAPER_MEMORY_S3_CMD, deliberately: the existing wrapper
+# (ddp-prod-s3-openstates-backups) has a plain put/get/ls/info contract with no conditional-write
+# support, and its bucket (ddp-openstates-backups) is the one OPEN-200/OPEN-183 found carries an
+# unrelated 30-day deletion rule -- not where this belongs even if the wrapper could do it.
+# SCRAPER_LOCK_S3_CMD talks to ddp-openstates-scraper-memory instead, through a new,
+# narrowly-scoped wrapper exposing exactly the three operations locking needs. See
+# OPEN-187-scraper-lock-wrapper-setup.md for the wrapper's exact contract and the script to
+# install it -- an operator (root/sudo) action this repo cannot do for itself, same as
+# ddp-prod-s3-openstates-backups's own setup.
+SCRAPER_LOCK_S3_CMD="${SCRAPER_LOCK_S3_CMD:-ddp-prod-s3-scraper-memory}"
+
+# Matches OPEN-154's own existing dead-holder threshold, for the same reason it was chosen
+# there: deliberately far longer than any real scrape (MA's full walk measured 8.2h), so a lock
+# only ever gets reclaimed once it is genuinely abandoned, never while a slow but healthy run is
+# still in progress.
+SCRAPER_LOCK_TTL_SECONDS=86400
+
+# scraper_memory_lock_key <source>
+# Keyed on SOURCE ALONE, matching OPEN-154's own local lock exactly, and for the identical
+# reason: the hazard is the shared data directory openstates-core wipes at scrape start, and
+# FL's several sessions share one -- a per-scrape-key lock would let them race each other.
+scraper_memory_lock_key() {
+    echo "${SCRAPER_MEMORY_PREFIX}/${1}/_lock"
+}
+
+# scraper_memory_acquire_lock <source> <holder-id>
+# 0 = acquired (including reclaiming a stale lock), 1 = another live holder has it,
+# 2 = could not tell. Same three-way discipline as scraper_memory_fetch/list and the same
+# reason: a lock this function cannot confirm is free must never be treated as free.
+#
+# Age-based expiry only, not liveness -- there is no pid to check across a Mac and a Fargate
+# task, so "the holder is gone" can only ever mean "past its own stated expiry". Mirrors
+# cloud_collector.py's SourceLock exactly (same TTL, same reclaim-via-conditional-write shape)
+# so the two clients agree on what a lock object means, even though this one shells out to a
+# sudo-gated wrapper rather than calling boto3 directly.
+scraper_memory_acquire_lock() {
+    local source="$1" holder="$2" key body_file now expires_at out rc etag existing_expires
+    key=$(scraper_memory_lock_key "$source")
+    now=$(date +%s)
+    expires_at=$((now + SCRAPER_LOCK_TTL_SECONDS))
+    body_file=$(mktemp)
+    printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
+
+    out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
+    if [ "$rc" -eq 0 ]; then
+        rm -f "$body_file"
+        return 0
+    fi
+    case "$out" in
+        *PreconditionFailed*|*"(412)"*) ;;  # someone holds it -- check whether it is stale
+        *)
+            rm -f "$body_file"
+            echo "$out" >&2
+            return 2
+            ;;
+    esac
+
+    out=$("$SCRAPER_LOCK_S3_CMD" lock-read "$key" 2>&1); rc=$?
+    if [ "$rc" -ne 0 ]; then
+        rm -f "$body_file"
+        case "$out" in
+            # Raced a release/expiry between our failed acquire and this read -- the key that
+            # just refused us is now gone. One retry, not a loop: a second miss here means
+            # something is actively churning this key, and guessing would be exactly the
+            # mistake this function exists to avoid.
+            *"(404)"*|*NoSuchKey*)
+                body_file=$(mktemp)
+                printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
+                out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
+                rm -f "$body_file"
+                [ "$rc" -eq 0 ] && return 0
+                return 1
+                ;;
+        esac
+        echo "$out" >&2
+        return 2
+    fi
+    etag=$(printf '%s' "$out" | cut -f1)
+    # [[:space:]]* between the colon and the digits: cloud_collector.py's SourceLock writes
+    # this same JSON via json.dumps(), which inserts a space after every colon by default --
+    # this parser has to read a lock either side ever wrote, not just its own bash-printf'd
+    # (space-free) format. Missing this was a real bug, not a style nit: a stale python-written
+    # lock parsed to an empty expires_at, which happened to still reclaim correctly (empty
+    # fails the liveness check too), but a LIVE python-written lock parsed the same empty value
+    # and was wrongly reclaimed instead of refused -- caught by this file's own test suite.
+    existing_expires=$(printf '%s' "$out" | cut -f2- | sed -n 's/.*"expires_at":[[:space:]]*\([0-9][0-9]*\).*/\1/p')
+
+    if [ -n "$existing_expires" ] && [ "$now" -le "$existing_expires" ]; then
+        rm -f "$body_file"
+        return 1  # a live holder
+    fi
+
+    out=$("$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" 2>&1); rc=$?
+    rm -f "$body_file"
+    [ "$rc" -eq 0 ] && return 0
+    case "$out" in
+        *PreconditionFailed*|*"(412)"*) return 1 ;;  # someone else reclaimed it first
+        *) echo "$out" >&2; return 2 ;;
+    esac
+}
+
+# scraper_memory_release_lock <source> <holder-id>
+# Marks the lock immediately expired rather than deleting it -- so the wrapper's credential
+# never needs delete permission at all (OPEN-187-scraper-lock-wrapper-setup.md's IAM policy has
+# none). Best-effort: a release that fails to land costs nothing beyond the lock living out its
+# TTL, the same outcome as today's genuinely-abandoned case.
+scraper_memory_release_lock() {
+    local source="$1" holder="$2" key body_file now out etag
+    key=$(scraper_memory_lock_key "$source")
+    now=$(date +%s)
+    out=$("$SCRAPER_LOCK_S3_CMD" lock-read "$key" 2>/dev/null) || return 0
+    etag=$(printf '%s' "$out" | cut -f1)
+    body_file=$(mktemp)
+    printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$((now - 1))" > "$body_file"
+    "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" >/dev/null 2>&1 || true
+    rm -f "$body_file"
     return 0
 }
 

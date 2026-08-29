@@ -28,7 +28,9 @@ class FakeS3Client:
 
     def __init__(self):
         self.objects = {}  # key -> bytes
+        self.etags = {}  # key -> etag, for put_object/get_object's conditional-write emulation
         self.put_calls = []  # keys, in call order -- what the ordering tests assert on
+        self._etag_counter = 0
 
     def download_file(self, bucket, key, dest):
         if key not in self.objects:
@@ -40,6 +42,32 @@ class FakeS3Client:
         with open(local_path, "rb") as f:
             self.objects[key] = f.read()
         self.put_calls.append(key)
+
+    def put_object(self, Bucket, Key, Body, IfNoneMatch=None, IfMatch=None):
+        """SourceLock's conditional writes -- real S3 semantics, not a stand-in for
+        upload_file: IfNoneMatch="*" rejects an existing key, IfMatch rejects a stale one."""
+        if IfNoneMatch == "*" and Key in self.objects:
+            raise ClientError(
+                {"Error": {"Code": "PreconditionFailed", "Message": "At least one of the "
+                                                                      "pre-conditions you specified did not hold"}},
+                "PutObject")
+        if IfMatch is not None and self.etags.get(Key) != IfMatch:
+            raise ClientError(
+                {"Error": {"Code": "PreconditionFailed", "Message": "At least one of the "
+                                                                      "pre-conditions you specified did not hold"}},
+                "PutObject")
+        self._etag_counter += 1
+        etag = f'"fake-etag-{self._etag_counter}"'
+        self.objects[Key] = Body if isinstance(Body, bytes) else Body.encode()
+        self.etags[Key] = etag
+        self.put_calls.append(Key)
+        return {"ETag": etag}
+
+    def get_object(self, Bucket, Key):
+        import io
+        if Key not in self.objects:
+            raise ClientError({"Error": {"Code": "NoSuchKey", "Message": "Not Found"}}, "GetObject")
+        return {"Body": io.BytesIO(self.objects[Key]), "ETag": self.etags[Key]}
 
     def get_paginator(self, op_name):
         assert op_name == "list_objects_v2"
@@ -377,3 +405,136 @@ def test_main_rejects_malformed_params(capsys):
     assert rc == 1
     record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert record["status"] == "failed"
+
+
+# --- SourceLock (OPEN-187) -----------------------------------------------------------------
+
+
+def test_lock_acquire_then_second_attempt_is_refused():
+    client = FakeS3Client()
+    first = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    second = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
+
+    assert first.acquire("mi") is True
+    assert second.acquire("mi") is False
+
+
+def test_lock_released_lock_can_be_reacquired():
+    client = FakeS3Client()
+    first = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    second = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
+
+    assert first.acquire("mi") is True
+    first.release("mi")
+    assert second.acquire("mi") is True
+
+
+def test_lock_stale_lock_is_reclaimed_not_refused():
+    """A holder that died leaves its lock object exactly as it wrote it -- expires_at in the
+    past is the only signal that distinguishes "abandoned" from "still running", since there
+    is no pid to check across machines (SourceLock's own docstring)."""
+    client = FakeS3Client()
+    stale = json.dumps({"holder": "dead-run", "acquired_at": 0, "expires_at": 1}).encode()
+    client.put_object(Bucket="bucket", Key="dev-open187/mi/_lock", Body=stale)
+
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
+    assert lock.acquire("mi") is True
+
+
+def test_lock_live_lock_is_not_reclaimed():
+    client = FakeS3Client()
+    live = json.dumps({"holder": "live-run", "acquired_at": cc.time.time(),
+                        "expires_at": cc.time.time() + 3600}).encode()
+    client.put_object(Bucket="bucket", Key="dev-open187/mi/_lock", Body=live)
+
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
+    assert lock.acquire("mi") is False
+
+
+def test_lock_keyed_on_source_not_scrape_key():
+    """FL's eight sessions share one data directory -- OPEN-154's own reasoning for keying the
+    local lock on $STATE rather than the scrape key applies identically here."""
+    client = FakeS3Client()
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    assert lock.key("fl") == "dev-open187/fl/_lock"
+
+
+def test_lock_unavailable_is_not_the_same_as_refused():
+    """A credential/network problem must not be read as "someone else holds it" -- that would
+    silently convert an S3 blip into every jurisdiction refusing to run at once."""
+    class ExplodingClient(FakeS3Client):
+        def put_object(self, **kwargs):
+            raise ClientError({"Error": {"Code": "AccessDenied", "Message": "nope"}}, "PutObject")
+
+    lock = cc.SourceLock(ExplodingClient(), "bucket", "dev-open187", holder="run-a")
+    with pytest.raises(cc.LockUnavailable):
+        lock.acquire("mi")
+
+
+def test_lock_release_without_acquire_is_a_noop():
+    client = FakeS3Client()
+    cc.SourceLock(client, "bucket", "dev-open187", holder="run-a").release("mi")
+    assert client.objects == {}
+
+
+# --- SourceLock integrated into main() -----------------------------------------------------
+
+
+def test_main_refuses_when_another_run_holds_the_lock(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=3))
+    client = FakeS3Client()
+    live = json.dumps({"holder": "other-run", "acquired_at": cc.time.time(),
+                        "expires_at": cc.time.time() + 3600}).encode()
+    client.put_object(Bucket="bucket", Key="dev-open201/ut/_lock", Body=live)
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert rc == cc.EXIT_DO_NOT_RETRY
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+    # The source was never asked -- OPEN-187's acceptance criterion, mirroring OPEN-154's own.
+    assert "os-update" not in " ".join(client.put_calls)  # nothing scraped, nothing to publish
+    assert not any(k.endswith(".ts") for k in client.put_calls)
+
+
+def test_main_reclaims_stale_lock_and_proceeds(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=3))
+    client = FakeS3Client()
+    stale = json.dumps({"holder": "dead-run", "acquired_at": 0, "expires_at": 1}).encode()
+    client.put_object(Bucket="bucket", Key="dev-open201/ut/_lock", Body=stale)
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "ok"
+
+
+def test_main_releases_lock_after_a_successful_run(tmp_path, monkeypatch):
+    """Released, not deleted (SourceLock avoids needing s3:DeleteObject) -- so a successful
+    run must leave the lock object present but already expired, immediately reclaimable."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=3))
+    client = FakeS3Client()
+
+    cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    lock_data = json.loads(client.objects["dev-open201/ut/_lock"])
+    assert lock_data["expires_at"] < cc.time.time()
+
+
+def test_main_releases_lock_even_when_the_run_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, exit_code=1, stderr_text="boom"))
+    client = FakeS3Client()
+
+    cc.main(["mi_test"], s3_client=client)
+
+    lock_data = json.loads(client.objects["dev-open201/mi_test/_lock"])
+    assert lock_data["expires_at"] < cc.time.time()

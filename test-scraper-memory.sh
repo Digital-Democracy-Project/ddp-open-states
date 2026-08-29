@@ -99,6 +99,58 @@ STUB
 chmod +x "$ROOT/bin/fake-s3"
 export FAKE_S3_ROOT="$ROOT/bucket"
 
+# A stand-in for the new ddp-prod-s3-scraper-memory wrapper's three lock-specific subcommands
+# (OPEN-187; see OPEN-187-scraper-lock-wrapper-setup.md for the real contract). Etags are a
+# simple incrementing counter, sidecar'd next to each object -- enough to exercise the
+# conditional-write semantics scraper_memory_acquire_lock/release_lock actually depend on,
+# without needing S3. Created here, ahead of the e2e harness below, since run-scrape.sh's
+# scraper_memory_check_config now requires this command whenever SCRAPER_MEMORY_BACKEND=s3
+# (OPEN-187: the lock is mandatory alongside externalised memory, not a separate opt-in).
+mkdir -p "$ROOT/lockbucket"
+cat > "$ROOT/bin/fake-lock" <<'STUB'
+#!/usr/bin/env bash
+BUCKET="$FAKE_LOCK_ROOT"
+key_path() { echo "$BUCKET/$1"; }
+etag_path() { echo "$BUCKET/$1.etag"; }
+case "$1" in
+    lock-acquire)
+        f=$(key_path "$2")
+        if [ -f "$f" ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+            exit 1
+        fi
+        mkdir -p "$(dirname "$f")"
+        cp "$3" "$f"
+        n=$(( $(cat "$(etag_path "$2")" 2>/dev/null || echo 0) + 1 ))
+        echo "$n" > "$(etag_path "$2")"
+        echo "\"etag-$n\""
+        ;;
+    lock-read)
+        f=$(key_path "$2")
+        if [ ! -f "$f" ]; then
+            echo "An error occurred (404) when calling the HeadObject operation: Not Found" >&2
+            exit 1
+        fi
+        printf '"etag-%s"\t%s\n' "$(cat "$(etag_path "$2")")" "$(cat "$f")"
+        ;;
+    lock-reclaim)
+        f=$(key_path "$2"); e=$(etag_path "$2")
+        current="\"etag-$(cat "$e" 2>/dev/null || echo 0)\""
+        if [ ! -f "$f" ] || [ "$current" != "$4" ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+            exit 1
+        fi
+        cp "$3" "$f"
+        n=$(( $(cat "$e") + 1 ))
+        echo "$n" > "$e"
+        echo "\"etag-$n\""
+        ;;
+    *) exit 2 ;;
+esac
+STUB
+chmod +x "$ROOT/bin/fake-lock"
+export FAKE_LOCK_ROOT="$ROOT/lockbucket"
+
 # ------------------------------------------------------------------ the helper's own behaviour
 
 echo "== the store is off unless it is switched on =="
@@ -282,6 +334,7 @@ e2e() {  # $1 extra env assignments, evaluated; echoes exit code into RUN_RC
         SCRAPED_DATA_DIR_OVERRIDE="$RUN_ROOT/data" CACHE_DIR_OVERRIDE="$RUN_ROOT/cache" \
         SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=e2ens \
         SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" FAKE_S3_ROOT="$ROOT/bucket" \
+        SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" FAKE_LOCK_ROOT="$ROOT/lockbucket" \
         $1 \
         bash "$SCRIPT_DIR/run-scrape.sh" va > "$RUN_ROOT/stdout.log" 2> "$RUN_ROOT/stderr.log"
     RUN_RC=$?
@@ -434,6 +487,63 @@ check "unparsed: stored watermark DID advance"  "yes" \
     "$([ "$(stored)" != "$BEFORE" ] && echo yes || echo no)"
 
 rm -rf "$RUN_ROOT"
+
+echo "== OPEN-187: the shared cross-machine lock =="
+
+lock_helper() {
+    SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+        bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; $1" 2>/dev/null
+}
+
+check "lock key is scoped by source alone, not a scrape key" "testns/mi/_lock" \
+    "$(lock_helper 'scraper_memory_lock_key mi')"
+
+rc=$(lock_helper 'scraper_memory_acquire_lock mi run-a; echo $?')
+check "acquire: a free lock succeeds" "0" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_lock mi run-a >/dev/null;
+                scraper_memory_acquire_lock mi run-b; echo \$?" 2>/dev/null )
+check "acquire: a second run is refused (1), not told it is free" "1" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_lock mi run-a >/dev/null;
+                scraper_memory_release_lock mi run-a;
+                scraper_memory_acquire_lock mi run-b; echo \$?" 2>/dev/null )
+check "release then acquire: the next run succeeds" "0" "$rc"
+
+# A stale lock (expires_at already in the past) must be RECLAIMED, not treated as live -- there
+# is no pid to check across machines, so age is the only signal a dead holder ever leaves.
+python3 -c "
+import json
+open('$ROOT/lockbucket/testns/mi/_lock', 'w').write(json.dumps({'holder': 'dead-run', 'acquired_at': 0, 'expires_at': 1}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi run-b; echo $?')
+check "acquire: a stale lock is reclaimed (0), not refused" "0" "$rc"
+
+# A live lock (expires_at in the future) must NOT be reclaimed just because it is being asked.
+python3 -c "
+import json, time
+open('$ROOT/lockbucket/testns/mi/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi run-c; echo $?')
+check "acquire: a live lock is refused (1), not reclaimed" "1" "$rc"
+
+# "Could not tell" must never be mistaken for "acquired" or "refused" -- same three-way
+# discipline as scraper_memory_fetch, and the same reason: a genuinely unreadable store here
+# would otherwise let two runs believe they both hold the same jurisdiction's lock.
+cat > "$ROOT/bin/fake-lock-broken" <<'STUB'
+#!/usr/bin/env bash
+echo "Could not connect to the endpoint URL" >&2
+exit 1
+STUB
+chmod +x "$ROOT/bin/fake-lock-broken"
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock-broken" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi run-a; echo \$?" 2>/dev/null )
+check "acquire during an outage: returns 2, not 0 or 1" "2" "$rc"
 
 echo
 if [ "$FAIL" -eq 0 ]; then
