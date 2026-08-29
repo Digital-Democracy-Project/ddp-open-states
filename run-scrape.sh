@@ -414,6 +414,7 @@ touch "$READER_MARKER"
 trap 'rm -f "$READER_MARKER"; kill "$SWEEP_PID" 2>/dev/null || true; wait "$SWEEP_PID" 2>/dev/null || true;
       [ "$IMPORT_LOCK_HELD" = "1" ] && rm -rf "$IMPORT_LOCK_DIR";
       [ "${SCRAPE_LOCK_HELD:-0}" = "1" ] && rm -rf "$SCRAPE_LOCK_DIR";
+      [ "${SHARED_LOCK_HELD:-0}" = "1" ] && scraper_memory_release_lock "$STATE" "mac:$$";
       emit_completion_record' EXIT
 
 # OPEN-154: refuse to run two scrapes of the same jurisdiction at once.
@@ -502,6 +503,39 @@ if [ "$SCRAPE_LOCK_HELD" != "1" ]; then
     trap - ERR
     on_failure
     exit "$EXIT_DO_NOT_RETRY"
+fi
+
+# OPEN-187: the local lock above only ever protected against a second run ON THIS MACHINE.
+# It cannot see a Fargate task, and a Fargate task cannot see it -- two directories on two
+# different filesystems. Gated on scraper_memory_enabled(): a jurisdiction still running
+# local-only cannot collide with a cloud run that does not exist for it yet, so this only
+# activates once a jurisdiction could genuinely run on either path (OPEN-201's coexistence).
+if scraper_memory_enabled; then
+    _SHARED_LOCK_RC=0
+    scraper_memory_acquire_lock "$STATE" "mac:$$" || _SHARED_LOCK_RC=$?
+    case "$_SHARED_LOCK_RC" in
+        0) SHARED_LOCK_HELD=1 ;;
+        1)
+            # A cloud run holds it. Same classification as the local-lock refusal above --
+            # failed, EXIT_DO_NOT_RETRY, no markers written -- for the identical reason: the
+            # source was never asked, and retrying immediately would only collide again.
+            log "ERROR: another run of $STATE already holds the shared lock (likely a cloud collection in progress) — refusing to start a second one (OPEN-187)"
+            [ -n "${DO_NOT_RETRY_FLAG:-}" ] && : > "$DO_NOT_RETRY_FLAG"
+            COMPLETION_STATUS="failed"
+            trap - ERR
+            on_failure
+            exit "$EXIT_DO_NOT_RETRY"
+            ;;
+        2)
+            # Could not tell -- same "never guess" discipline as scraper_memory_hydrate_markers's
+            # own rc=2 above: a store that did not answer is not a store that said "go ahead".
+            # Plain exit 1, not EXIT_DO_NOT_RETRY -- this is a transient store failure, not a
+            # known collision, so a later retry is exactly the right thing to happen.
+            log "ERROR: could not read $STATE's shared lock from the external store — refusing to run rather than assuming it is free (OPEN-187)"
+            COMPLETION_STATUS="failed"
+            exit 1
+            ;;
+    esac
 fi
 
 # MODE is derived far above, next to the watermark read (OPEN-182).

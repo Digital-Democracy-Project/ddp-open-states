@@ -99,6 +99,58 @@ STUB
 chmod +x "$ROOT/bin/fake-s3"
 export FAKE_S3_ROOT="$ROOT/bucket"
 
+# A stand-in for the new ddp-prod-s3-scraper-memory wrapper's three lock-specific subcommands
+# (OPEN-187; see OPEN-187-scraper-lock-wrapper-setup.md for the real contract). Etags are a
+# simple incrementing counter, sidecar'd next to each object -- enough to exercise the
+# conditional-write semantics scraper_memory_acquire_lock/release_lock actually depend on,
+# without needing S3. Created here, ahead of the e2e harness below, since run-scrape.sh's
+# scraper_memory_check_config now requires this command whenever SCRAPER_MEMORY_BACKEND=s3
+# (OPEN-187: the lock is mandatory alongside externalised memory, not a separate opt-in).
+mkdir -p "$ROOT/lockbucket"
+cat > "$ROOT/bin/fake-lock" <<'STUB'
+#!/usr/bin/env bash
+BUCKET="$FAKE_LOCK_ROOT"
+key_path() { echo "$BUCKET/$1"; }
+etag_path() { echo "$BUCKET/$1.etag"; }
+case "$1" in
+    lock-acquire)
+        f=$(key_path "$2")
+        if [ -f "$f" ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+            exit 1
+        fi
+        mkdir -p "$(dirname "$f")"
+        cp "$3" "$f"
+        n=$(( $(cat "$(etag_path "$2")" 2>/dev/null || echo 0) + 1 ))
+        echo "$n" > "$(etag_path "$2")"
+        echo "\"etag-$n\""
+        ;;
+    lock-read)
+        f=$(key_path "$2")
+        if [ ! -f "$f" ]; then
+            echo "An error occurred (404) when calling the HeadObject operation: Not Found" >&2
+            exit 1
+        fi
+        printf '"etag-%s"\t%s\n' "$(cat "$(etag_path "$2")")" "$(cat "$f")"
+        ;;
+    lock-reclaim)
+        f=$(key_path "$2"); e=$(etag_path "$2")
+        current="\"etag-$(cat "$e" 2>/dev/null || echo 0)\""
+        if [ ! -f "$f" ] || [ "$current" != "$4" ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+            exit 1
+        fi
+        cp "$3" "$f"
+        n=$(( $(cat "$e") + 1 ))
+        echo "$n" > "$e"
+        echo "\"etag-$n\""
+        ;;
+    *) exit 2 ;;
+esac
+STUB
+chmod +x "$ROOT/bin/fake-lock"
+export FAKE_LOCK_ROOT="$ROOT/lockbucket"
+
 # ------------------------------------------------------------------ the helper's own behaviour
 
 echo "== the store is off unless it is switched on =="
@@ -282,6 +334,7 @@ e2e() {  # $1 extra env assignments, evaluated; echoes exit code into RUN_RC
         SCRAPED_DATA_DIR_OVERRIDE="$RUN_ROOT/data" CACHE_DIR_OVERRIDE="$RUN_ROOT/cache" \
         SCRAPER_MEMORY_BACKEND=s3 SCRAPER_MEMORY_PREFIX=e2ens \
         SCRAPER_MEMORY_S3_CMD="$ROOT/bin/fake-s3" FAKE_S3_ROOT="$ROOT/bucket" \
+        SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" FAKE_LOCK_ROOT="$ROOT/lockbucket" \
         $1 \
         bash "$SCRIPT_DIR/run-scrape.sh" va > "$RUN_ROOT/stdout.log" 2> "$RUN_ROOT/stderr.log"
     RUN_RC=$?
@@ -434,6 +487,180 @@ check "unparsed: stored watermark DID advance"  "yes" \
     "$([ "$(stored)" != "$BEFORE" ] && echo yes || echo no)"
 
 rm -rf "$RUN_ROOT"
+
+echo "== OPEN-187: the shared cross-machine lock =="
+
+# Each case below uses ITS OWN jurisdiction key (mi1, mi2, ...) rather than sharing "mi" --
+# the lock store is real files on disk, persisting across test cases in this one script run,
+# and an earlier version of these tests shared one key across cases that never released their
+# own lock. That silently made "release then acquire" pass for the wrong reason (a stale
+# leftover lock happened to already be reclaimable) until pm-review's ETag-binding fix on
+# release() started correctly refusing to release a lock a call never actually acquired --
+# which then correctly failed the shared-key test. Isolating keys is the fix, not loosening
+# the new correctness check that exposed the problem.
+lock_helper() {
+    SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+        bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; $1" 2>/dev/null
+}
+
+check "lock key is scoped by source alone, not a scrape key" "testns/mi/_lock" \
+    "$(lock_helper 'scraper_memory_lock_key mi')"
+
+rc=$(lock_helper 'scraper_memory_acquire_lock mi1 run-a; echo $?')
+check "acquire: a free lock succeeds" "0" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_lock mi2 run-a >/dev/null;
+                scraper_memory_acquire_lock mi2 run-b; echo \$?" 2>/dev/null )
+check "acquire: a second run is refused (1), not told it is free" "1" "$rc"
+
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+                scraper_memory_acquire_lock mi3 run-a >/dev/null;
+                scraper_memory_release_lock mi3 run-a;
+                scraper_memory_acquire_lock mi3 run-b; echo \$?" 2>/dev/null )
+check "release then acquire: the next run succeeds" "0" "$rc"
+
+# A stale lock (expires_at already in the past) must be RECLAIMED, not treated as live -- there
+# is no pid to check across machines, so age is the only signal a dead holder ever leaves.
+mkdir -p "$ROOT/lockbucket/testns/mi4"
+python3 -c "
+import json
+open('$ROOT/lockbucket/testns/mi4/_lock', 'w').write(json.dumps({'holder': 'dead-run', 'acquired_at': 0, 'expires_at': 1}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi4/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi4 run-b; echo $?')
+check "acquire: a stale lock is reclaimed (0), not refused" "0" "$rc"
+
+# A live lock (expires_at in the future) must NOT be reclaimed just because it is being asked.
+mkdir -p "$ROOT/lockbucket/testns/mi5"
+python3 -c "
+import json, time
+open('$ROOT/lockbucket/testns/mi5/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi5/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi5 run-c; echo $?')
+check "acquire: a live lock is refused (1), not reclaimed" "1" "$rc"
+
+# A lock body this parser cannot read at all (malformed, truncated, some future shape neither
+# client writes) must be "could not tell" (2), not treated as expired-and-reclaimed. pm-review's
+# finding: an empty parse result used to fail the liveness check the same way a genuinely past
+# expiry does, so an unparseable lock was silently reclaimed rather than refused.
+mkdir -p "$ROOT/lockbucket/testns/mi6"
+echo 'not valid json at all' > "$ROOT/lockbucket/testns/mi6/_lock"
+echo 1 > "$ROOT/lockbucket/testns/mi6/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi6 run-a; echo $?')
+check "acquire: an unparseable lock returns 2, is NOT reclaimed" "2" "$rc"
+
+# "Could not tell" must never be mistaken for "acquired" or "refused" -- same three-way
+# discipline as scraper_memory_fetch, and the same reason: a genuinely unreadable store here
+# would otherwise let two runs believe they both hold the same jurisdiction's lock.
+cat > "$ROOT/bin/fake-lock-broken" <<'STUB'
+#!/usr/bin/env bash
+echo "Could not connect to the endpoint URL" >&2
+exit 1
+STUB
+chmod +x "$ROOT/bin/fake-lock-broken"
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock-broken" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi7 run-a; echo \$?" 2>/dev/null )
+check "acquire during an outage: returns 2, not 0 or 1" "2" "$rc"
+
+# pm-review's specific concern about the retry-after-404 path: a genuine failure on the RETRY
+# attempt (not a recognized PreconditionFailed) must be "could not tell" (2), not "someone else
+# holds it" (1) -- the earlier version returned 1 for ANY failure there, which would have set
+# DO_NOT_RETRY on a transient wrapper/network problem, exactly the mistake this function's own
+# three-way contract exists to prevent elsewhere.
+cat > "$ROOT/bin/fake-lock-404-then-broken" <<STUB
+#!/usr/bin/env bash
+COUNTER="$ROOT/mi8-acquire-calls"
+case "\$1" in
+    lock-acquire)
+        n=\$(( \$(cat "\$COUNTER" 2>/dev/null || echo 0) + 1 ))
+        echo "\$n" > "\$COUNTER"
+        if [ "\$n" -eq 1 ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+        else
+            echo "Could not connect to the endpoint URL" >&2
+        fi
+        exit 1
+        ;;
+    lock-read) echo "An error occurred (404) when calling the HeadObject operation: Not Found" >&2; exit 1 ;;
+    *) exit 2 ;;
+esac
+STUB
+chmod +x "$ROOT/bin/fake-lock-404-then-broken"
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock-404-then-broken" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi8 run-a; echo \$?" 2>/dev/null )
+check "acquire: a genuine failure on the post-404 retry returns 2, not 1" "2" "$rc"
+
+# THE regression pm-review's core finding calls for: a stale owner's release must not clobber
+# the successor that legitimately reclaimed its expired lock. Simulated directly against the
+# fake store rather than via scraper_memory_acquire_lock, since reproducing a real 24h TTL
+# expiry isn't practical in a test -- the fake store's file-based ETag makes this a precise,
+# deterministic reproduction of the exact interleaving: A holds an (expired) lock, B reclaims
+# it for real via the acquire function, A then calls release using the ETag IT ORIGINALLY HELD.
+mkdir -p "$ROOT/lockbucket/testns/mi9"
+python3 -c "
+import json
+open('$ROOT/lockbucket/testns/mi9/_lock', 'w').write(json.dumps({'holder': 'run-a', 'acquired_at': 0, 'expires_at': 1}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi9/_lock.etag"   # A's original lock: etag-1, already expired
+lock_helper 'scraper_memory_acquire_lock mi9 run-b' >/dev/null  # B reclaims for real: now etag-2
+B_BODY_BEFORE="$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
+# A calls release using the KEY and etag IT held (etag-1) -- never re-read at release time.
+# Both must be set for this to reach the conditional-write protection at all: release() also
+# refuses on a key mismatch alone (the next test below), so this one is specifically exercising
+# "correct key, stale etag" -- the conditional write itself is what has to fail harmlessly here.
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              SCRAPER_LOCK_HELD_KEY='testns/mi9/_lock'; SCRAPER_LOCK_HELD_ETAG='\"etag-1\"';
+              scraper_memory_release_lock mi9 run-a" 2>/dev/null
+check "stale owner's release does not clobber a successor's reclaimed lock" "$B_BODY_BEFORE" \
+    "$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
+
+# Second pm-review round's finding: an etag alone is not bound to which key it was acquired
+# for -- mi10b's release must not reuse mi10a's leftover state against mi10b's key.
+#
+# Third round's finding, on the first fix attempt: clearing SCRAPER_LOCK_HELD_KEY/ETAG
+# unconditionally at the top of every acquire call over-corrected this into a NEW bug -- a
+# failed acquire of mi10b would wipe out the still-valid, still-held mi10a lock's state,
+# leaving it unreleasable (alive for its full TTL) even though this shell legitimately still
+# holds it. The correct fix needs no clearing at all: the globals are only ever written by a
+# SUCCESSFUL lock-acquire/lock-reclaim, so a failed acquire of mi10b already leaves mi10a's
+# state untouched, and it's scraper_memory_release_lock's own key-match check that prevents
+# the cross-key reuse -- so mi10a must still release correctly here, not be sacrificed for it.
+mkdir -p "$ROOT/lockbucket/testns/mi10b"
+python3 -c "
+import json, time
+open('$ROOT/lockbucket/testns/mi10b/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi10b/_lock.etag"
+MI10B_BEFORE="$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              scraper_memory_acquire_lock mi10a run-a >/dev/null;
+              scraper_memory_acquire_lock mi10b run-a >/dev/null;
+              scraper_memory_release_lock mi10b run-a;
+              scraper_memory_release_lock mi10a run-a" 2>/dev/null
+check "mi10b's release (never held) is a no-op -- content unchanged" "$MI10B_BEFORE" \
+    "$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+MI10A_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi10a/_lock'))['expires_at'])")"
+check "mi10a's release STILL SUCCEEDS despite the later failed mi10b attempt" "yes" \
+    "$(python3 -c "import time; print('yes' if $MI10A_EXPIRES < time.time() else 'no')")"
+
+# pm-review round 3's specific additional ask: the same-key case, not just cross-key. A shell
+# that successfully acquires mi11, then calls acquire again for the SAME key (refused, since
+# the key it itself just wrote is still live) -- must still be able to release its own,
+# still-legitimately-held lock afterward.
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              scraper_memory_acquire_lock mi11 run-a >/dev/null;
+              scraper_memory_acquire_lock mi11 run-a >/dev/null;
+              scraper_memory_release_lock mi11 run-a" 2>/dev/null
+MI11_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi11/_lock'))['expires_at'])")"
+check "release survives a failed same-key reacquire attempt" "yes" \
+    "$(python3 -c "import time; print('yes' if $MI11_EXPIRES < time.time() else 'no')")"
 
 echo
 if [ "$FAIL" -eq 0 ]; then
