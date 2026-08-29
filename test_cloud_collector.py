@@ -549,7 +549,11 @@ def test_lock_stale_owner_release_does_not_clobber_a_reclaimed_lock():
     a = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
     stale = json.dumps({"holder": "run-a", "acquired_at": 0, "expires_at": 1}).encode()
     client.put_object(Bucket="bucket", Key="dev-open187/mi/_lock", Body=stale)
-    a._etag = client.etags["dev-open187/mi/_lock"]  # simulates A having acquired this exact write
+    # Simulates A having acquired this exact write -- both _key and _etag, matching what a
+    # real acquire() sets, so this actually exercises the etag-mismatch conditional-write path
+    # rather than short-circuiting on release()'s separate key-match check.
+    a._key = "dev-open187/mi/_lock"
+    a._etag = client.etags["dev-open187/mi/_lock"]
 
     b = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
     assert b.acquire("mi") is True  # B reclaims the expired lock for real
@@ -558,6 +562,35 @@ def test_lock_stale_owner_release_does_not_clobber_a_reclaimed_lock():
     a.release("mi")  # A releases using the etag it originally held, not a fresh read
 
     assert client.objects["dev-open187/mi/_lock"] == b_body_before
+
+
+# --- OPEN-203: the import lock, as a second independent SourceLock instance ----------------
+#
+# There is no separate "ImportLock" class -- SourceLock is already generic (it just needs a
+# distinct key string), and OPEN-190's future loader is expected to hold a scrape lock and an
+# import lock in the SAME process at once (mirroring what run-scrape.sh already does). The
+# pattern that makes that safe is simply: use a SEPARATE instance per lock, never one instance
+# for both. Proven directly here rather than left implicit.
+
+
+def test_lock_scrape_and_import_locks_coexist_as_separate_instances():
+    client = FakeS3Client()
+    scrape_lock = cc.SourceLock(client, "bucket", "dev-open201", holder="run-a")
+    import_lock = cc.SourceLock(client, "bucket", "dev-open201", holder="run-a")
+
+    assert scrape_lock.acquire("mi") is True
+    assert import_lock.acquire("mi_2025-2026-import") is True
+
+    # Acquiring the import lock must not have disturbed the scrape lock's own tracked state --
+    # each instance's _key/_etag are its own, never shared globals like the bash equivalent
+    # (which is exactly why OPEN-203 gave that side its own separate variable pair).
+    scrape_lock.release("mi")
+    import_lock.release("mi_2025-2026-import")
+
+    scrape_data = json.loads(client.objects["dev-open201/mi/_lock"])
+    import_data = json.loads(client.objects["dev-open201/mi_2025-2026-import/_lock"])
+    assert scrape_data["expires_at"] < cc.time.time()
+    assert import_data["expires_at"] < cc.time.time()
 
 
 # --- SourceLock integrated into main() -----------------------------------------------------

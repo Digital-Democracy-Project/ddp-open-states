@@ -383,6 +383,23 @@ scraper_memory_lock_key() {
 SCRAPER_LOCK_HELD_KEY=""
 SCRAPER_LOCK_HELD_ETAG=""
 
+# OPEN-203: the import lock's own tracking pair, entirely separate from the scrape lock's
+# above -- NOT reused, on purpose. run-scrape.sh holds the scrape lock for the whole scrape and
+# only later, in the SAME process, takes the import lock -- exactly the "one shell, two locks"
+# situation SCRAPER_LOCK_HELD_KEY/ETAG's own comment warns is unsupported through one pair of
+# globals. A second, independently-named pair is what makes that safe: acquiring the import
+# lock can never overwrite the scrape lock's tracked state, so releasing either one later still
+# finds its own, correct key/etag.
+SCRAPER_IMPORT_LOCK_HELD_KEY=""
+SCRAPER_IMPORT_LOCK_HELD_ETAG=""
+
+# _scraper_lock_acquire_core <key> <holder> <held-key-outvar> <held-etag-outvar>
+# The shared implementation behind scraper_memory_acquire_lock and
+# scraper_memory_acquire_import_lock -- one piece of acquire/reclaim logic, tracking state into
+# whichever pair of globals the caller names (via `printf -v`, bash 3.1+, since this fleet's
+# bash -- 3.2 -- has no `local -n` nameref support), so the scrape and import locks can never
+# collide on state even though they share this one function.
+#
 # 0 = acquired (including reclaiming a stale lock), 1 = another live holder has it,
 # 2 = could not tell. Same three-way discipline as scraper_memory_fetch/list and the same
 # reason: a lock this function cannot confirm is free must never be treated as free.
@@ -392,28 +409,28 @@ SCRAPER_LOCK_HELD_ETAG=""
 # cloud_collector.py's SourceLock exactly (same TTL, same reclaim-via-conditional-write shape)
 # so the two clients agree on what a lock object means, even though this one shells out to a
 # sudo-gated wrapper rather than calling boto3 directly.
-scraper_memory_acquire_lock() {
-    local source="$1" holder="$2" key body_file now expires_at out rc etag existing_expires
-    key=$(scraper_memory_lock_key "$source")
+_scraper_lock_acquire_core() {
+    local key="$1" holder="$2" held_key_var="$3" held_etag_var="$4"
+    local body_file now expires_at out rc etag existing_expires
     now=$(date +%s)
     expires_at=$((now + SCRAPER_LOCK_TTL_SECONDS))
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
 
-    # pm-review round 3: an earlier version of this fix cleared SCRAPER_LOCK_HELD_KEY/ETAG
+    # pm-review round 3: an earlier version of this fix cleared the held-key/etag globals
     # unconditionally here. That was an over-correction with its own real bug: a failed
-    # acquire for a SECOND jurisdiction would wipe out a still-valid, still-held FIRST lock's
-    # state, leaving it unreleasable (alive for its full 24h TTL) even though this process
+    # acquire for a SECOND lock would wipe out a still-valid, still-held FIRST lock's state,
+    # leaving it unreleasable (alive for its full 24h TTL) even though this process
     # legitimately still holds it. Not needed anyway -- these globals are only ever written on
     # a SUCCESSFUL lock-acquire/lock-reclaim below, so a failed attempt already leaves whatever
-    # was previously held untouched, and scraper_memory_release_lock's own key-match check
-    # (not this clearing) is what actually closes round 2's cross-key finding.
+    # was previously held untouched, and the release side's own key-match check (not this
+    # clearing) is what actually closes round 2's cross-key finding.
 
     out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
     if [ "$rc" -eq 0 ]; then
         rm -f "$body_file"
-        SCRAPER_LOCK_HELD_KEY="$key"
-        SCRAPER_LOCK_HELD_ETAG="$out"
+        printf -v "$held_key_var" '%s' "$key"
+        printf -v "$held_etag_var" '%s' "$out"
         return 0
     fi
     case "$out" in
@@ -439,8 +456,8 @@ scraper_memory_acquire_lock() {
                 out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
                 rm -f "$body_file"
                 if [ "$rc" -eq 0 ]; then
-                    SCRAPER_LOCK_HELD_KEY="$key"
-                    SCRAPER_LOCK_HELD_ETAG="$out"
+                    printf -v "$held_key_var" '%s' "$key"
+                    printf -v "$held_etag_var" '%s' "$out"
                     return 0
                 fi
                 # pm-review: this used to return 1 (busy) for ANY failure here, including a
@@ -486,8 +503,8 @@ scraper_memory_acquire_lock() {
     out=$("$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" 2>&1); rc=$?
     rm -f "$body_file"
     if [ "$rc" -eq 0 ]; then
-        SCRAPER_LOCK_HELD_KEY="$key"
-        SCRAPER_LOCK_HELD_ETAG="$out"
+        printf -v "$held_key_var" '%s' "$key"
+        printf -v "$held_etag_var" '%s' "$out"
         return 0
     fi
     case "$out" in
@@ -496,31 +513,77 @@ scraper_memory_acquire_lock() {
     esac
 }
 
-# scraper_memory_release_lock <source> <holder-id>
-# Marks the lock immediately expired rather than deleting it -- so the wrapper's credential
-# never needs delete permission at all (OPEN-187-scraper-lock-wrapper-setup.md's IAM policy has
-# none). Best-effort: a release that fails to land costs nothing beyond the lock living out its
-# TTL, the same outcome as today's genuinely-abandoned case.
+# _scraper_lock_release_core <key> <holder> <held-key-outvar> <held-etag-outvar>
+# The shared implementation behind scraper_memory_release_lock and
+# scraper_memory_release_import_lock. Marks the lock immediately expired rather than deleting
+# it -- so the wrapper's credential never needs delete permission at all
+# (OPEN-187-scraper-lock-wrapper-setup.md's IAM policy has none). Best-effort: a release that
+# fails to land costs nothing beyond the lock living out its TTL, the same outcome as today's
+# genuinely-abandoned case.
 #
-# Uses SCRAPER_LOCK_HELD_ETAG -- the etag THIS process's own successful acquire/reclaim
-# produced -- never a fresh read of whatever is current. See that variable's own comment for
-# the failure mode a fresh read would reopen. Also refuses unless SCRAPER_LOCK_HELD_KEY matches
-# the key this call is asked to release: a caller that acquired lock A and then attempted (and
-# failed) to acquire lock B must not have B's release silently reuse A's leftover etag against
-# A's key, or worse, be handed a caller-supplied source that doesn't match what was held at all.
-scraper_memory_release_lock() {
-    local source="$1" holder="$2" key body_file now
-    key=$(scraper_memory_lock_key "$source")
-    [ -n "$SCRAPER_LOCK_HELD_ETAG" ] || return 0
-    [ "$SCRAPER_LOCK_HELD_KEY" = "$key" ] || return 0
+# Uses the etag THIS process's own successful acquire/reclaim produced -- never a fresh read of
+# whatever is current. See _scraper_lock_acquire_core's comment for the failure mode a fresh
+# read would reopen. Also refuses unless the held key matches the key this call is asked to
+# release: a caller that acquired lock A and then attempted (and failed) to acquire lock B must
+# not have B's release silently reuse A's leftover etag against A's key, or worse, be handed a
+# caller-supplied source that doesn't match what was held at all.
+_scraper_lock_release_core() {
+    local key="$1" holder="$2" held_key_var="$3" held_etag_var="$4"
+    local held_key="${!held_key_var}" held_etag="${!held_etag_var}"
+    local body_file now
+    [ -n "$held_etag" ] || return 0
+    [ "$held_key" = "$key" ] || return 0
     now=$(date +%s)
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$((now - 1))" > "$body_file"
-    "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$SCRAPER_LOCK_HELD_ETAG" >/dev/null 2>&1 || true
+    "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$held_etag" >/dev/null 2>&1 || true
     rm -f "$body_file"
-    SCRAPER_LOCK_HELD_KEY=""
-    SCRAPER_LOCK_HELD_ETAG=""
+    printf -v "$held_key_var" ''
+    printf -v "$held_etag_var" ''
     return 0
+}
+
+# scraper_memory_acquire_lock <source> <holder-id>
+# The per-jurisdiction scrape lock (OPEN-187). See _scraper_lock_acquire_core for the mechanics.
+scraper_memory_acquire_lock() {
+    _scraper_lock_acquire_core "$(scraper_memory_lock_key "$1")" "$2" \
+        SCRAPER_LOCK_HELD_KEY SCRAPER_LOCK_HELD_ETAG
+}
+
+# scraper_memory_release_lock <source> <holder-id>
+scraper_memory_release_lock() {
+    _scraper_lock_release_core "$(scraper_memory_lock_key "$1")" "$2" \
+        SCRAPER_LOCK_HELD_KEY SCRAPER_LOCK_HELD_ETAG
+}
+
+# scraper_memory_import_lock_key <scrape-key>
+# Keyed on the SCRAPE KEY (state+session+chamber), matching the existing local import lock's
+# own keying (IMPORT_LOCK_DIR, run-scrape.sh) -- not bare source. That lock's own comment
+# explains why: USA lower and upper share bare $STATE, and a lock keyed on it alone would
+# collide between them; the scrape key is what actually scopes the data being imported.
+scraper_memory_import_lock_key() {
+    echo "${SCRAPER_MEMORY_PREFIX}/${1}/_import_lock"
+}
+
+# scraper_memory_acquire_import_lock <scrape-key> <holder-id>
+# OPEN-203: the existing LOCAL import lock (acquire_import_lock, run-scrape.sh) only ever
+# protected against a second import ON THIS MACHINE -- exactly OPEN-187's own gap, but for the
+# import half rather than the scrape half. A cloud-side loader (OPEN-190) invokes
+# `os-update --import` directly, bypassing run-scrape.sh (and its local lock) entirely, so
+# nothing today stops a local import and a cloud import racing the same jurisdiction's data.
+#
+# Deliberately its OWN tracking pair (SCRAPER_IMPORT_LOCK_HELD_KEY/ETAG), not
+# scraper_memory_acquire_lock's -- see that pair's own comment for why sharing would be unsafe
+# for the exact call pattern this ticket exists to support (one process, both locks, at once).
+scraper_memory_acquire_import_lock() {
+    _scraper_lock_acquire_core "$(scraper_memory_import_lock_key "$1")" "$2" \
+        SCRAPER_IMPORT_LOCK_HELD_KEY SCRAPER_IMPORT_LOCK_HELD_ETAG
+}
+
+# scraper_memory_release_import_lock <scrape-key> <holder-id>
+scraper_memory_release_import_lock() {
+    _scraper_lock_release_core "$(scraper_memory_import_lock_key "$1")" "$2" \
+        SCRAPER_IMPORT_LOCK_HELD_KEY SCRAPER_IMPORT_LOCK_HELD_ETAG
 }
 
 # THE HTTP CACHE -- decided, not forgotten (OPEN-181 acceptance criterion).
