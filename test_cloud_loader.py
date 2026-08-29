@@ -142,7 +142,7 @@ def test_refuses_a_manifest_key_that_escapes_the_staging_directory_via_dotdot(en
         rc = cl.main(["mi", "mi-run1"], s3_client=client)
     assert rc == 1
     mock_popen.assert_not_called()
-    assert "resolves outside the staging directory" in capsys.readouterr().err
+    assert "invalid relative path" in capsys.readouterr().err
 
 
 def test_refuses_a_manifest_key_whose_suffix_is_absolute(env, capsys):
@@ -156,7 +156,37 @@ def test_refuses_a_manifest_key_whose_suffix_is_absolute(env, capsys):
         rc = cl.main(["mi", "mi-run1"], s3_client=client)
     assert rc == 1
     mock_popen.assert_not_called()
-    assert "resolves outside the staging directory" in capsys.readouterr().err
+    assert "invalid relative path" in capsys.readouterr().err
+
+
+def test_refuses_a_manifest_key_equal_to_the_runs_own_prefix(env, capsys):
+    """pm-review round 2: an object key exactly equal to run_prefix produces an empty `rel`,
+    which would otherwise land `dest` on the staging directory itself rather than a file."""
+    client = FakeS3Client()
+    empty_rel = "working-tier/mi/mi-run1/"
+    client.objects[empty_rel] = b"payload"
+    _seed_manifest(client, "prod", "mi", "mi-run1", [empty_rel])
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "invalid relative path" in capsys.readouterr().err
+
+
+def test_refuses_a_manifest_key_with_a_dotdot_component_that_still_resolves_inside_staging(
+        env, capsys):
+    """A `..` component that happens to resolve back inside the staging directory (e.g.
+    `a/../b`) is rejected on shape alone, not just on where it resolves to -- otherwise it
+    could silently collide with a separate, plain `b` key in the same manifest."""
+    client = FakeS3Client()
+    tricky = "working-tier/mi/mi-run1/bills/a/../HB1.json"
+    client.objects[tricky] = b"payload"
+    _seed_manifest(client, "prod", "mi", "mi-run1", [tricky])
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    assert "invalid relative path" in capsys.readouterr().err
 
 
 # ── manifest schema validation ──────────────────────────────────────────────────────────────

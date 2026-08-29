@@ -138,7 +138,17 @@ def _fetch_run_objects(memory, work_prefix, source, run_id, manifest, data_dir):
     entirely. The manifest is written by cloud_collector.py, not user input directly, but nothing
     stops it (or the object this function reads) from carrying a corrupted or tampered key --
     and the failure mode is an on-prem file write outside the staging directory, so this is
-    checked explicitly rather than trusted."""
+    checked explicitly rather than trusted.
+
+    pm-review round 2: containment-after-resolve alone still let `rel` be empty (or reduce to
+    one via a `.`/`..` component), which lands `dest` ON data_dir itself rather than a file
+    beneath it -- not an escape, but a fetch aimed at a directory instead of a file, and two
+    keys that both normalize to the same destination (`a/../b` and a plain `b`) could silently
+    overwrite each other. cloud_collector.py's own manifest only ever lists real
+    `Path.relative_to()` suffixes from an actual filesystem walk, which never contain an empty,
+    `.`, or `..` component -- so rejecting any that do is a correctness check on the relative
+    path's shape, checked before ever resolving it, not a new restriction on a legitimate case.
+    """
     run_prefix = f"{work_prefix}/{source}/{run_id}/"
     data_root = Path(data_dir).resolve()
     for object_key in manifest.get("objects", []):
@@ -146,6 +156,9 @@ def _fetch_run_objects(memory, work_prefix, source, run_id, manifest, data_dir):
             return (f"manifest lists {object_key!r}, outside this run's own prefix "
                      f"{run_prefix!r} -- refusing to fetch it")
         rel = object_key[len(run_prefix):]
+        if not rel or any(part in ("", ".", "..") for part in rel.split("/")):
+            return (f"manifest lists {object_key!r} with an invalid relative path {rel!r} "
+                     f"-- refusing to fetch it")
         dest = (data_root / rel).resolve()
         if data_root != dest and data_root not in dest.parents:
             return (f"manifest lists {object_key!r}, which resolves outside the staging "
