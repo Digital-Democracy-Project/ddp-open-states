@@ -14,6 +14,7 @@ import json
 import os
 import stat
 import sys
+import time
 
 import pytest
 from botocore.exceptions import ClientError
@@ -355,17 +356,134 @@ def test_main_michigan_refuses_without_baseline(tmp_path, monkeypatch, capsys):
     assert record["status"] == "failed"
 
 
-def test_main_michigan_proceeds_with_baseline_present(tmp_path, monkeypatch, capsys):
+def _fresh_mi_cookie_body(now=None, expires_in=7200):
+    now = now if now is not None else time.time()
+    return json.dumps({
+        "x-bni-fpc": {"value": "fake-cookie-value", "expires": now + expires_in},
+        "_meta": {"user_agent": "fake-ua"},
+    }).encode()
+
+
+def test_main_michigan_proceeds_with_baseline_and_fresh_cookie_present(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
     monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=2))
     client = FakeS3Client()
     client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    client.objects["dev-open201/mi/_cache/mi_waf_cookies.json"] = _fresh_mi_cookie_body()
 
     rc = cc.main(["mi"], s3_client=client)
     assert rc == 0
     record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert record["status"] == "ok"
+
+
+def test_main_michigan_refuses_without_a_published_cookie(tmp_path, monkeypatch, capsys):
+    """OPEN-188: a bare run (baseline present, but no published cookie at all) must be
+    impossible by construction -- exactly the OPEN-152/153 mistake."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    # deliberately no mi_waf_cookies.json object at all
+
+    rc = cc.main(["mi"], s3_client=client)
+
+    assert rc == 1
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+
+
+def test_main_michigan_refuses_with_a_stale_cookie(tmp_path, monkeypatch, capsys):
+    """A cookie that technically parses but is expired (or expiring within the freshness
+    floor) must refuse exactly as if it were missing -- OPEN-188's "stale beyond threshold"
+    criterion."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    client.objects["dev-open201/mi/_cache/mi_waf_cookies.json"] = _fresh_mi_cookie_body(
+        expires_in=-60  # already expired
+    )
+
+    rc = cc.main(["mi"], s3_client=client)
+
+    assert rc == 1
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+
+
+def test_main_michigan_refuses_with_an_unparsable_cookie_file(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    client.objects["dev-open201/mi/_cache/mi_waf_cookies.json"] = b"not json"
+
+    rc = cc.main(["mi"], s3_client=client)
+
+    assert rc == 1
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+
+
+def test_main_michigan_cookie_refusal_is_retryable_not_do_not_retry(tmp_path, monkeypatch, capsys):
+    """Unlike the missing-baseline case, a missing/stale cookie is expected to self-heal at
+    the mac's own next scheduled publish tick -- it must NOT set the do-not-retry flag."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    flag = tmp_path / "do-not-retry"
+    monkeypatch.setenv("DO_NOT_RETRY_FLAG", str(flag))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+
+    rc = cc.main(["mi"], s3_client=client)
+
+    assert rc == 1
+    assert rc != cc.EXIT_DO_NOT_RETRY
+    assert not flag.exists()
+
+
+def test_mi_waf_cookies_are_fresh_rejects_empty_cookie_set(tmp_path):
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_text(json.dumps({"_meta": {"user_agent": "ua"}}))
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_rejects_nan_expires(tmp_path):
+    """pm-review: json.loads accepts the non-standard NaN literal, and float("nan") < x is
+    always False -- so this must be checked explicitly rather than relying on the comparison
+    alone to reject it."""
+    path = tmp_path / "mi_waf_cookies.json"
+    # json.dumps also emits NaN for float("nan") -- write the literal directly rather than
+    # relying on that, so this test exercises exactly what a real (malformed) file looks like.
+    path.write_text('{"x": {"value": "y", "expires": NaN}}')
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_rejects_infinite_expires(tmp_path):
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_text('{"x": {"value": "y", "expires": Infinity}}')
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_rejects_boolean_expires(tmp_path):
+    """bool is a subclass of int in Python -- True/False must not be accepted as a numeric
+    expires just because isinstance(x, (int, float)) is technically satisfied."""
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_text(json.dumps({"x": {"value": "y", "expires": True}}))
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", time.time(), 600) is False
+
+
+def test_mi_waf_cookies_are_fresh_accepts_a_genuinely_fresh_file(tmp_path):
+    now = time.time()
+    path = tmp_path / "mi_waf_cookies.json"
+    path.write_bytes(_fresh_mi_cookie_body(now=now, expires_in=3600))
+    assert cc._mi_waf_cookies_are_fresh(str(tmp_path), "mi_waf_cookies.json", now, 600) is True
 
 
 def test_main_unreachable_site_is_terminal(tmp_path, monkeypatch, capsys):
