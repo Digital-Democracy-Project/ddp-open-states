@@ -148,6 +148,44 @@ should reuse rather than reimplement:
   `migrate-scraper-memory.sh --prefix <ns>` moves an existing checkout's memory into the store;
   dry run unless `--commit`. **The 2.8 GB HTTP cache is deliberately not part of this** — see the
   bottom of `scraper-memory.sh` for that decision and what it costs on a first cloud run.
+- **`cloud_collector.py` (OPEN-201, 2026-08-29)** — the cloud collection runner, built fresh rather
+  than a `run-scrape.sh` port (Ramon's build-fresh decision). Does only what collection needs: read
+  memory (`S3Memory`, the same object layout `scraper-memory.sh` computes independently in bash —
+  the two must never drift), decide full vs. incremental, invoke `os-update --scrape`, classify the
+  outcome via `import-summary.sh`'s own unreachable-site matcher (sourced, not reimplemented),
+  publish output and a completion marker. `run-scrape.sh` is untouched and keeps running every
+  jurisdiction that hasn't moved to this — the two runners coexist for the whole migration.
+  **Does not import** — that is `cloud_loader.py`, a separate invocation against a separate
+  exclusion mechanism. Michigan-specific: refuses without its externalised last-action baseline
+  (same rule as the old script), and separately refuses without a fresh published WAF cookie
+  (`_mi_waf_cookies_are_fresh()` — every cookie in the published set must have `MI_WAF_COOKIE_MIN_
+  FRESHNESS_SECONDS` of life left, default 600s; a Michigan cookie is minted and published on its
+  own schedule by `ddp-sync`'s `mi_cookie_publish.py`, not by this file, which never mints its own).
+- **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
+  **one** cloud collection run, identified by its manifest (never bare object presence): fetches
+  every object the manifest names into a staging directory, refuses on an absent/unparsable/
+  identity-mismatched manifest or a partial fetch, then `os-update --datadir <staging> --import`.
+  **Path-containment is checked explicitly**, not assumed from `startswith()` alone — a manifest
+  key with a `../` component, a doubled slash, or an empty/`.`/`..`-only relative path is refused
+  before ever being resolved against the staging directory, because the failure mode of getting
+  this wrong is writing outside it.
+- **The cross-machine locks (OPEN-187/OPEN-203, 2026-08-29)** — `SourceLock`
+  (`cloud_collector.py`) and its bash mirror, `scraper_memory_acquire_lock`/`_release_lock`
+  (`scraper-memory.sh`), replace the old `/tmp`-local `mkdir` locks (OPEN-154's scrape lock, and
+  the local-only import lock) with S3 conditional writes (`IfNoneMatch`/`IfMatch`) — a Mac run and
+  a cloud run can now see the same lock. Age-based expiry only (24h TTL, matching the old dead-
+  holder threshold): there is no pid to check across machines, so a lock is reclaimed on its own
+  stated expiry, never on a liveness probe. **The import lock is a second, independently-tracked
+  instance/variable-pair, not the scrape lock reused** — `run-scrape.sh`'s real call pattern holds
+  the scrape lock for the whole run and the import lock later in the same process, and sharing
+  tracking state between them reproduces the exact cross-key clobbering bug three `/pm-review`
+  rounds found and fixed in this exact mechanism. **What this does not yet cover**: sequential
+  duplicate delivery (the same run loaded twice, an hour apart) — a lock only ever prevents
+  *concurrent* access and was never going to help here; that is still open (OPEN-203's own AC).
+  **Setup is a separate operator action**: `OPEN-187-scraper-lock-wrapper-setup.md` has the exact
+  sudo-gated wrapper recipe for the Mac side, not yet installed as of this writing — until it is,
+  `scraper_memory_check_config()` refuses to enable the S3 memory backend at all rather than run
+  without the lock.
 - **`SKIP_PATCHES=1`** env var — skips the `apply-local-patches.sh` call entirely. Set by
   ddp-sync's scheduler (each jurisdiction's own scheduled run doesn't re-run the patch step; a
   separate `openstates_patch_refresh` cron job does it once). Also the escape hatch when
