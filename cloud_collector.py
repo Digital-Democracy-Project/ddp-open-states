@@ -212,6 +212,14 @@ class SourceLock:
     the hazard is the shared data directory openstates-core wipes at scrape start, and FL's
     eight sessions share one, so a per-scrape-key lock would let them race each other.
 
+    `suffix` (default `_lock`) is what OPEN-190's loader overrides to `_import_lock` when
+    reusing this same class for the cross-machine IMPORT lock -- exactly the reuse this
+    class's own key-binding comment above anticipated. It must produce
+    `f"{prefix}/{key}/_import_lock"` to land on the identical S3 object
+    `scraper_memory_import_lock_key` (scraper-memory.sh, OPEN-203) computes for the same
+    jurisdiction's import, since a mac-side `run-scrape.sh` import and a cloud-side loader
+    import only exclude each other if both name the same key.
+
     Age-based expiry only, not liveness. run-scrape.sh's local lock can ask the OS "is this
     pid still alive" (`kill -0`) because a dead local process and a live one are both visible
     to it; nothing here is comparably checkable across a Mac and a Fargate task, so "the
@@ -229,11 +237,12 @@ class SourceLock:
 
     LOCK_TTL_SECONDS = 24 * 60 * 60
 
-    def __init__(self, client, bucket, prefix, holder):
+    def __init__(self, client, bucket, prefix, holder, suffix="_lock"):
         self.client = client
         self.bucket = bucket
         self.prefix = prefix
         self.holder = holder
+        self.suffix = suffix
         # Set together, only on a successful acquire/reclaim, and checked together in
         # release() -- a second pm-review round on this same design (in scraper-memory.sh,
         # its bash counterpart) caught that an etag alone is not bound to which key it was
@@ -252,7 +261,7 @@ class SourceLock:
         self._etag = None
 
     def key(self, source):
-        return f"{self.prefix}/{source}/_lock"
+        return f"{self.prefix}/{source}/{self.suffix}"
 
     def _lock_body(self, now):
         return json.dumps({
