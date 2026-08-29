@@ -620,29 +620,47 @@ check "stale owner's release does not clobber a successor's reclaimed lock" "$B_
     "$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
 
 # Second pm-review round's finding: an etag alone is not bound to which key it was acquired
-# for. A single shell that successfully acquires "mi10a" and then attempts (and fails) to
-# acquire a live "mi10b" must not have mi10b's release reuse mi10a's leftover state -- and
-# acquire()'s own unconditional clear-on-entry means mi10a's own release is a no-op too, since
-# by the time release runs, SCRAPER_LOCK_HELD_KEY/ETAG belong to the failed mi10b attempt (both
-# empty), not to mi10a.
+# for -- mi10b's release must not reuse mi10a's leftover state against mi10b's key.
+#
+# Third round's finding, on the first fix attempt: clearing SCRAPER_LOCK_HELD_KEY/ETAG
+# unconditionally at the top of every acquire call over-corrected this into a NEW bug -- a
+# failed acquire of mi10b would wipe out the still-valid, still-held mi10a lock's state,
+# leaving it unreleasable (alive for its full TTL) even though this shell legitimately still
+# holds it. The correct fix needs no clearing at all: the globals are only ever written by a
+# SUCCESSFUL lock-acquire/lock-reclaim, so a failed acquire of mi10b already leaves mi10a's
+# state untouched, and it's scraper_memory_release_lock's own key-match check that prevents
+# the cross-key reuse -- so mi10a must still release correctly here, not be sacrificed for it.
 mkdir -p "$ROOT/lockbucket/testns/mi10b"
 python3 -c "
 import json, time
 open('$ROOT/lockbucket/testns/mi10b/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
 "
 echo 1 > "$ROOT/lockbucket/testns/mi10b/_lock.etag"
-MI10A_BEFORE="" MI10B_BEFORE="$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+MI10B_BEFORE="$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
 SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
     bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
               scraper_memory_acquire_lock mi10a run-a >/dev/null;
-              MI10A_BEFORE=\$(cat \"$ROOT/lockbucket/testns/mi10a/_lock\");
               scraper_memory_acquire_lock mi10b run-a >/dev/null;
               scraper_memory_release_lock mi10b run-a;
-              scraper_memory_release_lock mi10a run-a;
-              echo \"\$MI10A_BEFORE\" > \"$ROOT/mi10a-before.txt\"" 2>/dev/null
-check "a second failed acquire's leftover state does not leak into either release" \
-    "$(cat "$ROOT/mi10a-before.txt")|$MI10B_BEFORE" \
-    "$(cat "$ROOT/lockbucket/testns/mi10a/_lock")|$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+              scraper_memory_release_lock mi10a run-a" 2>/dev/null
+check "mi10b's release (never held) is a no-op -- content unchanged" "$MI10B_BEFORE" \
+    "$(cat "$ROOT/lockbucket/testns/mi10b/_lock")"
+MI10A_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi10a/_lock'))['expires_at'])")"
+check "mi10a's release STILL SUCCEEDS despite the later failed mi10b attempt" "yes" \
+    "$(python3 -c "import time; print('yes' if $MI10A_EXPIRES < time.time() else 'no')")"
+
+# pm-review round 3's specific additional ask: the same-key case, not just cross-key. A shell
+# that successfully acquires mi11, then calls acquire again for the SAME key (refused, since
+# the key it itself just wrote is still live) -- must still be able to release its own,
+# still-legitimately-held lock afterward.
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
+              scraper_memory_acquire_lock mi11 run-a >/dev/null;
+              scraper_memory_acquire_lock mi11 run-a >/dev/null;
+              scraper_memory_release_lock mi11 run-a" 2>/dev/null
+MI11_EXPIRES="$(python3 -c "import json; print(json.load(open('$ROOT/lockbucket/testns/mi11/_lock'))['expires_at'])")"
+check "release survives a failed same-key reacquire attempt" "yes" \
+    "$(python3 -c "import time; print('yes' if $MI11_EXPIRES < time.time() else 'no')")"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

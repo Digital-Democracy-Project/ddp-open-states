@@ -392,10 +392,14 @@ scraper_memory_acquire_lock() {
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
 
-    # Cleared unconditionally at the start of every attempt -- see the variables' own comment.
-    # A prior call's leftover state must never survive into this one, success or failure alike.
-    SCRAPER_LOCK_HELD_KEY=""
-    SCRAPER_LOCK_HELD_ETAG=""
+    # pm-review round 3: an earlier version of this fix cleared SCRAPER_LOCK_HELD_KEY/ETAG
+    # unconditionally here. That was an over-correction with its own real bug: a failed
+    # acquire for a SECOND jurisdiction would wipe out a still-valid, still-held FIRST lock's
+    # state, leaving it unreleasable (alive for its full 24h TTL) even though this process
+    # legitimately still holds it. Not needed anyway -- these globals are only ever written on
+    # a SUCCESSFUL lock-acquire/lock-reclaim below, so a failed attempt already leaves whatever
+    # was previously held untouched, and scraper_memory_release_lock's own key-match check
+    # (not this clearing) is what actually closes round 2's cross-key finding.
 
     out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
     if [ "$rc" -eq 0 ]; then

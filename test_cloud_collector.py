@@ -494,10 +494,15 @@ def test_lock_malformed_body_is_unavailable_not_reclaimed():
 
 def test_lock_leftover_etag_not_reused_across_a_second_failed_acquire():
     """Second pm-review round's finding: an etag alone is not bound to which key it was
-    acquired for. One SourceLock instance acquires "mi" successfully, then attempts (and
-    fails) to acquire "fl" -- release("fl") must not reuse "mi"'s leftover etag against "fl"'s
-    key, and release("mi") must not succeed either, since acquire()'s own entry clears state
-    unconditionally before the "fl" attempt ever runs."""
+    acquired for -- release("fl") must not reuse "mi"'s leftover etag against "fl"'s key.
+
+    Third round's finding, on the first fix attempt: clearing _key/_etag unconditionally at
+    the top of every acquire() call over-corrected this into a NEW bug -- a failed second
+    acquire would wipe out a still-valid, still-held first lock, leaving it unreleasable (and
+    therefore alive for its full TTL) even though this process legitimately still holds it.
+    The correct fix needs no clearing at all: _key/_etag are only ever written by a
+    SUCCESSFUL put_object, so a failed acquire("fl") already leaves "mi"'s state exactly as
+    it was, and it's release()'s own key-match check that prevents the cross-key reuse."""
     client = FakeS3Client()
     other_holder = cc.SourceLock(client, "bucket", "dev-open187", holder="run-other")
     assert other_holder.acquire("fl") is True  # someone else already holds "fl" live
@@ -512,8 +517,27 @@ def test_lock_leftover_etag_not_reused_across_a_second_failed_acquire():
     lock.release("fl")  # must be a no-op: this instance never actually held "fl"
     assert client.objects["dev-open187/fl/_lock"] == fl_body_before
 
-    lock.release("mi")  # must also be a no-op: acquire("fl")'s entry cleared "mi"'s state
-    assert client.objects["dev-open187/mi/_lock"] == mi_body_before
+    # THE regression: "mi" must still be releasable -- the failed "fl" attempt must not have
+    # cost this process its own, still-legitimately-held lock.
+    lock.release("mi")
+    mi_data = json.loads(client.objects["dev-open187/mi/_lock"])
+    assert mi_data["expires_at"] < cc.time.time()
+
+
+def test_lock_failed_reacquire_of_the_same_key_does_not_lose_the_original_release():
+    """pm-review round 3's specific additional ask: the same-key case, not just cross-key.
+    A single instance acquires "mi", then calls acquire("mi") again on itself -- since the key
+    now exists (its own prior write) and hasn't expired, this second call is correctly refused
+    (False). That refusal must not cost the instance its own, still-legitimately-held lock."""
+    client = FakeS3Client()
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    assert lock.acquire("mi") is True
+
+    assert lock.acquire("mi") is False  # the key it itself wrote is live, so this refuses
+
+    lock.release("mi")
+    mi_data = json.loads(client.objects["dev-open187/mi/_lock"])
+    assert mi_data["expires_at"] < cc.time.time()
 
 
 def test_lock_stale_owner_release_does_not_clobber_a_reclaimed_lock():

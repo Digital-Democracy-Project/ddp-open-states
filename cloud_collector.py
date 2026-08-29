@@ -261,11 +261,15 @@ class SourceLock:
         (a credential problem, a timeout) -- distinct from False, which means "asked, and the
         answer was no"."""
         key = self.key(source)
-        # Cleared unconditionally at the start of every attempt -- a prior call's leftover
-        # state (for this key or a different one) must never survive into this one, success
-        # or failure alike. See __init__'s comment.
-        self._key = None
-        self._etag = None
+        # pm-review round 3: an earlier version of this fix cleared _key/_etag unconditionally
+        # here, reasoning that stale state should never survive into a new attempt. That was
+        # an over-correction with its own real bug: a failed acquire(B) would wipe out a
+        # still-valid, still-held lock A's state, leaving A unreleasable (and therefore alive
+        # for its full 24h TTL) even though this process legitimately still holds it. Not
+        # needed anyway -- _key/_etag are only ever written by a SUCCESSFUL put_object below,
+        # so a failed attempt already leaves whatever this instance previously held
+        # untouched, and release()'s own key-match check (not this clearing) is what actually
+        # closes round 2's cross-key finding.
         for _attempt in range(2):
             now = time.time()
             try:
