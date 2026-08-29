@@ -42,7 +42,15 @@ resource "aws_db_instance" "openstates" {
   performance_insights_enabled = true
   # Standard tier, not Advanced -- this is a small validation-gate database without real
   # production traffic yet, not a fleet needing long-retention cross-database correlation.
+  # Confirmed live and working on db.t4g.micro (2026-08-29 DescribeDBInstances:
+  # PerformanceInsightsEnabled=true) -- pm-review round 1 raised whether this combination is
+  # even supported; it is, for this instance class/engine/region.
   performance_insights_retention_period = 7
 
-  skip_final_snapshot = false
+  # pm-review round 1: skip_final_snapshot = false requires final_snapshot_identifier, or a
+  # real terraform destroy fails outright asking for one. deletion_protection above already
+  # blocks destruction entirely today, but this makes the eventual retirement path (turn off
+  # protection, then destroy) actually work rather than fail a second time on a missing name.
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.db_instance_identifier}-final"
 }
