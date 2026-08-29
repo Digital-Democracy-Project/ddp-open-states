@@ -532,6 +532,38 @@ chmod +x "$RUN_ROOT/bin/os-update"
 e2e ""
 check "default import path: a normal run succeeds once the lock is free again" "ok" "$(status)"
 
+# pm-review's specific ask: the shared import lock's "could not tell" result (2), reached
+# AFTER the local mkdir already succeeded, must release that local lock and fail the run
+# cleanly -- not invoke os-update, not leave anything held. A wrapper that fails every
+# lock-acquire against an _import_lock key with a genuine (non-precondition) backend error,
+# while leaving the SCRAPE lock's own keys working normally so the run reaches the import
+# phase at all.
+cat > "$ROOT/bin/fake-lock-import-outage" <<STUB
+#!/usr/bin/env bash
+BUCKET="\$FAKE_LOCK_ROOT"
+case "\$2" in
+    */_import_lock)
+        [ "\$1" = "lock-acquire" ] && { echo "Could not connect to the endpoint URL" >&2; exit 1; }
+        ;;
+esac
+exec "$ROOT/bin/fake-lock" "\$@"
+STUB
+chmod +x "$ROOT/bin/fake-lock-import-outage"
+cat > "$RUN_ROOT/bin/os-update" <<'STUB'
+#!/usr/bin/env bash
+for a in "$@"; do
+    if [ "$a" = "--import" ]; then echo "SHOULD NEVER RUN -- the import lock outage should have refused first"; exit 1; fi
+done
+echo "scraped fine"
+STUB
+chmod +x "$RUN_ROOT/bin/os-update"
+e2e "SCRAPER_LOCK_S3_CMD=$ROOT/bin/fake-lock-import-outage LOCK_WAIT_TIMEOUT_SECS=1"
+check "import lock backend outage (rc=2) after local acquire: run fails cleanly" "failed" "$(status)"
+check "import lock backend outage: os-update --import was never actually invoked" "no" \
+    "$(grep -q 'SHOULD NEVER RUN' "$RUN_ROOT/stdout.log" "$RUN_LOG_DIR/scraper.log" 2>/dev/null && echo yes || echo no)"
+check "import lock backend outage: the local import lock dir was released, not left held" "no" \
+    "$([ -d "/tmp/ddp-openstates-import-locks/va" ] && echo yes || echo no)"
+
 rm -rf "$RUN_ROOT"
 
 echo "== OPEN-187: the shared cross-machine lock =="
