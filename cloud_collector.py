@@ -60,6 +60,16 @@ EXIT_DO_NOT_RETRY = 90
 # second hard-coded name, so the two cannot drift on what "Michigan's baseline" means.
 _MI_BASELINE_GLOB = "mi_last_actions_*.json"
 
+# OPEN-189/OPEN-188's "publish, do not call in" cookie design, exercised for the first time
+# here: this file never mints a Michigan cookie itself (no CAPTCHA-solving, no Playwright
+# import at all unless this fetch comes up empty and openstates-core falls back on its own).
+# It only reads whatever the Mac's real ScrapeBot mint already published to this same memory
+# store -- the same fetch mechanism as the last-action baseline, a different filename.
+# CookieProvider._read_cache() (openstates-core) reads this exact filename from --cachedir and,
+# if it validates, never touches Playwright at all -- cookies and user_agent travel as one
+# unit (OPEN-23), which is why this is a plain file fetch and not two separate values.
+_MI_WAF_COOKIE_GLOB = "mi_waf_cookies.json"
+
 
 class MemoryUnavailable(Exception):
     """The store could not be read (found/absent could not be determined). Never guess."""
@@ -338,6 +348,19 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
                     touch_do_not_retry()
                     return EXIT_DO_NOT_RETRY
 
+                # Opportunistic, not required: unlike the baseline, an absent cookie is not
+                # this runner's call to refuse on -- that is a design question OPEN-188 owns
+                # (does a stale/missing cookie fail loudly, same as Michigan's baseline, or
+                # fall through to a local mint attempt). Fetching it if present is what this
+                # spike needs today; the refusal policy is deliberately not decided here.
+                cookie_fetched = memory.hydrate_cache(source, cache_dir, _MI_WAF_COOKIE_GLOB)
+                if not cookie_fetched:
+                    print(
+                        "WARNING: no published Michigan WAF cookie found in the memory store "
+                        "-- proceeding without one (OPEN-188's publish side is not built yet)",
+                        file=sys.stderr,
+                    )
+
             found_watermark = memory.hydrate_markers(source, scrape_key, last_run_dir)
         except MemoryUnavailable as e:
             print(f"ERROR: {e} -- refusing to run rather than assuming a first-ever run "
@@ -379,14 +402,39 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # this function just fetched from S3 sits in a directory the scraper never looks in.
         cmd += ["--cachedir", cache_dir, "--datadir", out_dir]
 
+        # --cachedir alone does NOT make the hydrated mi_waf_cookies.json reachable by
+        # MI_COOKIE_PROVIDER: that's a module-level singleton in openstates-core's
+        # mi_cookies.py built as `CookieProvider(cache_path=os.path.join(settings.CACHE_DIR,
+        # ...))` at *import* time, and that import happens (via get_jurisdiction()) before
+        # update.py's own override_settings() context manager ever applies --cachedir's value
+        # to settings.CACHE_DIR. By the time the override lands, the singleton's cache_path is
+        # already baked in against the old value. settings.py's CACHE_DIR, in turn, is seeded
+        # from the CACHE_DIR *environment* variable at settings-module import time -- so
+        # setting it in the subprocess's own environment (rather than relying on --cachedir)
+        # is what actually reaches the singleton before it's constructed. Found by tracing
+        # through cookie_provider.py -> mi_cookies.py -> update.py's override_settings/
+        # get_jurisdiction ordering after a real run showed _read_cache() missing a cookie
+        # file that was hydrated to the right directory on disk.
+        scrape_env = dict(os.environ, CACHE_DIR=cache_dir)
+
         with open(scrape_output, "w") as f:
-            proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+            proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, env=scrape_env)
 
         duration_s = int(time.time() - started)
 
+        if proc.returncode != 0:
+            # Printed here, not left as a "see {path}" pointer: scrape_output lives inside
+            # the TemporaryDirectory this whole block is under, which is gone the moment this
+            # process exits. In a container, "check the file" is not an option the next
+            # person has -- CloudWatch only has stdout/stderr, so the diagnosis has to be
+            # inline or it is lost with the container. Tailed rather than dumped whole to
+            # avoid flooding the log on a failure that produced a lot of output before dying.
+            tail = subprocess.run(["tail", "-n", "40", scrape_output], capture_output=True, text=True).stdout
+            print(f"--- last 40 lines of {source} scrape output ---\n{tail}", file=sys.stderr)
+
         if proc.returncode != 0 and scrape_output_shows_unreachable_site(scrape_output):
             # OPEN-53: retrying a block makes it worse. Terminal, not retryable.
-            print(f"ERROR: {source} appears unreachable -- see {scrape_output}", file=sys.stderr)
+            print(f"ERROR: {source} appears unreachable", file=sys.stderr)
             emit_completion_record(status="unreachable", mode=mode, source=source,
                                     run_id=run_id, session=session, duration_s=duration_s)
             touch_do_not_retry()
