@@ -265,7 +265,6 @@ class SourceLock:
 
             try:
                 existing = self.client.get_object(Bucket=self.bucket, Key=key)
-                data = json.loads(existing["Body"].read())
                 etag = existing["ETag"]
             except ClientError as e:
                 code = e.response.get("Error", {}).get("Code", "")
@@ -273,7 +272,20 @@ class SourceLock:
                     continue  # raced a release/expiry between the PUT and this GET -- retry
                 raise LockUnavailable(f"could not read {source}'s lock: {e}")
 
-            if now <= data.get("expires_at", 0):
+            # pm-review: a lock body this process cannot parse at all (malformed, truncated,
+            # or some future shape neither client writes today) must not be treated as "not
+            # live" and reclaimed -- json.JSONDecodeError/AttributeError/TypeError are not
+            # ClientErrors, so without this they would propagate as a raw, uncaught exception
+            # out of acquire() entirely, past the LockUnavailable handling in main() and past
+            # contract SS2's "every setup failure still emits a completion record" guarantee.
+            try:
+                data = json.loads(existing["Body"].read())
+                expires_at = data["expires_at"]
+                is_live = now <= expires_at
+            except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
+                raise LockUnavailable(f"could not parse {source}'s lock contents: {e}")
+
+            if is_live:
                 return False  # a live holder
 
             try:

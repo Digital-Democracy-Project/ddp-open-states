@@ -490,6 +490,14 @@ rm -rf "$RUN_ROOT"
 
 echo "== OPEN-187: the shared cross-machine lock =="
 
+# Each case below uses ITS OWN jurisdiction key (mi1, mi2, ...) rather than sharing "mi" --
+# the lock store is real files on disk, persisting across test cases in this one script run,
+# and an earlier version of these tests shared one key across cases that never released their
+# own lock. That silently made "release then acquire" pass for the wrong reason (a stale
+# leftover lock happened to already be reclaimable) until pm-review's ETag-binding fix on
+# release() started correctly refusing to release a lock a call never actually acquired --
+# which then correctly failed the shared-key test. Isolating keys is the fix, not loosening
+# the new correctness check that exposed the problem.
 lock_helper() {
     SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
         bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; $1" 2>/dev/null
@@ -498,39 +506,52 @@ lock_helper() {
 check "lock key is scoped by source alone, not a scrape key" "testns/mi/_lock" \
     "$(lock_helper 'scraper_memory_lock_key mi')"
 
-rc=$(lock_helper 'scraper_memory_acquire_lock mi run-a; echo $?')
+rc=$(lock_helper 'scraper_memory_acquire_lock mi1 run-a; echo $?')
 check "acquire: a free lock succeeds" "0" "$rc"
 
 rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
       bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
-                scraper_memory_acquire_lock mi run-a >/dev/null;
-                scraper_memory_acquire_lock mi run-b; echo \$?" 2>/dev/null )
+                scraper_memory_acquire_lock mi2 run-a >/dev/null;
+                scraper_memory_acquire_lock mi2 run-b; echo \$?" 2>/dev/null )
 check "acquire: a second run is refused (1), not told it is free" "1" "$rc"
 
 rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
       bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\";
-                scraper_memory_acquire_lock mi run-a >/dev/null;
-                scraper_memory_release_lock mi run-a;
-                scraper_memory_acquire_lock mi run-b; echo \$?" 2>/dev/null )
+                scraper_memory_acquire_lock mi3 run-a >/dev/null;
+                scraper_memory_release_lock mi3 run-a;
+                scraper_memory_acquire_lock mi3 run-b; echo \$?" 2>/dev/null )
 check "release then acquire: the next run succeeds" "0" "$rc"
 
 # A stale lock (expires_at already in the past) must be RECLAIMED, not treated as live -- there
 # is no pid to check across machines, so age is the only signal a dead holder ever leaves.
+mkdir -p "$ROOT/lockbucket/testns/mi4"
 python3 -c "
 import json
-open('$ROOT/lockbucket/testns/mi/_lock', 'w').write(json.dumps({'holder': 'dead-run', 'acquired_at': 0, 'expires_at': 1}))
+open('$ROOT/lockbucket/testns/mi4/_lock', 'w').write(json.dumps({'holder': 'dead-run', 'acquired_at': 0, 'expires_at': 1}))
 "
-echo 1 > "$ROOT/lockbucket/testns/mi/_lock.etag"
-rc=$(lock_helper 'scraper_memory_acquire_lock mi run-b; echo $?')
+echo 1 > "$ROOT/lockbucket/testns/mi4/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi4 run-b; echo $?')
 check "acquire: a stale lock is reclaimed (0), not refused" "0" "$rc"
 
 # A live lock (expires_at in the future) must NOT be reclaimed just because it is being asked.
+mkdir -p "$ROOT/lockbucket/testns/mi5"
 python3 -c "
 import json, time
-open('$ROOT/lockbucket/testns/mi/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
+open('$ROOT/lockbucket/testns/mi5/_lock', 'w').write(json.dumps({'holder': 'live-run', 'acquired_at': time.time(), 'expires_at': time.time() + 3600}))
 "
-rc=$(lock_helper 'scraper_memory_acquire_lock mi run-c; echo $?')
+echo 1 > "$ROOT/lockbucket/testns/mi5/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi5 run-c; echo $?')
 check "acquire: a live lock is refused (1), not reclaimed" "1" "$rc"
+
+# A lock body this parser cannot read at all (malformed, truncated, some future shape neither
+# client writes) must be "could not tell" (2), not treated as expired-and-reclaimed. pm-review's
+# finding: an empty parse result used to fail the liveness check the same way a genuinely past
+# expiry does, so an unparseable lock was silently reclaimed rather than refused.
+mkdir -p "$ROOT/lockbucket/testns/mi6"
+echo 'not valid json at all' > "$ROOT/lockbucket/testns/mi6/_lock"
+echo 1 > "$ROOT/lockbucket/testns/mi6/_lock.etag"
+rc=$(lock_helper 'scraper_memory_acquire_lock mi6 run-a; echo $?')
+check "acquire: an unparseable lock returns 2, is NOT reclaimed" "2" "$rc"
 
 # "Could not tell" must never be mistaken for "acquired" or "refused" -- same three-way
 # discipline as scraper_memory_fetch, and the same reason: a genuinely unreadable store here
@@ -542,8 +563,56 @@ exit 1
 STUB
 chmod +x "$ROOT/bin/fake-lock-broken"
 rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock-broken" \
-      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi run-a; echo \$?" 2>/dev/null )
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi7 run-a; echo \$?" 2>/dev/null )
 check "acquire during an outage: returns 2, not 0 or 1" "2" "$rc"
+
+# pm-review's specific concern about the retry-after-404 path: a genuine failure on the RETRY
+# attempt (not a recognized PreconditionFailed) must be "could not tell" (2), not "someone else
+# holds it" (1) -- the earlier version returned 1 for ANY failure there, which would have set
+# DO_NOT_RETRY on a transient wrapper/network problem, exactly the mistake this function's own
+# three-way contract exists to prevent elsewhere.
+cat > "$ROOT/bin/fake-lock-404-then-broken" <<STUB
+#!/usr/bin/env bash
+COUNTER="$ROOT/mi8-acquire-calls"
+case "\$1" in
+    lock-acquire)
+        n=\$(( \$(cat "\$COUNTER" 2>/dev/null || echo 0) + 1 ))
+        echo "\$n" > "\$COUNTER"
+        if [ "\$n" -eq 1 ]; then
+            echo "An error occurred (PreconditionFailed) when calling the PutObject operation" >&2
+        else
+            echo "Could not connect to the endpoint URL" >&2
+        fi
+        exit 1
+        ;;
+    lock-read) echo "An error occurred (404) when calling the HeadObject operation: Not Found" >&2; exit 1 ;;
+    *) exit 2 ;;
+esac
+STUB
+chmod +x "$ROOT/bin/fake-lock-404-then-broken"
+rc=$( SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock-404-then-broken" \
+      bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; scraper_memory_acquire_lock mi8 run-a; echo \$?" 2>/dev/null )
+check "acquire: a genuine failure on the post-404 retry returns 2, not 1" "2" "$rc"
+
+# THE regression pm-review's core finding calls for: a stale owner's release must not clobber
+# the successor that legitimately reclaimed its expired lock. Simulated directly against the
+# fake store rather than via scraper_memory_acquire_lock, since reproducing a real 24h TTL
+# expiry isn't practical in a test -- the fake store's file-based ETag makes this a precise,
+# deterministic reproduction of the exact interleaving: A holds an (expired) lock, B reclaims
+# it for real via the acquire function, A then calls release using the ETag IT ORIGINALLY HELD.
+mkdir -p "$ROOT/lockbucket/testns/mi9"
+python3 -c "
+import json
+open('$ROOT/lockbucket/testns/mi9/_lock', 'w').write(json.dumps({'holder': 'run-a', 'acquired_at': 0, 'expires_at': 1}))
+"
+echo 1 > "$ROOT/lockbucket/testns/mi9/_lock.etag"   # A's original lock: etag-1, already expired
+lock_helper 'scraper_memory_acquire_lock mi9 run-b' >/dev/null  # B reclaims for real: now etag-2
+B_BODY_BEFORE="$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
+# A calls release using the etag IT held (etag-1) -- never re-read at release time.
+SCRAPER_MEMORY_PREFIX=testns SCRAPER_LOCK_S3_CMD="$ROOT/bin/fake-lock" \
+    bash -c ". \"$SCRIPT_DIR/scraper-memory.sh\"; SCRAPER_LOCK_HELD_ETAG='\"etag-1\"'; scraper_memory_release_lock mi9 run-a" 2>/dev/null
+check "stale owner's release does not clobber a successor's reclaimed lock" "$B_BODY_BEFORE" \
+    "$(cat "$ROOT/lockbucket/testns/mi9/_lock")"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

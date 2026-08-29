@@ -353,6 +353,18 @@ scraper_memory_lock_key() {
 }
 
 # scraper_memory_acquire_lock <source> <holder-id>
+# The ETag of THIS process's own successful acquire/reclaim, set only by
+# scraper_memory_acquire_lock on success and consumed only by scraper_memory_release_lock.
+# pm-review caught a real bug in an earlier version: release() used to re-read the lock's
+# CURRENT etag at release time instead of remembering the one this process's own write
+# produced. Under the TTL-expiry design that is a live hazard, not a hypothetical one -- a
+# run that outlives the 24h TTL (already an accepted, documented tradeoff) can have its lock
+# legitimately reclaimed by a second holder while the first is still finishing; if the first
+# then releases using whatever etag it finds "current" at that moment, it clobbers the SECOND
+# holder's live lock. Binding release to the specific etag this process itself received is
+# what makes its conditional write fail harmlessly in that case instead of succeeding.
+SCRAPER_LOCK_HELD_ETAG=""
+
 # 0 = acquired (including reclaiming a stale lock), 1 = another live holder has it,
 # 2 = could not tell. Same three-way discipline as scraper_memory_fetch/list and the same
 # reason: a lock this function cannot confirm is free must never be treated as free.
@@ -373,6 +385,7 @@ scraper_memory_acquire_lock() {
     out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
     if [ "$rc" -eq 0 ]; then
         rm -f "$body_file"
+        SCRAPER_LOCK_HELD_ETAG="$out"
         return 0
     fi
     case "$out" in
@@ -397,8 +410,19 @@ scraper_memory_acquire_lock() {
                 printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$expires_at" > "$body_file"
                 out=$("$SCRAPER_LOCK_S3_CMD" lock-acquire "$key" "$body_file" 2>&1); rc=$?
                 rm -f "$body_file"
-                [ "$rc" -eq 0 ] && return 0
-                return 1
+                if [ "$rc" -eq 0 ]; then
+                    SCRAPER_LOCK_HELD_ETAG="$out"
+                    return 0
+                fi
+                # pm-review: this used to return 1 (busy) for ANY failure here, including a
+                # genuine network/credential error -- which would set DO_NOT_RETRY on a
+                # transient wrapper failure, exactly the "could not tell" mistake this
+                # function's own three-way contract exists to avoid. Only a recognized
+                # PreconditionFailed means "someone else genuinely won the race."
+                case "$out" in
+                    *PreconditionFailed*|*"(412)"*) return 1 ;;
+                    *) echo "$out" >&2; return 2 ;;
+                esac
                 ;;
         esac
         echo "$out" >&2
@@ -414,14 +438,28 @@ scraper_memory_acquire_lock() {
     # and was wrongly reclaimed instead of refused -- caught by this file's own test suite.
     existing_expires=$(printf '%s' "$out" | cut -f2- | sed -n 's/.*"expires_at":[[:space:]]*\([0-9][0-9]*\).*/\1/p')
 
-    if [ -n "$existing_expires" ] && [ "$now" -le "$existing_expires" ]; then
+    # pm-review: a lock body this parser cannot read at all (no expires_at match -- malformed,
+    # truncated, or in some future shape neither client writes today) must NOT be treated as
+    # "not live" and reclaimed. That was the previous behaviour, since an empty
+    # existing_expires failed the liveness check below the same way a genuinely past expiry
+    # does. Indistinguishable-from-expired is exactly the "could not tell" case, not "go ahead".
+    if [ -z "$existing_expires" ]; then
+        rm -f "$body_file"
+        echo "could not parse expires_at from $key's current contents: $out" >&2
+        return 2
+    fi
+
+    if [ "$now" -le "$existing_expires" ]; then
         rm -f "$body_file"
         return 1  # a live holder
     fi
 
     out=$("$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" 2>&1); rc=$?
     rm -f "$body_file"
-    [ "$rc" -eq 0 ] && return 0
+    if [ "$rc" -eq 0 ]; then
+        SCRAPER_LOCK_HELD_ETAG="$out"
+        return 0
+    fi
     case "$out" in
         *PreconditionFailed*|*"(412)"*) return 1 ;;  # someone else reclaimed it first
         *) echo "$out" >&2; return 2 ;;
@@ -433,16 +471,20 @@ scraper_memory_acquire_lock() {
 # never needs delete permission at all (OPEN-187-scraper-lock-wrapper-setup.md's IAM policy has
 # none). Best-effort: a release that fails to land costs nothing beyond the lock living out its
 # TTL, the same outcome as today's genuinely-abandoned case.
+#
+# Uses SCRAPER_LOCK_HELD_ETAG -- the etag THIS process's own successful acquire/reclaim
+# produced -- never a fresh read of whatever is current. See that variable's own comment for
+# the failure mode a fresh read would reopen.
 scraper_memory_release_lock() {
-    local source="$1" holder="$2" key body_file now out etag
+    local source="$1" holder="$2" key body_file now
+    [ -n "$SCRAPER_LOCK_HELD_ETAG" ] || return 0
     key=$(scraper_memory_lock_key "$source")
     now=$(date +%s)
-    out=$("$SCRAPER_LOCK_S3_CMD" lock-read "$key" 2>/dev/null) || return 0
-    etag=$(printf '%s' "$out" | cut -f1)
     body_file=$(mktemp)
     printf '{"holder":"%s","acquired_at":%s,"expires_at":%s}' "$holder" "$now" "$((now - 1))" > "$body_file"
-    "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$etag" >/dev/null 2>&1 || true
+    "$SCRAPER_LOCK_S3_CMD" lock-reclaim "$key" "$body_file" "$SCRAPER_LOCK_HELD_ETAG" >/dev/null 2>&1 || true
     rm -f "$body_file"
+    SCRAPER_LOCK_HELD_ETAG=""
     return 0
 }
 

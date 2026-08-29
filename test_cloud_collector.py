@@ -477,6 +477,41 @@ def test_lock_release_without_acquire_is_a_noop():
     assert client.objects == {}
 
 
+def test_lock_malformed_body_is_unavailable_not_reclaimed():
+    """pm-review's finding: json.JSONDecodeError/TypeError are not ClientErrors, so without
+    converting them, a lock body this process can't parse would propagate as a raw, uncaught
+    exception out of acquire() -- past LockUnavailable's handling in main(), past contract
+    SS2's "every setup failure still emits a completion record" guarantee -- rather than being
+    treated as "could not tell", which is the only safe reading of a body it cannot verify as
+    either live or expired."""
+    client = FakeS3Client()
+    client.put_object(Bucket="bucket", Key="dev-open187/mi/_lock", Body=b"not valid json")
+
+    lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    with pytest.raises(cc.LockUnavailable):
+        lock.acquire("mi")
+
+
+def test_lock_stale_owner_release_does_not_clobber_a_reclaimed_lock():
+    """THE regression for pm-review's core finding, on the Python side (which was already
+    correct): if A's lock expires, B reclaims it, and A then releases using the ETag captured
+    at A's OWN acquisition -- never a fresh read -- A's conditional write must fail harmlessly
+    against B's current (different) ETag rather than overwriting B's live lock."""
+    client = FakeS3Client()
+    a = cc.SourceLock(client, "bucket", "dev-open187", holder="run-a")
+    stale = json.dumps({"holder": "run-a", "acquired_at": 0, "expires_at": 1}).encode()
+    client.put_object(Bucket="bucket", Key="dev-open187/mi/_lock", Body=stale)
+    a._etag = client.etags["dev-open187/mi/_lock"]  # simulates A having acquired this exact write
+
+    b = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
+    assert b.acquire("mi") is True  # B reclaims the expired lock for real
+    b_body_before = client.objects["dev-open187/mi/_lock"]
+
+    a.release("mi")  # A releases using the etag it originally held, not a fresh read
+
+    assert client.objects["dev-open187/mi/_lock"] == b_body_before
+
+
 # --- SourceLock integrated into main() -----------------------------------------------------
 
 
