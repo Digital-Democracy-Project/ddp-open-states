@@ -1,0 +1,19 @@
+# OPEN-200: keep the build context to what the image actually needs. This repo root has a lot
+# of one-off backfill scripts, investigation write-ups, and a 3.7 TiB-capacity local disk cache
+# that must never end up inside a build context or an image layer.
+.venv/
+_cache/
+logs/
+motion-text-audit/
+motion-text-audit-before/
+notes/
+.git/
+.pytest_cache/
+.worktrees/
+.claude/
+*.md
+openstates-core/
+openstates-scrapers/
+people/
+api-v3/
+deploy/
