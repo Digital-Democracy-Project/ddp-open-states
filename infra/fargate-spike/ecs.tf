@@ -61,6 +61,10 @@ resource "aws_ecs_task_definition" "scraper_prototype" {
       environment = [
         { name = "MEMORY_BUCKET", value = regex("arn:aws:s3:::([^/]+)", var.memory_bucket_arn)[0] },
         { name = "MEMORY_PREFIX", value = "prod" },
+        # OPEN-191 rehearsal (2026-08-29/30): Virginia's default scraper needs this or it
+        # silently collects zero bills. See variables.tf's own note on why this is plain env
+        # for now rather than Secrets Manager.
+        { name = "VA_API_KEY", value = var.va_api_key },
       ]
       logConfiguration = {
         logDriver = "awslogs"

@@ -16,6 +16,44 @@ all, by design).
   2,728 vote events, collected via OPEN-190's `cloud_collector.py` on a real Fargate task) was
   loaded on top via `cloud_loader.py` — `150 updated, 1,747 noop` bills, `157 new, 31 updated,
   2,540 noop` vote events, zero duplicates (row count unchanged before/after: 7,685 both times).
+- **Extended to every jurisdiction (2026-08-29/30), not just Florida.** Virginia collected via a
+  real Fargate task and loaded the same way — zero duplicates (4,380 bills before and after).
+  Washington, Massachusetts, Arizona, and both USA chamber runs were launched in parallel over
+  the same rehearsal to prove independent per-jurisdiction collection works concurrently, not
+  just one jurisdiction at a time.
+  - **Found and fixed**: Virginia's default scraper (`VaBillScraper`) requires a Virginia LIS API
+    key. It exists in this repo's `.env` (`VA_API_KEY`) but was never in the Fargate task
+    definition's environment, so the first two attempts failed with `ScrapeError: no objects
+    returned from VaBillScraper` (exit code 1) — the site was reachable the whole time; the
+    scraper just silently produced nothing without the key. Diagnosed by reproducing the exact
+    failure locally (`docker run` against the same image) after CloudWatch log read access
+    became unavailable partway through this rehearsal (see the gap noted below). Fixed by adding
+    `VA_API_KEY` to a new task definition revision — see `infra/fargate-spike/variables.tf`'s
+    `va_api_key` variable, which also flags that this should move to Secrets Manager rather than
+    stay a plain environment variable.
+  - **Confirmed working as designed, not a bug**: launching both USA chamber runs
+    (`session=119 chamber=lower` / `session=119 chamber=upper`) at the same time produced one
+    success and one `EXIT_DO_NOT_RETRY` (90) — OPEN-187's cross-machine `SourceLock` is keyed on
+    the jurisdiction alone, not the full scrape key, so two concurrent collections of the same
+    source correctly refuse to race each other. `ddp-sync`'s real job function
+    (`run_usa_scrapes_job`) already runs these two sequentially for exactly this reason; the
+    failed chamber run was simply relaunched once the other finished.
+  - **Confirmed the WAF/UA resilience code is identical between the Mac and Fargate paths.**
+    `resilience_profiles.py`/`fl_cookies.py` are module-level singletons inside `openstates-core`
+    itself, not something either runner reimplements — both `run-scrape.sh` (Mac) and
+    `cloud_collector.py` (Fargate) invoke the same `os-update <source> --scrape bills` CLI
+    against the same installed `openstates-core` package. Fargate needed Dockerfile fixes
+    (`poppler-utils`, `playwright install --with-deps chromium`) to make that *same* code path
+    runnable in the container — not a second, parallel implementation of it.
+  - **Operational gap found, not yet root-caused**: CloudWatch log read access on
+    `/ecs/ddp-scrapers` (`logs:GetLogEvents`/`logs:FilterLogEvents`) started being denied to the
+    `ddp-scraper` IAM user partway through this rehearsal, after working earlier in the same
+    session. Suspected cause (unconfirmed — this policy is hand-edited in the console, not
+    Terraform-managed): `infra/fargate-spike/README.md`'s own bootstrap policy scopes the Logs
+    statement to `/aws/ecs/ddp-scrapers*`, but the real log group is `/ecs/ddp-scrapers` (no
+    `aws/` prefix) — worth checking if the live console policy carried that same mismatch
+    forward. Diagnosing the VA failure above had to fall back to a local `docker run`
+    reproduction instead of reading the actual Fargate task's logs.
 - **Reachable only through the existing WireGuard EC2 jump box** — not publicly accessible. That
   box's security group is an allowed source on this instance's own security group, and it also
   already hosts production `ddp-sync`/`ddp-api`, so those services get direct in-VPC access with

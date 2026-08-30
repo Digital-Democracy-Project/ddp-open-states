@@ -53,6 +53,25 @@ variable "memory_bucket_arn" {
   type        = string
 }
 
+variable "va_api_key" {
+  description = <<-EOT
+    Virginia's LIS API key (https://lis.virginia.gov/developers). Found missing during OPEN-191's
+    per-jurisdiction Fargate rehearsal (2026-08-29/30): the default VaBillScraper needs it, and
+    without it the scraper silently returns zero objects -- openstates-core then raises
+    "ScrapeError: no objects returned from VaBillScraper", indistinguishable at the exit-code
+    level from a real scrape failure. Reproduced locally (`docker run` against the same image)
+    to confirm, since CloudWatch log read access was unavailable at the time to see the real
+    traceback from the Fargate task directly.
+
+    Plain environment variable for now, matching MEMORY_BUCKET/MEMORY_PREFIX's existing pattern
+    -- not yet moved to Secrets Manager. That's a real gap (this is a credential, not
+    infrastructure-shaped config like a bucket name) worth fixing before any other jurisdiction's
+    API key is added the same way; tracked as a follow-up rather than blocking this fix.
+  EOT
+  type        = string
+  sensitive   = true
+}
+
 variable "image_tag" {
   description = "The ECR tag this task definition points at. ecr.tf sets the repository to IMMUTABLE tags, so a rebuilt image during the spike needs a new value here (a git sha, a timestamp -- anything but reusing the last one, which ECR will simply refuse)."
   type        = string
