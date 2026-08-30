@@ -16,13 +16,15 @@ all, by design).
   2,728 vote events, collected via OPEN-190's `cloud_collector.py` on a real Fargate task) was
   loaded on top via `cloud_loader.py` — `150 updated, 1,747 noop` bills, `157 new, 31 updated,
   2,540 noop` vote events, zero duplicates (row count unchanged before/after: 7,685 both times).
-- **Extended to every jurisdiction (2026-08-29/30), not just Florida.** Virginia collected via a
-  real Fargate task and loaded the same way — zero duplicates (4,380 bills before and after).
-  Washington, Massachusetts, Arizona, and both USA chamber runs were launched in parallel over
-  the same rehearsal to prove independent per-jurisdiction collection works concurrently, not
-  just one jurisdiction at a time.
-  - **Found and fixed**: Virginia's default scraper (`VaBillScraper`) requires a Virginia LIS API
-    key. It exists in this repo's `.env` (`VA_API_KEY`) but was never in the Fargate task
+- **Extended to every jurisdiction (2026-08-29/30), not just Florida.** Virginia, Washington,
+  Massachusetts, Arizona, and both USA chamber sessions were each collected via real Fargate
+  tasks and loaded the same way — zero duplicates on every one (VA 4,380, WA 3,411, MA 11,406,
+  AZ 2,190, USA 37,784, all unchanged before/after). Several were launched in parallel over the
+  same rehearsal to prove independent per-jurisdiction collection works concurrently, not just
+  one jurisdiction at a time. Full-session runs with no prior watermark took hours (WA ~9h,
+  MA ~9.5h) — long, but not stuck.
+  - **Found and fixed (VA)**: Virginia's default scraper (`VaBillScraper`) requires a Virginia
+    LIS API key. It exists in this repo's `.env` (`VA_API_KEY`) but was never in the Fargate task
     definition's environment, so the first two attempts failed with `ScrapeError: no objects
     returned from VaBillScraper` (exit code 1) — the site was reachable the whole time; the
     scraper just silently produced nothing without the key. Diagnosed by reproducing the exact
@@ -31,13 +33,24 @@ all, by design).
     `VA_API_KEY` to a new task definition revision — see `infra/fargate-spike/variables.tf`'s
     `va_api_key` variable, which also flags that this should move to Secrets Manager rather than
     stay a plain environment variable.
-  - **Confirmed working as designed, not a bug**: launching both USA chamber runs
-    (`session=119 chamber=lower` / `session=119 chamber=upper`) at the same time produced one
-    success and one `EXIT_DO_NOT_RETRY` (90) — OPEN-187's cross-machine `SourceLock` is keyed on
-    the jurisdiction alone, not the full scrape key, so two concurrent collections of the same
-    source correctly refuse to race each other. `ddp-sync`'s real job function
-    (`run_usa_scrapes_job`) already runs these two sequentially for exactly this reason; the
-    failed chamber run was simply relaunched once the other finished.
+  - **Found and fixed (USA)**: launching both chamber collections (`session=119 chamber=lower` /
+    `chamber=upper`) at the same time correctly produced one success and one `EXIT_DO_NOT_RETRY`
+    (90) — OPEN-187's cross-machine `SourceLock` is keyed on the jurisdiction alone, so two
+    concurrent collections of the same source correctly refuse to race each other; that part is
+    working as designed. But relaunching the failed chamber sequentially afterward exposed a
+    real, separate bug: `cloud_collector.py`/`cloud_loader.py`'s `scrape_key` was derived from
+    the `session` param alone, so both chambers shared one `usa_119` watermark. The second
+    chamber silently hydrated the first's watermark and ran "incremental" against a cutoff for a
+    chamber it had never collected, crashing with the same `ScrapeError`. Fixed with a shared
+    `derive_scrape_key()` that folds every param into the key — see the fix PR, backward
+    compatible with every key already persisted (FL/UT unaffected).
+  - **MI: correctly refused, by design, not attempted further.** A real Fargate task for `mi`
+    stopped almost immediately with `EXIT_DO_NOT_RETRY` — confirmed via S3 that neither
+    Michigan's baseline nor a fresh WAF cookie exist in the memory store, so it refused at the
+    first safety gate before any request to `legislature.mi.gov`. Zero site traffic. Exactly the
+    behavior OPEN-188's "publish, don't call in" design exists to guarantee. MI isn't usable via
+    Fargate again until its baseline is externalized and OPEN-188's cookie publisher is
+    re-enabled.
   - **Confirmed the WAF/UA resilience code is identical between the Mac and Fargate paths.**
     `resilience_profiles.py`/`fl_cookies.py` are module-level singletons inside `openstates-core`
     itself, not something either runner reimplements — both `run-scrape.sh` (Mac) and
