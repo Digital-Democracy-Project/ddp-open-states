@@ -402,6 +402,32 @@ echo "$PWD/openstates-core" > .venv/lib/python3.9/site-packages/openstates.pth
 # (production's install succeeded when the venv was first built, so its wrappers are the reference).
 ```
 
+### `os-text-extract refresh-extraction` — retroactive re-extraction after an extractor fix
+
+Neither `reextract` (filters to `is_error=True`) nor `recompute_diff_order` (recomputes from
+already-stored `raw_text`) can make an extractor bug fix retroactive — the documents an extractor
+fix targets typically extracted "successfully," just badly, so `reextract` skips them, and
+`recompute_diff_order` would just recompute diffs from the same bad text. `refresh-extraction`
+exists for exactly this: it walks bill by bill, re-extracts every document whose current extractor
+output differs from what's stored, and only then recomputes that bill's diffs (order matters —
+recomputing while any version still holds stale text reproduces the problem for that hop). Dry-run
+by default (`--commit` to write), idempotent, reads only from the local archive (no re-fetching).
+
+```bash
+os-text-extract refresh-extraction ut              # dry run — reports counts, changes nothing
+os-text-extract refresh-extraction ut --commit      # the real backfill
+os-text-extract refresh-extraction all -n 50        # limit to 50 bills, for testing
+```
+
+**Run for real against production 2026-08-29** (OPEN-210/211/212, after the XML/WA-HTML
+structure-aware extraction fix): Utah (1,021 bills / 3,100 documents), Washington (3,411 / 5,818),
+United States (37,672 / 44,723) — zero documents refused in any of the three. One residual, recorded
+rather than chased: 5 US documents (4 bills) have a `sha256_hash` from archive time but no
+`archive_location`, so there is nothing local to re-extract from — verify directly in Postgres
+(`select count(*) from ddp_bill_version_document where media_type in ('text/xml','text/html') and
+not is_error and raw_text != '' and position(chr(10) in raw_text) = 0`) rather than trusting the
+command's own summary line, which is exactly how that residual was caught.
+
 Verify the same way as production: `.venv/bin/python -c "import openstates; print(openstates.__file__)"`
 must point at the dev checkout's `openstates-core/`, not `site-packages`.
 
