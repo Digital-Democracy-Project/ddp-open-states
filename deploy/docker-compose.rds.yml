@@ -1,0 +1,58 @@
+# INFRA-1: api-v3 pointed at the real ddp-openstates RDS instance, run on the same box as
+# production ddp-broker (10.0.0.11) rather than the Mac Studio. Deliberately self-contained --
+# INFRA-1's whole premise is that api-v3 has no real dependency on the Mac or on CAMS's
+# infrastructure, so unlike docker-compose.ddp.yml (Mac-hosted, reuses CAMS's Redis) this stack
+# brings its own Redis and does not attach to any pre-existing external network. It should stand
+# up cleanly on a bare box with nothing else already running.
+#
+# DATABASE_URL is deliberately NOT hardcoded here (unlike docker-compose.ddp.yml's local dev
+# password) -- it's a real Secrets-Manager-managed RDS credential, supplied via a `.env` file
+# that stays on the host and is never committed. See infra/rds/README.md's own gotcha: the
+# password can contain `:`/`[`, which breaks a naive connection string unless URL-encoded
+# first (`urllib.parse.quote(password, safe="")`).
+#
+#   DATABASE_URL=postgresql://openstates_admin:<url-encoded-password>@ddp-openstates.cvxdhm1ogxug.us-east-1.rds.amazonaws.com:5432/openstates
+#
+name: ddp-openstates-rds
+
+services:
+  api:
+    build:
+      context: ../api-v3
+      dockerfile: ../deploy/Dockerfile.ddp
+    image: ddp-openstates-api:local
+    container_name: ddp-openstates-api-1
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: "${DATABASE_URL}"
+      RRL_REDIS_HOST: "redis"
+      RRL_REDIS_PORT: "6379"
+      RRL_REDIS_DB: "1"
+      WEB_CONCURRENCY: "4"
+      FORWARDED_ALLOW_IPS: "*"
+    ports:
+      - "0.0.0.0:8002:80"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:80/healthz', timeout=3).status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  # api-v3's own rate-limiter Redis -- not CAMS's ddp-agents-redis-1. The upstream api-v3
+  # docker-compose.yml already ships exactly this service; reusing CAMS's instance
+  # (docker-compose.ddp.yml's approach) was only ever a same-Mac convenience, not a
+  # requirement -- see INFRA-1.
+  redis:
+    image: redis
+    container_name: ddp-openstates-redis-1
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
