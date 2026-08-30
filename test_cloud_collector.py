@@ -246,6 +246,23 @@ def test_main_second_run_is_incremental(tmp_path, monkeypatch, capsys):
     assert "--cachedir" in argv, argv
 
 
+def test_main_same_session_different_chamber_does_not_share_a_watermark(tmp_path, monkeypatch, capsys):
+    """The real OPEN-191 bug: a same-session second chamber run must be its own `full` run, not
+    silently inherit the first chamber's watermark and go "incremental" against a cutoff from a
+    chamber it never actually collected."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FakeS3Client()
+    # Only the lower chamber has ever been collected -- its watermark exists under its own key.
+    client.objects["dev-open201/usa/usa_119_lower/usa_119_lower.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["usa", "session=119", "chamber=upper"], s3_client=client)
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["mode"] == "full"
+
+
 def test_main_mode_requires_ts_specifically_not_any_marker(tmp_path, monkeypatch, capsys):
     """pm-review's sharpest correctness finding: a `.count` present without a `.ts` must
     still be a full run. `.ts` is published last precisely so a partial publish leaves it
@@ -567,6 +584,37 @@ def test_lock_live_lock_is_not_reclaimed():
 
     lock = cc.SourceLock(client, "bucket", "dev-open187", holder="run-b")
     assert lock.acquire("mi") is False
+
+
+def test_derive_scrape_key_no_params_is_bare_source():
+    assert cc.derive_scrape_key("wa", {}) == "wa"
+
+
+def test_derive_scrape_key_session_only_matches_existing_persisted_format():
+    """Backward compatible: FL/UT already have real S3 objects under `fl_2026`/`ut_2025S2` --
+    this must keep deriving exactly that, not a new format that orphans them."""
+    assert cc.derive_scrape_key("fl", {"session": "2026"}) == "fl_2026"
+    assert cc.derive_scrape_key("ut", {"session": "2025S2"}) == "ut_2025S2"
+
+
+def test_derive_scrape_key_distinguishes_same_session_different_chamber():
+    """The actual bug found in OPEN-191's rehearsal: both USA chamber runs shared `session=119`
+    and nothing else distinguished them, so upper silently hydrated lower's watermark and
+    crashed running "incremental" against a chamber it had never collected."""
+    lower = cc.derive_scrape_key("usa", {"session": "119", "chamber": "lower"})
+    upper = cc.derive_scrape_key("usa", {"session": "119", "chamber": "upper"})
+    assert lower != upper
+    assert lower == "usa_119_lower"
+    assert upper == "usa_119_upper"
+
+
+def test_derive_scrape_key_order_independent():
+    """Params arrive as whatever order the caller's key=value tokens were given in -- the key
+    must not depend on that order, or the same logical target could derive two different keys
+    across two runs."""
+    a = cc.derive_scrape_key("usa", {"session": "119", "chamber": "upper"})
+    b = cc.derive_scrape_key("usa", {"chamber": "upper", "session": "119"})
+    assert a == b
 
 
 def test_lock_keyed_on_source_not_scrape_key():

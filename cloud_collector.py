@@ -486,6 +486,30 @@ def _incremental_start_arg(ts_path):
         return None
 
 
+def derive_scrape_key(source, params):
+    """Distinguishes different scrape targets that share one jurisdiction so their watermarks
+    and OPEN-203 import locks never collide -- found missing during OPEN-191's Fargate
+    rehearsal (2026-08-29/30): USA's `session=119 chamber=lower` and `session=119 chamber=upper`
+    both derived the bare `usa_119` key (session-only), so upper silently hydrated lower's
+    watermark and ran "incremental" against a cutoff from a chamber it had never actually
+    collected, producing zero objects and a hard `ScrapeError`. run-scrape.sh's own SCRAPE_KEY
+    (run-scrape.sh:82) already folds every key=value param into the key for exactly this reason.
+
+    Backward compatible with every key already persisted in S3: a single `session` param with
+    nothing else still derives the existing `{source}_{session}` form (e.g. `fl_2026`), and no
+    params at all still derives bare `source` -- neither format changes here.
+    """
+    session = params.get("session")
+    extra = {k: v for k, v in params.items() if k != "session"}
+    if not session and not extra:
+        return source
+    parts = [source]
+    if session:
+        parts.append(session)
+    parts.extend(v for _, v in sorted(extra.items()))
+    return "_".join(parts)
+
+
 def main(argv, s3_client=None):
     if len(argv) < 1:
         print("usage: cloud_collector.py <source-id> [key=value ...]", file=sys.stderr)
@@ -502,7 +526,7 @@ def main(argv, s3_client=None):
         return 1
 
     session = params.get("session")
-    scrape_key = f"{source}_{session}" if session else source
+    scrape_key = derive_scrape_key(source, params)
 
     try:
         bucket = os.environ["MEMORY_BUCKET"]

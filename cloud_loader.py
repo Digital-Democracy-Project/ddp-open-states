@@ -65,6 +65,7 @@ from cloud_collector import (
     LockUnavailable,
     S3Memory,
     SourceLock,
+    derive_scrape_key,
     parse_kv_args,
 )
 
@@ -240,7 +241,7 @@ def main(argv, s3_client=None):
         return 1
 
     session = params.get("session")
-    scrape_key = f"{source}_{session}" if session else source
+    scrape_key = derive_scrape_key(source, params)
 
     try:
         bucket = os.environ["MEMORY_BUCKET"]
