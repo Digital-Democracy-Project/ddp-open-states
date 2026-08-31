@@ -188,9 +188,12 @@ def test_real_manifest_is_valid():
 
 
 def test_real_manifest_covers_the_eight_tracked_jurisdictions():
+    """The original 8 must always be present; the manifest is allowed to grow beyond them as
+    OPEN-230-style pilot candidates get added (e.g. nc, status: probing) -- so this is a subset
+    check, not exact-set equality."""
     with open(DEFAULT_MANIFEST_PATH) as f:
         data = yaml.safe_load(f)
-    assert set(data.keys()) == {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"}
+    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= set(data.keys())
 
 
 def test_real_manifest_has_no_walk_direction_field():
@@ -228,8 +231,11 @@ def test_real_manifest_matches_known_live_config_values():
     for code in ("va", "mi", "ut", "az", "ma"):
         assert data[code]["archive"]["timeout_s"] == 4 * 3600
 
-    # activate.sh ARCHIVE_ENABLED_STATES -- all 8 tracked jurisdictions are enabled
-    for code in data:
+    # activate.sh ARCHIVE_ENABLED_STATES -- all 8 originally-tracked jurisdictions are enabled.
+    # Scoped to just those 8, not `for code in data`: a pilot candidate can be present in the
+    # manifest (status: probing) with archive deliberately not yet enabled (Stage 4 gates that),
+    # so archive.enabled isn't a blanket invariant across every entry any more.
+    for code in ("us", "fl", "wa", "va", "mi", "ut", "az", "ma"):
         assert data[code]["archive"]["enabled"] is True
 
     # run-scrape.sh --allow_duplicates states
@@ -325,8 +331,13 @@ def test_cli_exits_zero_on_the_real_manifest():
         capture_output=True,
         text=True,
     )
+    with open(DEFAULT_MANIFEST_PATH) as f:
+        real_count = len(yaml.safe_load(f))
+
     assert result.returncode == 0
-    assert result.stdout.startswith("OK: 8 jurisdiction(s) valid")
+    # Not hardcoded to 8: the manifest is expected to grow as pilot candidates get added
+    # (OPEN-230+), so this checks the CLI's reported count against the real manifest instead.
+    assert result.stdout.startswith(f"OK: {real_count} jurisdiction(s) valid")
 
 
 def test_cli_exits_nonzero_and_reports_problems_on_invalid_input(tmp_path):
