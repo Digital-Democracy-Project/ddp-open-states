@@ -44,13 +44,20 @@ all, by design).
     chamber it had never collected, crashing with the same `ScrapeError`. Fixed with a shared
     `derive_scrape_key()` that folds every param into the key — see the fix PR, backward
     compatible with every key already persisted (FL/UT unaffected).
-  - **MI: correctly refused, by design, not attempted further.** A real Fargate task for `mi`
-    stopped almost immediately with `EXIT_DO_NOT_RETRY` — confirmed via S3 that neither
-    Michigan's baseline nor a fresh WAF cookie exist in the memory store, so it refused at the
-    first safety gate before any request to `legislature.mi.gov`. Zero site traffic. Exactly the
-    behavior OPEN-188's "publish, don't call in" design exists to guarantee. MI isn't usable via
-    Fargate again until its baseline is externalized and OPEN-188's cookie publisher is
-    re-enabled.
+  - **MI: first correctly refused, then genuinely onboarded.** A real Fargate task for `mi`
+    stopped almost immediately with `EXIT_DO_NOT_RETRY` on the first attempt — confirmed via S3
+    that neither Michigan's baseline nor a fresh WAF cookie existed in the memory store, so it
+    refused at the first safety gate before any request to `legislature.mi.gov`. Zero site
+    traffic. Exactly the behavior OPEN-188's "publish, don't call in" design exists to guarantee.
+    Both prerequisites were then put in place for real: `mi_cookie_publish` was enabled in
+    `ddp-sync`'s live schedule (see that repo's own history) and manually triggered once —
+    which surfaced and worked around a real, already-known CAMS bug (a dead shared browser with
+    no liveness/respawn, `AGENTS-57`, plus a new finding logged there: `OPEN-153`'s isolated-retry
+    fallback doesn't reliably obtain Michigan's real WAF cookies even when it reports success) —
+    and Michigan's local last-action baseline (`mi_last_actions_2025-2026.json`, 4,013 entries)
+    was published to the same memory store. A second real Fargate task then ran a genuine full
+    collection under Michigan's 10 req/min cap, explicitly authorized as a real onboarding run
+    rather than a verification spot-check.
   - **Confirmed the WAF/UA resilience code is identical between the Mac and Fargate paths.**
     `resilience_profiles.py`/`fl_cookies.py` are module-level singletons inside `openstates-core`
     itself, not something either runner reimplements — both `run-scrape.sh` (Mac) and
@@ -67,6 +74,13 @@ all, by design).
     `aws/` prefix) — worth checking if the live console policy carried that same mismatch
     forward. Diagnosing the VA failure above had to fall back to a local `docker run`
     reproduction instead of reading the actual Fargate task's logs.
+- **Confirmed every completed jurisdiction persisted its incremental watermark**, so tonight's
+  rehearsal is genuinely a one-time cold-start cost, not a recurring one: `fl_2026.ts`, `va.ts`,
+  `wa.ts`, `az.ts`, `ma.ts`, `usa_119.ts`, and `usa_119_upper.ts` all exist under
+  `prod/<source>/_lock`'s sibling paths in the memory store. The next `cloud_collector.py` run
+  for any of these will hydrate that watermark, run `mode="incremental"` with a `start=` cutoff,
+  and be cheap — matching what the Mac's own scheduled scrapes already do daily. MI's own
+  watermark isn't written until its first real cloud run finishes.
 - **Reachable only through the existing WireGuard EC2 jump box** — not publicly accessible. That
   box's security group is an allowed source on this instance's own security group, and it also
   already hosts production `ddp-sync`/`ddp-api`, so those services get direct in-VPC access with
