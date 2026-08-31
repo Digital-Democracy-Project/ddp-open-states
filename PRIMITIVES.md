@@ -478,6 +478,35 @@ DB row order is chronological for any bill-version work; use these instead**:
   `openstates` dependency to this fork (so the copy can be deleted) is a known, larger follow-up,
   not yet done.
 
+**Updated 2026-08-31 (OPEN-217/OPEN-107/OPEN-219):** three further fixes to the same two
+functions, layered on top of the ordering work above rather than changing it.
+
+- **OPEN-217 — one diff baseline per media type, not per version.** `archive_bill_versions()`
+  used to pick a single "preferred" media type (XML over PDF) per version and diff every other
+  media type against *that one* instead of its own predecessor — a real one-line edit read as a
+  whole-document rewrite for whichever type lost the preference. Fixed by keeping
+  `prior_by_media: dict[str, str]`, one baseline per media type, matching what
+  `recomputed_diffs_for_documents()` already did since OPEN-211. Known, accepted side effect:
+  Massachusetts pairs a PDF "Bill Text" with an HTML "Chapter Law Text" — genuinely different
+  documents — so it now produces **no** changelog for that pair instead of a wrong one.
+- **OPEN-107 — a benign cross-archiver race no longer fails the whole run.** Two archivers racing
+  on the same natural key used to have the loser's `IntegrityError` counted as a real conflict,
+  `sys.exit(1)`-ing the entire run over a document that was, in fact, safely archived by the
+  winner. The handler now re-queries by natural key inside its own `transaction.atomic()`
+  savepoint (needed because a failed INSERT otherwise leaves the connection needing rollback,
+  so the recovery `SELECT` couldn't run at all): a row already there is a benign
+  `concurrent_writes` count, feeding this version's diff baseline from the *winner's* stored
+  text rather than this run's own fetch; no row at all is still a real `conflicts` failure.
+- **OPEN-219 — the WA/MI/VA/AZ text-cleanup dispatch is now one call site, not two.**
+  `archive_bill_versions()` and `recomputed_diffs_for_documents()` each used to inline their own
+  copy of the same four per-jurisdiction cleaners (OPEN-7/9/10/11) — they had silently
+  diverged (the recompute path applied none of them), so a bill's diff differed depending on
+  which path computed it, with nothing to say which one you had. Both now call one shared
+  `apply_prediff_cleaning(prior_text, raw_text, *, jurisdiction_name, is_bill, prior_media_type,
+  cur_media_type)`. **This is not the OPEN-121 registry migration below** — the dispatch is
+  still the same `if jurisdiction_name == "Washington": ...` conditional chain, just
+  consolidated into one function instead of duplicated across two; see that section's note.
+
 ## Motion classification tooling
 
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
@@ -583,6 +612,13 @@ whenever that code is already being touched, not as a big-bang rewrite. Two inli
 same file (an FL TLS-cipher workaround, a CA jurisdiction-ID check) are byte-for-byte identical to
 the public project's own code and are deliberately *not* candidates — rewriting those would only
 add diff noise against every future upstream merge for a problem DDP doesn't own.
+
+**Still open after OPEN-219 (2026-08-31, see "Bill-version ordering & diff backfills" above)** —
+that ticket consolidated the dispatch from two duplicated inline copies into one shared
+`apply_prediff_cleaning()` function, closing the divergence risk, but deliberately didn't do the
+registry migration itself (its own scope was *where* this runs, not *how* it's expressed). OPEN-121
+is still open, now against one call site instead of two — a smaller, not harder, version of the
+same opportunistic migration.
 
 **What's explicitly not a "per-jurisdiction config" problem, even though it looks like one:**
 `version_ordering.py`'s stage-classification table (see above) knows MI writes `"(S-1)"`, WA
@@ -716,6 +752,54 @@ question — but the documented default is "DC is out of scope," and no credenti
 requested until that is deliberately revisited. `in` is the one that makes this section urgent
 anyway: it is on the pilot shortlist (`NC, GA, CO, OH, IN`) and needs `INDIANA_API_KEY`, so the
 first credentialed onboarding DDP actually does is more likely Indiana than DC.
+
+## `jurisdictions.yaml` — the jurisdiction manifest, v0 (repo root, OPEN-221, 2026-08-31)
+
+An **eighth** mechanism, added after the six-mechanisms survey above — deliberately not folded
+into it, because it isn't a replacement for any of the seven: it's a new, narrowly-scoped
+per-jurisdiction manifest (name/status/tier/scrape/archive/waf/quality/api_keys/onboarding
+fields, schema in `ddp-infra/PLAN-push-button-onboarding.md` §4.1) consumed **only** by this
+repo's own scripts (`activate.sh`, `run-scrape.sh`, `run-people-refresh.sh`, `start-os-api.sh`,
+`quality_check.py`) and the onboarding probe below. `ddp-sync`/`ddp-broker-py`/`ddp-next`/votebot
+deliberately stay on their own existing jurisdiction lists as documentation-of-record until a
+later phase — **do not wire this file into another repo without checking §4.1 first**, that
+scope line was deliberate, not an oversight.
+
+- **`validate_jurisdictions.py`** — the checked-in schema validator (has its own test suite,
+  `test_validate_jurisdictions.py`). Catches duplicate YAML keys explicitly — plain PyYAML
+  silently lets a later duplicate key win, which would otherwise make a manifest entry disagree
+  with itself with no error.
+- **`jurisdiction-field.sh`** — the bash-3.2-safe read helper (this Mac's bash is frozen at
+  3.2.57, see the discipline checklist below) other scripts and the probe read a field through,
+  rather than each hand-rolling its own YAML parsing. Rejects a request for a block-shaped path
+  (a whole sub-mapping, not a leaf value) with a real error instead of printing Python's `repr()`
+  of the block. `test-jurisdiction-field.sh` runs the whole thing under real bash 3.2.57.
+- **Failure mode is fail-open, loudly:** an unreadable or invalid manifest makes consuming
+  scripts keep their pre-manifest behavior and print a loud warning, rather than silently
+  proceeding on bad data or hard-crashing a scheduled scrape.
+
+## `verify-jurisdiction <state>` — the onboarding probe (repo root, OPEN-222, 2026-08-31)
+
+Read-only diagnostic answering "what will onboarding this state actually cost?" in ~30 minutes,
+before anyone commits to it. Reads and writes an entry in `jurisdictions.yaml` above per its
+schema. Runs eight gates, four of them (A/B/C/D/H) **blocking** and three (E/F/G) **advisory-only**
+— an advisory gate can never turn a green verdict red, only add a note:
+
+- **A** session list check, **B** scraper module shape (votes scraper? `start=` supported?
+  required API keys present, per the credentials table above?), **C** `CONVERSION_FUNCTIONS`
+  coverage for every upstream `media_type`, **D** a bounded, timed dry scrape with a
+  nonzero-objects assertion, **H** `BillVersionLink` rows actually exist (not a stale snapshot)
+  — all blocking.
+- **E** `motion_classification.yaml` coverage, **F** version-walk direction, **G** people
+  data/broker fixture shape — all advisory.
+
+Output is a scored green/yellow/red report, checked into `notes/` (e.g.
+`notes/fl-onboarding-probe-20260831.md`). **A real bug caught in review, worth knowing if you
+touch this script:** the scoring originally could report GREEN when a blocking gate had only
+warned or been skipped, not actually confirmed passing — fixed so GREEN requires every blocking
+gate to have genuinely passed. Calibrated by running it against an already-onboarded, healthy
+state (FL) and confirming GREEN — proving the gates recognize a healthy state correctly, not just
+that they can reject a broken one, which is the easier half to get right by accident.
 
 ## Cross-cutting conventions (don't reinvent these)
 
