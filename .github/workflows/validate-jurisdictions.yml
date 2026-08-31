@@ -1,0 +1,29 @@
+name: Validate jurisdictions manifest
+
+# PLAN-push-button-onboarding.md §7 Phase 0b exit criterion: "manifest validator gating PRs".
+# validate_jurisdictions.py (OPEN-221) already exists and already catches every schema problem
+# it's designed to catch when run by hand -- this workflow is the one missing piece: making that
+# check run automatically on every PR that touches the manifest, rather than depending on someone
+# remembering to run it locally before merging.
+
+on:
+  pull_request:
+    paths:
+      - "jurisdictions.yaml"
+      - "validate_jurisdictions.py"
+      - "test_validate_jurisdictions.py"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest  # pure Python + PyYAML, no macOS-specific dependency
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install PyYAML (validate_jurisdictions.py's only dependency)
+        run: pip install pyyaml pytest
+      - name: Run the manifest validator
+        run: python3 validate_jurisdictions.py
+      - name: Run the validator's own test suite
+        run: python3 -m pytest test_validate_jurisdictions.py -v
