@@ -5,6 +5,8 @@ dicts plus the actual checked-in manifest.
 """
 
 import copy
+import subprocess
+import sys
 
 import yaml
 
@@ -282,3 +284,59 @@ def test_load_and_validate_invalid_yaml(tmp_path):
     assert data is None
     assert len(errors) == 1
     assert "not valid YAML" in errors[0]
+
+
+# -- PM-review round 1 fold: duplicate-key detection --
+
+
+def test_load_and_validate_rejects_duplicate_top_level_jurisdiction_key(tmp_path):
+    """PyYAML's default loader silently accepts duplicate mapping keys (last value wins) -- a
+    real gap for a file meant to be this fleet's authoritative source of truth. A duplicated
+    jurisdiction code must be rejected, not silently resolved to whichever copy came last."""
+    dup = tmp_path / "dup.yaml"
+    dup.write_text(
+        "fl:\n  name: Florida\n  status: live\nfl:\n  name: Florida Again\n  status: live\n"
+    )
+    data, errors = load_and_validate(str(dup))
+    assert data is None
+    assert len(errors) == 1
+    assert "duplicate key" in errors[0]
+
+
+def test_load_and_validate_rejects_duplicate_nested_field(tmp_path):
+    """Same gap, one level deeper -- two timeout_s: lines under one jurisdiction's scrape block."""
+    dup = tmp_path / "dup.yaml"
+    dup.write_text(
+        "fl:\n  name: Florida\n  status: live\n  scrape:\n    timeout_s: 100\n    timeout_s: 200\n"
+    )
+    data, errors = load_and_validate(str(dup))
+    assert data is None
+    assert len(errors) == 1
+    assert "duplicate key" in errors[0]
+
+
+# -- PM-review round 1 fold: exercise the actual CLI entry point as a subprocess, not just by
+# -- importing and calling functions, so a broken/missing __main__ block would actually fail here.
+
+
+def test_cli_exits_zero_on_the_real_manifest():
+    result = subprocess.run(
+        [sys.executable, "validate_jurisdictions.py", DEFAULT_MANIFEST_PATH],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout.startswith("OK: 8 jurisdiction(s) valid")
+
+
+def test_cli_exits_nonzero_and_reports_problems_on_invalid_input(tmp_path):
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("fl:\n  name: Florida\n")  # missing every other required field
+    result = subprocess.run(
+        [sys.executable, "validate_jurisdictions.py", str(bad)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1
+    assert "problem(s)" in result.stderr
+    assert "missing required field" in result.stderr

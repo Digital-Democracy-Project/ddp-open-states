@@ -86,7 +86,15 @@ for part in field.split("."):
         sys.exit(4)
     node = node[part]
 
-if node is None:
+if isinstance(node, dict):
+    # PM-review round 1 fold: a block path (e.g. "scrape" instead of "scrape.timeout_s") has
+    # no stable shell serialization -- printing Python's dict repr would be a silently-wrong,
+    # unparseable string handed to whatever bash expected a scalar. Every documented usage
+    # example asks for a leaf value; enforce that rather than let this slide through.
+    sys.stderr.write(f"jurisdiction_field: '{field}' on '{juris}' is a block, not a leaf value "
+                      f"-- request a specific field inside it instead\n")
+    sys.exit(4)
+elif node is None:
     print("")
 elif isinstance(node, bool):
     print("true" if node else "false")

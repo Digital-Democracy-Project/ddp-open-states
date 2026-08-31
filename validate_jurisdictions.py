@@ -34,6 +34,25 @@ except ImportError:  # pragma: no cover - exercised only in a broken environment
     sys.exit(2)
 
 
+class _DuplicateKeyCheckingLoader(yaml.SafeLoader):
+    """PM-review round 1 fold: PyYAML's default SafeLoader silently accepts duplicate mapping
+    keys (last value wins) -- a real gap for a file meant to be this fleet's authoritative
+    per-jurisdiction source of truth, where a duplicated jurisdiction code or a duplicated nested
+    field (e.g. two `timeout_s:` lines under one state) would otherwise silently drop a reviewed
+    value with no error at all. Overrides construct_mapping to raise instead."""
+
+    def construct_mapping(self, node, deep=False):
+        mapping = set()
+        for key_node, _value_node in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if key in mapping:
+                raise yaml.constructor.ConstructorError(
+                    None, None, f"found duplicate key {key!r}", key_node.start_mark
+                )
+            mapping.add(key)
+        return super().construct_mapping(node, deep=deep)
+
+
 DEFAULT_MANIFEST_PATH = "jurisdictions.yaml"
 
 STATUS_VALUES = {"probing", "scraping", "validating", "archived", "live", "paused"}
@@ -133,7 +152,10 @@ def validate(data):
             errors.append(f"jurisdiction key {code!r}: keys must be non-empty strings")
             continue
         if not code.islower() or not code.replace("_", "").isalpha():
-            errors.append(f"{code}: jurisdiction key should be lowercase letters (e.g. 'fl', 'us'), not {code!r}")
+            errors.append(
+                f"{code}: jurisdiction key should be lowercase letters, optionally "
+                f"underscore-separated (e.g. 'fl', 'us'), not {code!r}"
+            )
 
         if not isinstance(entry, dict):
             errors.append(f"{code}: entry must be a mapping, got {type(entry).__name__}")
@@ -198,7 +220,7 @@ def load_and_validate(path):
         return None, [f"cannot read {path}: {exc}"]
 
     try:
-        data = yaml.safe_load(raw)
+        data = yaml.load(raw, Loader=_DuplicateKeyCheckingLoader)
     except yaml.YAMLError as exc:
         return None, [f"{path} is not valid YAML: {exc}"]
 
