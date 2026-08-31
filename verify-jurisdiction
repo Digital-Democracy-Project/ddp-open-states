@@ -1,0 +1,937 @@
+#!/usr/bin/env python3
+"""
+verify-jurisdiction — the Onboarding Probe (OPEN-222, PLAN-push-button-onboarding.md §4.4).
+
+Answers "what will this state cost?" in ~30 minutes, before anyone commits to onboarding it,
+by running gates A-H against the real scraper toolchain and the local OpenStates DB. Read-only
+by design (see "Safety" below) -- it never writes to a production database, never edits scraper
+code, never files tickets, and never touches ddp-sync/ddp-broker-py/ddp-next/votebot.
+
+Depends on OPEN-221 (jurisdictions.yaml / validate_jurisdictions.py / jurisdiction-field.sh),
+this branch's own base. Uses jurisdiction-field.sh's manifest only to read an existing entry's
+recorded values for context (e.g. api_keys) when one exists -- a brand-new state has no manifest
+entry yet, which is fine, every gate below works from the live scraper/DB, not the manifest.
+
+Gates (PLAN-push-button-onboarding.md §4.4's table, ticket OPEN-222's restatement of it):
+    A (blocking)  get_session_list() >= 1 session; check_session_list() passes; active sessions
+    B (blocking)  scraper module shape: votes scraper? start= supported? module-level
+                  settings/RPM? required API keys present in the environment?
+    C (blocking)  CONVERSION_FUNCTIONS[<st>] covers every media_type actually present upstream
+    D (blocking)  bounded, timed dry scrape; nonzero objects; per-bill latency; block signatures
+    E (advisory)  motion_classification.yaml has a block for this state? sample motion texts
+    F (advisory)  version walk direction, informational only (OPEN-34: quality.walk_direction
+                  itself is obsolete -- this gate reports a finding, never writes that field)
+    G (advisory)  people data present; broker fixture district counts (best-effort); session
+                  code shape vs. the broker's `^(\\d{3}|\\d{4}|\\d{4}[a-zA-Z]+)$` regex
+    H (blocking)  BillVersionLink rows exist and aren't a stale snapshot
+
+Output: a scored, classified (green/yellow/red) markdown report written to
+notes/<st>-onboarding-probe-<date>.md (PLAN §5 Stage 0's exact naming convention).
+
+Safety (judgment calls made explicit, since the plan text doesn't spell out DB-write mechanics):
+  - Gates C and D never touch a database. They run a bounded, capped dry scrape (like this
+    repo's existing test-mi-scrape-sample.py, generalized to any jurisdiction) that writes
+    scraped JSON to an ISOLATED scratch subdirectory -- never the real `_data/<st>` `run-scrape.sh`
+    and a live production scrape use -- and gate C derives extractor coverage from that JSON, not
+    from a live-API sample (both are named as acceptable in the plan; JSON is what a plain
+    dry-scrape run already produces, no extra network budget spent).
+  - Gate D respects the existing same-jurisdiction scrape lock (`/tmp/ddp-openstates-scrape-locks/
+    $STATE`, OPEN-154) as a courtesy check before scraping, and always writes to its own scratch
+    subdirectory regardless, so it cannot collide with a concurrent real scrape's data even if the
+    lock has already been released mid-check.
+  - Gate H is READ-ONLY by default: it queries whatever BillVersionLink rows already exist in the
+    configured DATABASE_URL. Passing --import additionally imports the gate D dry-scrape's bounded
+    JSON sample (a real write) -- and that is refused unless DATABASE_URL is recognizable as a
+    non-production database (name ends in _dev/_test, or --force-import is passed explicitly).
+    This is the one place this script could write to a database at all, and it defaults to off.
+
+Usage:
+    verify-jurisdiction <st> [--session ID] [--sample-bills N] [--import] [--notes-dir DIR]
+
+Must be run with this repo's environment active (source activate.sh or activate-dev.sh first) --
+same requirement as every other script in this repo (see PRIMITIVES.md).
+"""
+
+import argparse
+import datetime
+import glob
+import inspect
+import io
+import itertools
+import json
+import logging
+import os
+import re
+import subprocess
+import sys
+import time
+from urllib.parse import urlparse
+
+# ── Constants ──────────────────────────────────────────────────────────────────
+
+# PRIMITIVES.md's documented gotcha: the scraper module is "usa", the DB/manifest short code
+# is "us". Every other jurisdiction's module name matches its short code.
+SCRAPER_MODULE_OVERRIDES = {"us": "usa"}
+
+# Same marker regexes as import-summary.sh's scrape_output_shows_unreachable_site() /
+# _SCRAPE_UNREACHABLE_MARKERS / _SCRAPE_NEGATED_MARKER -- deliberately duplicated here (bash vs.
+# Python, no shared runtime) rather than shelled out to, matching this repo's existing precedent
+# for a byte-for-byte-intentional small duplication (api-v3's copy of version_ordering.py is the
+# same call). If you change one, change the other.
+_UNREACHABLE_MARKERS_RE = re.compile(
+    r"neither a results page nor a usable bill page|waf block detected|"
+    r"consecutive waf blocks|unrecognised block page|unrecognized block page",
+    re.IGNORECASE,
+)
+_NEGATED_MARKER_RE = re.compile(
+    r"(^|[^a-zA-Z0-9])(no|not|never|without|isn.t|wasn.t)\s+(an?\s+)?"
+    r"(waf block|consecutive waf|unrecognised block|unrecognized block|results page)",
+    re.IGNORECASE,
+)
+
+# The broker's session-code regex (PLAN-push-button-onboarding.md §4.4 gate G / ddp-broker-py's
+# own validation) -- a code change is needed on the broker side for anything that doesn't match.
+BROKER_SESSION_CODE_RE = re.compile(r"^(\d{3}|\d{4}|\d{4}[a-zA-Z]+)$")
+
+SCRAPE_LOCK_DIR = "/tmp/ddp-openstates-scrape-locks"
+
+DEFAULT_SAMPLE_BILLS = 20  # matches §4.4's "20-bill dry scrape" gate C example
+
+
+# ── Pure helpers (unit-testable, no scraper/DB/network needed) ─────────────────
+
+
+def scraper_module_name(st):
+    """Jurisdiction short code -> importable scraper module name.
+
+    Bare name (e.g. "fl", "usa"), NOT "scrapers.fl" -- verified live, 2026-08-30: under
+    activate.sh/activate-dev.sh's PYTHONPATH (which points directly at openstates-scrapers/
+    scrapers/, not its parent), get_jurisdiction("fl") resolves and get_jurisdiction("scrapers.fl")
+    does not. check-scraper-imports.sh's "scrapers.<abbr>" form only works because that script
+    sets its own different PYTHONPATH (both the scrapers dir AND its parent) -- this script reuses
+    activate.sh/activate-dev.sh's environment as-is instead of a third PYTHONPATH convention, so
+    it must call get_jurisdiction() the way run-scrape.sh's own votes-scraper probe does (bare
+    $STATE), not the way check-scraper-imports.sh does.
+    """
+    return SCRAPER_MODULE_OVERRIDES.get(st, st)
+
+
+def ocd_jurisdiction_id(st):
+    """Short code -> the OCD jurisdiction id string used throughout the local DB (matches
+    quality_check.py's OCD_TO_CODE mapping direction, generalized to any state, not just the
+    7 it hardcodes)."""
+    if st == "us":
+        return "ocd-jurisdiction/country:us/government"
+    return f"ocd-jurisdiction/country:us/state:{st}/government"
+
+
+def looks_like_unreachable_site(text):
+    """True if `text` (scrape exception text + captured log lines) contains a WAF/block-page
+    signature that isn't itself negated -- mirrors import-summary.sh's
+    scrape_output_shows_unreachable_site() line-by-line, applied to the whole blob here since
+    there's no separate scrape-output file in this in-process invocation."""
+    if not text:
+        return False
+    for line in text.splitlines():
+        if _NEGATED_MARKER_RE.search(line):
+            continue
+        if _UNREACHABLE_MARKERS_RE.search(line):
+            return True
+    return False
+
+
+def is_probably_production_db(database_url):
+    """Best-effort judgment call: does this DATABASE_URL look like OUR dev/test convention
+    (db name ending in _dev or _test), or does it look like production? Mirrors
+    activate.sh/activate-dev.sh's own DATABASE_URL_OVERRIDE convention (db NAME is what differs
+    between the two, same container/port) rather than inventing a second one. Errs toward "yes,
+    this is production" on anything ambiguous or unparsable -- a false positive here just means
+    --import is refused and a human passes --force-import; a false negative would mean a real
+    write against a real production database, which is the failure mode this function exists to
+    prevent.
+
+    Round-1 PM review fold: dropped the bare "test" in lowered substring check -- it would have
+    called a real database like contest_prod safe. The two suffix checks already cover this
+    fleet's actual, documented naming convention; a same-suffix match is a stronger signal than
+    "contains the word test anywhere".
+    """
+    try:
+        name = (urlparse(database_url).path or "").lstrip("/")
+    except ValueError:
+        return True
+    if not name:
+        return True
+    lowered = name.lower()
+    return not (lowered.endswith("_dev") or lowered.endswith("_test"))
+
+
+def extract_media_types(bill_json):
+    """Every media_type referenced by a scraped bill's versions[] and documents[] links --
+    the exact shape openstates-core's do_scrape()/save_object() writes to disk (verified live
+    against a real AZ bill JSON, 2026-08-30)."""
+    media_types = set()
+    for version in bill_json.get("versions", []) or []:
+        for link in version.get("links", []) or []:
+            if link.get("media_type"):
+                media_types.add(link["media_type"])
+    for document in bill_json.get("documents", []) or []:
+        for link in document.get("links", []) or []:
+            if link.get("media_type"):
+                media_types.add(link["media_type"])
+    return media_types
+
+
+def missing_extractor_coverage(media_types_present, conversion_functions_for_state):
+    """media_types this state's scrape actually produced that have no entry (of any kind,
+    including the deliberate DoNotDownload sentinel) in CONVERSION_FUNCTIONS[<st>]."""
+    covered = set((conversion_functions_for_state or {}).keys())
+    return media_types_present - covered
+
+
+def scraper_signature_has_param(scraper_cls, param_name):
+    """Does `scraper_cls`'s scrape() method accept a given keyword parameter (e.g. "start")?
+    Static inspection only -- no instantiation, no network."""
+    try:
+        sig = inspect.signature(scraper_cls.scrape)
+    except (TypeError, ValueError, AttributeError):
+        return False
+    return param_name in sig.parameters
+
+
+_ENV_VAR_REF_RE = re.compile(
+    r"os\.(?:environ\[[\"']([A-Z][A-Z0-9_]*)[\"']\]"
+    r"|environ\.get\([\"']([A-Z][A-Z0-9_]*)[\"']"
+    r"|getenv\([\"']([A-Z][A-Z0-9_]*)[\"'])"
+)
+
+
+def find_env_var_references(source_dir):
+    """Static scan of every .py file under `source_dir` for os.environ[...]/os.environ.get(...)/
+    os.getenv(...) calls naming an ALL_CAPS variable -- the candidate per-jurisdiction credential
+    names (PRIMITIVES.md's "per-jurisdiction credentials" section: the value's own scraper-chosen
+    name, e.g. VA_API_KEY, never a DDP-invented alias). Deliberately excludes generic names any
+    scraper might share (nothing here is state-specific by construction, so no exclusion list is
+    needed beyond what the regex already requires: an ALL_CAPS identifier)."""
+    found = set()
+    for path in glob.glob(os.path.join(source_dir, "**", "*.py"), recursive=True):
+        try:
+            with open(path, "r", errors="replace") as f:
+                text = f.read()
+        except OSError:
+            continue
+        for match in _ENV_VAR_REF_RE.finditer(text):
+            found.add(next(g for g in match.groups() if g))
+    return found
+
+
+def classify_walk_direction(bills_versions):
+    """PLAN §4.4 gate F, adapted to the real schema (documented judgment call): BillVersion/
+    BillVersionLink carry no created_at timestamp at all (verified live against the real schema,
+    2026-08-30) and their primary key is a random UUID, so "DB insertion order via id" -- the
+    literal OPEN-34-era mechanism -- cannot be recovered from the database after the fact. This
+    instead compares each bill's *scrape order* (the order versions appear in the scraper's own
+    JSON output, i.e. the order about to be/just inserted) against BillVersion.date (the one
+    timestamp-shaped field that exists) for bills where every version has a non-blank date.
+
+    `bills_versions`: list of per-bill version-date lists in scrape order, e.g.
+        [["2024-01-01", "2024-01-15"], ["2024-02-01", "2024-01-20"], ...]
+    Only bills with >=2 versions AND every version's date populated are classifiable; anything
+    else is silently excluded (not enough information, not a stated direction).
+
+    Returns one of "forward", "backward", "mixed", "unknown" (mirrors the manifest's own
+    now-obsolete quality.walk_direction enum values for readability in the probe report only --
+    this is NEVER written back to jurisdictions.yaml, see the module docstring and OPEN-221's
+    2026-08-07 note)."""
+    forward = backward = 0
+    for dates in bills_versions:
+        if len(dates) < 2 or any(not d for d in dates):
+            continue
+        if dates == sorted(dates):
+            forward += 1
+        elif dates == sorted(dates, reverse=True):
+            backward += 1
+        # else: neither monotonic direction (a substitute/amendment shape) -- not counted
+        # either way, matching OPEN-34's own finding that not every state fits a binary model.
+
+    if forward + backward < 10:
+        return "unknown"
+    if forward and backward:
+        return "mixed"
+    return "forward" if forward else "backward"
+
+
+def session_code_shape_ok(session_identifier):
+    """Does a session identifier match the broker's own regex
+    (^(\\d{3}|\\d{4}|\\d{4}[a-zA-Z]+)$)? A non-conforming shape (e.g. Arizona's
+    "57th-1st-regular") is a real, pre-existing finding -- not a script bug -- and is exactly
+    what this sub-check exists to catch before a code change is needed broker-side."""
+    return bool(BROKER_SESSION_CODE_RE.match(session_identifier or ""))
+
+
+def exit_code_for_classification(classification):
+    """Round-1 PM review fold: extracted so the exit-code contract is directly unit-testable,
+    not just asserted from reading main(). Only a clean green run is success -- a shell/CI
+    caller checking exit code alone previously saw 0 for yellow too, including a refused
+    --import, which is not something to report as if it went fine. Distinct nonzero codes so a
+    caller that cares can tell "needs scoped work" (1) from "needs human scoping" (2) apart."""
+    return {"green": 0, "yellow": 1, "red": 2}[classification]
+
+
+def classify_probe(gate_results):
+    """Roll up every GateResult into green/yellow/red, per PLAN §4.4:
+        green  = every blocking gate PASSED CLEAN (not merely "didn't fail" -- warn/skip on a
+                 blocking gate means the probe couldn't actually confirm that gate, which is not
+                 the same as confirming it's fine, round-1 PM review fold), no advisory gate
+                 found real work
+        yellow = a blocking gate failed in a way that's scoped, known code work (extractor
+                 coverage, an import-time credential, a votes/start-filter gap) -- or is
+                 inconclusive (warn/skip) rather than cleanly confirmed -- or an advisory gate
+                 found real (but bounded) work
+        red    = gate D found an actual WAF/block-page signature, or a blocking gate failed
+                 with no scoped fix in view (can't list sessions at all, zero objects with no
+                 block signature to explain it) -- needs human scoping, per the plan's own
+                 definition of red
+
+    This mapping is a judgment call the plan states only in prose ("green = config-only, yellow
+    = needs extractor/motion/cleaner work, red = WAF/structural") -- documented here rather than
+    left implicit, and called out again in this PR's own description.
+
+    Round-1 PM review fold: the original version only inspected blocking gates with
+    status == "fail", so a blocking gate that came back "warn" or "skip" (gate C with no
+    document links to check, gate D skipped for a held scrape lock, gate H skipped with no
+    DATABASE_URL configured, gate H "warn" on stale data) was silently treated the same as a
+    clean pass -- a run that couldn't actually confirm a blocking gate could still report GREEN.
+    Now any blocking gate that isn't a clean "pass" keeps the result out of green.
+    """
+    by_gate = {g.gate: g for g in gate_results}
+    blocking_failed = [g for g in gate_results if g.blocking and g.status == "fail"]
+    blocking_inconclusive = [
+        g for g in gate_results if g.blocking and g.status in ("warn", "skip")
+    ]
+    advisory_warn = [g for g in gate_results if not g.blocking and g.status == "warn"]
+
+    gate_d = by_gate.get("D")
+    if gate_d is not None and gate_d.status == "fail" and gate_d.block_signature:
+        return "red"
+
+    if any(g.gate == "A" for g in blocking_failed):
+        return "red"  # can't even list sessions -- needs human scoping before anything else
+    if any(g.gate == "D" for g in blocking_failed):
+        # zero objects with no known block signature -- structural, not a known-shape fix
+        return "red"
+    if any(g.gate == "H" for g in blocking_failed):
+        return "yellow"  # the UT zero-links trap was a real, scoped scraper bug once found
+
+    if blocking_failed:
+        return "yellow"  # B/C: credential, extractor coverage -- scoped, templated fixes
+    if blocking_inconclusive:
+        return "yellow"  # round-1 fold: inconclusive is not confirmed-fine
+    if advisory_warn:
+        return "yellow"  # motion classification / people data / session shape need real work
+    return "green"
+
+
+# ── GateResult ───────────────────────────────────────────────────────────────
+
+
+class GateResult:
+    def __init__(self, gate, blocking, status, summary, details=None, block_signature=False):
+        assert status in ("pass", "warn", "fail", "skip")
+        self.gate = gate
+        self.blocking = blocking
+        self.status = status
+        self.summary = summary
+        self.details = details or []
+        self.block_signature = block_signature  # only meaningful for gate D
+
+    def symbol(self):
+        return {"pass": "PASS", "warn": "WARN", "fail": "FAIL", "skip": "SKIP"}[self.status]
+
+
+# ── Gate implementations (need the real toolchain / DB) ─────────────────────
+
+
+def run_gate_a(juris, module_name):
+    from openstates.cli.update import check_session_list, CommandError
+
+    try:
+        scraped_sessions = juris.get_session_list()
+    except Exception as exc:  # pragma: no cover - exercised only against a real broken scraper
+        return GateResult("A", True, "fail", f"get_session_list() raised {exc!r}")
+
+    if not scraped_sessions:
+        return GateResult("A", True, "fail", "get_session_list() returned no sessions")
+
+    try:
+        active_sessions = check_session_list(juris)
+    except CommandError as exc:
+        return GateResult("A", True, "fail", f"check_session_list() failed: {exc}")
+
+    return GateResult(
+        "A", True, "pass",
+        f"{len(scraped_sessions)} scraped session(s), {len(active_sessions)} active",
+        details=[f"active: {', '.join(sorted(active_sessions))}"],
+    )
+
+
+def run_gate_b(juris, module_name, st, scrapers_source_dir):
+    from openstates.cli.update import get_jurisdiction, CommandError
+
+    details = []
+    votes_scraper = "votes" in juris.scrapers
+    details.append(f"votes scraper registered: {votes_scraper}")
+
+    bills_cls = juris.scrapers.get("bills")
+    start_supported = bool(bills_cls) and scraper_signature_has_param(bills_cls, "start")
+    details.append(f"bills scraper accepts start=: {start_supported}")
+
+    try:
+        from openstates.utils.resilience_profiles import RESILIENCE_PROFILES
+        waf_profile = "cookie_provider" if st in RESILIENCE_PROFILES else "none"
+    except ImportError:  # pragma: no cover - only if this checkout predates resilience_profiles
+        waf_profile = "unknown"
+    details.append(f"WAF resilience profile: {waf_profile}")
+
+    # Round-1 PM review fold: gate B's stated checks include "module-level settings/RPM", which
+    # had no code at all before this -- MI's own bills.py names the real convention
+    # (`<ST>_SCRAPELIB_RPM = int(os.environ.get("<ST>_SCRAPELIB_RPM", <default>))`, overriding
+    # the platform-wide openstates.settings.SCRAPELIB_RPM default). Informational, like
+    # votes_scraper/start_supported above -- a conservative per-state RPM isn't itself a
+    # failure, it's a fact that feeds a human's rate-limit judgment call, same as this gate's
+    # other findings.
+    rpm_attr = f"{st.upper()}_SCRAPELIB_RPM"
+    module = sys.modules.get(bills_cls.__module__) if bills_cls else None
+    custom_rpm = getattr(module, rpm_attr, None) if module else None
+    details.append(
+        f"module-level RPM override ({rpm_attr}): {custom_rpm}" if custom_rpm is not None
+        else f"no module-level RPM override found ({rpm_attr} not set) -- platform default applies"
+    )
+
+    candidate_keys = find_env_var_references(os.path.join(scrapers_source_dir, module_name))
+    missing_keys = sorted(k for k in candidate_keys if k not in os.environ)
+    present_keys = sorted(k for k in candidate_keys if k in os.environ)
+    if candidate_keys:
+        details.append(
+            f"credential env-var references found in source: {', '.join(sorted(candidate_keys))}"
+            f" (present: {', '.join(present_keys) or 'none'}; "
+            f"absent: {', '.join(missing_keys) or 'none'})"
+        )
+    else:
+        details.append("no credential env-var references found in scraper source")
+
+    # An import-time-gated credential (dc's shape -- KeyError raised at class-definition time)
+    # is the only class of missing-credential this script can prove statically; a method-time
+    # gate (va/in/ny's shape) needs a real scrape attempt, which gate D provides -- see
+    # PRIMITIVES.md's "Onboarding a credentialed jurisdiction" section, reused here rather than
+    # re-derived.
+    try:
+        get_jurisdiction(module_name)
+    except KeyError as exc:
+        key = exc.args[0] if exc.args else None
+        if isinstance(key, str) and re.fullmatch(r"[A-Z][A-Z0-9_]*", key) and key not in os.environ:
+            return GateResult(
+                "B", True, "fail",
+                f"import-time-required credential {key!r} is not set in the environment",
+                details=details,
+            )
+        return GateResult("B", True, "fail", f"module import raised KeyError: {key!r}", details=details)
+    except CommandError as exc:
+        return GateResult("B", True, "fail", f"could not import scraper module: {exc}", details=details)
+    except Exception as exc:  # pragma: no cover - exercised only against a genuinely broken module
+        return GateResult("B", True, "fail", f"could not import scraper module: {exc!r}", details=details)
+
+    status = "warn" if missing_keys else "pass"
+    summary = "module shape recorded"
+    if missing_keys:
+        summary += (
+            f" -- {', '.join(missing_keys)} referenced in source but absent from the "
+            "environment (could be method-time-optional; confirm via gate D)"
+        )
+    return GateResult("B", True, status, summary, details=details)
+
+
+def run_gate_c(media_types_present, conversion_functions_for_state, st):
+    missing = missing_extractor_coverage(media_types_present, conversion_functions_for_state)
+    if missing:
+        return GateResult(
+            "C", True, "fail",
+            f"{len(missing)} media_type(s) with no CONVERSION_FUNCTIONS['{st}'] entry: "
+            f"{', '.join(sorted(missing))}",
+        )
+    if not media_types_present:
+        return GateResult(
+            "C", True, "warn",
+            "dry scrape produced no document links to check extractor coverage against "
+            "(inconclusive, not a pass) -- widen --sample-bills or re-run once bills exist",
+        )
+    return GateResult(
+        "C", True, "pass",
+        f"all {len(media_types_present)} media_type(s) seen have an extractor entry: "
+        f"{', '.join(sorted(media_types_present))}",
+    )
+
+
+def run_gate_d(juris, st, session, sample_bills, scraped_data_dir):
+    lock_path = os.path.join(SCRAPE_LOCK_DIR, st)
+    if os.path.isdir(lock_path):
+        return GateResult(
+            "D", True, "skip",
+            f"a real scrape appears to be in progress for '{st}' ({lock_path} held) -- "
+            "not safe to run a dry scrape right now, retry later",
+        ), [], None
+
+    bills_cls = juris.scrapers.get("bills")
+    if bills_cls is None:
+        return GateResult("D", True, "fail", "no 'bills' scraper registered on this jurisdiction"), [], None
+
+    datadir = os.path.join(scraped_data_dir, "_probe", st)
+    os.makedirs(datadir, exist_ok=True)
+    for f in glob.glob(os.path.join(datadir, "*.json")):
+        os.remove(f)
+
+    log_capture = io.StringIO()
+    handler = logging.StreamHandler(log_capture)
+    handler.setLevel(logging.WARNING)
+    logging.getLogger().addHandler(handler)
+
+    scraper = bills_cls(juris, datadir, strict_validation=False)
+    real_scrape = scraper.scrape
+
+    def capped_scrape(*a, **kw):
+        return itertools.islice(real_scrape(*a, **kw), sample_bills)
+
+    scraper.scrape = capped_scrape
+
+    kwargs = {"session": session} if session else {}
+    start = time.monotonic()
+    error_text = ""
+    report = None
+    try:
+        report = scraper.do_scrape(**kwargs)
+    except Exception as exc:
+        error_text = f"{type(exc).__name__}: {exc}"
+    elapsed = time.monotonic() - start
+    logging.getLogger().removeHandler(handler)
+
+    captured_log = log_capture.getvalue()
+    blocked = looks_like_unreachable_site(error_text) or looks_like_unreachable_site(captured_log)
+
+    bill_files = sorted(glob.glob(os.path.join(datadir, "bill_*.json")))
+    n_objects = len(bill_files)
+    per_bill_latency = (elapsed / n_objects) if n_objects else None
+
+    details = [f"wall clock: {elapsed:.1f}s", f"objects written: {n_objects}"]
+    if per_bill_latency is not None:
+        details.append(f"avg per-bill latency: {per_bill_latency:.2f}s")
+    if captured_log.strip():
+        details.append(f"warnings/errors logged during scrape: {captured_log.strip()[:2000]}")
+
+    if error_text:
+        status = "fail"
+        summary = f"dry scrape raised: {error_text}"
+        if blocked:
+            summary += " (looks like a block-page/WAF signature)"
+    elif n_objects == 0:
+        status = "fail"
+        summary = "dry scrape completed but wrote zero objects"
+    else:
+        status = "pass"
+        summary = f"dry scrape OK: {n_objects} object(s) in {elapsed:.1f}s"
+
+    return (
+        GateResult("D", True, status, summary, details=details, block_signature=blocked),
+        bill_files,
+        report,
+    )
+
+
+def run_gate_e(conn, st, scrapers_source_dir):
+    # scrapers_source_dir is PYTHONPATH's own root under activate.sh/activate-dev.sh -- the
+    # openstates-scrapers/scrapers directory itself (see main()) -- so config/ is a direct
+    # sibling of every per-state package dir, not something to re-derive from an import.
+    yaml_path = os.path.join(scrapers_source_dir, "config", "motion_classification.yaml")
+
+    if not os.path.isfile(yaml_path):
+        return GateResult("E", False, "warn", f"could not locate motion_classification.yaml at {yaml_path}")
+
+    import yaml as pyyaml
+    with open(yaml_path) as f:
+        data = pyyaml.safe_load(f) or {}
+    has_block = st in (data.get("jurisdictions") or {})
+
+    details = []
+    if conn is not None:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT DISTINCT ve.motion_text
+            FROM opencivicdata_voteevent ve
+            JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
+            JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
+            WHERE j.id = %s
+            LIMIT 10
+            """,
+            (ocd_jurisdiction_id(st),),
+        )
+        rows = [r[0] for r in cur.fetchall()]
+        if rows:
+            details.append(f"sample motion texts already in local DB: {rows}")
+        else:
+            details.append("no vote events in local DB yet to sample motion texts from")
+
+    if has_block:
+        return GateResult("E", False, "pass", f"motion_classification.yaml has a '{st}' block", details=details)
+    return GateResult("E", False, "warn", f"no motion_classification.yaml block for '{st}' yet", details=details)
+
+
+def run_gate_f(bill_files):
+    bills_versions = []
+    for path in bill_files:
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        dates = [v.get("date", "") for v in (data.get("versions") or [])]
+        if len(dates) >= 2:
+            bills_versions.append(dates)
+
+    direction = classify_walk_direction(bills_versions)
+    qualifying = sum(
+        1 for d in bills_versions
+        if len(d) >= 2 and all(d) and (d == sorted(d) or d == sorted(d, reverse=True))
+    )
+    summary = (
+        f"walk direction (informational only, NOT written to the manifest per OPEN-34's "
+        f"2026-08-07 correction): {direction} ({qualifying} classifiable multi-version bill(s) "
+        f"in this dry scrape's sample)"
+    )
+    # "unknown" here means "this bounded sample didn't happen to include 10+ classifiable
+    # multi-version bills" -- expected and common for a small probe sample, not a defect, and
+    # per OPEN-34's own 2026-08-07 correction this finding no longer gates anything downstream
+    # (the durable content-based classifier handles direction regardless). SKIP rather than WARN
+    # so an inconclusive sample never costs an otherwise-healthy state its green classification;
+    # WARN is reserved for an actual finding worth a human glance ("mixed" -- some bills go one
+    # way, some the other, worth knowing about even though nothing downstream depends on it).
+    if direction == "unknown":
+        status = "skip"
+    elif direction == "mixed":
+        status = "warn"
+    else:
+        status = "pass"
+    return GateResult("F", False, status, summary)
+
+
+def run_gate_g(st, active_sessions, people_dir_root, broker_fixture_path):
+    details = []
+
+    people_dir = os.path.join(people_dir_root, st, "legislature")
+    has_people = os.path.isdir(people_dir) and bool(os.listdir(people_dir))
+    details.append(f"people/data/{st}/legislature/ non-empty: {has_people}")
+
+    if os.path.isfile(broker_fixture_path):
+        # Round-1 PM review fold: this used to imply a district-count cross-check had happened.
+        # It hadn't -- reading and comparing ddp-broker-py's fixture CSV needs that repo's own
+        # schema confirmed first, which this script doesn't do (see run_gate_g's docstring
+        # note in the module header). Say plainly that presence was checked, not the count.
+        details.append(
+            f"broker fixture found at {broker_fixture_path} -- district-count cross-check not "
+            "implemented (would need ddp-broker-py's fixture schema confirmed first); presence "
+            "only, do not read this as 'counts verified'"
+        )
+    else:
+        details.append(
+            f"broker fixture not found locally ({broker_fixture_path}) -- this is a different "
+            "repo's checkout, not expected to be present here; skipped rather than guessed"
+        )
+
+    bad_sessions = sorted(s for s in active_sessions if not session_code_shape_ok(s))
+    if bad_sessions:
+        details.append(
+            f"session code(s) not matching the broker's regex: {', '.join(bad_sessions)} "
+            "(a broker-side code change would be needed for these)"
+        )
+
+    issues = (not has_people) or bool(bad_sessions)
+    status = "warn" if issues else "pass"
+    summary = "people data / broker session-shape check" + (" -- see details" if issues else " OK")
+    return GateResult("G", False, status, summary, details=details)
+
+
+def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_name, datadir):
+    # Note: main() already refuses to call this with do_import=True against a DB that looks
+    # like production (see the is_probably_production_db() check around the call site) -- this
+    # function trusts that gate and does not re-derive DATABASE_URL from the live connection.
+    details = []
+    if do_import:
+        import_cmd = [
+            os.path.join(os_venv, "bin", "os-update"), module_name,
+            "--import", "--datadir", datadir,
+        ]
+        result = subprocess.run(import_cmd, capture_output=True, text=True)
+        details.append(f"import command: {' '.join(import_cmd)}")
+        details.append(f"import exit code: {result.returncode}")
+        if result.returncode != 0:
+            return GateResult(
+                "H", True, "fail", "import step failed", details=details + [result.stderr[-2000:]],
+            )
+
+    # Round-1 PM review fold: scoped to the session actually being probed when one is known,
+    # rather than jurisdiction-wide. A jurisdiction-wide count can pass on old, unrelated
+    # sessions' links even when the session this run just (dry-)scraped/imported produced none
+    # -- exactly the gap between "this jurisdiction has data somewhere" and "this run's own
+    # target session has links", which matters most for an already-onboarded state's later
+    # sessions, not just a brand-new state (where jurisdiction-wide and session-scoped happen to
+    # coincide, since nothing else exists yet). Falls back to jurisdiction-wide only if no
+    # session could be determined at all (gate A found no active sessions).
+    session_filter = "AND ls.identifier = %s" if session else ""
+    params = (ocd_jurisdiction_id(st), session) if session else (ocd_jurisdiction_id(st),)
+
+    cur = conn.cursor()
+    cur.execute(
+        f"""
+        SELECT count(*)
+        FROM opencivicdata_billversionlink l
+        JOIN opencivicdata_billversion v ON v.id = l.version_id
+        JOIN opencivicdata_bill b ON b.id = v.bill_id
+        JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+        JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
+        WHERE j.id = %s {session_filter}
+        """,
+        params,
+    )
+    link_count = cur.fetchone()[0]
+    scope_note = f"session {session}" if session else "jurisdiction-wide (no session determined)"
+    details.append(f"BillVersionLink rows for {st} ({scope_note}): {link_count}")
+
+    cur.execute(
+        f"""
+        SELECT max(b.updated_at)
+        FROM opencivicdata_bill b
+        JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+        JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
+        WHERE j.id = %s {session_filter}
+        """,
+        params,
+    )
+    row = cur.fetchone()
+    last_updated = row[0] if row else None
+    details.append(f"most recent opencivicdata_bill.updated_at for {st} ({scope_note}): {last_updated}")
+
+    if link_count == 0:
+        return GateResult(
+            "H", True, "fail",
+            "zero BillVersionLink rows for this jurisdiction (the UT zero-links trap)",
+            details=details,
+        )
+
+    staleness_note = ""
+    if last_updated is not None:
+        age = datetime.datetime.now(datetime.timezone.utc) - last_updated
+        if age > datetime.timedelta(days=30):
+            staleness_note = f" -- most recent update is {age.days} days old (the MA stale-snapshot trap; verify this isn't a dead scrape)"
+
+    status = "warn" if staleness_note else "pass"
+    return GateResult(
+        "H", True, status,
+        f"{link_count} BillVersionLink row(s) present{staleness_note}",
+        details=details,
+    )
+
+
+# ── Report rendering ───────────────────────────────────────────────────────────
+
+
+def render_report(st, name, classification, gate_results, wall_clock_s, run_at):
+    lines = [
+        f"# Onboarding Probe — {st} ({name})",
+        "",
+        f"**Classification:** {classification.upper()}",
+        f"**Run at:** {run_at.isoformat()}  |  **Wall clock:** {wall_clock_s:.1f}s",
+        "",
+        "PLAN-push-button-onboarding.md §4.4 / §5 Stage 0 -- OPEN-222. Read-only: no production "
+        "database writes, no scraper code changes, no tickets filed. See the script's own "
+        "docstring for exactly what each gate checks and the judgment calls made where the "
+        "plan's prose left a gap.",
+        "",
+        "## Gate summary",
+        "",
+        "| Gate | Blocking? | Status | Summary |",
+        "|---|---|---|---|",
+    ]
+    for g in gate_results:
+        lines.append(f"| {g.gate} | {'yes' if g.blocking else 'no'} | {g.symbol()} | {g.summary} |")
+
+    lines += ["", "## Details", ""]
+    for g in gate_results:
+        lines.append(f"### Gate {g.gate}")
+        lines.append("")
+        lines.append(f"**{g.symbol()}** ({'blocking' if g.blocking else 'advisory'}) — {g.summary}")
+        for d in g.details:
+            lines.append(f"- {d}")
+        lines.append("")
+
+    blocking_failures = [g.gate for g in gate_results if g.blocking and g.status == "fail"]
+    advisory_warnings = [g.gate for g in gate_results if not g.blocking and g.status == "warn"]
+    lines += ["## Recommendation", ""]
+    if classification == "green":
+        lines.append("Config-only. Proceed to RUNBOOK.md §5 Stage 1 (fix cycle) with zero expected tickets.")
+    elif classification == "yellow":
+        lines.append(
+            f"Needs scoped code work before progressing: blocking gate(s) {blocking_failures or 'none'}, "
+            f"advisory gate(s) needing attention: {advisory_warnings or 'none'}. "
+            "File templated tickets per RUNBOOK.md §5 Stage 1, copying the AC structure from the "
+            "matching solved OPEN ticket named in each gate's detail above."
+        )
+    else:
+        lines.append(
+            "WAF/structural — needs a human scoping conversation before any fix ticket is filed "
+            "(PLAN-push-button-onboarding.md §5 Stage 0's explicit red-state instruction)."
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ── main ────────────────────────────────────────────────────────────────────
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("state", help="jurisdiction short code, e.g. fl, ut, nc")
+    parser.add_argument("--session", default=None, help="override the session to dry-scrape (default: an active session from gate A)")
+    parser.add_argument("--sample-bills", type=int, default=DEFAULT_SAMPLE_BILLS, help=f"bounded dry-scrape sample size (default {DEFAULT_SAMPLE_BILLS})")
+    parser.add_argument("--notes-dir", default="notes", help="where to write the probe report (default: notes/)")
+    parser.add_argument("--import", dest="do_import", action="store_true", help="also import the dry-scrape sample (real DB write; refused against a DB that looks like production)")
+    parser.add_argument("--force-import", action="store_true", help="override the production-DB guard for --import (dangerous; use only when you are certain)")
+    parser.add_argument("--people-dir", default="people/data", help="path to the people/ data directory")
+    parser.add_argument(
+        "--broker-fixture",
+        default=os.path.expanduser("~/Developer/repos/ddp-broker-py/common/fixtures/jurisdictions.csv"),
+        help="best-effort path to ddp-broker-py's jurisdiction fixture, for gate G's district-count cross-check",
+    )
+    args = parser.parse_args(argv)
+
+    st = args.state.lower()
+    module_name = scraper_module_name(st)
+
+    scraped_data_dir = os.environ.get("SCRAPED_DATA_DIR")
+    scrapers_src_dir = os.environ.get("PYTHONPATH", "").split(":")[0] or "."
+    os_venv = os.environ.get("OS_VENV", "")
+    if not scraped_data_dir:
+        print("ERROR: SCRAPED_DATA_DIR is not set -- source activate.sh or activate-dev.sh first.", file=sys.stderr)
+        return 2
+
+    from openstates.cli.update import get_jurisdiction
+
+    run_at = datetime.datetime.now(datetime.timezone.utc)
+    t0 = time.monotonic()
+
+    juris, _module = get_jurisdiction(module_name)
+    name = getattr(juris, "name", st.upper())
+
+    results = []
+    results.append(run_gate_a(juris, module_name))
+    results.append(run_gate_b(juris, module_name, st, scrapers_src_dir))
+
+    active_sessions = []
+    for line in (results[0].details or []):
+        if line.startswith("active:"):
+            active_sessions = [s.strip() for s in line[len("active:"):].split(",") if s.strip()]
+
+    conn = None
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        import psycopg2
+
+        try:
+            conn = psycopg2.connect(database_url)
+        except psycopg2.OperationalError as exc:
+            print(f"WARNING: could not connect to DATABASE_URL ({exc}); DB-backed gates will be skipped", file=sys.stderr)
+
+    # Pick a default session with real data to dry-scrape against, rather than an arbitrary
+    # sort order -- an active-but-nearly-empty special session (e.g. a one-bill special session)
+    # would starve gates C/D/F of anything to check. Falls back to the alphabetically-last active
+    # session (a mild bias toward a state's current regular session, e.g. "2026" over "2025") when
+    # there's no DB connection or no existing bill counts to rank by.
+    session = args.session
+    if session is None and active_sessions:
+        session = sorted(active_sessions)[-1]
+        if conn is not None:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT ls.identifier, count(*)
+                FROM opencivicdata_bill b
+                JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+                JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
+                WHERE j.id = %s AND ls.identifier = ANY(%s)
+                GROUP BY ls.identifier
+                ORDER BY count(*) DESC
+                LIMIT 1
+                """,
+                (ocd_jurisdiction_id(st), active_sessions),
+            )
+            row = cur.fetchone()
+            if row:
+                session = row[0]
+
+    gate_d_result, bill_files, _scrape_report = run_gate_d(
+        juris, st, session, args.sample_bills, scraped_data_dir
+    )
+    results.append(gate_d_result)
+
+    media_types_present = set()
+    for path in bill_files:
+        try:
+            with open(path) as f:
+                media_types_present |= extract_media_types(json.load(f))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+    from openstates.fulltext import CONVERSION_FUNCTIONS
+
+    results.insert(2, run_gate_c(media_types_present, CONVERSION_FUNCTIONS.get(st), st))
+
+    if conn is not None:
+        do_import = args.do_import
+        if do_import and is_probably_production_db(database_url) and not args.force_import:
+            results.append(GateResult(
+                "H", True, "fail",
+                "--import requested but DATABASE_URL looks like production -- refused "
+                "(pass --force-import only if you are certain this is safe)",
+            ))
+        else:
+            datadir = os.path.join(scraped_data_dir, "_probe", st)
+            results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir))
+        results.append(run_gate_e(conn, st, scrapers_src_dir))
+    else:
+        results.append(GateResult("H", True, "skip", "no DATABASE_URL configured -- skipped"))
+        results.append(run_gate_e(None, st, scrapers_src_dir))
+
+    results.append(run_gate_f(bill_files))
+    results.append(run_gate_g(st, active_sessions, args.people_dir, args.broker_fixture))
+
+    if conn is not None:
+        conn.close()
+
+    order = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7}
+    results.sort(key=lambda g: order.get(g.gate, 99))
+
+    classification = classify_probe(results)
+    wall_clock = time.monotonic() - t0
+
+    report_text = render_report(st, name, classification, results, wall_clock, run_at)
+    os.makedirs(args.notes_dir, exist_ok=True)
+    date_str = run_at.strftime("%Y%m%d")
+    report_path = os.path.join(args.notes_dir, f"{st}-onboarding-probe-{date_str}.md")
+    with open(report_path, "w") as f:
+        f.write(report_text)
+
+    print(report_text)
+    print(f"\nWritten to {report_path}", file=sys.stderr)
+
+    return exit_code_for_classification(classification)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
