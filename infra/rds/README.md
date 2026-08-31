@@ -107,13 +107,69 @@ checked directly rather than assumed:
    **partially closed, and still only 3 of the 7 jurisdictions this rollout actually covers (FL,
    VA, WA, AZ, MA, MI, USA) have been checked at all.** For the three checked (FL HB 1325, VA
    SB 192, WA SB 6099): row counts, action/version counts, and document/version links identical
-   between local production Postgres and RDS, *and*, as of 2026-08-31, the api-v3 application
-   layer itself — the second, independent EC2 instance's response for all three matches the
-   Mac's own instance field-for-field, confirmed via `notes/ops-handoff`, not taken on the
-   reply's own word alone (full detail in `notes/open190-phase1-closure-validation-20260831.md`).
-   That closes the api-v3-response gap for these three. **AZ, MA, MI, and USA remain entirely
-   unchecked** — this line stays partially closed on jurisdiction coverage alone until those are
-   done.
+   between local production Postgres and RDS on all three (FL's full detail is in
+   `notes/open190-phase1-closure-validation-20260831.md`, merged in OPEN-190's own PR #207).
+   **AZ, MA, MI, and USA remain entirely unchecked** — this line stays partially closed on
+   jurisdiction coverage alone until those are done.
+
+   The api-v3 *application*-layer comparison against the second EC2 instance is closed for FL
+   (quoted in full in #207's own note, field-for-field identical including `updated_at` to the
+   microsecond). For VA and WA, the RDS-side response came back via `notes/ops-handoff`
+   (`39c9b8a`) — quoting the Mac-side response here directly, matching FL's standard, rather than
+   asserting a match without the evidence to back it (a real gap in an earlier version of this
+   section, caught via `notes/ops-handoff`):
+
+   **VA SB 192, Mac-side** (`GET /bills/ocd-bill/ae6f0d7a-6a70-430e-a85b-557412caaedf?include=versions`):
+   ```json
+   {
+     "id": "ocd-bill/ae6f0d7a-6a70-430e-a85b-557412caaedf",
+     "session": "2027",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:va/government", "name": "Virginia", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/9f1a0a17-d2fb-4d0c-90fb-119004411b83", "name": "Senate", "classification": "upper"},
+     "identifier": "SB 192",
+     "title": "State-owned bottomlands; localities, property interest.",
+     "classification": ["bill"],
+     "subject": [],
+     "extras": {"VA_LEG_ID": 99056},
+     "created_at": "2026-08-25T00:31:20.933573+00:00",
+     "updated_at": "2026-08-25T00:31:20.943513+00:00",
+     "openstates_url": "https://openstates.org/va/bills/2027/SB192/",
+     "first_action_date": "2026-01-09",
+     "latest_action_date": "2026-07-21",
+     "latest_action_description": "Continued from last session",
+     "latest_passage_date": ""
+   }
+   ```
+   `versions`: `"Introduced"` (2 links) and `"Agriculture, Conservation and Natural Resources
+   Substitute"` (4 links) — same two version notes, same order, as the RDS-side reply.
+   Field-for-field identical to the RDS-backed response quoted in
+   `notes/open190-191-api-v3-three-bill-comparison-reply-20260831.md`.
+
+   **WA SB 6099, Mac-side** (`GET /bills/ocd-bill/271de7b7-47b6-4992-bb36-40c54862e135`):
+   ```json
+   {
+     "id": "ocd-bill/271de7b7-47b6-4992-bb36-40c54862e135",
+     "session": "2025-2026",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:wa/government", "name": "Washington", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/ddae63d3-9f3e-4c46-a00f-703fe21b54d1", "name": "Senate", "classification": "upper"},
+     "identifier": "SB 6099",
+     "title": "Providing basic taxpayer fairness by delaying department of revenue action with regard to tax changes until rule making is finalized.",
+     "classification": ["bill"],
+     "subject": [],
+     "extras": {},
+     "created_at": "2026-06-15T23:09:25.014748+00:00",
+     "updated_at": "2026-06-15T23:09:25.032880+00:00",
+     "openstates_url": "https://openstates.org/wa/bills/2025-2026/SB6099/",
+     "first_action_date": "2026-01-13",
+     "latest_action_date": "2026-01-13",
+     "latest_action_description": "First reading, referred to Ways & Means.",
+     "latest_passage_date": ""
+   }
+   ```
+   Identical to the RDS-backed response quoted in the same reply note, field-for-field.
+
+   All three (FL/VA/WA) now genuinely closed at the api-v3 layer, with the actual comparison
+   data quoted rather than asserted.
 3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
    checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
    returns versions in the correct stage-aware order ("Introduced" before the later committee
