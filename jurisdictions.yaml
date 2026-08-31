@@ -255,3 +255,37 @@ ma:
   onboarding:
     epic: null
     evidence: null
+
+nc:
+  name: North Carolina
+  status: probing                     # OPEN-230: probed 2026-08-31, chosen as the pilot #1
+                                       # candidate -- not yet in ddp-sync's schedule, so the
+                                       # scrape/archive fields below are defaults, not measured
+                                       # production values (see the probe report cited below)
+  tier: secondary                      # per PLAN-push-button-onboarding.md §5 Stage 2, a new
+                                       # pilot state is added to secondary.jurisdictions
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h -- no NC-specific entry
+                                       # exists yet (not scheduled), same default az/ma use
+    session_arg: null                  # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: false                # scrapers/nc/__init__.py's `scrapers = {...}` registers
+                                        # only "bills" and "events" -- no "votes" entry
+    start_filter: false                  # scrapers/nc/bills.py's scrape() takes no start=
+                                         # argument -- the scraper does not support one yet
+  archive:
+    enabled: false                      # not enabled anywhere yet -- Stage 4 gates this on
+                                        # probe gate C, which passed for nc
+    timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h -- no NC-specific entry
+  waf:
+    profile: none                       # probe gate B recorded no WAF/cookie-provider shape
+  quality:
+    diff_cleaner: none                  # no NC-specific extractor gap found (gate C passed)
+  api_keys: []                          # gate A/D passed cleanly, no missing credential
+  onboarding:
+    epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
+                                        # blocking gate (H) is OPEN-222's known --import
+                                        # limitation for virgin states, not a real scraper gap
+                                        # (see OPEN-230's decision notes), so there is nothing
+                                        # yet to scope a fix-cycle ticket against
+    evidence: notes/nc-onboarding-probe-20260831.md
