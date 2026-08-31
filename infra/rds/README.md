@@ -108,6 +108,117 @@ naive `postgresql://user:pass@host` connection string — Python's `urllib.parse
 with `ValueError: Invalid IPv6 URL`. URL-encode the password
 (`urllib.parse.quote(password, safe="")`) before building `DATABASE_URL`/`DATABASE_URL_OVERRIDE`.
 
+## OPEN-191's own 4-item validation checklist, status as of 2026-08-31
+
+OPEN-191 lists four things to check before the broker is pointed at this instance. Status,
+checked directly rather than assumed:
+
+1. **api-v3 health** — **closed**. "Healthy" here means, on both the Mac's own instance and the
+   second, independent one on the `ddp-broker` EC2 host (INFRA-1): `GET /healthz` returns 200,
+   *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
+   current data rather than an error or a stub — not just process-up.
+2. **A representative response per routed jurisdiction, compared against the old path** —
+   **partially closed, and still only 3 of the 7 jurisdictions this rollout actually covers (FL,
+   VA, WA, AZ, MA, MI, USA) have been checked at all.** For the three checked (FL HB 1325, VA
+   SB 192, WA SB 6099): row counts, action/version counts, and document/version links identical
+   between local production Postgres and RDS on all three (FL's full detail is in
+   `notes/open190-phase1-closure-validation-20260831.md`, merged in OPEN-190's own PR #207).
+   **AZ, MA, MI, and USA remain entirely unchecked** — this line stays partially closed on
+   jurisdiction coverage alone until those are done.
+
+   The api-v3 *application*-layer comparison against the second EC2 instance is closed for FL
+   (quoted in full in #207's own note, field-for-field identical including `updated_at` to the
+   microsecond). For VA and WA, the RDS-side response came back via `notes/ops-handoff`
+   (`39c9b8a`) — quoting the Mac-side response here directly, matching FL's standard, rather than
+   asserting a match without the evidence to back it (a real gap in an earlier version of this
+   section, caught via `notes/ops-handoff`):
+
+   **VA SB 192, Mac-side** (`GET /bills/ocd-bill/ae6f0d7a-6a70-430e-a85b-557412caaedf?include=versions`):
+   ```json
+   {
+     "id": "ocd-bill/ae6f0d7a-6a70-430e-a85b-557412caaedf",
+     "session": "2027",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:va/government", "name": "Virginia", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/9f1a0a17-d2fb-4d0c-90fb-119004411b83", "name": "Senate", "classification": "upper"},
+     "identifier": "SB 192",
+     "title": "State-owned bottomlands; localities, property interest.",
+     "classification": ["bill"],
+     "subject": [],
+     "extras": {"VA_LEG_ID": 99056},
+     "created_at": "2026-08-25T00:31:20.933573+00:00",
+     "updated_at": "2026-08-25T00:31:20.943513+00:00",
+     "openstates_url": "https://openstates.org/va/bills/2027/SB192/",
+     "first_action_date": "2026-01-09",
+     "latest_action_date": "2026-07-21",
+     "latest_action_description": "Continued from last session",
+     "latest_passage_date": ""
+   }
+   ```
+   `versions`: `"Introduced"` (2 links) and `"Agriculture, Conservation and Natural Resources
+   Substitute"` (4 links) — same two version notes, same order, as the RDS-side reply.
+   Field-for-field identical to the RDS-backed response quoted in
+   `notes/open190-191-api-v3-three-bill-comparison-reply-20260831.md`.
+
+   **WA SB 6099, Mac-side** (`GET /bills/ocd-bill/271de7b7-47b6-4992-bb36-40c54862e135`):
+   ```json
+   {
+     "id": "ocd-bill/271de7b7-47b6-4992-bb36-40c54862e135",
+     "session": "2025-2026",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:wa/government", "name": "Washington", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/ddae63d3-9f3e-4c46-a00f-703fe21b54d1", "name": "Senate", "classification": "upper"},
+     "identifier": "SB 6099",
+     "title": "Providing basic taxpayer fairness by delaying department of revenue action with regard to tax changes until rule making is finalized.",
+     "classification": ["bill"],
+     "subject": [],
+     "extras": {},
+     "created_at": "2026-06-15T23:09:25.014748+00:00",
+     "updated_at": "2026-06-15T23:09:25.032880+00:00",
+     "openstates_url": "https://openstates.org/wa/bills/2025-2026/SB6099/",
+     "first_action_date": "2026-01-13",
+     "latest_action_date": "2026-01-13",
+     "latest_action_description": "First reading, referred to Ways & Means.",
+     "latest_passage_date": ""
+   }
+   ```
+   Identical to the RDS-backed response quoted in the same reply note, field-for-field.
+
+   All three (FL/VA/WA) now genuinely closed at the api-v3 layer, with the actual comparison
+   data quoted rather than asserted.
+3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
+   checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
+   returns versions in the correct stage-aware order ("Introduced" before the later committee
+   substitute) rather than raw insertion or date order — confirmed independently on *both* the
+   Mac's instance and the second EC2 instance against RDS. Two independent confirmations of the
+   same one case is stronger evidence than one, but it's still one bill — not the same claim as
+   "every stage-ordering edge case OPEN-90/92 originally found is still handled," which this
+   does not attempt to re-verify.
+4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
+   so this isn't closeable as written. Observed instead: the newest bill update per jurisdiction
+   in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of this check.
+   Checked whether Washington's age reflects a real absence of legislative activity rather than
+   an RDS-specific ingestion gap, rather than assuming it: the Mac's own daily scheduled
+   `run-scrape.sh` runs for Washington — the existing, already-trusted path, querying the real
+   site directly — have themselves reported `bills_scraped=0 | no changes since cutoff (no-op)`
+   on every run from at least 2026-08-14 through 2026-08-24. The same staleness pattern exists on
+   the old path too, which is real evidence against an RDS-specific problem, though it does not
+   rule out every other possible explanation. Setting the actual "agreed window" this criterion
+   refers to is still a decision for whoever owns that SLA, not something this check can settle.
+
+## Explicitly deferred, not attempted here
+
+Three things remain open and are **not** attempted in this pass, on purpose — each is either a
+policy call that belongs to Ramon specifically, or a substantial new infrastructure build with
+real production risk, not validation of what already exists:
+
+- **The rollback policy decision** (keep loading to both vs. a stated staleness window) —
+  OPEN-191's own text frames this as Ramon's call to make in writing before cutover, not
+  something to infer or default on his behalf.
+- **A read replica** — genuinely new infrastructure (a second RDS instance, replication set up,
+  traffic split between it and the primary), not a check against something already built.
+- **Pointing `ddp-broker` at this instance** — the actual cutover, which OPEN-191's own
+  acceptance criteria explicitly gate on all four validation items passing and the rollback
+  policy being decided first. Neither is true yet.
+
 ## What this does NOT do
 
 - Does not create the security group or DB subnet group it references — both pre-created out of
