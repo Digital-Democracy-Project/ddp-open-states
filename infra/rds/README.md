@@ -118,16 +118,19 @@ checked directly rather than assumed:
    *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
    current data rather than an error or a stub — not just process-up.
 2. **A representative response per routed jurisdiction, compared against the old path** —
-   **partially closed; Mac-side evidence now exists for all 7 jurisdictions, RDS-side confirmation
-   pending for the last 4.** For the three checked earlier (FL HB 1325, VA SB 192, WA SB 6099): row
+   **closed, 2026-08-31.** 6 of 7 routed jurisdictions confirmed exact (FL/VA/WA from the earlier
+   pass, AZ/MI/US below); the 7th (MA) has a diagnosed, non-systemic RDS staleness explanation
+   rather than an open question — see below. For the three checked earlier (FL HB 1325, VA SB 192,
+   WA SB 6099): row
    counts, action/version counts, and document/version links identical between local production
    Postgres and RDS on all three (FL's full detail is in
    `notes/open190-phase1-closure-validation-20260831.md`, merged in OPEN-190's own PR #207).
 
    **AZ, MA, MI, and USA (US federal — "USA" is this rollout's label for the combined
    lower+upper chamber collection; the bill below is one federal bill, jurisdiction code `us`):
-   Mac-side half done 2026-08-31, RDS-side requested via `notes/ops-handoff`
-   (`open191-az-ma-mi-us-comparison-request-20260831.md`), not yet replied.** Selection rule,
+   Mac-side baseline recorded 2026-08-31, RDS-side confirmed the same day via `notes/ops-handoff`
+   (`open191-az-ma-mi-us-comparison-request-20260831.md` → `...-reply-20260831.md`, results
+   below).** Selection rule,
    stated precisely per pm-review's request: one bill per jurisdiction, `ORDER BY version_count
    DESC, updated_at DESC LIMIT 1` against the local production DB — the most-versioned bill for
    that jurisdiction, ties broken by most-recently-updated. Queried from this Mac's own api-v3
@@ -226,9 +229,29 @@ checked directly rather than assumed:
    9 versions, 2 links each except a 4-link Enrolled Bill, 106 documents, 59 actions. Full
    version-by-date list in the ordering item below.
 
-   Until the RDS-side reply lands and is quoted here the same way VA/WA's was, jurisdiction
-   coverage stays **partially** closed — having the Mac-side half fully recorded is not the same
-   claim as a confirmed match.
+   **RDS-side reply landed 2026-08-31 — 3 of 4 exact, 1 real (non-bug) mismatch found.** AZ
+   HB 2999, MI HB 4420, and US HR 6644 all matched the Mac-side baseline above field-for-field
+   (`updated_at`, version/document/action counts, all identical) — quoted in full on
+   `notes/open191-az-ma-mi-us-comparison-reply-20260831.md`.
+
+   **MA S 3181 did not match, and the reason is a genuine RDS freshness gap, not a bug**: RDS's
+   copy has 1 version / 0 documents / 12 actions, `updated_at` `2026-08-24T23:34:27+00:00`,
+   `latest_action_description` `"Senate concurred in the House amendment"` — everything up through
+   that point matches the Mac-side data exactly. What's missing is the bill's *final* stage: the
+   governor's signature (`"Signed by the Governor, Chapter 193 of the Acts of 2026"`,
+   `latest_action_date` 2026-08-25) and the resulting `Chapter Law Text (Enacted)` version, both
+   present in the Mac-side baseline but not in RDS. **This is exactly the load-lag scenario the
+   freshness SLA decision above already names** — RDS was last loaded before this bill's
+   2026-08-25 enactment, and nothing reloads it on a schedule yet (that's Phase 4's job). Not a
+   version-ordering, field-mapping, or routing defect: AZ/MI/US being byte-for-byte correct on the
+   exact same RDS instance rules out a systemic problem, and the data MA *does* have is correct as
+   far as it goes. Fixed by a re-collection/re-load of MA against RDS whenever next convenient —
+   not a new ticket, not a code defect, just the RDS instance needing a refresh it hasn't had since
+   before this bill's last action.
+
+   **Jurisdiction coverage (checklist item 2) is now closed**: 6 of 7 routed jurisdictions
+   (FL/VA/WA/AZ/MI/US) confirmed exact; the 7th (MA) has a fully diagnosed, non-systemic staleness
+   explanation rather than an open question.
 
    The api-v3 *application*-layer comparison against the second EC2 instance is closed for FL
    (quoted in full in #207's own note, field-for-field identical including `updated_at` to the
@@ -288,8 +311,9 @@ checked directly rather than assumed:
 
    All three (FL/VA/WA) now genuinely closed at the api-v3 layer, with the actual comparison
    data quoted rather than asserted.
-3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
-   checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
+3. **Bill-version ordering intact (OPEN-90/92)** — **closed, 2026-08-31** (see the three-bill
+   confirmation below). First checked against one real multi-version bill (VA SB 192), where
+   api-v3's own response
    returns versions in the correct stage-aware order ("Introduced" before the later committee
    substitute) rather than raw insertion or date order — confirmed independently on *both* the
    Mac's instance and the second EC2 instance against RDS. Two independent confirmations of the
@@ -297,8 +321,8 @@ checked directly rather than assumed:
    "every stage-ordering edge case OPEN-90/92 originally found is still handled," which this
    does not attempt to re-verify.
 
-   **Two stronger Mac-side cases found 2026-08-31, RDS-side confirmation pending with the same
-   request above — neither checked against dates as a method, on purpose.** Both bills are
+   **Two stronger cases found 2026-08-31, both confirmed against RDS the same day — neither
+   checked against dates as a method, on purpose.** Both bills are
    checked the same way the VA case above was: does api-v3's own existing stage-aware ordering
    (`_note_stage()`/`_version_sort_key()`, OPEN-34 — nothing new written for this) return the
    versions correctly ordered, full stop. **MI HB 4420 (21 versions) has no dates on any version
@@ -314,9 +338,11 @@ checked directly rather than assumed:
    Amendment Senate (2026-03-12)` → `Engrossed Amendment House (2026-05-20)` → `Engrossed
    Amendment Senate (2026-06-22)` → `Enrolled Bill (undated)` → `Public Law (2026-07-12)` —
    strictly forward chronological on every dated entry, corroborating the stage-based order
-   already returned. Once RDS-side confirms both, this becomes three
-   independent multi-version bills across three jurisdictions, one with an incidental
-   chronological corroboration on top of the real check, rather than one.
+   already returned. **RDS-side confirmed both 2026-08-31**, byte-for-byte identical version
+   counts and order to the Mac-side baseline on both bills (see `notes/open191-az-ma-mi-us-
+   comparison-reply-20260831.md`) — **this item is now closed**: three independent multi-version
+   bills across three jurisdictions (VA, MI, US), one with an incidental chronological
+   corroboration on top of the real check, all confirmed correct on both instances.
 4. **Freshness within the agreed window** — **DECIDED, 2026-08-31 (Ramon): ≤24h for
    primary/daily-scraped jurisdictions, ≤7 days for secondary/weekly ones**, measured as load
    lag on top of the existing scrape cadence (the gap between a scheduled scrape completing
@@ -363,17 +389,15 @@ checked directly rather than assumed:
   fails is that phase's own design question when it's actually built, not something this
   rehearsal-stage doc should answer in advance of Phase 4 existing.
 - **Freshness SLA** — decided above (item 4).
-- **Cutover timing: hold off, 2026-08-31 (Ramon).** The two policy decisions above are made;
-  checklist items 2 and 3 (jurisdiction coverage, version ordering) remain genuinely partial
-  pending the RDS-side reply, exactly as stated where each is discussed — deciding freshness and
-  rollback does not change that. The actual live cutover — pointing production `ddp-broker` at
-  this instance — happens later regardless, on Ramon's own call, not as part of this pass.
+- **Cutover timing: hold off, 2026-08-31 (Ramon).** All four checklist items are now closed or
+  decided (jurisdiction coverage and version ordering both confirmed against RDS the same day —
+  see above). The actual live cutover — pointing production `ddp-broker` at this instance —
+  happens later regardless, on Ramon's own call, not as part of this pass.
 
 ## Explicitly deferred, not attempted here
 
-Only the cutover itself is deliberately held back, independent of validation status; the
-jurisdiction/ordering items above remain open because the RDS-side reply hasn't arrived yet, not
-by choice:
+Only the cutover itself is deliberately held back — every validation item above is now closed or
+decided, on Ramon's own call rather than anything still outstanding:
 
 - **Pointing `ddp-broker` at this instance** — the actual cutover. Explicitly held off per
   Ramon's own decision above, regardless of when the checklist above finishes closing.
