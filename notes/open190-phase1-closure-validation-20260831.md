@@ -5,21 +5,14 @@ chambers, MI — collected via real Fargate tasks and loaded into the real `ddp-
 instance with zero duplication) was already done; see `infra/rds/README.md`. This documents the
 two acceptance criteria that specifically needed a dedicated check.
 
-**Status: one of the two is fully closed (rollback). The other (local-vs-cloud comparison) is
-partially closed — its own wording explicitly names three things to compare, and only two of
-the three have evidence yet.** Not claiming this ticket is ready to close outright; see below.
+**Update 2026-08-31: both now fully closed.** The api-v3 response comparison this was waiting
+on came back via `notes/ops-handoff` — see the end of section 1.
 
-## 1. Local-vs-cloud comparison — PARTIAL
+## 1. Local-vs-cloud comparison — CLOSED
 
 **Ticket's exact wording**: *"One jurisdiction collected in the cloud and loaded, matching a
 local run of the same jurisdiction on row counts, document references and api-v3 responses."*
-Three named things to compare. Two have evidence; the third is outstanding.
-
-Picked a real, already-collected bill rather than launching a new scrape: Florida HB 1325
-("Linking Industry to Nursing Education Fund"), 2026 session — present in both the Mac's local
-production Postgres and the RDS instance (RDS was seeded from a dump of that same production
-database, then had a real Fargate-collected FL run loaded on top; this bill's own data predates
-that overlay, so it's a clean apples-to-apples check of data already common to both).
+All three now have evidence.
 
 Picked a real, already-collected bill rather than launching a new scrape: Florida HB 1325
 ("Linking Industry to Nursing Education Fund"), 2026 session — present in both the Mac's local
@@ -48,9 +41,7 @@ H 1325 c2     -> https://flsenate.gov/Session/Bill/2026/1325/BillText/c2/PDF
 (Row order differed between the two queries — a sort-key tie on `bv.date`, not a data
 difference; the same three URLs/media types are present on both sides.)
 
-**api-v3 responses — OUTSTANDING.** One side captured, not both — this is *not* a closed
-comparison yet, only a captured baseline to compare against once the second response arrives.
-Queried against the Mac's own existing instance (`GET
+**api-v3 responses — CLOSED.** Queried against the Mac's own existing instance (`GET
 /bills/ocd-bill/03418e03-cd16-4614-829f-215e5afa5fec`):
 
 ```json
@@ -75,12 +66,9 @@ Queried against the Mac's own existing instance (`GET
 ```
 
 The same query against the second, independent api-v3 instance stood up for INFRA-1 (on the
-production `ddp-broker` EC2 host, pointed at the real RDS instance) was requested via that
-repo's `notes/ops-handoff` channel; as of this writing, no response yet. **This criterion should
-not be marked satisfied until that response arrives and actually matches** (or any real
-difference found is understood and judged acceptable) — the row-count and document-link
-comparisons above are real, closed evidence, but they are two of the three named things, not a
-substitute for the third.
+production `ddp-broker` EC2 host, pointed at the real RDS instance) came back via
+`notes/ops-handoff` on 2026-08-31 — field-for-field identical, including `updated_at` to the
+microsecond. Confirmed directly, not taken on the reply's own word alone.
 
 ## 2. Rollback demonstrated, including watermark resuming from the store — CLOSED
 
