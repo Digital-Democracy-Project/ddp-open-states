@@ -127,6 +127,32 @@ def test_main_full_run_ok(tmp_path, monkeypatch, capsys):
     assert "run_id" in record
 
 
+def test_main_zero_exit_with_no_parseable_summary_is_not_reported_as_plain_ok(
+    tmp_path, monkeypatch, capsys
+):
+    """The concrete deploy-ordering failure mode this file's own module docstring warns about:
+    if cloud_archiver is deployed ahead of the openstates-core change it depends on (PR #34),
+    ARCHIVE_S3_MODE is set but silently ignored by old code, and the archive command can still
+    exit 0 with output that doesn't match the expected summary line shape. A plain "ok" status
+    would hide that from anything reading these completion records; "ok_unparsed" says the
+    command didn't signal failure but its outcome couldn't be confirmed."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
+    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
+    script = tmp_path / "fake_os_text_extract_no_summary.sh"
+    script.write_text("#!/usr/bin/env bash\necho 'some unrelated output'\nexit 0\n")
+    script.chmod(script.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("OS_TEXT_EXTRACT", str(script))
+    client = FakeS3Client()
+
+    rc = ca.main(["fl"], s3_client=client)
+
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "ok_unparsed"
+    assert "archived" not in record  # no counts were parsed at all
+
+
 def test_main_lock_held_by_another_run_refuses(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")

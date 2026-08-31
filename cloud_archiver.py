@@ -23,9 +23,16 @@ directly from `cloud_collector`, not duplicated.
 What is genuinely NEW here, not reused, because collection and archiving are different shapes
 of work:
   * `SourceLock` is acquired with `suffix="_archive_lock"` -- a third lock, alongside the
-    existing `_lock` (collection, OPEN-187) and `_import_lock` (load, OPEN-203) -- so an
-    on-prem archiver and this cloud archiver can never race the same jurisdiction, the exact
-    class of hazard OPEN-208 named for collection.
+    existing `_lock` (collection, OPEN-187) and `_import_lock` (load, OPEN-203) -- so two cloud
+    archive runs of the same jurisdiction can never race each other, and this cloud archiver
+    can never race a concurrent *collection* run of the same jurisdiction either (proven by
+    `test_main_archive_lock_and_collection_lock_are_independent_keys` in this file's own test
+    module). This reserves the lock key an on-prem archiver would need to acquire, under this
+    same `_archive_lock` suffix, to be excluded from this cloud archiver too -- but as of this
+    writing `os-text-extract archive` still runs unlocked on the Mac (invoked directly, not
+    through any runner that takes this lock), so that exclusion is not yet real. Don't run this
+    cloud archiver and a manual/cron Mac archive of the same jurisdiction at the same time; the
+    on-prem side taking this lock is follow-up work, not something claimed as already done here.
   * No baseline/watermark hydration at all. `os-text-extract archive` has no `start=` cutoff
     argument (unlike `os-update --scrape`) -- `archive_bill_versions()` is naturally idempotent
     per document via its own natural-key skip-check (version_note, version_date, source_url),
@@ -35,6 +42,16 @@ of work:
     incremental, "found" meaning objects scraped). Archiving has neither concept, and
     contorting one operation's record shape onto a structurally different one would be a worse
     fit than writing five honest fields of its own.
+
+Deploy ordering: this file sets ARCHIVE_S3_MODE=direct in the subprocess environment it hands
+to `os-text-extract archive`, but does not itself carry the code that understands that mode --
+that's openstates-core PR #34 (ARCHIVE_S3_MODE dispatch in `_upload_and_verify`). The
+openstates-core change must be deployed to whatever image/checkout this file's OS_TEXT_EXTRACT
+points at BEFORE this file is deployed or enabled. Running this file against a pre-#34
+openstates-core would set an env var that old code doesn't read at all, so archiving would
+fall through to the sudo-gated Mac wrapper -- absent in a cloud container -- and fail loudly at
+the first document (not silently: `_upload_and_verify_via_wrapper`'s `subprocess.run` on a
+nonexistent binary raises `OSError`, which is not swallowed anywhere in that path).
 
 Usage:
     python3 cloud_archiver.py <state> [session=<session>] [n=<count>]
@@ -295,6 +312,19 @@ def _run_archive_command(state, session, params, run_id, started, archive_env):
         emit_completion_record(status="failed", source=state, run_id=run_id, session=session,
                                 counts=counts, duration_s=duration_s)
         return 1
+
+    if counts is None:
+        # A zero exit with no recognizable summary line is exactly the shape a deploy-ordering
+        # mistake would take (an old openstates-core silently ignoring ARCHIVE_S3_MODE, or the
+        # summary format having drifted) -- reporting an unqualified "ok" here would hide that
+        # from whatever reads these completion records. Reported honestly as "ok_unparsed"
+        # instead of "failed": the archive command itself did not signal an error, so this is
+        # not known to be a failed run, only an unconfirmed one.
+        print(f"WARNING: {state} archive exited 0 but produced no parseable summary line -- "
+              f"cannot confirm counts", file=sys.stderr)
+        emit_completion_record(status="ok_unparsed", source=state, run_id=run_id,
+                                session=session, counts=counts, duration_s=duration_s)
+        return 0
 
     emit_completion_record(status="ok", source=state, run_id=run_id, session=session,
                             counts=counts, duration_s=duration_s)
