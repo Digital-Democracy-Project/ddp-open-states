@@ -104,24 +104,24 @@ checked directly rather than assumed:
    *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
    current data rather than an error or a stub — not just process-up.
 2. **A representative response per routed jurisdiction, compared against the old path** —
-   **partially closed, and only 3 of the 7 jurisdictions this rollout actually covers (FL, VA,
-   WA, AZ, MA, MI, USA) have been checked at all.** Compared real bills across FL (HB 1325), VA
-   (SB 192), WA (SB 6099) between local production Postgres and this RDS instance directly — row
-   counts, action counts, version counts, and document/version links are identical on every one
-   checked (full detail, including the actual queries and output, in
-   `notes/open190-phase1-closure-validation-20260831.md`). AZ, MA, MI, and USA are not yet
-   checked at all. Separately, the comparison at the api-v3 *application* layer specifically
-   (not just the database) against the second EC2 instance is still outstanding — requested via
-   that repo's `notes/ops-handoff` channel, no reply as of this writing. Do not treat this line
-   as closed until both gaps (remaining jurisdictions, and the pending api-v3 response) are
-   addressed.
+   **partially closed, and still only 3 of the 7 jurisdictions this rollout actually covers (FL,
+   VA, WA, AZ, MA, MI, USA) have been checked at all.** For the three checked (FL HB 1325, VA
+   SB 192, WA SB 6099): row counts, action/version counts, and document/version links identical
+   between local production Postgres and RDS, *and*, as of 2026-08-31, the api-v3 application
+   layer itself — the second, independent EC2 instance's response for all three matches the
+   Mac's own instance field-for-field, confirmed via `notes/ops-handoff`, not taken on the
+   reply's own word alone (full detail in `notes/open190-phase1-closure-validation-20260831.md`).
+   That closes the api-v3-response gap for these three. **AZ, MA, MI, and USA remain entirely
+   unchecked** — this line stays partially closed on jurisdiction coverage alone until those are
+   done.
 3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
    checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
    returns versions in the correct stage-aware order ("Introduced" before the later committee
-   substitute) rather than raw insertion or date order, on data identical between local Postgres
-   and RDS. One passing case is real evidence the ordering logic works on real cloud-collected
-   data — it is not the same claim as "every stage-ordering edge case OPEN-90/92 originally
-   found is still handled," which this does not attempt to re-verify.
+   substitute) rather than raw insertion or date order — confirmed independently on *both* the
+   Mac's instance and the second EC2 instance against RDS. Two independent confirmations of the
+   same one case is stronger evidence than one, but it's still one bill — not the same claim as
+   "every stage-ordering edge case OPEN-90/92 originally found is still handled," which this
+   does not attempt to re-verify.
 4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
    so this isn't closeable as written. Observed instead: the newest bill update per jurisdiction
    in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of this check.
