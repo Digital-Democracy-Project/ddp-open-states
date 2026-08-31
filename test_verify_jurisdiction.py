@@ -427,8 +427,17 @@ def test_main_reports_red_instead_of_crashing_when_module_import_fails(tmp_path,
 
     assert exit_code == vj.exit_code_for_classification("red")
 
-    report = (tmp_path / f"ga-onboarding-probe-{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')}.md").read_text()
+    # Round-1 review fold: locate the actual generated report rather than recomputing "today"
+    # a second time -- main() computes its own run_at internally, and a test that independently
+    # calls datetime.now() again would flake if the two calls straddle UTC midnight.
+    reports = list(tmp_path.glob("ga-onboarding-probe-*.md"))
+    assert len(reports) == 1
+    report = reports[0].read_text()
+
     assert "RED" in report
     assert "could not import scraper module" in report
     assert "suds" in report
     assert "human scoping" in report
+    # Round-1 review fold: assert the Gate A failure row explicitly, not just the surrounding
+    # prose -- protects the intended one-gate report contract (exactly Gate A, marked FAIL).
+    assert "| A | yes | FAIL |" in report
