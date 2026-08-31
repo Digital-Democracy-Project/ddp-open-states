@@ -1,0 +1,257 @@
+# ddp-open-states/jurisdictions.yaml — single source of truth for tracked jurisdictions.
+#
+# OPEN-221 / PLAN-push-button-onboarding.md §4.1 ("Manifest v0"). This is deliberately a SMALL
+# first step: the file + validate_jurisdictions.py + jurisdiction-field.sh, consumed ONLY by
+# ddp-open-states scripts and the (separate, not-yet-built) onboarding probe. It is NOT yet wired
+# into activate.sh / run-scrape.sh / quality_check.py / start-os-api.sh, and it is NOT consumed by
+# ddp-sync, ddp-broker-py, ddp-next, or votebot — those repos keep their own existing lists as
+# documentation-of-record for now (see the plan's §4.1 "consumer expansion" table). Consumer
+# wiring is deliberately deferred/follow-up work, not part of this change.
+#
+# The 8 entries below are the jurisdictions already tracked in production as of 2026-08-30 --
+# they onboarded before this manifest existed, so `status: live` and a null `onboarding` block
+# reflect "already done", not "not started". A jurisdiction going through the real Stage 0-6
+# runbook (PLAN-push-button-onboarding.md §5) would start at `status: probing` and fill in
+# `onboarding.epic` / `onboarding.evidence` as it progresses.
+#
+# Deliberate deviation from the plan's original §4.1 example schema: this file has NO
+# `quality.walk_direction` field. The plan's own 2026-08-07 update says that field (and the
+# walk-direction half of probe gate F) is "obsolete -- do not build it", superseded by OPEN-34's
+# durable content-based version-stage classifier (`_note_stage()`/`_version_sort_key()` in
+# openstates-core/openstates/utils/version_ordering.py). `quality.diff_cleaner` is kept -- that
+# part of §4.1/§4.3 was not superseded.
+#
+# `scrape.session_arg` is `null` for every entry here, including fl/us which DO run explicit,
+# multiple session invocations in production -- but that's a *list* of sessions owned by
+# ddp-sync's own scheduler config (config/sync_schedule.yaml), not a single per-jurisdiction
+# override. Per this repo's own per-jurisdiction-config convention (PRIMITIVES.md, OPEN-124),
+# "who is enrolled in a rollout, on what schedule" is scheduler-owned, not wrapper/manifest-owned
+# -- so this field stays reserved for a genuine single-session override and unused for fl/us.
+# For secondary-tier jurisdictions this null is also OPEN-24's resolution: ddp-sync deliberately
+# passes no session arg to secondaries so every active session gets scraped.
+#
+# Every value below was pulled from the real running config on 2026-08-30, not guessed:
+#   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
+#     (src/ddp_sync/pipelines/openstates_scrape.py, openstates_archive.py)
+#   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES
+#   - scrape.allow_duplicates: run-scrape.sh's --allow_duplicates states (mi, fl, va)
+#   - scrape.votes_scraper: whether the jurisdiction's own openstates-scrapers `__init__.py`
+#     registers a live (non-commented) "votes" entry in its `scrapers = {...}` dict -- only `ma`
+#     does (MAVoteScraper); `usa`'s is present but commented out. run-scrape.sh has auto-detected
+#     and invoked this at runtime since OPEN-50 shipped, so this field is documentation, not a
+#     read path (yet) -- see the "not wired in" note above.
+#   - scrape.start_filter: RUNBOOK.md's "Per-jurisdiction caveats" table, corrected for OPEN-128
+#     (MA's incremental filter was deleted 2026-08-25 -- MA now ignores start= and full-walks
+#     every run, so it is `false` here despite the stale RUNBOOK table still listing a caveat)
+#   - waf.profile: openstates-core/openstates/utils/resilience_profiles.py's RESILIENCE_PROFILES
+#     dict (currently `mi` and `fl` only)
+#   - quality.diff_cleaner: openstates-core/openstates/cli/text_extract.py's per-jurisdiction
+#     dispatch (_clean_wa_text, _clean_virginia_text, _clean_michigan_text, _reflow_paragraphs
+#     for az; fl's only per-jurisdiction check there is an unrelated TLS-cipher workaround, not a
+#     cleaner)
+#   - api_keys: PRIMITIVES.md's "per-jurisdiction credentials" table (va requires VA_API_KEY; usa
+#     optionally reads CONGRESS_GOV_API_KEY)
+#   - tier: ddp-sync's sync_schedule.yaml `openstates_scrape.primary` (fl, wa, usa) vs
+#     `.secondary` (va, mi, ma, ut, az) blocks
+
+us:
+  name: United States (Congress)
+  status: live
+  tier: primary            # ddp-sync openstates_scrape.primary.usa
+  scrape:
+    allow_duplicates: false
+    timeout_s: 14400        # SCRAPE_TIMEOUT_S["usa"], 4h
+    session_arg: null        # explicit "119 chamber=lower"/"119 chamber=upper" sessions are
+                              # scheduler-owned (ddp-sync sync_schedule.yaml), see header note
+    votes_scraper: false      # "votes": USVoteScraper is registered but commented out in
+                              # scrapers/usa/__init__.py -- not actually invoked today
+    start_filter: true        # GovInfo sitemap lastmod -- clean server-side filter, no caveat
+  archive:
+    enabled: true
+    timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: none
+  api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
+  onboarding:
+    epic: null                # predates this manifest / the onboarding runbook
+    evidence: null
+
+fl:
+  name: Florida
+  status: live
+  tier: primary             # ddp-sync openstates_scrape.primary.fl
+  scrape:
+    allow_duplicates: true    # pagination overlap produces duplicate bill JSON (upstream #5697)
+    timeout_s: 57600           # SCRAPE_TIMEOUT_S["fl"], 16h -- FL is the longest-running job
+    session_arg: null           # multiple explicit sessions (2026/2026D/2026E/2026F) are
+                                 # scheduler-owned, see header note; also weekly-not-daily
+                                 # (sync_day: sunday) while FL is out of session
+    votes_scraper: false
+    start_filter: true           # last-action date in HTML td[3]; re-verify if flsenate.gov
+                                  # changes layout
+  archive:
+    enabled: true
+    timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
+  waf:
+    profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
+  quality:
+    diff_cleaner: none            # FL's extractor already strips noise as a side effect --
+                                   # verified, not just untried (OPEN-8's actual finding)
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
+
+wa:
+  name: Washington
+  status: live
+  tier: primary              # ddp-sync openstates_scrape.primary.wa
+  scrape:
+    allow_duplicates: false
+    timeout_s: 28800            # SCRAPE_TIMEOUT_S["wa"], 8h
+    session_arg: null            # no session arg passed -- auto-detected
+    votes_scraper: false
+    start_filter: true            # CurrentStatus/ActionDate from GetLegislation; still O(n)
+                                   # GetLegislation calls, only downstream calls are skipped
+  archive:
+    enabled: true
+    timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
+
+va:
+  name: Virginia
+  status: live
+  tier: secondary               # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
+  scrape:
+    allow_duplicates: true        # pagination overlap (upstream #5697); scraper-side dedup also
+                                   # added (65363ef)
+    timeout_s: 21600                # SCRAPE_TIMEOUT_S default, 6h (no VA-specific entry)
+    session_arg: null                # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: false
+    start_filter: true                # max(EventDate) from events call; events call unavoidable,
+                                       # saves 3 of 4 per-bill calls
+  archive:
+    enabled: true
+    timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
+  api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
+                                         # absent (VA already carries upstream's own good-failure
+                                         # pattern -- see PRIMITIVES.md)
+  onboarding:
+    epic: null
+    evidence: null
+
+mi:
+  name: Michigan
+  status: live
+  tier: secondary                # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
+  scrape:
+    allow_duplicates: true         # pagination overlap (upstream #5697)
+    timeout_s: 36000                 # SCRAPE_TIMEOUT_S["mi"], 10h -- MI also gets a periodic
+                                      # forced full walk (OPEN-162), a full walk is ~6.5h against
+                                      # its hard 10 req/min WAF cap
+    session_arg: null                 # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: false
+    start_filter: true                 # dateFrom= URL param in search -- UNVERIFIED: may filter
+                                        # by intro date, not last-action date (RUNBOOK.md caveat)
+  archive:
+    enabled: true
+    timeout_s: 14400                   # ARCHIVE_TIMEOUT_S default, 4h (no MI-specific entry)
+  waf:
+    profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
+                                         # WAF (OPEN-19/21/22/23), 10 req/min hard cap
+  quality:
+    diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
+
+ut:
+  name: Utah
+  status: live
+  tier: secondary                 # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no UT-specific entry)
+    session_arg: null                  # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: false
+    start_filter: true                  # actionHistoryList[0].actionDate -- saves processing
+                                         # time only, still one HTTP call per bill
+  archive:
+    enabled: true
+    timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: none
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
+
+az:
+  name: Arizona
+  status: live
+  tier: secondary                 # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no AZ-specific entry)
+    session_arg: null                  # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: false
+    start_filter: true                  # max(BillStatusAction.ReportDate) -- still O(n) API
+                                         # calls, only sub-calls skipped
+  archive:
+    enabled: true
+    timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
+                                         # boilerplate stripping (_reflow_paragraphs)
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
+
+ma:
+  name: Massachusetts
+  status: live                      # half-onboarded in practice (OPEN-68: drifted across
+                                     # repos' own lists) -- tracked here as `live` since it is
+                                     # scraped/archived/served on /explore today; OPEN-68/
+                                     # OPEN-169/176/177 track its remaining data-quality gaps,
+                                     # not an onboarding-stage regression
+  tier: secondary                    # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
+  scrape:
+    allow_duplicates: false
+    timeout_s: 57600                   # SCRAPE_TIMEOUT_S["ma"], 16h -- same ceiling as FL
+    session_arg: null                   # ALWAYS null for secondaries (OPEN-24 resolution)
+    votes_scraper: true                  # "votes": MAVoteScraper IS registered and live in
+                                          # scrapers/ma/__init__.py (re-enabled inside ma/bills.py
+                                          # per the plan's §0 evidence table)
+    start_filter: false                   # OPEN-128 (2026-08-25): MA's incremental filter was
+                                          # deleted -- it now logs "ignoring start= and listing
+                                          # every bill" and full-walks on every run
+  archive:
+    enabled: true
+    timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: none
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null
