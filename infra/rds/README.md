@@ -99,29 +99,40 @@ with `ValueError: Invalid IPv6 URL`. URL-encode the password
 OPEN-191 lists four things to check before the broker is pointed at this instance. Status,
 checked directly rather than assumed:
 
-1. **api-v3 health** — real, independent api-v3 instances confirmed healthy against this RDS
-   instance, on both the Mac and (for INFRA-1) a second EC2 host. **Closed.**
+1. **api-v3 health** — **closed**. "Healthy" here means, on both the Mac's own instance and the
+   second, independent one on the `ddp-broker` EC2 host (INFRA-1): `GET /healthz` returns 200,
+   *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
+   current data rather than an error or a stub — not just process-up.
 2. **A representative response per routed jurisdiction, compared against the old path** —
-   **partially closed.** Compared real bills across three jurisdictions (FL HB 1325, VA SB 192,
-   WA SB 6099) between local production Postgres and this RDS instance directly — row counts,
-   action counts, version counts, and document/version links are identical on every one checked.
-   What's still outstanding: the comparison at the api-v3 *application* layer specifically
-   (not just the database) against the second, independent api-v3 instance running on the
-   `ddp-broker` EC2 host (INFRA-1) — requested via that repo's `notes/ops-handoff` channel, no
-   reply as of this writing. Do not treat this line as fully closed until that response arrives
-   and actually matches.
-3. **Bill-version ordering intact (OPEN-90/92)** — checked directly against a real multi-version
-   bill (VA SB 192): api-v3's own response returns versions in the correct stage-aware order
-   ("Introduced" before the later committee substitute), not raw insertion or date order, on
-   data that's identical between local Postgres and RDS. **Closed** for the case tested; not
-   exhaustively verified across every stage-ordering edge case OPEN-90/92 originally found.
+   **partially closed, and only 3 of the 7 jurisdictions this rollout actually covers (FL, VA,
+   WA, AZ, MA, MI, USA) have been checked at all.** Compared real bills across FL (HB 1325), VA
+   (SB 192), WA (SB 6099) between local production Postgres and this RDS instance directly — row
+   counts, action counts, version counts, and document/version links are identical on every one
+   checked (full detail, including the actual queries and output, in
+   `notes/open190-phase1-closure-validation-20260831.md`). AZ, MA, MI, and USA are not yet
+   checked at all. Separately, the comparison at the api-v3 *application* layer specifically
+   (not just the database) against the second EC2 instance is still outstanding — requested via
+   that repo's `notes/ops-handoff` channel, no reply as of this writing. Do not treat this line
+   as closed until both gaps (remaining jurisdictions, and the pending api-v3 response) are
+   addressed.
+3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
+   checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
+   returns versions in the correct stage-aware order ("Introduced" before the later committee
+   substitute) rather than raw insertion or date order, on data identical between local Postgres
+   and RDS. One passing case is real evidence the ordering logic works on real cloud-collected
+   data — it is not the same claim as "every stage-ordering edge case OPEN-90/92 originally
+   found is still handled," which this does not attempt to re-verify.
 4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
-   so this isn't closeable as written. Observed instead, honestly: the newest bill update per
-   jurisdiction in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of
-   this check — reflecting each jurisdiction's own real legislative activity level (Washington's
-   own session was less active in this window), not a bug or a stale pipeline. Setting the
-   actual "agreed window" this criterion refers to is a decision for whoever owns that SLA, not
-   something to infer from one snapshot.
+   so this isn't closeable as written. Observed instead: the newest bill update per jurisdiction
+   in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of this check.
+   Checked whether Washington's age reflects a real absence of legislative activity rather than
+   an RDS-specific ingestion gap, rather than assuming it: the Mac's own daily scheduled
+   `run-scrape.sh` runs for Washington — the existing, already-trusted path, querying the real
+   site directly — have themselves reported `bills_scraped=0 | no changes since cutoff (no-op)`
+   on every run from at least 2026-08-14 through 2026-08-24. The same staleness pattern exists on
+   the old path too, which is real evidence against an RDS-specific problem, though it does not
+   rule out every other possible explanation. Setting the actual "agreed window" this criterion
+   refers to is still a decision for whoever owns that SLA, not something this check can settle.
 
 ## Explicitly deferred, not attempted here
 
