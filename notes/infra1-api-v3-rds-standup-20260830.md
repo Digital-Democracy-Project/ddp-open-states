@@ -58,3 +58,44 @@ diagnosis:
 
 Nothing else about the standup has changed — the stack itself is up and healthy; this is purely
 about the network path to RDS.
+
+## Resolved 2026-08-31 — network path fixed, both smoke tests pass
+
+Diagnosis (steps 1-4 above), then the actual fix:
+
+- Host's real attached SGs: `ec2-rds-1` (`sg-065e612a112ca7b70`), `ec2-rds-2`
+  (`sg-0961291cf0fca4326`), `ec2-rds-5` (`sg-0691f4deb9393b7fd`), `ec2-rds-6`
+  (`sg-0ef4eff23ae8c42a2`), plus the default Bitnami LAMP group.
+- `ddp-openstates` RDS was carrying 4 SGs: `ddp-scraper-task`, `rds-ec2-7`, `VPN-security-group`,
+  `ec2-rds-6`. Of those, only `rds-ec2-7` had any port-5432 ingress rule, and it only trusted
+  `ec2-rds-7` — a group this host does not carry. `ec2-rds-6` was attached to *both* the host and
+  RDS, but had no ingress rule of its own (membership in a group doesn't grant inbound access;
+  the group needs an explicit rule). So there was genuinely no rule anywhere permitting this
+  host → RDS on 5432 — not a stale/wrong-id mismatch, a real gap. Same-VPC routing was fine
+  (`172.31.0.0/16` on both sides; host subnet `172.31.64.0/20`, RDS in a different subnet, same
+  VPC — implicit local route, never actually the blocker).
+- Confirming this needed `rds:DescribeDBInstances` (to read `VpcSecurityGroups` off the RDS
+  instance itself), which wasn't granted yet; added narrowly, `Resource` scoped to just the
+  `ddp-openstates` DB instance ARN, alongside the existing `ec2:Describe*` grants on
+  `EC2ServiceAccessReadOnlyRole`.
+- **Fix applied**: swapped one of `ddp-openstates`'s SGs to `sg-08ece6ced1406e4a8` (`rds-ec2-6`),
+  which has a 5432 rule trusting `ec2-rds-6` — a group this host already carries. RDS now shows
+  `[sg-08ece6ced1406e4a8, sg-09346518873d48a08 (ddp-scraper-task), sg-03cc52bae0d7329d7
+  (VPN-security-group)]`.
+
+**Both smoke tests now pass:**
+- Raw TCP connect, host → `ddp-openstates.cvxdhm1ogxug.us-east-1.rds.amazonaws.com:5432`:
+  succeeds (was timing out).
+- `GET http://localhost:8002/jurisdictions/mi?include=legislative_sessions&apikey=...` (note:
+  api-v3 is mapped to host port **8002**, not 8080/8080 — see `deploy/docker-compose.rds.yml`):
+  200, real Michigan jurisdiction data back, `legislative_sessions` populated,
+  `latest_bill_update` from within the last week.
+
+**Flag for follow-up, not blocking**: `sg-08ece6ced1406e4a8` (`rds-ec2-6`) is *shared* — it's
+already attached to another RDS instance. That means it's now a coupling point: any future rule
+change made for that other instance's needs will silently affect `ddp-openstates` too, and vice
+versa. Worth a deliberate decision (dedicated SG for `ddp-openstates` vs. accepting the shared
+one) rather than leaving it as an artifact of this fix.
+
+INFRA-1 validation goal (api-v3 up against real RDS, no cutover, nothing else on the host
+touched) is met.
