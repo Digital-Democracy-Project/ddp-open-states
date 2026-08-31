@@ -17,6 +17,7 @@ import importlib.machinery
 import importlib.util
 import os
 import sys
+from unittest.mock import patch
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _LOADER = importlib.machinery.SourceFileLoader("verify_jurisdiction", os.path.join(_HERE, "verify-jurisdiction"))
@@ -405,3 +406,29 @@ def test_render_report_red_recommendation_mentions_human_scoping():
     gates = [_gate("A", True, "fail")]
     text = vj.render_report("zz", "Zed", "red", gates, 1.0, datetime.datetime(2026, 8, 30, tzinfo=datetime.timezone.utc))
     assert "human scoping" in text
+
+
+# ── main(): the get_jurisdiction() import crash (round-1 fold) ────────────────
+
+
+def test_main_reports_red_instead_of_crashing_when_module_import_fails(tmp_path, monkeypatch):
+    """Confirmed live against real candidate states: GA needs `suds`, OH needs `cloudscraper`,
+    neither installed in this checkout's venv -- the same class of gap OPEN-125 already found
+    once for a different five states. Before this fix, that ModuleNotFoundError propagated all
+    the way out of main() as a raw traceback and a Python-default exit code that happened to
+    collide with "yellow" -- this state was never actually probed, and nothing said so."""
+    monkeypatch.setenv("SCRAPED_DATA_DIR", str(tmp_path))
+
+    with patch(
+        "openstates.cli.update.get_jurisdiction",
+        side_effect=ModuleNotFoundError("No module named 'suds'"),
+    ):
+        exit_code = vj.main(["ga", "--notes-dir", str(tmp_path)])
+
+    assert exit_code == vj.exit_code_for_classification("red")
+
+    report = (tmp_path / f"ga-onboarding-probe-{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')}.md").read_text()
+    assert "RED" in report
+    assert "could not import scraper module" in report
+    assert "suds" in report
+    assert "human scoping" in report
