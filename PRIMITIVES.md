@@ -403,6 +403,15 @@ step matters — a newer pip breaks one of the pinned deps' build.
   `psycopg2-binary==2.9.9` for Postgres-16 SCRAM auth on arm64 — the stock pin links an old
   libpq that can't do `scram-sha-256`), `docker-compose.stopgap.yml` (pinned rollback target,
   points at the old CAMS-shared DB on :5432), `Dockerfile.ddp.dockerignore`.
+  **`docker-compose.rds.yml`** (PR #205, INFRA-1) is a separate, self-contained stack — own
+  Redis, no dependency on any other host's containers/network — for standing up a *second,
+  independent* api-v3 instance pointed at the real `ddp-openstates` RDS instance. Purpose is
+  validation only (no cutover); currently deployed on the `ddp-broker` EC2 host at
+  `/opt/ddp-open-states`, **not** the Mac Studio checkout the rest of this file assumes. See
+  `RUNBOOK.md` → "INFRA-1: ddp-broker RDS validation stack" and the repo's persistent
+  `notes/ops-handoff` branch for that deployment's history — don't confuse it with the
+  Mac-Studio-side `docker-compose.ddp.yml` stack above even though both listen on host port 8002;
+  they're on different machines entirely.
 - **`refresh-api-v3.sh`** (OPEN-101, repo root) — the repeatable pull/rebuild/redeploy cycle
   api-v3 never had one of (unlike `apply-local-patches.sh` for `openstates-core`/
   `openstates-scrapers`): `git pull origin main` in the production `api-v3` checkout, then

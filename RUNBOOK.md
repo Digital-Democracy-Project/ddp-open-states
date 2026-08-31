@@ -1457,6 +1457,29 @@ is removed; see ddp-api README).
 
 ---
 
+## INFRA-1: ddp-broker RDS validation stack (not the cutover target)
+
+A **second, independent** api-v3 instance runs on the production `ddp-broker` EC2 host, at
+`/opt/ddp-open-states`, pointed at the real `ddp-openstates` RDS instance —
+`deploy/docker-compose.rds.yml` (PR #205), own Redis, no dependency on that host's other
+containers/network. **Purpose is validation only — there is no cutover plan for this instance.**
+It happens to listen on host port 8002, same as the Mac-Studio stack described above, but the
+two are on different machines and serve different purposes: don't point any of the "Cutover"
+section's `OPENSTATES_API_BASE` values at this one.
+
+- Containers: `ddp-openstates-api-1`, `ddp-openstates-redis-1`. Health: `GET
+  http://localhost:8002/healthz` → 200.
+- Smoke test: `GET http://localhost:8002/jurisdictions/mi?include=legislative_sessions&apikey=00000000-0000-0000-0000-000000000001`
+  → 200 with real data.
+- 2026-08-30/31: initial standup hit an RDS network-path block (host's security groups had no
+  rule permitting 5432 from any group this host carries) — resolved by moving `ddp-openstates`
+  onto `sg-08ece6ced1406e4a8` (`rds-ec2-6`), which trusts the `ec2-rds-6` group this host already
+  carries. **Open follow-up:** that SG is shared with another RDS instance — a deliberate call is
+  still needed on whether `ddp-openstates` should get its own dedicated SG instead of staying
+  coupled to that one. Full history: this repo's persistent `notes/ops-handoff` branch.
+
+---
+
 ## Cutover (future — not yet)
 
 When the shadow pipeline has run reliably for ≥4 weeks:
