@@ -142,13 +142,19 @@ def looks_like_unreachable_site(text):
 
 def is_probably_production_db(database_url):
     """Best-effort judgment call: does this DATABASE_URL look like OUR dev/test convention
-    (db name ending in _dev/_test, or containing 'test'), or does it look like production?
-    Mirrors activate.sh/activate-dev.sh's own DATABASE_URL_OVERRIDE convention (db NAME is what
-    differs between the two, same container/port) rather than inventing a second one. Errs
-    toward "yes, this is production" on anything ambiguous or unparsable -- a false positive
-    here just means --import is refused and a human passes --force-import; a false negative
-    would mean a real write against a real production database, which is the failure mode this
-    function exists to prevent."""
+    (db name ending in _dev or _test), or does it look like production? Mirrors
+    activate.sh/activate-dev.sh's own DATABASE_URL_OVERRIDE convention (db NAME is what differs
+    between the two, same container/port) rather than inventing a second one. Errs toward "yes,
+    this is production" on anything ambiguous or unparsable -- a false positive here just means
+    --import is refused and a human passes --force-import; a false negative would mean a real
+    write against a real production database, which is the failure mode this function exists to
+    prevent.
+
+    Round-1 PM review fold: dropped the bare "test" in lowered substring check -- it would have
+    called a real database like contest_prod safe. The two suffix checks already cover this
+    fleet's actual, documented naming convention; a same-suffix match is a stronger signal than
+    "contains the word test anywhere".
+    """
     try:
         name = (urlparse(database_url).path or "").lstrip("/")
     except ValueError:
@@ -156,7 +162,7 @@ def is_probably_production_db(database_url):
     if not name:
         return True
     lowered = name.lower()
-    return not (lowered.endswith("_dev") or lowered.endswith("_test") or "test" in lowered)
+    return not (lowered.endswith("_dev") or lowered.endswith("_test"))
 
 
 def extract_media_types(bill_json):
@@ -262,12 +268,25 @@ def session_code_shape_ok(session_identifier):
     return bool(BROKER_SESSION_CODE_RE.match(session_identifier or ""))
 
 
+def exit_code_for_classification(classification):
+    """Round-1 PM review fold: extracted so the exit-code contract is directly unit-testable,
+    not just asserted from reading main(). Only a clean green run is success -- a shell/CI
+    caller checking exit code alone previously saw 0 for yellow too, including a refused
+    --import, which is not something to report as if it went fine. Distinct nonzero codes so a
+    caller that cares can tell "needs scoped work" (1) from "needs human scoping" (2) apart."""
+    return {"green": 0, "yellow": 1, "red": 2}[classification]
+
+
 def classify_probe(gate_results):
     """Roll up every GateResult into green/yellow/red, per PLAN §4.4:
-        green  = every blocking gate passed clean, no advisory gate found real work
+        green  = every blocking gate PASSED CLEAN (not merely "didn't fail" -- warn/skip on a
+                 blocking gate means the probe couldn't actually confirm that gate, which is not
+                 the same as confirming it's fine, round-1 PM review fold), no advisory gate
+                 found real work
         yellow = a blocking gate failed in a way that's scoped, known code work (extractor
-                 coverage, an import-time credential, a votes/start-filter gap) -- or an
-                 advisory gate found real (but bounded) work
+                 coverage, an import-time credential, a votes/start-filter gap) -- or is
+                 inconclusive (warn/skip) rather than cleanly confirmed -- or an advisory gate
+                 found real (but bounded) work
         red    = gate D found an actual WAF/block-page signature, or a blocking gate failed
                  with no scoped fix in view (can't list sessions at all, zero objects with no
                  block signature to explain it) -- needs human scoping, per the plan's own
@@ -276,9 +295,19 @@ def classify_probe(gate_results):
     This mapping is a judgment call the plan states only in prose ("green = config-only, yellow
     = needs extractor/motion/cleaner work, red = WAF/structural") -- documented here rather than
     left implicit, and called out again in this PR's own description.
+
+    Round-1 PM review fold: the original version only inspected blocking gates with
+    status == "fail", so a blocking gate that came back "warn" or "skip" (gate C with no
+    document links to check, gate D skipped for a held scrape lock, gate H skipped with no
+    DATABASE_URL configured, gate H "warn" on stale data) was silently treated the same as a
+    clean pass -- a run that couldn't actually confirm a blocking gate could still report GREEN.
+    Now any blocking gate that isn't a clean "pass" keeps the result out of green.
     """
     by_gate = {g.gate: g for g in gate_results}
     blocking_failed = [g for g in gate_results if g.blocking and g.status == "fail"]
+    blocking_inconclusive = [
+        g for g in gate_results if g.blocking and g.status in ("warn", "skip")
+    ]
     advisory_warn = [g for g in gate_results if not g.blocking and g.status == "warn"]
 
     gate_d = by_gate.get("D")
@@ -295,6 +324,8 @@ def classify_probe(gate_results):
 
     if blocking_failed:
         return "yellow"  # B/C: credential, extractor coverage -- scoped, templated fixes
+    if blocking_inconclusive:
+        return "yellow"  # round-1 fold: inconclusive is not confirmed-fine
     if advisory_warn:
         return "yellow"  # motion classification / people data / session shape need real work
     return "green"
@@ -360,6 +391,21 @@ def run_gate_b(juris, module_name, st, scrapers_source_dir):
     except ImportError:  # pragma: no cover - only if this checkout predates resilience_profiles
         waf_profile = "unknown"
     details.append(f"WAF resilience profile: {waf_profile}")
+
+    # Round-1 PM review fold: gate B's stated checks include "module-level settings/RPM", which
+    # had no code at all before this -- MI's own bills.py names the real convention
+    # (`<ST>_SCRAPELIB_RPM = int(os.environ.get("<ST>_SCRAPELIB_RPM", <default>))`, overriding
+    # the platform-wide openstates.settings.SCRAPELIB_RPM default). Informational, like
+    # votes_scraper/start_supported above -- a conservative per-state RPM isn't itself a
+    # failure, it's a fact that feeds a human's rate-limit judgment call, same as this gate's
+    # other findings.
+    rpm_attr = f"{st.upper()}_SCRAPELIB_RPM"
+    module = sys.modules.get(bills_cls.__module__) if bills_cls else None
+    custom_rpm = getattr(module, rpm_attr, None) if module else None
+    details.append(
+        f"module-level RPM override ({rpm_attr}): {custom_rpm}" if custom_rpm is not None
+        else f"no module-level RPM override found ({rpm_attr} not set) -- platform default applies"
+    )
 
     candidate_keys = find_env_var_references(os.path.join(scrapers_source_dir, module_name))
     missing_keys = sorted(k for k in candidate_keys if k not in os.environ)
@@ -584,7 +630,15 @@ def run_gate_g(st, active_sessions, people_dir_root, broker_fixture_path):
     details.append(f"people/data/{st}/legislature/ non-empty: {has_people}")
 
     if os.path.isfile(broker_fixture_path):
-        details.append(f"broker fixture found at {broker_fixture_path} (see PR notes for how it was checked)")
+        # Round-1 PM review fold: this used to imply a district-count cross-check had happened.
+        # It hadn't -- reading and comparing ddp-broker-py's fixture CSV needs that repo's own
+        # schema confirmed first, which this script doesn't do (see run_gate_g's docstring
+        # note in the module header). Say plainly that presence was checked, not the count.
+        details.append(
+            f"broker fixture found at {broker_fixture_path} -- district-count cross-check not "
+            "implemented (would need ddp-broker-py's fixture schema confirmed first); presence "
+            "only, do not read this as 'counts verified'"
+        )
     else:
         details.append(
             f"broker fixture not found locally ({broker_fixture_path}) -- this is a different "
@@ -622,35 +676,47 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
                 "H", True, "fail", "import step failed", details=details + [result.stderr[-2000:]],
             )
 
+    # Round-1 PM review fold: scoped to the session actually being probed when one is known,
+    # rather than jurisdiction-wide. A jurisdiction-wide count can pass on old, unrelated
+    # sessions' links even when the session this run just (dry-)scraped/imported produced none
+    # -- exactly the gap between "this jurisdiction has data somewhere" and "this run's own
+    # target session has links", which matters most for an already-onboarded state's later
+    # sessions, not just a brand-new state (where jurisdiction-wide and session-scoped happen to
+    # coincide, since nothing else exists yet). Falls back to jurisdiction-wide only if no
+    # session could be determined at all (gate A found no active sessions).
+    session_filter = "AND ls.identifier = %s" if session else ""
+    params = (ocd_jurisdiction_id(st), session) if session else (ocd_jurisdiction_id(st),)
+
     cur = conn.cursor()
     cur.execute(
-        """
+        f"""
         SELECT count(*)
         FROM opencivicdata_billversionlink l
         JOIN opencivicdata_billversion v ON v.id = l.version_id
         JOIN opencivicdata_bill b ON b.id = v.bill_id
         JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
         JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
-        WHERE j.id = %s
+        WHERE j.id = %s {session_filter}
         """,
-        (ocd_jurisdiction_id(st),),
+        params,
     )
     link_count = cur.fetchone()[0]
-    details.append(f"BillVersionLink rows for {st}: {link_count}")
+    scope_note = f"session {session}" if session else "jurisdiction-wide (no session determined)"
+    details.append(f"BillVersionLink rows for {st} ({scope_note}): {link_count}")
 
     cur.execute(
-        """
+        f"""
         SELECT max(b.updated_at)
         FROM opencivicdata_bill b
         JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
         JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
-        WHERE j.id = %s
+        WHERE j.id = %s {session_filter}
         """,
-        (ocd_jurisdiction_id(st),),
+        params,
     )
     row = cur.fetchone()
     last_updated = row[0] if row else None
-    details.append(f"most recent opencivicdata_bill.updated_at for {st}: {last_updated}")
+    details.append(f"most recent opencivicdata_bill.updated_at for {st} ({scope_note}): {last_updated}")
 
     if link_count == 0:
         return GateResult(
@@ -864,7 +930,7 @@ def main(argv=None):
     print(report_text)
     print(f"\nWritten to {report_path}", file=sys.stderr)
 
-    return 0 if classification != "red" else 1
+    return exit_code_for_classification(classification)
 
 
 if __name__ == "__main__":

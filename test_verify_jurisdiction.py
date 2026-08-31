@@ -96,8 +96,12 @@ def test_test_db_name_suffix_is_not_flagged():
     assert vj.is_probably_production_db("postgresql://u:p@localhost:5433/openstates_test") is False
 
 
-def test_name_containing_test_anywhere_is_not_flagged():
-    assert vj.is_probably_production_db("postgresql://u:p@localhost:5433/v3test_eval5") is False
+def test_name_merely_containing_test_is_flagged_as_production():
+    """Round-1 PM review fold: a bare 'test' substring anywhere in the name used to be treated
+    as safe -- the reviewer's own example (a real database like contest_prod) shows why that's
+    wrong. Only the two suffix conventions this fleet actually uses (_dev/_test) are safe now."""
+    assert vj.is_probably_production_db("postgresql://u:p@localhost:5433/v3test_eval5") is True
+    assert vj.is_probably_production_db("postgresql://u:p@localhost:5433/contest_prod") is True
 
 
 def test_empty_or_unparsable_url_defaults_to_production():
@@ -260,6 +264,21 @@ def _gate(gate, blocking, status, block_signature=False):
     return vj.GateResult(gate, blocking, status, "summary", block_signature=block_signature)
 
 
+def test_exit_code_green_is_zero():
+    assert vj.exit_code_for_classification("green") == 0
+
+
+def test_exit_code_yellow_is_nonzero():
+    """Round-1 PM review fold: yellow -- including a blocking gate failure or a refused
+    --import -- used to exit 0, indistinguishable from a clean pass to a shell/CI caller."""
+    assert vj.exit_code_for_classification("yellow") != 0
+
+
+def test_exit_code_red_is_nonzero_and_distinct_from_yellow():
+    assert vj.exit_code_for_classification("red") != 0
+    assert vj.exit_code_for_classification("red") != vj.exit_code_for_classification("yellow")
+
+
 def test_classify_all_pass_is_green():
     gates = [_gate(g, True, "pass") for g in "ABCDH"] + [_gate(g, False, "pass") for g in "EFG"]
     assert vj.classify_probe(gates) == "green"
@@ -267,6 +286,40 @@ def test_classify_all_pass_is_green():
 
 def test_classify_advisory_warn_is_yellow():
     gates = [_gate(g, True, "pass") for g in "ABCDH"] + [_gate("E", False, "warn"), _gate("F", False, "skip"), _gate("G", False, "pass")]
+    assert vj.classify_probe(gates) == "yellow"
+
+
+# -- Round-1 PM review fold: a blocking gate that's inconclusive (warn/skip) must not be
+# -- rolled up into green -- only a clean "pass" on every blocking gate earns green.
+
+
+def test_classify_blocking_gate_c_warn_is_not_green():
+    """Gate C warns when the dry scrape produced no document links to check coverage against --
+    inconclusive, not confirmed-fine."""
+    gates = [_gate("A", True, "pass"), _gate("B", True, "pass"), _gate("C", True, "warn"),
+             _gate("D", True, "pass"), _gate("H", True, "pass")] + [_gate(g, False, "pass") for g in "EFG"]
+    assert vj.classify_probe(gates) == "yellow"
+
+
+def test_classify_blocking_gate_d_skip_is_not_green():
+    """Gate D skips when a real scrape lock is held -- the probe couldn't run at all, not the
+    same as confirming the state scrapes cleanly."""
+    gates = [_gate("A", True, "pass"), _gate("B", True, "pass"), _gate("C", True, "pass"),
+             _gate("D", True, "skip"), _gate("H", True, "pass")] + [_gate(g, False, "pass") for g in "EFG"]
+    assert vj.classify_probe(gates) == "yellow"
+
+
+def test_classify_blocking_gate_h_skip_is_not_green():
+    """Gate H skips when no DATABASE_URL is configured -- the probe never actually checked
+    whether BillVersionLink rows exist."""
+    gates = [_gate("A", True, "pass"), _gate("B", True, "pass"), _gate("C", True, "pass"),
+             _gate("D", True, "pass"), _gate("H", True, "skip")] + [_gate(g, False, "pass") for g in "EFG"]
+    assert vj.classify_probe(gates) == "yellow"
+
+
+def test_classify_blocking_gate_h_stale_warn_is_not_green():
+    gates = [_gate("A", True, "pass"), _gate("B", True, "pass"), _gate("C", True, "pass"),
+             _gate("D", True, "pass"), _gate("H", True, "warn")] + [_gate(g, False, "pass") for g in "EFG"]
     assert vj.classify_probe(gates) == "yellow"
 
 
