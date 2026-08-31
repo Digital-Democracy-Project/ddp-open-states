@@ -315,8 +315,8 @@ checked directly rather than assumed:
    Amendment Senate (2026-06-22)` → `Enrolled Bill (undated)` → `Public Law (2026-07-12)` —
    strictly forward chronological on every dated entry, corroborating the stage-based order
    already returned. Once RDS-side confirms both, this becomes three
-   independent multi-version bills across three jurisdictions, one with an explicit date-ordered
-   check, rather than one.
+   independent multi-version bills across three jurisdictions, one with an incidental
+   chronological corroboration on top of the real check, rather than one.
 4. **Freshness within the agreed window** — **DECIDED, 2026-08-31 (Ramon): ≤24h for
    primary/daily-scraped jurisdictions, ≤7 days for secondary/weekly ones**, measured as load
    lag on top of the existing scrape cadence (the gap between a scheduled scrape completing
@@ -348,27 +348,35 @@ checked directly rather than assumed:
   the OPEN-189 cost figures — full jurisdiction loads cost cents, not dollars) — and, per the
   replica decision directly below, this cost buys a second, standing thing going forward, not
   just a rollback safety net during one validation window.
-- **Read replica: not built, on purpose — the Mac's local Postgres already serves that role.**
+- **Read replica: not built, on purpose — Ramon's chosen redundancy mechanism is the Mac's local
+  Postgres instead, not a claim that it's a technical substitute for a managed AWS replica.**
   "Keep loading to both" (above) means the Mac's existing `ddp-openstates` local Postgres
-  continues receiving every load indefinitely, not just through the validation window — which
-  already *is* a live, independently-updated secondary copy of the same data, outside AWS
-  entirely. Combined with RDS's own automatic nightly backups (already running, no setup needed),
-  that covers the redundancy a dedicated AWS RDS read replica would otherwise exist for, at zero
-  additional infrastructure cost. **No `aws_db_instance` replica resource is planned.** This also
-  means Phase 4 (OPEN-193, moving the load step to EC2) needs to keep writing to both targets, not
-  just RDS, once it's built — noted there as a consequence of this decision, not a new
-  requirement invented here.
+  continues receiving every load indefinitely, not just through the validation window — a live,
+  independently-updated secondary copy of the same data, outside AWS entirely. Combined with
+  RDS's own automatic nightly backups (already running, no setup needed), that's the redundancy
+  Ramon decided is sufficient — deliberately **not** a claim that it replicates a managed AWS read
+  replica's actual properties (continuous low-lag replication, read-traffic scaling, automatic
+  failover); none of those were asked for, and none are built. **No `aws_db_instance` replica
+  resource is planned.** This also means Phase 4 (OPEN-193, moving the load step to EC2) needs to
+  keep writing to both targets, not just RDS, once it's built — a consequence of this decision,
+  not a new requirement invented here. What Phase 4 does when one target succeeds and the other
+  fails is that phase's own design question when it's actually built, not something this
+  rehearsal-stage doc should answer in advance of Phase 4 existing.
 - **Freshness SLA** — decided above (item 4).
-- **Cutover timing: hold off, 2026-08-31 (Ramon).** Everything else in this checklist is either
-  closed or has a decided target; the actual live cutover — pointing production `ddp-broker` at
-  this instance — happens later, on Ramon's own call, not as part of this pass.
+- **Cutover timing: hold off, 2026-08-31 (Ramon).** The two policy decisions above are made;
+  checklist items 2 and 3 (jurisdiction coverage, version ordering) remain genuinely partial
+  pending the RDS-side reply, exactly as stated where each is discussed — deciding freshness and
+  rollback does not change that. The actual live cutover — pointing production `ddp-broker` at
+  this instance — happens later regardless, on Ramon's own call, not as part of this pass.
 
 ## Explicitly deferred, not attempted here
 
-One thing remains open and is **not** attempted in this pass, on purpose:
+Only the cutover itself is deliberately held back, independent of validation status; the
+jurisdiction/ordering items above remain open because the RDS-side reply hasn't arrived yet, not
+by choice:
 
 - **Pointing `ddp-broker` at this instance** — the actual cutover. Explicitly held off per
-  Ramon's own decision above, independent of whether every checklist item above is closed.
+  Ramon's own decision above, regardless of when the checklist above finishes closing.
 
 ## What this does NOT do
 
