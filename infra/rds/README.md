@@ -118,13 +118,28 @@ checked directly rather than assumed:
    *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
    current data rather than an error or a stub — not just process-up.
 2. **A representative response per routed jurisdiction, compared against the old path** —
-   **partially closed, and still only 3 of the 7 jurisdictions this rollout actually covers (FL,
-   VA, WA, AZ, MA, MI, USA) have been checked at all.** For the three checked (FL HB 1325, VA
-   SB 192, WA SB 6099): row counts, action/version counts, and document/version links identical
-   between local production Postgres and RDS on all three (FL's full detail is in
+   **partially closed; Mac-side evidence now exists for all 7 jurisdictions, RDS-side confirmation
+   pending for the last 4.** For the three checked earlier (FL HB 1325, VA SB 192, WA SB 6099): row
+   counts, action/version counts, and document/version links identical between local production
+   Postgres and RDS on all three (FL's full detail is in
    `notes/open190-phase1-closure-validation-20260831.md`, merged in OPEN-190's own PR #207).
-   **AZ, MA, MI, and USA remain entirely unchecked** — this line stays partially closed on
-   jurisdiction coverage alone until those are done.
+
+   **AZ, MA, MI, and USA: Mac-side half done 2026-08-31, RDS-side requested via
+   `notes/ops-handoff` (`open191-az-ma-mi-us-comparison-request-20260831.md`), not yet replied.**
+   One representative bill per jurisdiction, chosen as the most-versioned, most-recently-updated
+   bill in each — queried from this Mac's own api-v3 (`localhost:8002`,
+   `include=versions,documents,actions`):
+
+   | Jurisdiction | Bill | `updated_at` (Mac) | Versions |
+   | --- | --- | --- | --- |
+   | AZ | HB 2999 (`ocd-bill/684dd592-426c-44b6-b635-b851b8aa91f4`) | `2026-06-16T22:04:19.528671+00:00` | 10 |
+   | MA | S 3181 (`ocd-bill/db94bbcd-c21b-4a1d-9302-f7bbeb327fea`) | `2026-08-30T07:25:00.284176+00:00` | 2 |
+   | MI | HB 4420 (`ocd-bill/006abf23-5a5a-4aa3-9e14-a53aa8bb2f19`) | `2026-06-14T01:52:56.034029+00:00` | 21 |
+   | US | HR 6644 (`ocd-bill/fab1200c-53c6-48fa-8e8b-cde9e19d1338`) | `2026-08-13T23:00:57.935370+00:00` | 9 |
+
+   Until the RDS-side reply lands, jurisdiction coverage stays **partially** closed — the Mac-side
+   half being done isn't the same claim as a confirmed match, and this line will keep saying so
+   until the reply is quoted here the same way VA/WA's was.
 
    The api-v3 *application*-layer comparison against the second EC2 instance is closed for FL
    (quoted in full in #207's own note, field-for-field identical including `updated_at` to the
@@ -192,6 +207,15 @@ checked directly rather than assumed:
    same one case is stronger evidence than one, but it's still one bill — not the same claim as
    "every stage-ordering edge case OPEN-90/92 originally found is still handled," which this
    does not attempt to re-verify.
+
+   **Two stronger Mac-side cases found 2026-08-31, RDS-side confirmation pending with the same
+   request above.** MI HB 4420 (21 versions) correctly orders House Introduced before its
+   alternating House/Senate substitutes rather than by insertion order; US HR 6644 (9 versions)
+   returns versions in correct forward chronological order by real date (`2025-12-11` Introduced
+   through `2026-05-20` Engrossed Amendment House) — the clearest single case yet, since date
+   order gives an unambiguous way to check the ordering is actually correct rather than merely
+   plausible. Once RDS-side confirms both, this becomes three independent multi-version bills
+   across three jurisdictions, one with an explicit date-ordered check, rather than one.
 4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
    so this isn't closeable as written. Observed instead: the newest bill update per jurisdiction
    in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of this check.
@@ -204,20 +228,71 @@ checked directly rather than assumed:
    rule out every other possible explanation. Setting the actual "agreed window" this criterion
    refers to is still a decision for whoever owns that SLA, not something this check can settle.
 
+   **Proposal, not a decision (2026-08-31) — offered because a number is more useful to react to
+   than a blank.** No load currently runs against RDS on any schedule at all — every load so far
+   in this rehearsal was a manual, one-off `cloud_loader.py` invocation, not a recurring job (that
+   wiring is Phase 4, OPEN-193, not built yet). So there is nothing to hold to a freshness window
+   *yet*, which is different from "no reasonable window exists." The natural candidate is the
+   cadence the Mac's own existing schedule already uses and DDP already implicitly promises: **≤24h
+   for primary/daily-scraped jurisdictions, ≤7 days for secondary/weekly ones**, applied once
+   Phase 4 actually wires scheduled loads to RDS. Proposing this rather than inventing a stricter
+   number because it's the bar this migration is supposed to match, not beat — a tighter SLA here
+   would be a new, unrequested product commitment, exactly the kind of scope a reviewer should
+   catch. **Needs Ramon's explicit sign-off before it's the real answer, not just a plausible one.**
+
+## Decisions needed from Ramon before cutover — proposed, not made
+
+OPEN-191's own text names two of these as explicitly his call, not something to infer or default
+on his behalf. Proposals below are offered as a starting point to react to, not a decision already
+taken:
+
+- **Rollback policy** (keep loading to both vs. a stated staleness window). OPEN-203 already
+  confirmed a double load is deterministic for the same run (the importer resolves by natural key,
+  not row id or `run_id`), which is the fact that makes "keep loading to both" actually safe rather
+  than merely convenient — that was the one open precondition this option depended on, and it's
+  closed. **Proposed: keep loading to both** during the validation window (this rehearsal already
+  does, incidentally — the Mac's own local Postgres and RDS have both been loaded independently
+  throughout), making rollback genuinely instant rather than a stated-staleness compromise. The
+  cost is running the load twice per jurisdiction until Phase 4 consolidates it, which is cheap at
+  today's volume (see the OPEN-189 cost figures — full jurisdiction loads cost cents, not dollars).
+- **Freshness SLA** — see the proposal directly above.
+
 ## Explicitly deferred, not attempted here
 
-Three things remain open and are **not** attempted in this pass, on purpose — each is either a
-policy call that belongs to Ramon specifically, or a substantial new infrastructure build with
-real production risk, not validation of what already exists:
+One thing remains open and is **not** attempted in this pass, on purpose — substantial new
+infrastructure with real production risk, not validation of what already exists, and premature
+before the decisions above are actually made:
 
-- **The rollback policy decision** (keep loading to both vs. a stated staleness window) —
-  OPEN-191's own text frames this as Ramon's call to make in writing before cutover, not
-  something to infer or default on his behalf.
-- **A read replica** — genuinely new infrastructure (a second RDS instance, replication set up,
-  traffic split between it and the primary), not a check against something already built.
 - **Pointing `ddp-broker` at this instance** — the actual cutover, which OPEN-191's own
   acceptance criteria explicitly gate on all four validation items passing and the rollback
   policy being decided first. Neither is true yet.
+
+## Read replica — deferred deliberately, not forgotten
+
+**Not built, and recommending against building it yet — this is a guard against over-engineering,
+not a gap.** OPEN-191's own acceptance criteria name a replica/primary split for site reads versus
+load writes, but nothing reads from this instance at request time today (see "What this does NOT
+do" below) — `ddp-broker` isn't pointed at it, so there is no live read traffic for a replica to
+take on yet. Building one now would be infrastructure with no consumer, sized against a traffic
+pattern (`ddp-next` reads via the broker) that doesn't hit this instance at all until cutover.
+**Recommended trigger: build it as part of the cutover work itself, sized from real read volume
+observed on the *old* path in the weeks immediately before cutover, not estimated now.** This
+account's credentials can't create it regardless (`rds:CreateDBInstance` denied, same as the
+primary instance) — it needs Ramon's own console access whenever it's actually time.
+
+For when it is wanted, the shape is a one-line addition to what's already documented here:
+```hcl
+# infra/rds/rds.tf — proposed addition, NOT applied, NOT built
+resource "aws_db_instance" "openstates_replica" {
+  identifier          = "ddp-openstates-replica"
+  replicate_source_db = aws_db_instance.openstates.identifier
+  instance_class      = aws_db_instance.openstates.instance_class  # match primary; resize from real read load once observed
+  publicly_accessible = false
+}
+```
+Deliberately not more than this: no separate parameter group, no auto-scaling, no cross-AZ decision
+made in advance — those are real questions worth answering when there's real read traffic to size
+against, not guesses to bake in now.
 
 ## What this does NOT do
 
