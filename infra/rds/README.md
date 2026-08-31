@@ -131,9 +131,14 @@ checked directly rather than assumed:
    stated precisely per pm-review's request: one bill per jurisdiction, `ORDER BY version_count
    DESC, updated_at DESC LIMIT 1` against the local production DB — the most-versioned bill for
    that jurisdiction, ties broken by most-recently-updated. Queried from this Mac's own api-v3
-   (`localhost:8002`, `include=versions,documents,actions`), quoted in full — matching FL/VA/WA's
-   standard rather than a summary table, so the eventual RDS-side reply has something exact to be
-   checked against even if this Mac's own data changes in the meantime:
+   (`localhost:8002`, `include=versions,documents,actions`). **What "quoted" means here, stated
+   precisely per pm-review round 2's request: the top-level bill object verbatim, plus a complete
+   accounting of every version (all versions listed, not sampled) and document/action counts —
+   the same standard VA/WA already used in this doc (see their `versions` line below), not a raw
+   dump of the full `documents`/`actions` arrays**, which for US HR 6644's 106 documents would
+   bloat this doc far past what a spot-check needs. This is a *stronger* standard than
+   round-1's summary table, not the full-array standard round 2 initially read into "quoted in
+   full" — that phrase is corrected below to say exactly what's here:
 
    **AZ HB 2999** (`GET /bills/ocd-bill/684dd592-426c-44b6-b635-b851b8aa91f4`):
    ```json
