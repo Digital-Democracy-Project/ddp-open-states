@@ -94,6 +94,50 @@ naive `postgresql://user:pass@host` connection string — Python's `urllib.parse
 with `ValueError: Invalid IPv6 URL`. URL-encode the password
 (`urllib.parse.quote(password, safe="")`) before building `DATABASE_URL`/`DATABASE_URL_OVERRIDE`.
 
+## OPEN-191's own 4-item validation checklist, status as of 2026-08-31
+
+OPEN-191 lists four things to check before the broker is pointed at this instance. Status,
+checked directly rather than assumed:
+
+1. **api-v3 health** — real, independent api-v3 instances confirmed healthy against this RDS
+   instance, on both the Mac and (for INFRA-1) a second EC2 host. **Closed.**
+2. **A representative response per routed jurisdiction, compared against the old path** —
+   **partially closed.** Compared real bills across three jurisdictions (FL HB 1325, VA SB 192,
+   WA SB 6099) between local production Postgres and this RDS instance directly — row counts,
+   action counts, version counts, and document/version links are identical on every one checked.
+   What's still outstanding: the comparison at the api-v3 *application* layer specifically
+   (not just the database) against the second, independent api-v3 instance running on the
+   `ddp-broker` EC2 host (INFRA-1) — requested via that repo's `notes/ops-handoff` channel, no
+   reply as of this writing. Do not treat this line as fully closed until that response arrives
+   and actually matches.
+3. **Bill-version ordering intact (OPEN-90/92)** — checked directly against a real multi-version
+   bill (VA SB 192): api-v3's own response returns versions in the correct stage-aware order
+   ("Introduced" before the later committee substitute), not raw insertion or date order, on
+   data that's identical between local Postgres and RDS. **Closed** for the case tested; not
+   exhaustively verified across every stage-ordering edge case OPEN-90/92 originally found.
+4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
+   so this isn't closeable as written. Observed instead, honestly: the newest bill update per
+   jurisdiction in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of
+   this check — reflecting each jurisdiction's own real legislative activity level (Washington's
+   own session was less active in this window), not a bug or a stale pipeline. Setting the
+   actual "agreed window" this criterion refers to is a decision for whoever owns that SLA, not
+   something to infer from one snapshot.
+
+## Explicitly deferred, not attempted here
+
+Three things remain open and are **not** attempted in this pass, on purpose — each is either a
+policy call that belongs to Ramon specifically, or a substantial new infrastructure build with
+real production risk, not validation of what already exists:
+
+- **The rollback policy decision** (keep loading to both vs. a stated staleness window) —
+  OPEN-191's own text frames this as Ramon's call to make in writing before cutover, not
+  something to infer or default on his behalf.
+- **A read replica** — genuinely new infrastructure (a second RDS instance, replication set up,
+  traffic split between it and the primary), not a check against something already built.
+- **Pointing `ddp-broker` at this instance** — the actual cutover, which OPEN-191's own
+  acceptance criteria explicitly gate on all four validation items passing and the rollback
+  policy being decided first. Neither is true yet.
+
 ## What this does NOT do
 
 - Does not create the security group or DB subnet group it references — both pre-created out of
