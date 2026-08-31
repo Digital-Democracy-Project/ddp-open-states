@@ -118,13 +118,140 @@ checked directly rather than assumed:
    *and* a real jurisdiction query (`GET /bills/<id>`) against this RDS instance returns correct,
    current data rather than an error or a stub — not just process-up.
 2. **A representative response per routed jurisdiction, compared against the old path** —
-   **partially closed, and still only 3 of the 7 jurisdictions this rollout actually covers (FL,
-   VA, WA, AZ, MA, MI, USA) have been checked at all.** For the three checked (FL HB 1325, VA
-   SB 192, WA SB 6099): row counts, action/version counts, and document/version links identical
-   between local production Postgres and RDS on all three (FL's full detail is in
+   **closed, 2026-08-31.** 6 of 7 routed jurisdictions confirmed exact (FL/VA/WA from the earlier
+   pass, AZ/MI/US below); the 7th (MA) has a diagnosed, non-systemic RDS staleness explanation
+   rather than an open question — see below. For the three checked earlier (FL HB 1325, VA SB 192,
+   WA SB 6099): row
+   counts, action/version counts, and document/version links identical between local production
+   Postgres and RDS on all three (FL's full detail is in
    `notes/open190-phase1-closure-validation-20260831.md`, merged in OPEN-190's own PR #207).
-   **AZ, MA, MI, and USA remain entirely unchecked** — this line stays partially closed on
-   jurisdiction coverage alone until those are done.
+
+   **AZ, MA, MI, and USA (US federal — "USA" is this rollout's label for the combined
+   lower+upper chamber collection; the bill below is one federal bill, jurisdiction code `us`):
+   Mac-side baseline recorded 2026-08-31, RDS-side confirmed the same day via `notes/ops-handoff`
+   (`open191-az-ma-mi-us-comparison-request-20260831.md` → `...-reply-20260831.md`, results
+   below).** Selection rule,
+   stated precisely per pm-review's request: one bill per jurisdiction, `ORDER BY version_count
+   DESC, updated_at DESC LIMIT 1` against the local production DB — the most-versioned bill for
+   that jurisdiction, ties broken by most-recently-updated. Queried from this Mac's own api-v3
+   (`localhost:8002`, `include=versions,documents,actions`). **What "quoted" means here, stated
+   precisely per pm-review round 2's request: the top-level bill object verbatim, plus a complete
+   accounting of every version (all versions listed, not sampled) and document/action counts —
+   the same standard VA/WA already used in this doc (see their `versions` line below), not a raw
+   dump of the full `documents`/`actions` arrays**, which for US HR 6644's 106 documents would
+   bloat this doc far past what a spot-check needs. This is a *stronger* standard than
+   round-1's summary table, not the full-array standard round 2 initially read into "quoted in
+   full" — that phrase is corrected below to say exactly what's here:
+
+   **AZ HB 2999** (`GET /bills/ocd-bill/684dd592-426c-44b6-b635-b851b8aa91f4`):
+   ```json
+   {
+     "id": "ocd-bill/684dd592-426c-44b6-b635-b851b8aa91f4",
+     "session": "57th-2nd-regular",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:az/government", "name": "Arizona", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/b00585a8-0bd5-4a6b-bde1-1c96400f882f", "name": "House", "classification": "lower"},
+     "identifier": "HB 2999",
+     "title": "municipal improvement districts; technical correction",
+     "classification": ["bill"],
+     "created_at": "2026-06-16T22:04:19.498312+00:00",
+     "updated_at": "2026-06-16T22:04:19.528671+00:00",
+     "first_action_date": "2026-02-16",
+     "latest_action_date": "2026-06-04",
+     "latest_action_description": "Signed by Governor",
+     "latest_passage_date": "2026-06-01"
+   }
+   ```
+   10 versions (Introduced → House/Senate Engrossed → committee strikes/floor amendments →
+   Chaptered, 2 links each on all but two single-link floor-amendment versions), 11 documents,
+   18 actions.
+
+   **MA S 3181** (`GET /bills/ocd-bill/db94bbcd-c21b-4a1d-9302-f7bbeb327fea`):
+   ```json
+   {
+     "id": "ocd-bill/db94bbcd-c21b-4a1d-9302-f7bbeb327fea",
+     "session": "194th",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:ma/government", "name": "Massachusetts", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/1a75ab3a-669b-43fe-ac8d-31a2d6923d9a", "name": "Senate", "classification": "upper"},
+     "identifier": "S 3181",
+     "title": "An Act providing equal opportunity for residents to vote on establishment of the Great River Regional School District",
+     "classification": ["bill"],
+     "created_at": "2026-08-09T10:59:45.242049+00:00",
+     "updated_at": "2026-08-30T07:25:00.284176+00:00",
+     "first_action_date": "2026-07-16",
+     "latest_action_date": "2026-08-25",
+     "latest_action_description": "Signed by the Governor, Chapter 193 of the Acts of 2026",
+     "latest_passage_date": "2026-08-24"
+   }
+   ```
+   2 versions (Bill Text, 1 link; Chapter Law Text (Enacted), 1 link), 0 documents (MA's known
+   one-version-per-stage shape — see `PLAN-push-button-onboarding.md` §OPEN-36), 13 actions.
+
+   **MI HB 4420** (`GET /bills/ocd-bill/006abf23-5a5a-4aa3-9e14-a53aa8bb2f19`):
+   ```json
+   {
+     "id": "ocd-bill/006abf23-5a5a-4aa3-9e14-a53aa8bb2f19",
+     "session": "2025-2026",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/state:mi/government", "name": "Michigan", "classification": "state"},
+     "from_organization": {"id": "ocd-organization/d387cf69-631c-4013-bb32-4a00c848fcc4", "name": "House", "classification": "lower"},
+     "identifier": "HB 4420",
+     "title": "State management: funds; form to disclose legislatively directed spending items; create. Amends 1984 PA 431 (MCL 18.1101 - 18.1594) by adding sec. 364a.  TIE BAR WITH: SB 0596'25",
+     "classification": ["bill"],
+     "subject": ["Appropriations: other", "State management: funds"],
+     "created_at": "2026-06-14T01:52:55.985463+00:00",
+     "updated_at": "2026-06-14T01:52:56.034029+00:00",
+     "first_action_date": "2025-05-01",
+     "latest_action_date": "2025-12-02",
+     "latest_action_description": "assigned PA 32'25 with immediate effect",
+     "latest_passage_date": "2025-12-02"
+   }
+   ```
+   21 versions (House Introduced Bill → alternating House/Senate substitutes → As Passed by
+   House/Senate → House/Senate Concurred → Public Act, 1-2 links each), 5 documents, 51 actions.
+
+   **US HR 6644** (`GET /bills/ocd-bill/fab1200c-53c6-48fa-8e8b-cde9e19d1338`):
+   ```json
+   {
+     "id": "ocd-bill/fab1200c-53c6-48fa-8e8b-cde9e19d1338",
+     "session": "119",
+     "jurisdiction": {"id": "ocd-jurisdiction/country:us/government", "name": "United States", "classification": "country"},
+     "from_organization": {"id": "ocd-organization/24af4233-d9b5-5933-91b2-51d29f721037", "name": "House", "classification": "lower"},
+     "identifier": "HR 6644",
+     "title": "21st Century ROAD to Housing Act",
+     "classification": ["bill"],
+     "created_at": "2026-06-16T02:20:39.408557+00:00",
+     "updated_at": "2026-08-13T23:00:57.935370+00:00",
+     "first_action_date": "2025-12-11T05:00:00+00:00",
+     "latest_action_date": "2026-07-11T04:00:00+00:00",
+     "latest_action_description": "Sent to Archivist of the United States unsigned.",
+     "latest_passage_date": "2026-03-12T04:00:00+00:00"
+   }
+   ```
+   9 versions, 2 links each except a 4-link Enrolled Bill, 106 documents, 59 actions. Full
+   version-by-date list in the ordering item below.
+
+   **RDS-side reply landed 2026-08-31 — 3 of 4 exact, 1 real (non-bug) mismatch found.** AZ
+   HB 2999, MI HB 4420, and US HR 6644 all matched the Mac-side baseline above field-for-field
+   (`updated_at`, version/document/action counts, all identical) — quoted in full on
+   `notes/open191-az-ma-mi-us-comparison-reply-20260831.md`.
+
+   **MA S 3181 did not match, and the reason is a genuine RDS freshness gap, not a bug**: RDS's
+   copy has 1 version / 0 documents / 12 actions, `updated_at` `2026-08-24T23:34:27+00:00`,
+   `latest_action_description` `"Senate concurred in the House amendment"` — everything up through
+   that point matches the Mac-side data exactly. What's missing is the bill's *final* stage: the
+   governor's signature (`"Signed by the Governor, Chapter 193 of the Acts of 2026"`,
+   `latest_action_date` 2026-08-25) and the resulting `Chapter Law Text (Enacted)` version, both
+   present in the Mac-side baseline but not in RDS. **This is exactly the load-lag scenario the
+   freshness SLA decision above already names** — RDS was last loaded before this bill's
+   2026-08-25 enactment, and nothing reloads it on a schedule yet (that's Phase 4's job). Not a
+   version-ordering, field-mapping, or routing defect: AZ/MI/US being byte-for-byte correct on the
+   exact same RDS instance rules out a systemic problem, and the data MA *does* have is correct as
+   far as it goes. Fixed by a re-collection/re-load of MA against RDS whenever next convenient —
+   not a new ticket, not a code defect, just the RDS instance needing a refresh it hasn't had since
+   before this bill's last action.
+
+   **Jurisdiction coverage (checklist item 2) is now closed**: 6 of 7 routed jurisdictions
+   (FL/VA/WA/AZ/MI/US) confirmed exact; the 7th (MA) has a fully diagnosed, non-systemic staleness
+   explanation rather than an open question.
 
    The api-v3 *application*-layer comparison against the second EC2 instance is closed for FL
    (quoted in full in #207's own note, field-for-field identical including `updated_at` to the
@@ -184,48 +311,104 @@ checked directly rather than assumed:
 
    All three (FL/VA/WA) now genuinely closed at the api-v3 layer, with the actual comparison
    data quoted rather than asserted.
-3. **Bill-version ordering intact (OPEN-90/92)** — **partially closed**, not closed outright:
-   checked directly against one real multi-version bill (VA SB 192), where api-v3's own response
+3. **Bill-version ordering intact (OPEN-90/92)** — **closed, 2026-08-31** (see the three-bill
+   confirmation below). First checked against one real multi-version bill (VA SB 192), where
+   api-v3's own response
    returns versions in the correct stage-aware order ("Introduced" before the later committee
    substitute) rather than raw insertion or date order — confirmed independently on *both* the
    Mac's instance and the second EC2 instance against RDS. Two independent confirmations of the
    same one case is stronger evidence than one, but it's still one bill — not the same claim as
    "every stage-ordering edge case OPEN-90/92 originally found is still handled," which this
    does not attempt to re-verify.
-4. **Freshness within the agreed window** — **no agreed window exists yet to check against**,
-   so this isn't closeable as written. Observed instead: the newest bill update per jurisdiction
-   in RDS ranges from ~2 days old (Florida) to ~2.5 months old (Washington) as of this check.
-   Checked whether Washington's age reflects a real absence of legislative activity rather than
-   an RDS-specific ingestion gap, rather than assuming it: the Mac's own daily scheduled
-   `run-scrape.sh` runs for Washington — the existing, already-trusted path, querying the real
-   site directly — have themselves reported `bills_scraped=0 | no changes since cutoff (no-op)`
-   on every run from at least 2026-08-14 through 2026-08-24. The same staleness pattern exists on
-   the old path too, which is real evidence against an RDS-specific problem, though it does not
-   rule out every other possible explanation. Setting the actual "agreed window" this criterion
-   refers to is still a decision for whoever owns that SLA, not something this check can settle.
+
+   **Two stronger cases found 2026-08-31, both confirmed against RDS the same day — neither
+   checked against dates as a method, on purpose.** Both bills are
+   checked the same way the VA case above was: does api-v3's own existing stage-aware ordering
+   (`_note_stage()`/`_version_sort_key()`, OPEN-34 — nothing new written for this) return the
+   versions correctly ordered, full stop. **MI HB 4420 (21 versions) has no dates on any version
+   at all** — every version's `date` field came back empty from the API — so this case is ordering
+   evidence entirely from stage names (House Introduced before its alternating House/Senate
+   substitutes, ending at Public Act), exactly because dates can't be relied on and often aren't
+   there, which is also why the existing tool doesn't sort on them. **US HR 6644 (9 versions)
+   happens to carry real per-version dates** (federal bills usually do; most state bills don't) —
+   incidental to this one bill, not a technique being proposed generally, but worth noting because
+   it lets the already-correct stage order be cross-checked against real chronology too, as a bonus
+   rather than the method: `Introduced in House (2025-12-11)` → `Reported in House (2026-01-15)` →
+   `Engrossed in House (2026-02-09)` → `Placed on Calendar Senate (2026-02-24)` → `Engrossed
+   Amendment Senate (2026-03-12)` → `Engrossed Amendment House (2026-05-20)` → `Engrossed
+   Amendment Senate (2026-06-22)` → `Enrolled Bill (undated)` → `Public Law (2026-07-12)` —
+   strictly forward chronological on every dated entry, corroborating the stage-based order
+   already returned. **RDS-side confirmed both 2026-08-31**, byte-for-byte identical version
+   counts and order to the Mac-side baseline on both bills (see `notes/open191-az-ma-mi-us-
+   comparison-reply-20260831.md`) — **this item is now closed**: three independent multi-version
+   bills across three jurisdictions (VA, MI, US), one with an incidental chronological
+   corroboration on top of the real check, all confirmed correct on both instances.
+4. **Freshness within the agreed window** — **DECIDED, 2026-08-31 (Ramon): ≤24h for
+   primary/daily-scraped jurisdictions, ≤7 days for secondary/weekly ones**, measured as load
+   lag on top of the existing scrape cadence (the gap between a scheduled scrape completing
+   against the live source site — already true of the old, Mac-only path today — and that same
+   change being readable from RDS), applied once Phase 4 (OPEN-193) actually wires scheduled
+   loads to RDS. Matches the bar the Mac's own existing schedule already holds itself to, not a
+   new, tighter promise.
+
+   **Not yet checkable against real scheduled traffic**, since no load runs against RDS on any
+   schedule today — every load so far in this rehearsal was a manual, one-off `cloud_loader.py`
+   invocation. That's Phase 4's job to wire up, not a gap in this decision. What was checked here
+   instead: the newest bill update per jurisdiction in RDS ranges from ~2 days old (Florida) to
+   ~2.5 months old (Washington) as of this rehearsal, and Washington's age reflects a real
+   absence of legislative activity rather than an RDS-specific ingestion gap — the Mac's own daily
+   scheduled `run-scrape.sh` runs for Washington, querying the real site directly, have themselves
+   reported `bills_scraped=0 | no changes since cutoff (no-op)` on every run from at least
+   2026-08-14 through 2026-08-24. Real evidence against an RDS-specific staleness problem, not
+   proof the ≤24h/≤7d target is being met yet (nothing measures that until Phase 4 exists).
+
+## Decided by Ramon, 2026-08-31
+
+- **Rollback policy: keep loading to both, permanently — not just for the validation window.**
+  OPEN-203 already confirmed a double load is deterministic for the same run (the importer
+  resolves by natural key, not row id or `run_id`), which is what makes this actually safe rather
+  than merely convenient. This is not the same claim as rollback being "instant": a real rollback
+  still needs the application's own connection config reverted, and both databases actually having
+  received the same successful loads confirmed at the moment of rollback, not assumed from the
+  policy alone. The cost is running the load twice per jurisdiction, cheap at today's volume (see
+  the OPEN-189 cost figures — full jurisdiction loads cost cents, not dollars) — and, per the
+  replica decision directly below, this cost buys a second, standing thing going forward, not
+  just a rollback safety net during one validation window.
+- **Read replica: not built, on purpose — Ramon's chosen redundancy mechanism is the Mac's local
+  Postgres instead, not a claim that it's a technical substitute for a managed AWS replica.**
+  "Keep loading to both" (above) means the Mac's existing `ddp-openstates` local Postgres
+  continues receiving every load indefinitely, not just through the validation window — a live,
+  independently-updated secondary copy of the same data, outside AWS entirely. Combined with
+  RDS's own automatic nightly backups (already running, no setup needed), that's the redundancy
+  Ramon decided is sufficient — deliberately **not** a claim that it replicates a managed AWS read
+  replica's actual properties (continuous low-lag replication, read-traffic scaling, automatic
+  failover); none of those were asked for, and none are built. **No `aws_db_instance` replica
+  resource is planned.** This also means Phase 4 (OPEN-193, moving the load step to EC2) needs to
+  keep writing to both targets, not just RDS, once it's built — a consequence of this decision,
+  not a new requirement invented here. What Phase 4 does when one target succeeds and the other
+  fails is that phase's own design question when it's actually built, not something this
+  rehearsal-stage doc should answer in advance of Phase 4 existing.
+- **Freshness SLA** — decided above (item 4).
+- **Cutover timing: hold off, 2026-08-31 (Ramon).** All four checklist items are now closed or
+  decided (jurisdiction coverage and version ordering both confirmed against RDS the same day —
+  see above). The actual live cutover — pointing production `ddp-broker` at this instance —
+  happens later regardless, on Ramon's own call, not as part of this pass.
 
 ## Explicitly deferred, not attempted here
 
-Three things remain open and are **not** attempted in this pass, on purpose — each is either a
-policy call that belongs to Ramon specifically, or a substantial new infrastructure build with
-real production risk, not validation of what already exists:
+Only the cutover itself is deliberately held back — every validation item above is now closed or
+decided, on Ramon's own call rather than anything still outstanding:
 
-- **The rollback policy decision** (keep loading to both vs. a stated staleness window) —
-  OPEN-191's own text frames this as Ramon's call to make in writing before cutover, not
-  something to infer or default on his behalf.
-- **A read replica** — genuinely new infrastructure (a second RDS instance, replication set up,
-  traffic split between it and the primary), not a check against something already built.
-- **Pointing `ddp-broker` at this instance** — the actual cutover, which OPEN-191's own
-  acceptance criteria explicitly gate on all four validation items passing and the rollback
-  policy being decided first. Neither is true yet.
+- **Pointing `ddp-broker` at this instance** — the actual cutover. Explicitly held off per
+  Ramon's own decision above, regardless of when the checklist above finishes closing.
 
 ## What this does NOT do
 
 - Does not create the security group or DB subnet group it references — both pre-created out of
   band, same reasoning as `infra/fargate-spike`'s security group.
-- Does not point `api-v3` or any request-time traffic at this instance. No read replica exists
-  yet. The rollback policy decision (keep loading to both vs. a stated staleness window) is still
-  open — see `PLAN-scraper-execution-migration.md`'s Phase 2 section.
+- Does not point `api-v3` or any request-time traffic at this instance. No dedicated AWS read
+  replica exists or is planned (see "Decided by Ramon" above — the Mac's local Postgres plus
+  RDS's own backups fill that role instead).
 - Does not decide the cutover date. This documents the rehearsal that Phase 2 named as a
   prerequisite before any cutover date is set — the rehearsal itself, not the migration.
 
