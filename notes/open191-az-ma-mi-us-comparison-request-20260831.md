@@ -42,3 +42,12 @@ RDS-side versions come back in the same order.
 
 Thanks again for the catches on PR #207/#208 — trying to bring the same evidence bar to this one
 without being asked twice.
+
+## Update, same day — the frozen baseline lives in the PR now, not just this table
+
+pm-review on this PR (#213) correctly caught that the table above was a summary, not the same
+"quote it in full" standard FL/VA/WA got — fixed. The four bills' complete api-v3 responses
+(full JSON, version lists with dates/link counts, document/action counts) are now quoted verbatim
+in `infra/rds/README.md` on that PR's branch (`docs/open191-phase2-closure-evidence`). Compare
+your RDS-side replies against exactly what's quoted there, not against this note's summary table
+— that's now the frozen reference, same as VA/WA's was.
