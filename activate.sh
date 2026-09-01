@@ -123,9 +123,11 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 #
 # NC added 2026-08-31 (OPEN-231 Stage 4, PLAN-push-button-onboarding.md §5) -- Phase 1's pilot
 # state, probe gate C passed (every media type it scrapes has an extractor entry), DDP-HOT has
-# 3.7TB free (2% used). Added here only to permit a manual timed `run-archive.sh nc` dry run --
-# NOT yet in ddp-sync's config/sync_schedule.yaml openstates_archive.jurisdictions, so it does
-# not run on the recurring weekly schedule until that dry run's evidence (extractor success,
+# 3.7TB free (2% used). run-archive.sh has no dry-run/no-write mode -- added here only to permit
+# a real, manually-run, timed `run-archive.sh nc` validation pass (writes to DDP-HOT and S3 for
+# real; "dry" describes the supervised window it runs in, not the write behavior). NOT yet in
+# ddp-sync's config/sync_schedule.yaml openstates_archive.jurisdictions, so it does not run on
+# the recurring weekly schedule until that validation pass's evidence (extractor success,
 # "no function for" count, S3 mirror sample) is in hand.
 export ARCHIVE_ENABLED_STATES="fl,ut,az,wa,va,mi,ma,al,us,nc"
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
