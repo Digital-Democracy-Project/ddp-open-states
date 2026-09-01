@@ -62,6 +62,14 @@ fall through to the sudo-gated Mac wrapper -- absent in a cloud container -- and
 the first document (not silently: `_upload_and_verify_via_wrapper`'s `subprocess.run` on a
 nonexistent binary raises `OSError`, which is not swallowed anywhere in that path).
 
+Rollback follows the same ordering in reverse: if this file's own image needs to roll back to a
+pre-OPEN-238 version (one that still builds `WORKING_TIER_S3_BUCKET` into the subprocess
+environment), the openstates-core image it points at must be rolled back to the matching
+pre-OPEN-238 revision at the same time -- a post-OPEN-238 core silently ignores that env var
+(nothing reads it any more), which is harmless on its own, but pairing a rolled-back runner with
+a not-rolled-back core would mean the runner passes through a bucket name that no longer does
+anything, silently losing exactly the signal a real rollback needs to be trustworthy.
+
 Usage:
     python3 cloud_archiver.py <state> [session=<session>] [n=<count>]
     python3 cloud_archiver.py fl session=2026E
