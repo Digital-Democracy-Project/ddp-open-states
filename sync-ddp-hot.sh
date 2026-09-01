@@ -29,9 +29,12 @@
 # this one bucket) or a separate, purpose-scoped read identity -- an AWS IAM change, which is a
 # shared-infrastructure decision for a human to make, not something this ticket implements.
 #
-# No --delete: this is deliberately additive-only. DDP-HOT gaining a file some other local
-# process put there and this job not otherwise knowing about is harmless; this job silently
-# deleting a local file that fell out of the bucket is not something OPEN-236 asked for.
+# No --delete: this only ever ADDS or REPLACES files, never removes one from DDP-HOT that fell
+# out of the bucket (deletion propagation is not something OPEN-236 asked for). It does still
+# overwrite a local file at a path that also exists in S3 with different content -- that's the
+# whole point of a mirror, not an oversight -- so DDP-HOT is authoritative-from-S3 for any path
+# this job's key convention covers (bills/raw/...); anything placed at a colliding path by some
+# other local process is not preserved.
 #
 # Test seams (env vars), same convention as check-scrape-staleness.sh's STALE_* seam --
 # overridable so test-sync-ddp-hot.sh never touches a real bucket or /Volumes/DDP-HOT:
@@ -53,29 +56,58 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 
 mkdir -p "$(dirname "$LOG_FILE")"
 
+# pm-review round 1, HIGH severity, real: an unmounted /Volumes/DDP-HOT is just an ordinary --
+# usually nonexistent, but perfectly writable -- directory on the Mac's own boot disk. Without
+# this check, if the external drive were ever unmounted, renamed, or not yet attached when a
+# cron tick fires, aws s3 sync would happily create that path and start filling the SYSTEM disk
+# with the archive's contents, with no error at all. Comparing device IDs (stat -f %d) against
+# the parent directory is the standard portable way to detect "is this its own mount point" on
+# macOS -- there's no mountpoint(1) here (that's Linux/util-linux only), and diskutil's text
+# output isn't a stable thing to grep. Confirmed empirically against the real, currently-mounted
+# DDP-HOT on this machine (differing device id from /Volumes) and against an ordinary /tmp
+# subdirectory (same device id as its parent, correctly refused).
+dest_dev=$(stat -f '%d' "$DEST_DIR" 2>/dev/null)
+parent_dev=$(stat -f '%d' "$(dirname "$DEST_DIR")" 2>/dev/null)
+if [ -z "$dest_dev" ] || [ "$dest_dev" = "$parent_dev" ]; then
+    log "sync-ddp-hot: REFUSING to run -- $DEST_DIR does not look like a separately-mounted volume (missing, or the same device as $(dirname "$DEST_DIR")). If DDP-HOT is genuinely unmounted, mount it before the next tick; this job will not create/populate that path on the boot disk."
+    exit 1
+fi
+
 # A single sync tick normally finishes well within a 15-min cadence, but a slow or hung tick
 # must not pile up concurrent syncs against the same destination. This machine is a Mac, not
 # Linux -- there is no `flock` command here at all (confirmed: it isn't installed by default on
 # macOS) -- so this uses `lockf`, the BSD equivalent that ships with macOS itself, wrapping the
 # aws invocation directly rather than a separate acquire-then-run step. `-t 0` fails immediately
-# instead of blocking if another tick still holds the lock (empirically confirmed to exit 75,
-# sysexits.h's EX_TEMPFAIL, on this exact macOS version); `-k` keeps the lock file around between
-# runs instead of deleting it (deleting and recreating it on every tick would reopen a tiny race
-# a long-lived lock file doesn't have); `-s` keeps lockf's own contention message off stderr
-# since this script logs that case itself. Not the archiver's S3-based SourceLock -- that lock
-# exists to coordinate across machines/processes writing to S3; this job only ever runs as one
-# process on this one Mac, writing to local disk, so a local file lock is the right scope.
+# instead of blocking if another tick still holds the lock; `-k` keeps the lock file around
+# between runs instead of deleting it (deleting and recreating it on every tick would reopen a
+# tiny race a long-lived lock file doesn't have). Not the archiver's S3-based SourceLock -- that
+# lock exists to coordinate across machines/processes writing to S3; this job only ever runs as
+# one process on this one Mac, writing to local disk, so a local file lock is the right scope.
+#
+# pm-review round 1, real: lockf returns exit 75 (sysexits.h EX_TEMPFAIL) itself when it can't
+# acquire the lock, but ALSO simply passes through whatever exit code the wrapped command
+# produces once the lock IS acquired ("returns the exit status produced by command" -- lockf(1)).
+# aws-cli has never been observed to exit 75 for anything, but relying on the bare number alone
+# would silently misreport a real (if freak) aws failure as "someone else is running, skip" --
+# swallowing a real failure is worse than the reverse. So this checks for lockf's own literal
+# "already locked" message (its exact wording, confirmed empirically) in the captured output,
+# not just the number -- that string can only appear because lockf itself printed it before ever
+# invoking the child, so a same-numbered failure from aws itself can never produce it.
 log "sync-ddp-hot: starting, s3://$SRC_BUCKET -> $DEST_DIR"
-if lockf -t 0 -k -s "$LOCK_FILE" "$AWS_BIN" s3 sync "s3://$SRC_BUCKET" "$DEST_DIR" \
-        --ignore-glacier-warnings 2>&1 | tee -a "$LOG_FILE"; then
+TMP_OUT=$(mktemp)
+trap 'rm -f "$TMP_OUT"' EXIT
+lockf -t 0 -k "$LOCK_FILE" "$AWS_BIN" s3 sync "s3://$SRC_BUCKET" "$DEST_DIR" \
+    --ignore-glacier-warnings > "$TMP_OUT" 2>&1
+rc=$?
+tee -a "$LOG_FILE" < "$TMP_OUT"
+
+if [ "$rc" -eq 0 ]; then
     log "sync-ddp-hot: ok"
     exit 0
+elif [ "$rc" -eq 75 ] && grep -qF "already locked" "$TMP_OUT"; then
+    log "sync-ddp-hot: another sync is already running (lock held on $LOCK_FILE), skipping this tick"
+    exit 0
 else
-    rc=$?
-    if [ "$rc" -eq 75 ]; then
-        log "sync-ddp-hot: another sync is already running (lock held on $LOCK_FILE), skipping this tick"
-        exit 0
-    fi
     log "sync-ddp-hot: FAILED (exit $rc) -- see the aws s3 sync output above"
     exit 1
 fi
