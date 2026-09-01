@@ -8,10 +8,10 @@ ordinary credentials rather than from this Mac's own Postgres. It does only what
 needs: acquire exclusion, hydrate Michigan's WAF cookie if the state being archived is Michigan,
 invoke `os-text-extract archive` with `ARCHIVE_S3_MODE=direct` so uploads go straight to S3
 instead of through the sudo-gated Mac wrapper, parse its own summary line for counts, and emit
-a completion record. It does NOT decide *which* S3 buckets to write to -- that is
-`WORKING_TIER_S3_BUCKET`, a required environment variable this file only reads and passes
-through, matching OPEN-192's own acceptance criteria: which bucket the working tier lives in is
-an operator decision this file does not make on anyone's behalf.
+a completion record. **Corrected 2026-08-31 (OPEN-238):** there is no separate working-tier
+bucket to configure any more -- `_upload_and_verify_direct()` writes one `STANDARD_IA` object to
+`ddp-bill-archive` itself, the same bucket the Deep Archive vault already lives in. This file has
+no bucket decision left to make or pass through.
 
 Deliberately reuses rather than reimplements what cloud_collector.py (OPEN-201) already built
 and proved, per this repo's own stated rule for this rebuild (PLAN-scraper-execution-
@@ -33,12 +33,14 @@ of work:
     project's existing per-operation-type locking model, not a new safety property introduced
     here -- and this file changes nothing about either operation's own source-site pacing
     (each still respects its own rate limits independently).
-    This `_archive_lock` suffix is also the key an on-prem archiver would need to acquire to be
-    excluded from this cloud archiver -- but as of this writing `os-text-extract archive` still
-    runs unlocked on the Mac (invoked directly, not through any runner that takes this lock), so
-    that exclusion is not yet real. Don't run this cloud archiver and a manual/cron Mac archive
-    of the same jurisdiction at the same time; the on-prem side taking this lock is follow-up
-    work, not something claimed as already done here.
+    **Corrected 2026-08-31 (Ramon): there is no on-prem production archiver for this lock to
+    matter to.** An earlier version of this note reserved `_archive_lock` as the key an on-prem
+    archiver would eventually need to acquire for cross-machine exclusion. That framing assumed
+    the Mac would keep running archiving as a production fallback; it doesn't -- production
+    archiving is cloud-only, full stop (see `PLAN-scraper-execution-migration.md`'s fleet-wide
+    policy note). The Mac still runs `archive_bill_versions()` occasionally for development
+    (testing a new jurisdiction, debugging extraction against DDP-HOT), never as a scheduled or
+    production process, so there's no standing on-prem run this lock needs to coordinate with.
   * No baseline/watermark hydration at all. `os-text-extract archive` has no `start=` cutoff
     argument (unlike `os-update --scrape`) -- `archive_bill_versions()` is naturally idempotent
     per document via its own natural-key skip-check (version_note, version_date, source_url),
@@ -51,7 +53,8 @@ of work:
 
 Deploy ordering: this file sets ARCHIVE_S3_MODE=direct in the subprocess environment it hands
 to `os-text-extract archive`, but does not itself carry the code that understands that mode --
-that's openstates-core PR #34 (ARCHIVE_S3_MODE dispatch in `_upload_and_verify`). The
+that's openstates-core PR #34 (ARCHIVE_S3_MODE dispatch in `_upload_and_verify`) plus its OPEN-238
+follow-up (the single-write `STANDARD_IA` collapse this file's own env-building assumes). The
 openstates-core change must be deployed to whatever image/checkout this file's OS_TEXT_EXTRACT
 points at BEFORE this file is deployed or enabled. Running this file against a pre-#34
 openstates-core would set an env var that old code doesn't read at all, so archiving would
@@ -68,10 +71,6 @@ Environment:
     MEMORY_BUCKET          S3 bucket for the memory store (required) -- same store
                            cloud_collector.py uses, reused here only for Michigan's cookie
     MEMORY_PREFIX          Object-key namespace (required, no default -- OPEN-159/172)
-    WORKING_TIER_S3_BUCKET Required. The readable-tier bucket `_upload_and_verify_direct()`
-                           (openstates-core, OPEN-192) writes every document to, alongside the
-                           Deep Archive vault. This file does not default or guess it -- see
-                           OPEN-192's own acceptance criteria for why.
     OS_TEXT_EXTRACT        The os-text-extract binary to invoke (default "os-text-extract",
                            overridable for tests, matching cloud_collector.py's OS_UPDATE
                            convention)
@@ -187,19 +186,6 @@ def main(argv, s3_client=None):
 
     session = params.get("session")
 
-    working_tier_bucket = os.environ.get("WORKING_TIER_S3_BUCKET")
-    if not working_tier_bucket:
-        # Fails here rather than letting every individual document upload fail one at a time
-        # inside openstates-core -- same information, surfaced once, before any source-site
-        # request is made, rather than N times after N of them already were.
-        print(
-            "ERROR: WORKING_TIER_S3_BUCKET is required -- OPEN-192's own bucket decision is "
-            "not made yet (see that ticket's first acceptance criterion)",
-            file=sys.stderr,
-        )
-        emit_completion_record(status="failed", source=state, run_id=run_id, session=session)
-        return 1
-
     try:
         bucket = os.environ["MEMORY_BUCKET"]
     except KeyError:
@@ -238,8 +224,7 @@ def main(argv, s3_client=None):
 
     try:
         try:
-            return _archive(state, session, params, run_id, started, memory,
-                             working_tier_bucket)
+            return _archive(state, session, params, run_id, started, memory)
         except Exception:
             print(f"ERROR: unhandled exception during {state} archive", file=sys.stderr)
             emit_completion_record(status="failed", source=state, run_id=run_id,
@@ -249,11 +234,10 @@ def main(argv, s3_client=None):
         lock.release(state)
 
 
-def _archive(state, session, params, run_id, started, memory, working_tier_bucket):
+def _archive(state, session, params, run_id, started, memory):
     import tempfile
 
-    archive_env = dict(os.environ, ARCHIVE_S3_MODE="direct",
-                        WORKING_TIER_S3_BUCKET=working_tier_bucket)
+    archive_env = dict(os.environ, ARCHIVE_S3_MODE="direct")
 
     # Michigan's documents are fetched from the same WAF-protected site its bills are scraped
     # from -- this needs the identical published-cookie handoff cloud_collector.py already

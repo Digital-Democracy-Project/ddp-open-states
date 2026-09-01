@@ -83,30 +83,9 @@ def _fake_os_text_extract(tmp_path, *, exit_code=0, state="fl", archived=3,
     return str(script)
 
 
-def test_main_requires_working_tier_bucket_and_never_touches_s3_or_the_lock(
-    tmp_path, monkeypatch, capsys
-):
-    """The one thing this test file exists to prove above all the others -- mirrors the same
-    priority test in test_upload_and_verify_s3_modes.py, one layer up: OPEN-192's own bucket
-    decision gates the whole runner, not just the eventual S3 write inside openstates-core."""
-    monkeypatch.delenv("WORKING_TIER_S3_BUCKET", raising=False)
-    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
-    monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    client = FakeS3Client()
-
-    rc = ca.main(["fl"], s3_client=client)
-
-    assert rc == 1
-    assert client.put_calls == []  # no lock was ever attempted
-    out = capsys.readouterr().out
-    record = json.loads(out.strip().splitlines()[-1])
-    assert record["status"] == "failed"
-
-
 def test_main_full_run_ok(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     env_var_file = tmp_path / "seen_mode.txt"
     monkeypatch.setenv(
         "OS_TEXT_EXTRACT",
@@ -136,7 +115,6 @@ def test_main_zero_exit_with_no_parseable_summary_is_reported_as_a_failure(
     alone, so a 0 here would still read as success to anything not parsing the record body."""
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     script = tmp_path / "fake_os_text_extract_no_summary.sh"
     script.write_text("#!/usr/bin/env bash\necho 'some unrelated output'\nexit 0\n")
     script.chmod(script.stat().st_mode | stat.S_IEXEC)
@@ -154,7 +132,6 @@ def test_main_zero_exit_with_no_parseable_summary_is_reported_as_a_failure(
 def test_main_lock_held_by_another_run_refuses(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path))
     client = FakeS3Client()
     # Pre-seed a live lock, exactly as test_cloud_collector.py's own equivalent test does.
@@ -175,7 +152,6 @@ def test_main_archive_lock_and_collection_lock_are_independent_keys(tmp_path, mo
     collection runs) of the same jurisdiction should."""
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path))
     client = FakeS3Client()
     collection_lock = ca.SourceLock(client, "bucket", "dev-open192", holder="collector",
@@ -192,7 +168,6 @@ def test_main_archive_failure_still_emits_a_completion_record_with_parsed_counts
 ):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv(
         "OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path, exit_code=1, archived=0)
     )
@@ -209,7 +184,6 @@ def test_main_archive_failure_still_emits_a_completion_record_with_parsed_counts
 def test_main_michigan_refuses_without_a_fresh_published_cookie(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path, state="mi"))
     client = FakeS3Client()  # no cookie ever published to it
 
@@ -223,7 +197,6 @@ def test_main_michigan_refuses_without_a_fresh_published_cookie(tmp_path, monkey
 def test_main_michigan_proceeds_with_a_fresh_published_cookie(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path, state="mi"))
     client = FakeS3Client()
     fresh_cookie = {
@@ -246,7 +219,6 @@ def test_main_non_michigan_state_never_checks_for_a_cookie(tmp_path, monkeypatch
     at all must archive successfully, unlike mi in the test above."""
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(tmp_path, state="va"))
     client = FakeS3Client()
 
@@ -258,7 +230,6 @@ def test_main_non_michigan_state_never_checks_for_a_cookie(tmp_path, monkeypatch
 def test_main_unhandled_exception_still_releases_the_lock(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    monkeypatch.setenv("WORKING_TIER_S3_BUCKET", "ddp-openstates-scraper-memory")
     # A binary that does not exist at all -- Popen itself raises, exercising main()'s bare
     # `except Exception` path (contract: still emit a record, still release the lock, then
     # re-raise so the real exit code reflects the crash).
