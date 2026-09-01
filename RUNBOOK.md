@@ -686,6 +686,7 @@ grep "SCRAPE SUMMARY\|WARNING.*over-filtering" logs/scraper.log | tail -30
 | MA | `PrimarySponsor.ResponseDate` | **Weak proxy** — sponsor date, not action date. Bills with new floor actions but unchanged sponsors will be incorrectly skipped. Note: MA does scrape vote events (re-enabled 2026-06-22) so this proxy is more risky than originally noted |
 | AZ | `max(BillStatusAction.ReportDate)` | Still O(n) API calls; only sub-calls skipped |
 | VA | `max(EventDate)` from events call | Events call unavoidable; saves 3 of 4 per-bill calls |
+| NC | None | `scrapers/nc/bills.py`'s `scrape()` takes no `start=` argument — no incremental support at all, every run is a full walk (Phase 1 pilot state, onboarded 2026-08-31; see `PLAN-push-button-onboarding.md`) |
 
 ### ddp-sync compatibility
 
