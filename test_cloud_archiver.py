@@ -86,9 +86,8 @@ def _fake_os_text_extract(tmp_path, *, exit_code=0, state="fl", archived=3,
 def test_main_full_run_ok(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("MEMORY_BUCKET", "bucket")
     monkeypatch.setenv("MEMORY_PREFIX", "dev-open192")
-    # A stale WORKING_TIER_S3_BUCKET left over in the environment from before OPEN-238 must
-    # not matter -- nothing reads it any more, but proving that explicitly (rather than just
-    # not setting it) means this test can't pass by accident of a clean test environment.
+    # Proves the variable isn't required any more by explicitly deleting it, rather than
+    # relying on a clean test environment to happen not to have it set.
     monkeypatch.delenv("WORKING_TIER_S3_BUCKET", raising=False)
     env_var_file = tmp_path / "seen_mode.txt"
     monkeypatch.setenv(
