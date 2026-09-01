@@ -17,6 +17,15 @@
 #     DDP-HOT is now a periodic sync target, not a write target)
 #   - scraper ETA is just "how long the previous completed run took"
 #
+# Deploy ordering (OPEN-237): this file's heartbeat-reading half is useless without its
+# producer half -- openstates-core's archive() (text_extract.py) must already be printing
+# the "heartbeat, N bills processed so far" line before this version of os-status reaches
+# the production checkout. Deployed the other way round, archive_heartbeat() finds nothing
+# for every in-flight run and every archiver reads as "no heartbeat yet (stalled? ...)" from
+# the moment this script lands, even though nothing is actually wrong. Same pairing
+# requirement, same reasoning, as cloud_archiver.py's OPEN-238 note -- the producer (library
+# code) goes out first, the consumer (this script) second; rolling back reverses that order.
+#
 # Found 2026-08-09 (OPEN-55): the old log-derived "est. remaining" estimate
 # used the *previous* run's own fetched+fetch_errors total as a stand-in for
 # "backlog," which is really just "how much volume last run processed" — it
@@ -173,7 +182,11 @@ print_job() {  # $1=kind $2=jurisdiction $3=pid
             hb_epoch=$(date -j -f '%Y-%m-%d %H:%M:%S' "$hb_ts" +%s 2>/dev/null)
             now_epoch=$(date +%s)
             [ -n "$hb_epoch" ] && mins_since_hb=$(( (now_epoch - hb_epoch) / 60 ))
-            if [ -n "$mins_since_hb" ] && [ "$mins_since_hb" -le 2 ]; then
+            # 15m, not the heartbeat's own ~1m interval: the heartbeat check in archive()
+            # only runs between bills, so one slow bill (e.g. MI's WAF retry/backoff) with no
+            # heartbeat at all during it must not itself read as stalled. This matches the
+            # tolerance the old DDP-HOT-file-mtime signal used for the same reason.
+            if [ -n "$mins_since_hb" ] && [ "$mins_since_hb" -le 15 ]; then
                 printf '  archived this run: %s bills processed (heartbeat %sm ago)\n' "$hb_count" "$mins_since_hb"
             else
                 printf '  archived this run: %s bills processed (stalled? no heartbeat in %sm)\n' \
