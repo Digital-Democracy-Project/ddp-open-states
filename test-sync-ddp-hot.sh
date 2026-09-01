@@ -147,13 +147,15 @@ if mount_available; then
     assert_num "run after lock is released exits 0" "$RC" -eq 0
     assert_contains "run after lock release actually invokes aws" "$OUT" "sync-ddp-hot: ok"
 
-    echo "=== 6. a real aws-cli exit code that happens to collide with lockf's own EX_TEMPFAIL (75) is still reported as a failure, not silently skipped ==="
-    # pm-review round 1: lockf passes through whatever exit code the wrapped command produces
-    # once the lock IS acquired, so the number 75 alone can't distinguish "lockf itself refused"
-    # from "aws-cli happened to exit 75 for some unrelated reason." This aws never sees any lock
-    # contention at all (it's the only invocation touching this fresh lock file) and exits 75
-    # anyway -- proving the wrapper keys off lockf's own "already locked" message text, not the
-    # bare number, since that text cannot appear here.
+    echo "=== 6. an aws-cli exit code that happens to numerically match lockf's own EX_TEMPFAIL (75) is still reported as a failure, not misread as a lock skip ==="
+    # pm-review round 1 flagged an earlier version of this wrapper (lockf directly wrapping the
+    # aws invocation) for exactly this ambiguity: lockf passes through whatever exit code the
+    # wrapped command produces once the lock IS acquired, so a bare "was it 75?" check couldn't
+    # tell "lockf itself refused" apart from "aws happened to also exit 75." Round 2 removed the
+    # ambiguity at the source instead of string-matching around it: the lock is now
+    # attempted/held via a plain `lockf -t 0 <fd>` that never runs aws at all, so its result can
+    # only ever mean one thing, and aws's own exit code -- 75 or otherwise -- reaches the normal
+    # ok/FAILED branch below with no special-casing. This test just confirms that.
     AWS6=$(fake_aws "aws-weird-exit" 75 "some unrelated aws-cli error text, nothing to do with locking")
     LOG6="$TMPDIR_ROOT/weird-exit.log"
     OUT=$(run_sync "$AWS6" "$LOG6" "$TMPDIR_ROOT/weird-exit.lock" "$REAL_MOUNT")

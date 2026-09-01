@@ -41,7 +41,7 @@
 #   SYNC_SRC_BUCKET   default: ddp-bill-archive
 #   SYNC_DEST_DIR     default: $ARCHIVE_ROOT_DIR, falling back to /Volumes/DDP-HOT
 #   SYNC_LOG_FILE     default: ~/Developer/repos/ddp-open-states/logs/sync-ddp-hot.log
-#   SYNC_LOCK_FILE    default: /tmp/ddp-sync-ddp-hot.lock (a lockf(1) lock file, not a flock fd)
+#   SYNC_LOCK_FILE    default: /tmp/ddp-sync-ddp-hot.lock (opened on fd 200, locked via lockf(1))
 #   SYNC_AWS_BIN      default: aws -- point at a fake binary to test without real AWS calls
 
 set -uo pipefail
@@ -68,46 +68,44 @@ mkdir -p "$(dirname "$LOG_FILE")"
 # subdirectory (same device id as its parent, correctly refused).
 dest_dev=$(stat -f '%d' "$DEST_DIR" 2>/dev/null)
 parent_dev=$(stat -f '%d' "$(dirname "$DEST_DIR")" 2>/dev/null)
-if [ -z "$dest_dev" ] || [ "$dest_dev" = "$parent_dev" ]; then
-    log "sync-ddp-hot: REFUSING to run -- $DEST_DIR does not look like a separately-mounted volume (missing, or the same device as $(dirname "$DEST_DIR")). If DDP-HOT is genuinely unmounted, mount it before the next tick; this job will not create/populate that path on the boot disk."
+if [ -z "$dest_dev" ] || [ -z "$parent_dev" ] || [ "$dest_dev" = "$parent_dev" ]; then
+    log "sync-ddp-hot: REFUSING to run -- $DEST_DIR does not look like a separately-mounted volume (missing, unreadable, or the same device as $(dirname "$DEST_DIR")). If DDP-HOT is genuinely unmounted, mount it before the next tick; this job will not create/populate that path on the boot disk."
     exit 1
 fi
 
 # A single sync tick normally finishes well within a 15-min cadence, but a slow or hung tick
 # must not pile up concurrent syncs against the same destination. This machine is a Mac, not
 # Linux -- there is no `flock` command here at all (confirmed: it isn't installed by default on
-# macOS) -- so this uses `lockf`, the BSD equivalent that ships with macOS itself, wrapping the
-# aws invocation directly rather than a separate acquire-then-run step. `-t 0` fails immediately
-# instead of blocking if another tick still holds the lock; `-k` keeps the lock file around
-# between runs instead of deleting it (deleting and recreating it on every tick would reopen a
-# tiny race a long-lived lock file doesn't have). Not the archiver's S3-based SourceLock -- that
-# lock exists to coordinate across machines/processes writing to S3; this job only ever runs as
-# one process on this one Mac, writing to local disk, so a local file lock is the right scope.
+# macOS) -- so this uses `lockf`, the BSD equivalent that ships with macOS itself. Not the
+# archiver's S3-based SourceLock -- that lock exists to coordinate across machines/processes
+# writing to S3; this job only ever runs as one process on this one Mac, writing to local disk,
+# so a local file lock is the right scope.
 #
-# pm-review round 1, real: lockf returns exit 75 (sysexits.h EX_TEMPFAIL) itself when it can't
-# acquire the lock, but ALSO simply passes through whatever exit code the wrapped command
-# produces once the lock IS acquired ("returns the exit status produced by command" -- lockf(1)).
-# aws-cli has never been observed to exit 75 for anything, but relying on the bare number alone
-# would silently misreport a real (if freak) aws failure as "someone else is running, skip" --
-# swallowing a real failure is worse than the reverse. So this checks for lockf's own literal
-# "already locked" message (its exact wording, confirmed empirically) in the captured output,
-# not just the number -- that string can only appear because lockf itself printed it before ever
-# invoking the child, so a same-numbered failure from aws itself can never produce it.
-log "sync-ddp-hot: starting, s3://$SRC_BUCKET -> $DEST_DIR"
-TMP_OUT=$(mktemp)
-trap 'rm -f "$TMP_OUT"' EXIT
-lockf -t 0 -k "$LOCK_FILE" "$AWS_BIN" s3 sync "s3://$SRC_BUCKET" "$DEST_DIR" \
-    --ignore-glacier-warnings > "$TMP_OUT" 2>&1
-rc=$?
-tee -a "$LOG_FILE" < "$TMP_OUT"
-
-if [ "$rc" -eq 0 ]; then
-    log "sync-ddp-hot: ok"
-    exit 0
-elif [ "$rc" -eq 75 ] && grep -qF "already locked" "$TMP_OUT"; then
+# pm-review round 2: an earlier version of this wrapped the aws invocation directly in
+# `lockf -t 0 -k LOCKFILE aws ...`, which buffered all output through a temp file to be able to
+# tell "lockf itself refused the lock" (exit 75) apart from "aws happened to exit 75 for some
+# unrelated reason" (lockf just passes the child's own exit code through once the lock IS
+# acquired) -- correctly flagged as fragile (string-matching lockf's message inside output that
+# also contains the child's own text) AND as a real regression (no more live output while a
+# sync is running). Locking the file descriptor directly instead -- attempt-and-hold in one
+# atomic step, entirely separate from running aws -- removes the ambiguity at the source: this
+# lockf call never runs a child at all, so its exit code can only ever mean one thing.
+# Empirically confirmed (not just reasoned about) that a lock held via a DIFFERENT process's
+# open of the same path is correctly detected as contended, exiting 75, while a fork of the
+# holder itself (same open file description) is not -- i.e. this is a real per-file-description
+# lock, not a naive "does this path exist" check.
+exec 200>"$LOCK_FILE"
+if ! lockf -t 0 200; then
     log "sync-ddp-hot: another sync is already running (lock held on $LOCK_FILE), skipping this tick"
     exit 0
+fi
+
+log "sync-ddp-hot: starting, s3://$SRC_BUCKET -> $DEST_DIR"
+if "$AWS_BIN" s3 sync "s3://$SRC_BUCKET" "$DEST_DIR" --ignore-glacier-warnings 2>&1 | tee -a "$LOG_FILE"; then
+    log "sync-ddp-hot: ok"
+    exit 0
 else
+    rc=$?
     log "sync-ddp-hot: FAILED (exit $rc) -- see the aws s3 sync output above"
     exit 1
 fi
