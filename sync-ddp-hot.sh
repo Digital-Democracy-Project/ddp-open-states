@@ -94,10 +94,23 @@ fi
 # open of the same path is correctly detected as contended, exiting 75, while a fork of the
 # holder itself (same open file description) is not -- i.e. this is a real per-file-description
 # lock, not a naive "does this path exist" check.
+#
+# pm-review round 3: lockf(1) has at least three distinct documented failure exit codes, not
+# one -- EX_TEMPFAIL (75, genuine contention: another tick is running, safe to skip silently),
+# EX_CANTCREAT (73, couldn't create the lock file at all, e.g. a permissions problem on
+# $LOCK_FILE's directory), EX_UNAVAILABLE (69, only relevant to the -n flag, unused here). An
+# earlier version of this check treated ANY nonzero lockf result as "someone else is running" --
+# collapsing a real, alertable failure (can't even create the lock file) into a silent no-op
+# skip would have been worse than the exit-75-ambiguity bug this whole redesign exists to fix.
 exec 200>"$LOCK_FILE"
-if ! lockf -t 0 200; then
+lockf -t 0 200
+lock_rc=$?
+if [ "$lock_rc" -eq 75 ]; then
     log "sync-ddp-hot: another sync is already running (lock held on $LOCK_FILE), skipping this tick"
     exit 0
+elif [ "$lock_rc" -ne 0 ]; then
+    log "sync-ddp-hot: FAILED to acquire the lock on $LOCK_FILE (lockf exit $lock_rc, not contention -- see lockf(1)'s EXIT STATUS)"
+    exit 1
 fi
 
 log "sync-ddp-hot: starting, s3://$SRC_BUCKET -> $DEST_DIR"

@@ -163,8 +163,61 @@ if mount_available; then
     assert_num "a colliding-exit-code real failure still exits non-zero" "$RC" -ne 0
     assert_contains "it's reported as FAILED, not as a benign lock skip" "$OUT" "sync-ddp-hot: FAILED"
     assert_not_contains "it is NOT misreported as another sync already running" "$OUT" "already running"
+
+    echo "=== 9. two full instances of the actual script contend for the same lock end to end ==="
+    # pm-review round 3: tests 4/5 prove the underlying lockf primitive excludes correctly, but
+    # only against a bare `lockf ... sleep` holder, not against a second real invocation of this
+    # script -- the thing actually being shipped. This runs the real script twice concurrently:
+    # the first with a fake aws that sleeps (simulating a slow in-flight sync), the second with a
+    # fake aws that must NOT be invoked. A third invocation, after the first finishes, proves the
+    # lock is released, not held forever.
+    LOCK9="$TMPDIR_ROOT/e2e.lock"
+    AWS9_SLOW=$(fake_aws "aws-e2e-slow" 0)
+    # fake_aws's own "exit N" line always comes last; insert a sleep before it so this instance
+    # stays inside the aws step (and thus keeps the lock held) long enough for the second
+    # instance below to collide with it.
+    sed -i '' '$ i\
+sleep 2
+' "$AWS9_SLOW"
+    LOG9A="$TMPDIR_ROOT/e2e-first.log"
+    run_sync "$AWS9_SLOW" "$LOG9A" "$LOCK9" "$REAL_MOUNT" > "$TMPDIR_ROOT/e2e-first.out" 2>&1 &
+    FIRST_PID=$!
+    sleep 0.5  # let the first real instance actually acquire the lock and get into the aws step
+    AWS9_SHOULD_NOT_RUN=$(fake_aws "aws-e2e-should-not-run" 0)
+    LOG9B="$TMPDIR_ROOT/e2e-second.log"
+    OUT9B=$(run_sync "$AWS9_SHOULD_NOT_RUN" "$LOG9B" "$LOCK9" "$REAL_MOUNT")
+    RC9B=$?
+    assert_num "a second full instance exits 0 while the first is still running" "$RC9B" -eq 0
+    assert_contains "the second instance logs the skip" "$OUT9B" "already running"
+    assert_file_absent "$TMPDIR_ROOT/aws-e2e-should-not-run.argv" "the second instance's aws was never invoked while the first held the lock"
+    wait "$FIRST_PID"
+    assert_contains "the first instance completed normally once its aws finished" "$(cat "$TMPDIR_ROOT/e2e-first.out")" "sync-ddp-hot: ok"
+
+    AWS9_THIRD=$(fake_aws "aws-e2e-third" 0)
+    LOG9C="$TMPDIR_ROOT/e2e-third.log"
+    OUT9C=$(run_sync "$AWS9_THIRD" "$LOG9C" "$LOCK9" "$REAL_MOUNT")
+    RC9C=$?
+    assert_num "a third instance after the first releases the lock runs normally" "$RC9C" -eq 0
+    assert_contains "the third instance actually invokes aws" "$OUT9C" "sync-ddp-hot: ok"
+
+    echo "=== 10. a real lockf failure (can't even create the lock file) is reported as FAILED, not silently skipped as contention ==="
+    # pm-review round 3, real bug: an earlier version of this treated ANY nonzero lockf result as
+    # "someone else is running" -- collapsing lockf's own EX_CANTCREAT (73, couldn't create the
+    # lock file at all -- e.g. a permissions problem) into a silent no-op skip, which would have
+    # been worse than the exit-75 ambiguity this whole redesign exists to fix. Pointing the lock
+    # file at a directory that doesn't exist reproduces EX_CANTCREAT for real (confirmed
+    # empirically: `exec 200>` fails, then `lockf -t 0 200` reports "Bad file descriptor", exit
+    # 73) -- not a hand-picked exit code, the actual failure this scenario really produces.
+    AWS10=$(fake_aws "aws-should-not-run-bad-lockdir" 0)
+    LOG10="$TMPDIR_ROOT/bad-lockdir.log"
+    OUT=$(run_sync "$AWS10" "$LOG10" "$TMPDIR_ROOT/no-such-dir-at-all/lock" "$REAL_MOUNT")
+    RC=$?
+    assert_num "an uncreatable lock file exits non-zero" "$RC" -ne 0
+    assert_contains "it's reported as FAILED to acquire the lock, not a benign skip" "$OUT" "FAILED to acquire the lock"
+    assert_not_contains "it is NOT misreported as another sync already running" "$OUT" "already running"
+    assert_file_absent "$TMPDIR_ROOT/aws-should-not-run-bad-lockdir.argv" "aws was never invoked when the lock file itself couldn't be created"
 else
-    echo "=== 1-6 SKIPPED: $REAL_MOUNT is not a mounted volume on this machine ==="
+    echo "=== 1-10 SKIPPED: $REAL_MOUNT is not a mounted volume on this machine ==="
 fi
 
 echo "=== 7. a missing destination directory is refused, not silently created on the boot disk ==="
