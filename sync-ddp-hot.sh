@@ -7,7 +7,7 @@
 # time. See PLAN-scraper-execution-migration.md's "How DDP-HOT gets populated" section.
 #
 # Deliberately NOT installed as a live crontab entry by this change -- OPEN-236 is build+test
-# only. To install for real, once the IAM gap below is resolved:
+# only. To install for real:
 #   */15 * * * * /Users/agentsmith/Developer/repos/ddp-open-states/sync-ddp-hot.sh
 #
 # --ignore-glacier-warnings is the whole trick, not a custom log parser: ddp-bill-archive holds
@@ -20,14 +20,29 @@
 # reading awscli's own source (customizations/s3/s3handler.py's _warn_glacier, awscli 2.36.24),
 # not assumed from the --help text alone.
 #
-# KNOWN GAP, found while building this, not yet resolved: the `ddp-scraper` IAM user (the same
-# one already used for the archiver's own S3 PutObject calls, see .env) does not have
-# s3:ListBucket / s3:GetBucketLocation on ddp-bill-archive -- confirmed with a live AccessDenied
-# response during this ticket's own testing, not assumed. `aws s3 sync` cannot enumerate a
-# bucket's contents without ListBucket, so this job cannot actually run under that identity as
-# configured today. It needs either a broadened policy for ddp-scraper (read-only S3 verbs on
-# this one bucket) or a separate, purpose-scoped read identity -- an AWS IAM change, which is a
-# shared-infrastructure decision for a human to make, not something this ticket implements.
+# IAM: the `ddp-scraper` user needed s3:ListBucket / s3:GetBucketLocation / s3:GetObject on
+# ddp-bill-archive to run this at all -- confirmed missing via a live AccessDenied response
+# during this ticket's original testing, then granted and re-verified live (2026-09-01): a
+# dedicated test object, absent from DDP-HOT beforehand, landed with byte-identical content
+# after one real sync tick against the real bucket and the real mount.
+#
+# Syncs the "bills" subtree specifically (both SRC_BUCKET/bills and DEST_DIR/bills), not the
+# bucket/volume root -- found the same way as the IAM gap above: a real run against the real,
+# already-populated DDP-HOT mount, not a scratch directory. macOS creates its own metadata
+# directories (Spotlight index, Trash, document-revisions, temp items) at the ROOT of every
+# mounted volume, several with permissions that make them unreadable to a normal user process
+# even as their owner. aws s3 sync has to walk the whole destination tree to know what already
+# exists there, hits those, prints "File/Directory is not readable" warnings, and exits 2 --
+# the SAME exit code and codepath --ignore-glacier-warnings exists to neutralize, but for an
+# entirely different reason (a local permissions wall, not a remote storage class), so that
+# flag alone doesn't cover it. --exclude does NOT fix this either (tried and confirmed live,
+# both directory-contents and bare-name patterns): aws-cli's local walk still touches those
+# directory entries before filtering applies. Scoping the sync to only the "bills" subtree --
+# every real object key already starts with "bills/", see _s3_object_key()'s own docstring --
+# sidesteps the problem entirely: aws-cli's destination walk never leaves DEST_DIR/bills, so it
+# never reaches the volume-root metadata directories at all. Known limitation: if a future
+# object type ever gets written outside the "bills/" prefix (openstates-core's own comment
+# anticipates this), this job won't sync it until it's updated to scope more broadly.
 #
 # No --delete: this only ever ADDS or REPLACES files, never removes one from DDP-HOT that fell
 # out of the bucket (deletion propagation is not something OPEN-236 asked for). It does still
@@ -113,8 +128,9 @@ elif [ "$lock_rc" -ne 0 ]; then
     exit 1
 fi
 
-log "sync-ddp-hot: starting, s3://$SRC_BUCKET -> $DEST_DIR"
-if "$AWS_BIN" s3 sync "s3://$SRC_BUCKET" "$DEST_DIR" --ignore-glacier-warnings 2>&1 | tee -a "$LOG_FILE"; then
+log "sync-ddp-hot: starting, s3://$SRC_BUCKET/bills -> $DEST_DIR/bills"
+if "$AWS_BIN" s3 sync "s3://$SRC_BUCKET/bills" "$DEST_DIR/bills" --ignore-glacier-warnings \
+        2>&1 | tee -a "$LOG_FILE"; then
     log "sync-ddp-hot: ok"
     exit 0
 else

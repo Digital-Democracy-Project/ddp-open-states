@@ -94,8 +94,17 @@ if mount_available; then
     RC=$?
     assert_num "clean run exits 0" "$RC" -eq 0
     assert_contains "clean run logs ok" "$OUT" "sync-ddp-hot: ok"
-    assert_contains "invoked aws s3 sync against the right bucket" "$(cat "$TMPDIR_ROOT/aws-ok.argv")" "s3 sync s3://ddp-bill-archive"
+    assert_contains "invoked aws s3 sync against the right bucket" "$(cat "$TMPDIR_ROOT/aws-ok.argv")" "s3 sync s3://ddp-bill-archive/bills"
     assert_contains "invoked with --ignore-glacier-warnings" "$(cat "$TMPDIR_ROOT/aws-ok.argv")" "--ignore-glacier-warnings"
+    # Found live against the real, already-populated DDP-HOT mount (not a scratch dir): macOS's
+    # own metadata directories (Spotlight, Trash, document-revisions, temp items) sit at the
+    # ROOT of every mounted volume, several unreadable to a normal process even as their owner.
+    # aws s3 sync has to walk the whole destination tree, hits those, and exits 2 -- --exclude
+    # does NOT fix this (confirmed live, both directory-contents and bare-name patterns: the
+    # local walk still touches the entry before filtering applies). Scoping the sync to the
+    # "bills" subtree specifically -- every real object key already starts with "bills/" -- means
+    # aws-cli's destination walk never reaches the volume root at all.
+    assert_contains "destination is scoped to the bills subtree, not the volume root" "$(cat "$TMPDIR_ROOT/aws-ok.argv")" "$REAL_MOUNT/bills"
     assert_contains "log file records the ok line too" "$(cat "$LOG1")" "sync-ddp-hot: ok"
 
     echo "=== 2. a real failure (AccessDenied, a bad listing, a local write failure) reports failure ==="
