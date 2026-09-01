@@ -2,14 +2,19 @@
 # os-status — status of active OpenStates scrapers and bill archivers.
 #
 # Invoked as `os status` (see the os() function in ~/.zshrc). Read-only:
-# inspects ps, logs/scraper.log in the production checkout, file mtimes on
-# DDP-HOT, and (for the archiver backlog specifically) a direct Postgres
-# count. Estimates are rough by design and labeled as such:
+# inspects ps, logs/scraper.log in the production checkout, and (for the
+# archiver backlog specifically) a direct Postgres count. Estimates are
+# rough by design and labeled as such:
 #   - archiver backlog is a real count from Postgres (see db_backlog()) of
 #     ddp_bill_version_document rows never created + rows with is_error=true
 #     for the jurisdiction, not a guess from log text. Falls back to the old
 #     last-summary-line heuristic if the DB is unreachable.
-#   - throughput comes from files created on DDP-HOT in the last 15 minutes
+#   - archiver progress comes from a heartbeat line archive() itself prints
+#     to logs/scraper.log every ~60s (openstates-core, OPEN-237) -- corrected
+#     2026-08-31: this used to come from counting files newer than N minutes
+#     on DDP-HOT, which stopped meaning anything once the archiver stopped
+#     writing DDP-HOT directly at all (OPEN-192's storage-design correction;
+#     DDP-HOT is now a periodic sync target, not a write target)
 #   - scraper ETA is just "how long the previous completed run took"
 #
 # Found 2026-08-09 (OPEN-55): the old log-derived "est. remaining" estimate
@@ -25,7 +30,6 @@
 # projection.
 
 LOG=/Users/agentsmith/Developer/repos/ddp-open-states/logs/scraper.log
-RAW=/Volumes/DDP-HOT/Bills/raw
 DB_CONTAINER=ddp-openstates-postgres-1
 DB_USER=openstates
 DB_NAME=openstates
@@ -103,6 +107,26 @@ last_log_ts() {
     grep -E "^\[[0-9-]+ [0-9:]+\] $1" "$LOG" | tail -1 | sed -E 's/^\[([0-9-]+ [0-9:]+)\].*/\1/'
 }
 
+# OPEN-237: the archiver's progress signal, replacing DDP-HOT file mtimes. OPEN-192's
+# storage-design correction means the archiver no longer writes DDP-HOT directly at all
+# (it's a periodic sync target now, not a write target -- see PLAN-scraper-execution-
+# migration.md), so "count files newer than N minutes ago on DDP-HOT" stopped meaning
+# anything the moment that shipped. archive_bill_versions() (openstates-core, OPEN-237)
+# now prints a bracketed heartbeat line -- "[TIMESTAMP] <juris>: heartbeat, N bills
+# processed so far" -- at most once every 60s, in the exact same bracket format
+# last_log_ts() already parses. Echoes "timestamp|count" for the most recent heartbeat
+# at or after $2 (this run's own start, so a fresh process can't pick up a stale
+# heartbeat left over from an earlier, already-completed run of the same jurisdiction --
+# the log is never truncated between runs). Empty output means no heartbeat yet (either
+# just started, or stalled before the first 60s checkpoint).
+archive_heartbeat() {  # $1=jurisdiction $2=run-start "YYYY-MM-DD HH:MM:SS"
+    local juris=$1 start=$2 line
+    line=$(grep -E "^\[[0-9-]+ [0-9:]+\] $juris: heartbeat, [0-9]+ bills processed so far" "$LOG" \
+        | awk -v start="$start" -F'[][]' '$2 >= start' | tail -1)
+    [ -z "$line" ] && return
+    echo "$line" | sed -E 's/^\[([0-9-]+ [0-9:]+)\] [a-z]+: heartbeat, ([0-9]+) bills.*/\1|\2/'
+}
+
 # Duration (minutes) of the last COMPLETED run for a jurisdiction, from the
 # wrapper's own bracketed log lines. $1=start-pattern $2=end-pattern
 # (BSD awk has no mktime, so pair the lines by line number and diff with date.)
@@ -139,13 +163,34 @@ print_job() {  # $1=kind $2=jurisdiction $3=pid
     printf '%s — %s (%s), pid %s: running %s (started %s)%s\n' \
         "$label" "$name" "$juris" "$pid" "$etime" "${start_fmt:-?}" "$orphan"
 
-    if [ "$kind" = "ARCHIVER" ] && [ -d "$RAW/$juris" ] && [ -n "$start_fmt" ]; then
-        local done rate15 cutoff rate_disp="stalled?"
-        done=$(find "$RAW/$juris" -type f ! -name '.DS_Store' -newermt "$start_fmt" 2>/dev/null | wc -l | tr -d ' ')
-        cutoff=$(date -v-15M '+%Y-%m-%d %H:%M:%S')
-        rate15=$(find "$RAW/$juris" -type f ! -name '.DS_Store' -newermt "$cutoff" 2>/dev/null | wc -l | tr -d ' ')
-        [ "$rate15" -gt 0 ] && rate_disp="~$((rate15 / 15)).$(((rate15 * 10 / 15) % 10))/min"
-        printf '  archived this run: %s docs on DDP-HOT (last 15m: %s)\n' "$done" "$rate_disp"
+    if [ "$kind" = "ARCHIVER" ] && [ -n "$start_fmt" ]; then
+        local heartbeat hb_ts hb_count mins_since_hb=""
+        heartbeat=$(archive_heartbeat "$juris" "$start_fmt")
+        if [ -n "$heartbeat" ]; then
+            hb_ts=$(echo "$heartbeat" | cut -d'|' -f1)
+            hb_count=$(echo "$heartbeat" | cut -d'|' -f2)
+            local hb_epoch now_epoch
+            hb_epoch=$(date -j -f '%Y-%m-%d %H:%M:%S' "$hb_ts" +%s 2>/dev/null)
+            now_epoch=$(date +%s)
+            [ -n "$hb_epoch" ] && mins_since_hb=$(( (now_epoch - hb_epoch) / 60 ))
+            if [ -n "$mins_since_hb" ] && [ "$mins_since_hb" -le 2 ]; then
+                printf '  archived this run: %s bills processed (heartbeat %sm ago)\n' "$hb_count" "$mins_since_hb"
+            else
+                printf '  archived this run: %s bills processed (stalled? no heartbeat in %sm)\n' \
+                    "$hb_count" "${mins_since_hb:-?}"
+            fi
+        else
+            # No heartbeat yet. A run needs one interval (60s, openstates-core's
+            # _ARCHIVE_HEARTBEAT_INTERVAL_S) before its first one fires, so this is
+            # expected for a run that just started -- but distinguish that plainly from
+            # a genuinely stalled run below (etime coming from `ps`, not the log).
+            if [ -n "$etime" ] && [[ "$etime" =~ ^[0-9]+:[0-9]+$ ]] && \
+               [ "${etime%%:*}" -lt 1 ] 2>/dev/null; then
+                printf '  archived this run: no heartbeat yet (just started)\n'
+            else
+                printf '  archived this run: no heartbeat yet (stalled? running %s with zero progress logged)\n' "$etime"
+            fi
+        fi
 
         # Real backlog: bills we've scraped (version links exist) that we haven't
         # successfully archived yet (no document row at all, or a document row
@@ -156,26 +201,20 @@ print_job() {  # $1=kind $2=jurisdiction $3=pid
             never_attempted=$(echo "$db_result" | cut -d'|' -f1)
             errored=$(echo "$db_result" | cut -d'|' -f2)
             not_archived=$((never_attempted + errored))
-            if [ "$rate15" -gt 0 ] && [ "$not_archived" -gt 0 ]; then
-                printf '  not yet archived:   %s docs (%s never attempted + %s failed) → ~%s at current rate\n' \
-                    "$not_archived" "$never_attempted" "$errored" "$(humanize_min $((not_archived * 15 / rate15)))"
-            else
-                printf '  not yet archived:   %s docs (%s never attempted + %s failed)\n' \
-                    "$not_archived" "$never_attempted" "$errored"
-            fi
+            printf '  not yet archived:   %s docs (%s never attempted + %s failed)\n' \
+                "$not_archived" "$never_attempted" "$errored"
         else
             # DB unreachable (container down, timeout, etc.) — fall back to the
-            # old rough estimate rather than showing nothing.
-            local summary fetched errors backlog remaining summary_ts done_since
+            # old rough estimate rather than showing nothing. Uses the heartbeat's own
+            # bill count (bills iterated, not necessarily archived) as the closest
+            # available stand-in for "done so far" -- an approximation either way.
+            local summary fetched errors backlog remaining
             summary=$(grep -E "^$juris: [0-9]+ bills checked" "$LOG" | tail -1)
             if [ -n "$summary" ]; then
                 fetched=$(echo "$summary" | sed -E 's/.*fetched=([0-9]+).*/\1/')
                 errors=$(echo "$summary" | sed -E 's/.*fetch_errors=([0-9]+).*/\1/')
                 backlog=$((fetched + errors))
-                summary_ts=$(last_log_ts "Archiving done: $juris")
-                done_since=$done
-                [ -n "$summary_ts" ] && done_since=$(find "$RAW/$juris" -type f ! -name '.DS_Store' -newermt "$summary_ts" 2>/dev/null | wc -l | tr -d ' ')
-                remaining=$((backlog - done_since)); [ "$remaining" -lt 0 ] && remaining=0
+                remaining=$((backlog - ${hb_count:-0})); [ "$remaining" -lt 0 ] && remaining=0
                 printf '  est. remaining:    ≤%s docs (rough; backlog from last summary — DB unreachable for a real count)\n' \
                     "$remaining"
             fi
