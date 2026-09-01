@@ -259,9 +259,10 @@ ma:
 nc:
   name: North Carolina
   status: probing                     # OPEN-230: probed 2026-08-31, chosen as the pilot #1
-                                       # candidate -- not yet in ddp-sync's schedule, so the
-                                       # scrape/archive fields below are defaults, not measured
-                                       # production values (see the probe report cited below)
+                                       # candidate. Now in ddp-sync's secondary schedule and
+                                       # through Stage 3 QA (OPEN-231) -- status field itself
+                                       # stays at probing here since promoting it further is a
+                                       # human call (§4.6), not made in this file yet
   tier: secondary                      # per PLAN-push-button-onboarding.md §5 Stage 2, a new
                                        # pilot state is added to secondary.jurisdictions
   scrape:
@@ -274,8 +275,18 @@ nc:
     start_filter: false                  # scrapers/nc/bills.py's scrape() takes no start=
                                          # argument -- the scraper does not support one yet
   archive:
-    enabled: false                      # not enabled anywhere yet -- Stage 4 gates this on
-                                        # probe gate C, which passed for nc
+    enabled: true                       # OPEN-231 Stage 4: probe gate C passed, so nc clears
+                                        # the gate to enable archiving. This file isn't wired
+                                        # into activate.sh (see this file's own header note) --
+                                        # ARCHIVE_ENABLED_STATES there was updated separately, in
+                                        # the same commit, as its own gate that run-archive.sh
+                                        # actually checks. Not yet on ddp-sync's recurring weekly
+                                        # schedule (config/sync_schedule.yaml
+                                        # openstates_archive.jurisdictions, confirmed absent) --
+                                        # that addition waits for a real timed validation run's
+                                        # evidence (extractor success, DDP-HOT headroom, S3
+                                        # sample), same "measure before committing to a cadence"
+                                        # convention Stage 2 already followed.
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h -- no NC-specific entry
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
