@@ -565,10 +565,21 @@ def test_main_incremental_no_op_is_ok_not_failed(tmp_path, monkeypatch, capsys):
     count_keys = [k for k in client.put_calls if k.endswith(".count")]
     assert count_keys, "a no-op must still publish its count marker"
     assert client.objects[count_keys[0]] == b"0:incremental"
-    # A no-op scraped nothing -- it must not publish a manifest, which is what OPEN-190's
-    # loader treats as authorising a load. Publishing one here would tell the loader there is
-    # something to load when there is nothing.
-    assert not any(k.endswith("_manifest.json") for k in client.put_calls), client.put_calls
+    # OPEN-245: a no-op scraped nothing, but it MUST still publish a manifest -- an empty one --
+    # because that's the one signal cloud_loader.py (OPEN-190) treats as authorising a load at
+    # all. Without it, the loader can't tell "genuinely nothing to load" apart from "this run
+    # never finished" and refuses to proceed (found live: OPEN-244 made a no-op reach the load
+    # step for the first time, and cloud_loader.py had no manifest to find there).
+    #
+    # pm-review: pin the exact key AND payload the loader will actually look up
+    # (working-tier/{source}/{run_id}/_manifest.json, matching cloud_loader.py's own
+    # _fetch_manifest()), not just "some key ending in _manifest.json" -- a manifest published
+    # to the wrong path or naming a different run_id would satisfy the looser check while still
+    # leaving the loader unable to find it.
+    expected_manifest_key = f"working-tier/ut/{record['run_id']}/_manifest.json"
+    assert expected_manifest_key in client.put_calls, client.put_calls
+    manifest = json.loads(client.objects[expected_manifest_key])
+    assert manifest == {"run_id": record["run_id"], "source": "ut", "objects": []}
 
 
 def test_main_unreachable_takes_precedence_over_no_op_when_both_markers_present(
