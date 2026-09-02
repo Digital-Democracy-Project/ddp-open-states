@@ -570,11 +570,16 @@ def test_main_incremental_no_op_is_ok_not_failed(tmp_path, monkeypatch, capsys):
     # all. Without it, the loader can't tell "genuinely nothing to load" apart from "this run
     # never finished" and refuses to proceed (found live: OPEN-244 made a no-op reach the load
     # step for the first time, and cloud_loader.py had no manifest to find there).
-    manifest_keys = [k for k in client.put_calls if k.endswith("_manifest.json")]
-    assert manifest_keys, "a no-op must still publish an (empty) manifest for the loader (OPEN-245)"
-    manifest = json.loads(client.objects[manifest_keys[0]])
-    assert manifest["objects"] == []
-    assert manifest["run_id"] and manifest["source"] == "ut"
+    #
+    # pm-review: pin the exact key AND payload the loader will actually look up
+    # (working-tier/{source}/{run_id}/_manifest.json, matching cloud_loader.py's own
+    # _fetch_manifest()), not just "some key ending in _manifest.json" -- a manifest published
+    # to the wrong path or naming a different run_id would satisfy the looser check while still
+    # leaving the loader unable to find it.
+    expected_manifest_key = f"working-tier/ut/{record['run_id']}/_manifest.json"
+    assert expected_manifest_key in client.put_calls, client.put_calls
+    manifest = json.loads(client.objects[expected_manifest_key])
+    assert manifest == {"run_id": record["run_id"], "source": "ut", "objects": []}
 
 
 def test_main_unreachable_takes_precedence_over_no_op_when_both_markers_present(
