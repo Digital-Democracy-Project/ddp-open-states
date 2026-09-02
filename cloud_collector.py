@@ -34,6 +34,7 @@ in the cloud. That is the whole point of "role-based": this file never branches 
 credentials came from.
 """
 
+import datetime
 import json
 import math
 import os
@@ -430,6 +431,19 @@ def scrape_output_shows_unreachable_site(output_path):
     return result.returncode == 0
 
 
+def _scrape_output_shows_no_op(output_path):
+    """OPEN-244/OPEN-152: 'no objects returned from' is what openstates-core raises whenever a
+    scraper yields nothing at all, which covers both "nothing changed since the incremental
+    cutoff" (benign) and "the site could not be read" (a real failure) -- so this alone is
+    necessary but not sufficient to call a run a no-op. The caller must also confirm
+    scrape_output_shows_unreachable_site() is False first, exactly mirroring run-scrape.sh's
+    own precedence (run-scrape.sh:1030-1039) -- that ordering is what OPEN-152 exists to
+    enforce, after a WAF-blocked MI run once recorded `ok:0:0:0` and silently advanced its
+    watermark past a window it never actually examined."""
+    with open(output_path, encoding="utf-8", errors="replace") as f:
+        return "no objects returned from" in f.read()
+
+
 def parse_kv_args(argv):
     """`key=value` pairs, order-independent, per contract SS1. Anything without an "=" is a
     parse error -- this runner does not guess a caller's positional intent."""
@@ -720,6 +734,25 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
             touch_do_not_retry()
             return EXIT_DO_NOT_RETRY
 
+        # OPEN-244: mirrors run-scrape.sh's finish_no_op() (run-scrape.sh:841-870, invoked at
+        # run-scrape.sh:1030-1039). An incremental run whose scraper output shows "no objects
+        # returned from" -- once the unreachable check above has already ruled out a WAF
+        # block/site-down masquerading as the same message -- is a genuine, benign no-op:
+        # nothing changed since the watermark, not a failure to collect. Watermark and count
+        # still advance and memory still persists, exactly as a successful found=0 run would,
+        # so the next incremental run doesn't re-collect a window this one already covered
+        # (OPEN-181's "memory advances on every successful run" requirement).
+        if proc.returncode != 0 and mode == "incremental" and _scrape_output_shows_no_op(scrape_output):
+            print(f"{source}: no new objects since cutoff (no-op)", file=sys.stderr)
+            with open(os.path.join(last_run_dir, f"{scrape_key}.ts"), "w") as f:
+                f.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+            with open(os.path.join(last_run_dir, f"{scrape_key}.count"), "w") as f:
+                f.write(f"0:{mode}")
+            memory.persist_markers(source, scrape_key, last_run_dir)
+            emit_completion_record(status="ok", mode=mode, source=source, run_id=run_id,
+                                    session=session, found=0, duration_s=duration_s)
+            return 0
+
         if proc.returncode != 0:
             print(f"ERROR: {source} scrape failed, exit {proc.returncode}", file=sys.stderr)
             emit_completion_record(status="failed", mode=mode, source=source, run_id=run_id,
@@ -733,8 +766,6 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # exists on disk, and nothing else in this collect-only run creates these files.
         # No `.imported` marker: that describes an IMPORT outcome, and this runner never
         # loads (see emit_completion_record's note on new/updated/noop).
-        import datetime
-
         with open(os.path.join(last_run_dir, f"{scrape_key}.ts"), "w") as f:
             f.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
         with open(os.path.join(last_run_dir, f"{scrape_key}.count"), "w") as f:

@@ -535,6 +535,99 @@ def test_main_ordinary_failure_is_retryable(tmp_path, monkeypatch, capsys):
     assert record["status"] == "failed"
 
 
+def test_main_incremental_no_op_is_ok_not_failed(tmp_path, monkeypatch, capsys):
+    """OPEN-244/OPEN-152: 'no objects returned from' in an incremental run, with no
+    unreachable-site marker present, is a genuine benign no-op -- nothing changed since the
+    watermark -- and must record ok/found=0 while still advancing the watermark, not fail."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv(
+        "OS_UPDATE",
+        _fake_os_update(
+            tmp_path, exit_code=1,
+            stderr_text="openstates.exceptions.ScrapeError: no objects returned from FlBillScraper scrape",
+            bill_files=0,
+        ),
+    )
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "ok"
+    assert record["mode"] == "incremental"
+    assert record["found"] == 0
+
+    watermark_keys = [k for k in client.put_calls if k.endswith(".ts")]
+    assert watermark_keys, "a no-op must still advance the watermark (OPEN-181)"
+    count_keys = [k for k in client.put_calls if k.endswith(".count")]
+    assert count_keys, "a no-op must still publish its count marker"
+    assert client.objects[count_keys[0]] == b"0:incremental"
+    # A no-op scraped nothing -- it must not publish a manifest, which is what OPEN-190's
+    # loader treats as authorising a load. Publishing one here would tell the loader there is
+    # something to load when there is nothing.
+    assert not any(k.endswith("_manifest.json") for k in client.put_calls), client.put_calls
+
+
+def test_main_unreachable_takes_precedence_over_no_op_when_both_markers_present(
+    tmp_path, monkeypatch, capsys
+):
+    """OPEN-152's exact precedence, ported to cloud_collector.py: 'no objects returned from'
+    is necessary but not sufficient for a no-op -- a WAF block that also happens to yield zero
+    objects must still classify as unreachable, not as a benign no-op. Getting this backwards
+    is what let a WAF-blocked MI run once record ok:0:0:0 and silently advance its watermark
+    past a window it never actually examined."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv(
+        "OS_UPDATE",
+        _fake_os_update(
+            tmp_path, exit_code=1,
+            stderr_text="WAF block detected\nno objects returned from FlBillScraper scrape",
+            bill_files=0,
+        ),
+    )
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert rc == cc.EXIT_DO_NOT_RETRY
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "unreachable"
+    # The historically critical part (OPEN-152): an unreachable run must NOT advance the
+    # watermark -- a WAF-blocked MI run once did exactly that, silently skipping a window it
+    # never actually examined. Confirm no marker was published, not just the status label.
+    assert not any(k.endswith((".ts", ".count")) for k in client.put_calls), client.put_calls
+
+
+def test_main_full_run_no_objects_still_fails_not_a_no_op(tmp_path, monkeypatch, capsys):
+    """The no-op path is gated on mode == 'incremental' specifically, matching
+    run-scrape.sh's own condition -- a full run finding nothing has no watermark to have
+    "advanced past", so there is no benign interpretation to fall back to."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv(
+        "OS_UPDATE",
+        _fake_os_update(
+            tmp_path, exit_code=1,
+            stderr_text="no objects returned from FlBillScraper scrape",
+            bill_files=0,
+        ),
+    )
+
+    client = FakeS3Client()
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+
+    assert rc == 1
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+    assert record["mode"] == "full"
+    assert not any(k.endswith((".ts", ".count")) for k in client.put_calls), client.put_calls
+
+
 def test_main_rejects_malformed_params(capsys):
     rc = cc.main(["ut", "not-a-kv-pair"])
     assert rc == 1
