@@ -749,6 +749,24 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
             with open(os.path.join(last_run_dir, f"{scrape_key}.count"), "w") as f:
                 f.write(f"0:{mode}")
             memory.persist_markers(source, scrape_key, last_run_dir)
+
+            # OPEN-245: cloud_loader.py (OPEN-190) treats the ABSENCE of a manifest as "this
+            # run never finished" and refuses to load -- correct for a genuinely missing run,
+            # wrong for a no-op that legitimately has nothing to load. Before this fix, a no-op
+            # exited 1 here, so run_cloud_scrape() never even reached the load step; now it
+            # exits 0, so the loader needs its own authorizing signal. Publishing an
+            # empty-objects manifest, in the exact same shape/location the success path below
+            # writes, gives it that signal for free: cloud_loader.py's existing
+            # _validate_manifest()/_fetch_run_objects() already handle an empty `objects` list
+            # cleanly, and os-update --import against an empty --datadir already imports zero
+            # bills and exits 0 (confirmed against openstates-core: import_directory() globs
+            # for files and import_data() with an empty iterable just returns a zeroed report).
+            work_prefix = os.environ.get("WORKING_TIER_PREFIX", "working-tier")
+            marker_path = os.path.join(staging, "manifest.json")
+            with open(marker_path, "w") as f:
+                json.dump({"run_id": run_id, "source": source, "objects": []}, f)
+            memory.store(marker_path, f"{work_prefix}/{source}/{run_id}/_manifest.json")
+
             emit_completion_record(status="ok", mode=mode, source=source, run_id=run_id,
                                     session=session, found=0, duration_s=duration_s)
             return 0
