@@ -562,6 +562,13 @@ def test_main_incremental_no_op_is_ok_not_failed(tmp_path, monkeypatch, capsys):
 
     watermark_keys = [k for k in client.put_calls if k.endswith(".ts")]
     assert watermark_keys, "a no-op must still advance the watermark (OPEN-181)"
+    count_keys = [k for k in client.put_calls if k.endswith(".count")]
+    assert count_keys, "a no-op must still publish its count marker"
+    assert client.objects[count_keys[0]] == b"0:incremental"
+    # A no-op scraped nothing -- it must not publish a manifest, which is what OPEN-190's
+    # loader treats as authorising a load. Publishing one here would tell the loader there is
+    # something to load when there is nothing.
+    assert not any(k.endswith("_manifest.json") for k in client.put_calls), client.put_calls
 
 
 def test_main_unreachable_takes_precedence_over_no_op_when_both_markers_present(
@@ -590,6 +597,10 @@ def test_main_unreachable_takes_precedence_over_no_op_when_both_markers_present(
     assert rc == cc.EXIT_DO_NOT_RETRY
     record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert record["status"] == "unreachable"
+    # The historically critical part (OPEN-152): an unreachable run must NOT advance the
+    # watermark -- a WAF-blocked MI run once did exactly that, silently skipping a window it
+    # never actually examined. Confirm no marker was published, not just the status label.
+    assert not any(k.endswith((".ts", ".count")) for k in client.put_calls), client.put_calls
 
 
 def test_main_full_run_no_objects_still_fails_not_a_no_op(tmp_path, monkeypatch, capsys):
@@ -607,12 +618,14 @@ def test_main_full_run_no_objects_still_fails_not_a_no_op(tmp_path, monkeypatch,
         ),
     )
 
-    rc = cc.main(["ut", "session=2025S2"], s3_client=FakeS3Client())
+    client = FakeS3Client()
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
 
     assert rc == 1
     record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert record["status"] == "failed"
     assert record["mode"] == "full"
+    assert not any(k.endswith((".ts", ".count")) for k in client.put_calls), client.put_calls
 
 
 def test_main_rejects_malformed_params(capsys):
