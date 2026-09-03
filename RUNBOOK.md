@@ -321,6 +321,14 @@ source activate.sh && $OS_PEOPLE to-database az       # end-to-end
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
 > does not use this venv.
 
+**This same recipe is now containerized in two places, not just this local venv (2026-09-02).**
+The root `Dockerfile` (OPEN-200) builds it into the Fargate scraper image's own builder stage;
+`ddp-sync`'s `infrastructure/Dockerfile` (OPEN-248) does the same for `cloud_loader.py`'s
+`os-update` dependency, reaching `requirements-openstates.txt` via a BuildKit additional build
+context rather than a duplicated copy. If this recipe changes here, both of those need the same
+change (or at least a deliberate decision that they don't) — there is no single place that
+enforces the three stay in sync today.
+
 **Playwright browser binaries (added 2026-08-01, OPEN-19)** — MI's WAF-cookie warm-up
 (`openstates.utils.mi_cookies.MI_COOKIE_PROVIDER`, wired into `scrapers/mi/*.py` and
 `os-text-extract archive mi`) launches a real Chromium via Playwright the first time it needs to
