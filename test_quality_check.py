@@ -8,6 +8,8 @@ installed in this environment, so the module imports standalone with no real Pos
 connection needed for any test here -- every DB-touching test uses a fake conn/cursor.
 """
 
+import pytest
+
 from quality_check import (
     diff_voters,
     describe_voter_diff,
@@ -21,6 +23,7 @@ from quality_check import (
     PASS,
     WARN,
     FAIL,
+    _resolve_db_url,
 )
 
 
@@ -514,3 +517,45 @@ def test_same_day_same_chamber_votes_are_still_paired():
     matches = checks_for(report, "vote tally matches")
     assert matches and matches[0][0] == PASS
     assert "2026-06-03/lower" in matches[0][1], "the chamber should show in the message"
+
+
+# ── OPEN-260: _resolve_db_url() ─────────────────────────────────────────────────
+
+
+def test_resolve_rds_live_unset_falls_back_to_database_url_env_var(monkeypatch):
+    monkeypatch.delenv("RESOLVE_RDS_LIVE", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://local/openstates")
+
+    assert _resolve_db_url() == "postgresql://local/openstates"
+
+
+def test_resolve_rds_live_unset_and_no_database_url_uses_documented_default(monkeypatch):
+    monkeypatch.delenv("RESOLVE_RDS_LIVE", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    assert _resolve_db_url() == "postgresql://openstates:openstates_dev@localhost:5433/openstates"
+
+
+def test_resolve_rds_live_set_ignores_database_url_and_resolves_live(monkeypatch):
+    """The whole point: a stale DATABASE_URL in the environment must not win once an operator
+    has explicitly opted into live resolution."""
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "1")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://stale-cached-value/openstates")
+
+    from unittest.mock import patch
+
+    with patch(
+        "openstates.utils.rds_credentials.resolve_rds_database_url",
+        return_value=("postgresql://freshly-resolved/openstates", ""),
+    ):
+        assert _resolve_db_url() == "postgresql://freshly-resolved/openstates"
+
+
+def test_resolve_rds_live_set_but_unresolvable_raises_loudly(monkeypatch):
+    """Deliberately raises rather than silently falling back to the stale DATABASE_URL."""
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "1")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://stale-cached-value/openstates")
+    monkeypatch.delenv("RDS_CREDENTIALS_SECRET_ARN", raising=False)
+
+    with pytest.raises(RuntimeError, match="RESOLVE_RDS_LIVE set but could not resolve"):
+        _resolve_db_url()

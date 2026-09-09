@@ -14,6 +14,10 @@ Usage:
 Environment:
     OPENSTATES_API_KEY   Real API key for v3.openstates.org (required)
     DATABASE_URL         Local openstates DB (default: openstates:openstates_dev@localhost/openstates)
+    RESOLVE_RDS_LIVE     Set to resolve DATABASE_URL from Secrets Manager instead (OPEN-260) --
+                         for pointing this at RDS without relying on a cached RDS_DATABASE_URL,
+                         which goes stale every time RDS's own automatic 7-day credential
+                         rotation fires. Requires RDS_CREDENTIALS_SECRET_ARN to also be set.
 """
 
 import os
@@ -34,10 +38,32 @@ LOCAL_API  = "http://localhost:8002"
 LIVE_API   = "https://v3.openstates.org"
 LOCAL_KEY  = "00000000-0000-0000-0000-000000000001"
 LIVE_KEY   = os.environ.get("OPENSTATES_API_KEY", "")
-DB_URL     = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://openstates:openstates_dev@localhost:5433/openstates",
-)
+
+
+def _resolve_db_url() -> str:
+    """Returns the DATABASE_URL this script should use.
+
+    OPEN-260: mirrors openstates-core's own init_django()/_resolve_database_url() -- see that
+    docstring for the full incident this fixes. RESOLVE_RDS_LIVE opts into resolving the
+    current RDS credential from Secrets Manager instead of trusting whatever DATABASE_URL is
+    set in this process's environment; off by default, so pointing this script at a local
+    Postgres is unaffected.
+    """
+    if os.environ.get("RESOLVE_RDS_LIVE"):
+        from openstates.utils.rds_credentials import resolve_rds_database_url
+
+        url, error = resolve_rds_database_url()
+        if error:
+            raise RuntimeError(f"RESOLVE_RDS_LIVE set but could not resolve an RDS credential: {error}")
+        return url
+
+    return os.environ.get(
+        "DATABASE_URL",
+        "postgresql://openstates:openstates_dev@localhost:5433/openstates",
+    )
+
+
+DB_URL = _resolve_db_url()
 
 # Jurisdictions with data in our local DB (va blocked, us handled separately)
 JURISDICTIONS = ["fl", "wa", "mi", "ut", "al", "ma", "az"]
