@@ -9,9 +9,12 @@ needs: acquire exclusion, hydrate Michigan's WAF cookie if the state being archi
 invoke `os-text-extract archive` with `ARCHIVE_S3_MODE=direct` so uploads go straight to S3
 instead of through the sudo-gated Mac wrapper, parse its own summary line for counts, and emit
 a completion record. **Corrected 2026-08-31 (OPEN-238):** there is no separate working-tier
-bucket to configure any more -- `_upload_and_verify_direct()` writes one `STANDARD_IA` object to
+bucket to configure any more -- `_upload_and_verify_direct()` writes one object to
 `ddp-bill-archive` itself, the same bucket the Deep Archive vault already lives in. This file has
-no bucket decision left to make or pass through.
+no bucket decision left to make or pass through. **Corrected 2026-09-09:** that one write is now
+at `GLACIER_IR`, not `STANDARD_IA` -- the historical Deep Archive backlog was bulk-migrated to
+`GLACIER_IR` (cheaper storage for a mostly-cold archive), and new documents now land at the same
+tier from the start instead of needing a future re-tier of their own.
 
 Deliberately reuses rather than reimplements what cloud_collector.py (OPEN-201) already built
 and proved, per this repo's own stated rule for this rebuild (PLAN-scraper-execution-
