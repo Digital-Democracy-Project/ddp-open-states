@@ -14,10 +14,11 @@ Usage:
 Environment:
     OPENSTATES_API_KEY   Real API key for v3.openstates.org (required)
     DATABASE_URL         Local openstates DB (default: openstates:openstates_dev@localhost/openstates)
-    RESOLVE_RDS_LIVE     Set to resolve DATABASE_URL from Secrets Manager instead (OPEN-260) --
-                         for pointing this at RDS without relying on a cached RDS_DATABASE_URL,
-                         which goes stale every time RDS's own automatic 7-day credential
-                         rotation fires. Requires RDS_CREDENTIALS_SECRET_ARN to also be set.
+    RESOLVE_RDS_LIVE     Set to "true" to resolve DATABASE_URL from Secrets Manager instead
+                         (OPEN-260) -- for pointing this at RDS without relying on a cached
+                         RDS_DATABASE_URL, which goes stale every time RDS's own automatic
+                         7-day credential rotation fires. Requires RDS_CREDENTIALS_SECRET_ARN
+                         to also be set.
 """
 
 import os
@@ -44,12 +45,16 @@ def _resolve_db_url() -> str:
     """Returns the DATABASE_URL this script should use.
 
     OPEN-260: mirrors openstates-core's own init_django()/_resolve_database_url() -- see that
-    docstring for the full incident this fixes. RESOLVE_RDS_LIVE opts into resolving the
+    docstring for the full incident this fixes. RESOLVE_RDS_LIVE=true opts into resolving the
     current RDS credential from Secrets Manager instead of trusting whatever DATABASE_URL is
     set in this process's environment; off by default, so pointing this script at a local
     Postgres is unaffected.
+
+    pm-review: matches this project's own `os.getenv(X, "false").lower() == "true"` boolean
+    convention rather than a bare truthiness check -- RESOLVE_RDS_LIVE=0 or =false must NOT
+    enable this, which a plain `if os.environ.get(...)` would have gotten wrong.
     """
-    if os.environ.get("RESOLVE_RDS_LIVE"):
+    if os.environ.get("RESOLVE_RDS_LIVE", "false").lower() == "true":
         from openstates.utils.rds_credentials import resolve_rds_database_url
 
         url, error = resolve_rds_database_url()

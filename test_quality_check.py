@@ -539,7 +539,7 @@ def test_resolve_rds_live_unset_and_no_database_url_uses_documented_default(monk
 def test_resolve_rds_live_set_ignores_database_url_and_resolves_live(monkeypatch):
     """The whole point: a stale DATABASE_URL in the environment must not win once an operator
     has explicitly opted into live resolution."""
-    monkeypatch.setenv("RESOLVE_RDS_LIVE", "1")
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "true")
     monkeypatch.setenv("DATABASE_URL", "postgresql://stale-cached-value/openstates")
 
     from unittest.mock import patch
@@ -553,9 +553,26 @@ def test_resolve_rds_live_set_ignores_database_url_and_resolves_live(monkeypatch
 
 def test_resolve_rds_live_set_but_unresolvable_raises_loudly(monkeypatch):
     """Deliberately raises rather than silently falling back to the stale DATABASE_URL."""
-    monkeypatch.setenv("RESOLVE_RDS_LIVE", "1")
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "true")
     monkeypatch.setenv("DATABASE_URL", "postgresql://stale-cached-value/openstates")
     monkeypatch.delenv("RDS_CREDENTIALS_SECRET_ARN", raising=False)
 
     with pytest.raises(RuntimeError, match="RESOLVE_RDS_LIVE set but could not resolve"):
         _resolve_db_url()
+
+
+def test_resolve_rds_live_false_does_not_enable_live_resolution(monkeypatch):
+    """pm-review: a bare truthiness check on os.environ.get(...) would treat "false" (any
+    non-empty string) as enabled -- a real operator footgun for anyone following the common
+    RESOLVE_RDS_LIVE=false convention to mean "disabled"."""
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "false")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://local/openstates")
+
+    assert _resolve_db_url() == "postgresql://local/openstates"
+
+
+def test_resolve_rds_live_zero_does_not_enable_live_resolution(monkeypatch):
+    monkeypatch.setenv("RESOLVE_RDS_LIVE", "0")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://local/openstates")
+
+    assert _resolve_db_url() == "postgresql://local/openstates"
