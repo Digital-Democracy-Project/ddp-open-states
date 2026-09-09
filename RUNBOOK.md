@@ -1286,6 +1286,122 @@ intentionally not masked.
 
 Must use a subquery. Already fixed in `quality_check.py`.
 
+### ECS `RunTask` overrides support `command`/`environment`, not `entryPoint`
+
+Confirmed directly against the API (2026-09-09), not assumed: passing `entryPoint` inside
+`containerOverrides` at `run-task` time fails client-side with `ParamValidation: Unknown
+parameter in overrides.containerOverrides[0]: "entryPoint"`. The only override-compatible way
+to make one image/task-definition run a *different* script per invocation is an environment
+variable the entrypoint itself reads — not a per-task entrypoint override, which doesn't exist.
+
+This is why `docker-entrypoint.sh` (the `ddp-scrapers` image) dispatches on a `RUNNER_SCRIPT`
+env var rather than a positional/subcommand argument:
+
+```bash
+exec python3 "/app/${RUNNER_SCRIPT:-cloud_collector.py}" "$@"
+```
+
+An env var, not `argv[0]`, deliberately — `cloud_collector.py`'s own first argument is a
+jurisdiction abbreviation (`fl`, `wa`, ...), so any scheme consuming `argv[0]` as a mode
+selector would eventually collide with a real jurisdiction code. `RUNNER_SCRIPT` defaults to
+`cloud_collector.py` when unset, so every existing scrape-trigger invocation (which never sets
+it) is unaffected. `cloud_archiver.py` selects itself the same way, set as a
+`containerOverrides[].environment` entry alongside `command`/`RUN_ID` (`ddp-sync`'s
+`_launch_archive_fargate_task`, OPEN-192).
+
+### Two Dockerfiles claiming to "mirror" each other can still drift — verify, don't trust the comment
+
+`ddp-sync`'s own `infrastructure/Dockerfile` (the OPEN-248 bundled-toolchain image) has a
+header comment claiming it mirrors `ddp-open-states`' root `Dockerfile` "exactly." It didn't:
+the root Dockerfile added `poppler-utils` 2026-08-29 (a real FL scrape hit `FileNotFoundError:
+'pdftotext'`), and `ddp-sync`'s copy never picked it up — even though its own `libgdal32`
+addition (same file, same "found missing by actually running a real command here" reasoning)
+landed a full week *later*, 2026-09-02, and still missed it. Found live 2026-09-09 running
+`refresh-extraction` from a container built off `ddp-sync`'s image: every PDF-sourced document
+refused unconditionally (`[Errno 2] No such file or directory: 'pdftotext'`), inflating a
+`docs_refused` count to look exactly like an extractor regression (6,270 refused for UT alone)
+until traced back to this one missing binary. Fixed in `ddp-sync` `infrastructure/Dockerfile`
+(added to the same final-stage `apt-get install` as `libgdal32`).
+
+**The lesson generalizes beyond this one pair of files**: a comment saying two build artifacts
+are kept in sync is not evidence they actually are. If a runtime dependency gets added to one
+image because a real command failed without it, check every *other* image that runs the same
+toolchain, don't assume the comment already covers it.
+
+### A missing system binary on the *investigating* host can look exactly like a data-quality regression
+
+`refresh-extraction`'s dry-run reports a bare `docs_refused` count with no reason attached
+(fixed 2026-09-09, OPEN-259 — the reason `_reextract_document()` already computed was being
+discarded before it reached the report). Before that fix landed, an unusually high refused
+count read as "the current extractor is regressing on real content." The real cause, once the
+reason was actually surfaced, was `[Errno 2] No such file or directory: 'pdftotext'` on every
+single one — the *host running the check* was missing `poppler-utils`, not a problem with the
+archived documents or the extraction logic at all. **Before trusting any `docs_refused` /
+extraction-failure count as a real regression, confirm `pdftotext` (and any other
+subprocess-shelled-out tool the extractor path uses) is actually installed on the exact host
+running the check** — a bare venv or a freshly-bundled container image is not guaranteed to
+have the same system packages as the image that's actually been running this in production.
+
+### `refresh-extraction`/`reextract` can leak a live AWS credential via DEBUG-level logging (fixed)
+
+Fixed 2026-09-09, OPEN-258/openstates-core#42. `openstates/settings.py`'s Django root logger is
+`DEBUG` with `propagate: True`; `text_extract.py` had no override for the `boto3`/`botocore`/
+`s3transfer`/`urllib3` loggers the way `people.py` already does before touching S3. Once PR #40
+gave `refresh-extraction`/`reextract` a real S3 fallback read path, every S3 call under
+`os-text-extract` inherited that `DEBUG` level and logged the full signed request — including
+the live credential (an EC2 instance-profile STS token in the case that surfaced this, but a
+long-lived key on any host running under one) — to stdout/wherever that got captured. If you're
+running an `os-text-extract` build that predates this fix and it touches S3, treat its full
+output as sensitive until you've confirmed the fix is in (grep for `x-amz-security-token` in
+your own capture before sharing it, don't assume).
+
+### Glacier Deep Archive / Glacier (Flexible) block `aws s3 sync`; Glacier Instant Retrieval does not
+
+Confirmed directly in `awscli`'s own source (`customizations/s3/fileinfo.py`,
+`FileInfo._is_glacier_object`), not assumed: it hardcodes exactly two storage classes as
+unreadable for a sync/cp/mv download — `GLACIER` and `DEEP_ARCHIVE`. `GLACIER_IR` isn't in that
+list at all; a sync tool treats it exactly like `STANDARD`/`STANDARD_IA` — no restore, no
+special-casing, same millisecond-latency `GetObject`. The same source also checks the object's
+`Restore` header (`ongoing-request="false"`), not just its storage class — a *temporarily
+restored* Deep Archive object is downloadable too, even though its permanent class still says
+`DEEP_ARCHIVE`, right up until the restore's `expiry-date` passes and it reverts. Relevant any
+time a bulk archive migration or a `sync-ddp-hot.sh`-style mirror job needs to reason about
+which storage classes are safe to leave something in.
+
+### A migration ticket marked Done doesn't mean the new path is actually live — grep for it
+
+OPEN-192 ("move the archive step to the cloud") was marked Done on 2026-09-01: `cloud_archiver.py`
+was built, tested, and pm-reviewed to convergence. But `ddp-sync`'s scheduler
+(`_register_openstates_archive_jobs()` → `run_single_archive_job()` → `_run_archive()`) still
+called the pre-migration `run-archive.sh` wrapper — `cloud_archiver.py` had zero references
+anywhere in `ddp-sync` (code, config, or docs) until 2026-09-09, when a real production check
+(`~/Developer/repos/ddp-sync/.env` + `config/sync_schedule.yaml` on the Mac Studio, where
+production `ddp-sync` was still actually running as a live process) confirmed archiving was
+still running the old wrapper, on the Mac's local Postgres, eight days after the "Done" ticket.
+This also explained a separate, previously-unresolved finding (a batch of US Congress bills
+landing in Deep Archive instead of the new direct-upload tier) that had looked like a bug in the
+new code path — it wasn't; the new path was simply never being invoked at all.
+
+**"Built, tested, and merged" is not the same claim as "the scheduler that runs production
+actually calls this."** For any ticket whose acceptance criterion is "X now happens via the new
+path," grep the actual scheduler/orchestrator code for a real call site before trusting the
+ticket status — a passing test suite proves the new code works in isolation, not that anything
+in production invokes it.
+
+### `gh pr create` in a forked repo can silently target the real upstream project, not your fork
+
+Confirmed live 2026-09-09: from a checkout of `Digital-Democracy-Project/openstates-core` (a
+fork of the real, independently-maintained `openstates/openstates-core` project), running `gh
+pr create` with no `--repo` flag opened the PR against the **upstream** project, not the DDP
+fork — even though the local `git remote` was named `ddp` and pointed at the fork's own URL.
+`gh` appears to resolve the default target repo from GitHub's own fork-parent relationship, not
+from local git remote configuration. Had to close the accidental upstream PR immediately and
+re-run with `--repo Digital-Democracy-Project/openstates-core` explicit to land it correctly.
+**Always pass `--repo <org>/<repo>` explicitly to `gh pr create` (and likely other `gh`
+subcommands) when working in `openstates-core` or `openstates-scrapers`** — both are forks of
+real, actively-maintained upstream projects with maintainers who would see an accidental PR
+land in their queue.
+
 ---
 
 ## Data quality check
