@@ -118,7 +118,11 @@ RUN /opt/venv/bin/playwright install --with-deps chromium \
     && chmod -R a+rX /opt/pw-browsers
 
 WORKDIR /app
-COPY cloud_collector.py import-summary.sh docker-entrypoint.sh ./
+# cloud_archiver.py (OPEN-192, reopened): shares this image rather than needing its own build --
+# same installed openstates-core, same boto3, same S3_BILL_ARCHIVE_BUCKET constant. Selected at
+# task-launch time via docker-entrypoint.sh's RUNNER_SCRIPT env var, not a separate image/task
+# definition.
+COPY cloud_collector.py cloud_archiver.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 ENV PATH="/opt/venv/bin:$PATH"
