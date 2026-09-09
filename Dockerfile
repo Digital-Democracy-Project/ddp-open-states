@@ -125,6 +125,18 @@ WORKDIR /app
 COPY cloud_collector.py cloud_archiver.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
+# Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
+# /app/_archive/bills/raw/<state>/... at runtime to stage a fetched document before uploading it
+# to S3. /app itself was root-owned (WORKDIR/COPY above run before USER scraper switches to the
+# non-root runtime uid), so every one of those writes failed with `PermissionError: [Errno 13]
+# Permission denied: '/app/_archive'` -- and openstates-core's own exception handling for that
+# specific failure logs a line and continues without incrementing any counter, so it never
+# showed up as fetch_errors either. Every jurisdiction's archive run today looked clean
+# (archived=0) while silently discarding every document it had just fetched. Owning /app itself
+# is enough -- scraper creates _archive and everything nested under it at runtime, so those
+# inherit correct ownership automatically; no need to pre-create the directory here.
+RUN chown -R scraper:scraper /app
+
 ENV PATH="/opt/venv/bin:$PATH"
 # Not pip-installed -- see the builder stage's note. This is the same PYTHONPATH activate.sh
 # sets for the real pipeline, pointed at the cloned checkout's own scrapers/ subdirectory.
