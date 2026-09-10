@@ -103,7 +103,7 @@ retryable via OPEN-263's fix on VA's next real archive run.
 |---|---|---|
 | 1 | Determine MA's excess `is_error=False` rows' actual cause | **Characterized with real data** (100 rows, not ~75; one homogeneous `"Bill Text"`-type pattern confirmed across all 100) -- **true root cause still open**, pending the total-vs-partial pull and the post-retry check below |
 | 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by any current automatic or reusable mechanism** (see above) |
-| 3 | Determine VA's 4 rows' actual cause | **Strongly supported, not independently confirmed**: observed shape matches the OPEN-33 hypothesis's prediction exactly, but not row-traced against OPEN-33's specific backfill population -- actual historical cause remains technically open (see above) |
+| 3 | Determine VA's 4 rows' actual cause | **Strongly supported, not independently traced**: observed shape matches the OPEN-33 hypothesis's prediction exactly, but not row-traced against OPEN-33's specific backfill population -- actual historical cause remains technically open (see above) |
 | 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | **Partially decided**: no backfill for MA's 100 or VA's 4 (see disposition). **Not decided** for the 35 `is_error=True` rows -- that choice is still open |
 
 ## Disposition
@@ -121,10 +121,10 @@ source_url)`, is what stays stable and is the right thing to compare. But the na
 still isn't enough: a row whose retry was **never attempted this run** (e.g. the run didn't reach
 that bill at all) and a row whose retry **was attempted and failed again** look identical from the
 database afterward -- both leave a still-`is_error=False`/null row under the exact same key,
-because OPEN-263's fix only deletes-and-recreates on a **successful** create; every early-exit
-failure path (fetch error, blocked, persist error) leaves the pre-existing row untouched. Whether
-a target row disappears-and-reappears (attempted, one way or another) or simply never moves
-(genuinely untouched) isn't something a before/after DB snapshot can tell apart by itself.
+completely unchanged, because OPEN-263's fix only deletes-and-recreates the row on a **successful**
+create; every early-exit failure path (fetch error, blocked, persist error) leaves the
+pre-existing row exactly as it was, with no visible change at all -- only a successful retry
+actually replaces it (with a new row id, but a real `archive_location`).
 
 1. Before drawing any conclusion, confirm task-definition revision 22 actually ran to completion
    against `ma` (and `va`).
@@ -135,15 +135,20 @@ a target row disappears-and-reappears (attempted, one way or another) or simply 
    ambiguous by DB state alone -- resolving it needs either (a) the run's own console/log output
    checked for these specific URLs (a `fetch_errors`/`blocked`/`persist_errors` line naming one of
    them is direct evidence of an attempt that failed again; no line at all is evidence, not proof,
-   that it wasn't reached), or (b) confirming the run's own scope actually covers every one of
-   MA's/VA's bills each time (e.g. no `n`-count limit active for this invocation, and MA's total
-   distinct bills processed this run is consistent with its full known bill count) -- if jurisdiction
-   coverage is confirmed complete, a remaining null row under a key that was fetched at all (not
-   `blocked`/`fetch_errors`) had at minimum an upload attempt, which sharpens the picture
-   considerably even without a per-document success log line.
-4. Only report "evidence of a live bug" for a document that's confirmed (via 3a or 3b) to have
-   actually been retried and still lacks a real `archive_location` -- not for any row that merely
-   remains null in an aggregate count. The same check applies to VA's 4, even though a live bug
+   that it wasn't reached), or (b) confirming the run actually reached these specific *documents*,
+   not just these bills. `archive_bill_versions()`'s own loop structure makes bill-level and
+   document-level coverage the same fact here, not a leap: it walks `version.links.all()`
+   unconditionally for every version of a bill it processes, with no per-`version_note`/
+   media-type filtering that could skip a `"Bill Text"` link specifically while still touching the
+   rest of that bill -- so confirming a target bill was reached at all (not skipped by an `n`-count
+   limit, and the run wasn't aborted by a sustained-WAF-block `ScrapeError` before reaching it)
+   is sufficient to confirm its `"Bill Text"` link was too. Cross-check MA's total distinct bills
+   processed this run against its known full bill count to rule out a partial/limited run.
+4. A single confirmed-failed-again document (via 3a or 3b) is one real data point, not proof of a
+   systemic bug on its own -- a lone transient failure is still possible. Only report "evidence of
+   a live bug" if most or all of MA's 100 keys come back confirmed-attempted-and-still-null; a
+   handful failing while most recover looks like ordinary transient noise, not the systemic gap
+   this ticket is trying to characterize. The same check applies to VA's 4, even though a live bug
    there is far less likely given the population is only 4 rows.
 
 **The 35 `is_error=True` rows (ma: 30, mi: 4, wa: 1):** unaffected by any of the above --
