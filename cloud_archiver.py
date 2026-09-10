@@ -121,17 +121,19 @@ from cloud_collector import (
 
 # The summary line `archive()` (openstates-core, text_extract.py) prints on every run, win or
 # lose: "<state>: <N> bills checked | fetched=X skipped=Y archived=Z fetch_errors=A blocked=B
-# extract_errors=C conflicts=D concurrent_writes=E s3_verified=F s3_unverified=G". Parsed rather
-# than re-derived, per this repo's own "one place, sourced" rule -- the counts this runner
-# reports are exactly what the archiver itself already computed, not a second count of the same
-# thing arrived at a different way.
+# extract_errors=C conflicts=D concurrent_writes=E s3_verified=F s3_unverified=G
+# persist_errors=H" (OPEN-263 added persist_errors at the end, 2026-09-10). Parsed rather than
+# re-derived, per this repo's own "one place, sourced" rule -- the counts this runner reports
+# are exactly what the archiver itself already computed, not a second count of the same thing
+# arrived at a different way.
 _SUMMARY_LINE_RE = re.compile(
     r"(?P<state>\S+): (?P<checked>\d+) bills checked \| "
     r"fetched=(?P<fetched>\d+) skipped=(?P<skipped>\d+) "
     r"archived=(?P<archived>\d+) fetch_errors=(?P<fetch_errors>\d+) "
     r"blocked=(?P<blocked>\d+) extract_errors=(?P<extract_errors>\d+) "
     r"conflicts=(?P<conflicts>\d+) concurrent_writes=(?P<concurrent_writes>\d+) "
-    r"s3_verified=(?P<s3_verified>\d+) s3_unverified=(?P<s3_unverified>\d+)"
+    r"s3_verified=(?P<s3_verified>\d+) s3_unverified=(?P<s3_unverified>\d+) "
+    r"persist_errors=(?P<persist_errors>\d+)"
 )
 
 
