@@ -1,4 +1,4 @@
-# OPEN-266 investigation status: MA's and VA's row-level patterns characterized with real data -- true causes still open
+# OPEN-266 investigation status: MA's excess fully recovered and cause resolved (historical, not a live bug); VA's 4 rows still awaiting their own run
 
 OPEN-266 was split out of OPEN-263's investigation (see `notes/stuck-rows-correlation-breakdown-20260910.md`
 and `notes/backfill-scope-decided-split-filed-20260910.md`) to cover the ~123
@@ -34,6 +34,31 @@ script in OPEN-33's style (35 rows total across three jurisdictions is small), o
 OPEN-229 first and using it generally. Not deciding that here -- this write-up is the input for
 that decision, not the decision itself, consistent with how the original stuck-rows breakdown was
 handled.
+
+## RESOLVED: MA's excess recovered in full -- historical/transient cause confirmed, not a live bug
+
+**The verification plan below this section originally called for was actually run, and it's
+unambiguous.** A real archive run against `ma` (task-definition revision **23** -- not 22; 22
+itself turned out to be blocked by an unrelated regression, see the "Detour" note further down)
+produced:
+
+```
+ma: fetched=149 archived=149 s3_verified=149 s3_unverified=0 persist_errors=0
+```
+
+All 149 of MA's stuck `is_error=False`/null-`archive_location` rows -- both the ~49 remaining
+from the 2026-09-09 incident and OPEN-266's 100-row `"Bill Text"` excess -- got a real,
+S3-verified `archive_location` in this one pass. Zero `persist_errors`, zero `s3_unverified`,
+zero remaining null rows. This is the cleanest possible outcome the verification plan
+anticipated: there's no ambiguity to resolve here (no "still null, attempted or not" case to
+untangle) because nothing remained null at all. **Criterion 1 is answered: the 100-row
+`"Bill Text"` excess was historical/transient (almost certainly the same class of upload failure
+OPEN-263 fixed, just from an earlier, unlogged occurrence), not a live, still-present bug specific
+to that document type.** The total-vs-partial `"Bill Text"` archival-history pull that was
+pending is now moot -- the current state answers the practical question directly.
+
+The below section is kept as the original characterization write-up, unedited, for the historical
+record of how this was investigated -- read it as the reasoning that led here, not as still-open.
 
 ## Characterized with real data: MA's excess is 100 rows (not ~75), one homogeneous pattern -- true cause still open
 
@@ -78,7 +103,20 @@ transient historical cause) or fails again in the same way (a live, still-presen
 this URL shape or media type) is exactly what the verification plan in the Disposition section
 below is built to answer precisely, rather than guessed at here.
 
-## VA's 4 rows match the OPEN-33 hypothesis's predicted shape exactly -- historical cause not independently traced
+## Detour: task-definition revision 22 (built for OPEN-263) had an unrelated regression
+
+Worth recording since it delayed this verification and could confuse anyone reading the run
+history: revision 22's image (`v18`) silently lost an already-fixed, already-verified container
+permission bug (`chown -R scraper:scraper /app`, PR #228) -- that PR had been built directly as
+`v17`/revision 21 two days earlier but was never actually merged to `main` (correctly left open
+per this project's "don't merge your own PRs" policy), so a fresh `main`-based build for OPEN-263
+silently regressed it. `az`/`mi` (and later `us`/`ma`) each ran against revision 22 first and
+failed 100% on the persist step (`persist_errors` exactly equal to `fetched` on every
+jurisdiction) before this was root-caused and fixed as revision 23 (PR #228 has since been merged
+for real, closing the gap for future builds too). None of the numbers above are from revision 22
+-- they're from the corrected revision 23 run, after the regression was resolved.
+
+## VA's 4 rows match the OPEN-33 hypothesis's predicted shape exactly -- historical cause not independently traced -- still awaiting its own run
 
 The prod agent pulled the specific 4 rows (`notes/open266-data-pulled-20260910.md`): `SB 759`
 (Finance and Appropriations Substitute, Chaptered, and Enrolled versions) and `HB 1320`
@@ -97,40 +135,52 @@ explanation for the same field values. Treat criterion 3 as "strongly supported,
 traced" rather than fully closed. Same as MA's set, these are `is_error=False` and therefore
 retryable via OPEN-263's fix on VA's next real archive run.
 
+**Not yet run:** the revision-23 verification pass above only covered `us`/`az`/`mi`/`ma` (the
+four jurisdictions OPEN-263's own incident touched) -- `va` was never part of that ask, since
+VA's 4 rows are a separate, unrelated population. VA's own regularly-scheduled weekly archive run
+(or a deliberately triggered one, if someone wants this confirmed sooner) will pick these 4 rows
+up the same way MA's run just did, but that hasn't happened yet as of this write-up.
+
 ## Acceptance criteria status (all four, for traceability)
 
 | # | Criterion | Status |
 |---|---|---|
-| 1 | Determine MA's excess `is_error=False` rows' actual cause | **Characterized with real data** (100 rows, not ~75; one homogeneous `"Bill Text"`-type pattern confirmed across all 100) -- **true root cause still open**, pending the total-vs-partial pull and the post-retry check below |
+| 1 | Determine MA's excess `is_error=False` rows' actual cause | **RESOLVED**: all 100 rows (plus the ~49 remaining incident rows, 149 total) recovered with a real `archive_location` on the first real post-fix archive run (revision 23) -- `persist_errors=0`, `s3_unverified=0`. Historical/transient cause confirmed; not a live bug |
 | 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by any current automatic or reusable mechanism** (see above) |
-| 3 | Determine VA's 4 rows' actual cause | **Strongly supported, not independently traced**: observed shape matches the OPEN-33 hypothesis's prediction exactly, but not row-traced against OPEN-33's specific backfill population -- actual historical cause remains technically open (see above) |
-| 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | **Partially decided**: no backfill for MA's 100 or VA's 4 (see disposition). **Not decided** for the 35 `is_error=True` rows -- that choice is still open |
+| 3 | Determine VA's 4 rows' actual cause | **Strongly supported, not independently traced**: observed shape matches the OPEN-33 hypothesis's prediction exactly, but not row-traced against OPEN-33's specific backfill population, and not yet put through its own real archive run (VA wasn't part of the revision-23 verification pass -- see above) |
+| 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | **Decided for MA**: no backfill needed, confirmed self-healed for real. **Expected, not yet confirmed, for VA**: same mechanism should recover it on VA's own next run. **Not decided** for the 35 `is_error=True` rows -- that choice is still open |
 
 ## Disposition
 
-**VA's 4 rows and MA's 100 `is_error=False` rows:** no separate backfill script. Both are
-retryable via OPEN-263's own fix on their jurisdiction's next real archive run, the same
-mechanism recovering the ~624-row incident set -- no code change needed here, just the archive
-run itself (already requested for ma/mi/wa/va via task-definition revision 22).
+**MA's 100 `is_error=False` rows: done.** Recovered for real via a normal archive run
+(task-definition revision 23) -- no backfill was needed, and this is now confirmed rather than
+just expected. Nothing further to do here.
 
-**Verification plan, and an honest limit on what DB state alone can show:** an aggregate
-before/after count can't distinguish "recovered," "not yet attempted," and "failed again," and
-OPEN-263's own delete-then-recreate mechanic means a retried row gets a new row id, so row-id
-comparison doesn't work either -- the natural key, `(bill, version_note, version_date,
-source_url)`, is what stays stable and is the right thing to compare. But the natural key alone
-still isn't enough: a row whose retry was **never attempted this run** (e.g. the run didn't reach
-that bill at all) and a row whose retry **was attempted and failed again** look identical from the
-database afterward -- both leave a still-`is_error=False`/null row under the exact same key,
-completely unchanged, because OPEN-263's fix only deletes-and-recreates the row on a **successful**
-create; every early-exit failure path (fetch error, blocked, persist error) leaves the
-pre-existing row exactly as it was, with no visible change at all -- only a successful retry
-actually replaces it (with a new row id, but a real `archive_location`).
+**VA's 4 rows: expected to resolve the same way, not yet confirmed.** No separate backfill
+script needed if VA's next run behaves like MA's did -- but unlike MA, this hasn't actually been
+run yet (see above). The verification plan below, originally written before either jurisdiction's
+real run existed, is kept for VA's benefit since it still applies there.
 
-1. Before drawing any conclusion, confirm task-definition revision 22 actually ran to completion
-   against `ma` (and `va`).
-2. Capture the natural key for all 100 MA rows and all 4 VA rows *before* that run (already have
-   VA's; MA's are in `notes/open266-data-pulled-20260910.md`).
-3. After the run, look up each of those exact natural keys again. A real `archive_location` now
+**Verification plan for VA (already executed and moot for MA), and an honest limit on what DB
+state alone can show:** an aggregate before/after count can't distinguish "recovered," "not yet
+attempted," and "failed again," and OPEN-263's own delete-then-recreate mechanic means a retried
+row gets a new row id, so row-id comparison doesn't work either -- the natural key, `(bill,
+version_note, version_date, source_url)`, is what stays stable and is the right thing to compare.
+But the natural key alone still isn't enough: a row whose retry was **never attempted this run**
+(e.g. the run didn't reach that bill at all) and a row whose retry **was attempted and failed
+again** look identical from the database afterward -- both leave a still-`is_error=False`/null row
+under the exact same key, completely unchanged, because OPEN-263's fix only deletes-and-recreates
+the row on a **successful** create; every early-exit failure path (fetch error, blocked, persist
+error) leaves the pre-existing row exactly as it was, with no visible change at all -- only a
+successful retry actually replaces it (with a new row id, but a real `archive_location`). (For MA
+this distinction turned out not to matter in practice -- every single row succeeded, leaving
+nothing ambiguous to resolve -- but it's still the right approach for VA, where a partial result
+is plausible given the much smaller population.)
+
+1. Before drawing any conclusion, confirm VA's own real archive run actually happened and ran to
+   completion.
+2. The natural keys for VA's 4 rows are already captured above.
+3. After that run, look up each of those exact natural keys again. A real `archive_location` now
    set is unambiguous: recovered. A row still `is_error=False`/null under the same key is
    ambiguous by DB state alone -- resolving it needs either (a) the run's own console/log output
    checked for these specific URLs (a `fetch_errors`/`blocked`/`persist_errors` line naming one of
@@ -151,18 +201,15 @@ actually replaces it (with a new row id, but a real `archive_location`).
    crashed/exited non-zero," never a silent partial skip. That means a run that's confirmed to
    have completed normally (not crashed, exit code 0, full summary line printed) could not have hit
    a mid-run abort anywhere in it -- so a target bill appearing anywhere in that run's processing
-   had every one of its links, including its `"Bill Text"` link, walked to one of those recorded
-   outcomes. Cross-check MA's total distinct bills processed this run against its known full bill
-   count (and confirm no `n`-count limit was active) to rule out a partial/limited run in the first
-   place.
-4. Distinguish two different claims here. A single confirmed-failed-again document (via 3a or 3b)
-   is real evidence of a live failure for that one document -- weak and possibly transient on its
-   own, but not nothing. Reserve "evidence of a systemic live bug" (the pattern this ticket is
-   actually trying to characterize) for a result where most or all of MA's 100 keys come back
-   confirmed-attempted-and-still-null; a handful failing while most recover is still worth noting
-   as a genuine, if isolated, failure, just not evidence of the systemic gap hypothesized above.
-   The same check applies to VA's 4, even though a systemic pattern there is far less likely given
-   the population is only 4 rows.
+   had every one of its links walked to one of those recorded outcomes. Cross-check VA's total
+   distinct bills processed this run against its known full bill count (and confirm no `n`-count
+   limit was active) to rule out a partial/limited run in the first place.
+4. Distinguish two different claims here. A single confirmed-failed-again document is real
+   evidence of a live failure for that one document -- weak and possibly transient on its own, but
+   not nothing. Reserve "evidence of a systemic live bug" for a result where most or all of VA's 4
+   keys come back confirmed-attempted-and-still-null -- though given the population here is only
+   4 rows and MA's identical-shape population already resolved cleanly at 100/100, a systemic bug
+   showing up in VA specifically would be a surprising result at this point, not the expected one.
 
 **The 35 `is_error=True` rows (ma: 30, mi: 4, wa: 1):** unaffected by any of the above --
 confirmed above (criterion 2) to have no existing retry path at all, self-heal or otherwise.
