@@ -56,6 +56,21 @@ def test_parse_summary_line_extracts_persist_errors():
     assert ca.parse_summary_line(output)["persist_errors"] == 3
 
 
+def test_parse_summary_line_defaults_persist_errors_to_zero_on_a_pre_open263_line():
+    """OPEN-263 (review round 1): openstates-core and ddp-open-states deploy as separate
+    images on their own schedules, so this runner can genuinely receive a summary line from a
+    build that predates persist_errors entirely. That must parse as 0, not None (which would
+    break every downstream consumer expecting an int) and not fail to match the line at all."""
+    output = (
+        "wa: 4 bills checked | fetched=4 skipped=0 archived=4 fetch_errors=0 blocked=0 "
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=4 s3_unverified=0\n"
+    )
+    counts = ca.parse_summary_line(output)
+    assert counts is not None
+    assert counts["persist_errors"] == 0
+    assert counts["archived"] == 4
+
+
 def test_parse_summary_line_takes_the_last_match_if_several_appear():
     # Defensive, not expected in practice: `archive()` only ever prints one summary line per
     # invocation, but if output were ever concatenated across runs, the last one is the one
