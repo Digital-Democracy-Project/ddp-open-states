@@ -26,13 +26,15 @@ def test_parse_summary_line_extracts_all_counts():
     output = (
         "some log noise\n"
         "fl: 12 bills checked | fetched=8 skipped=4 archived=8 fetch_errors=0 blocked=0 "
-        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=8 s3_unverified=0\n"
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=8 s3_unverified=0 "
+        "persist_errors=0\n"
     )
     counts = ca.parse_summary_line(output)
     assert counts == {
         "state": "fl", "checked": 12, "fetched": 8, "skipped": 4, "archived": 8,
         "fetch_errors": 0, "blocked": 0, "extract_errors": 0, "conflicts": 0,
         "concurrent_writes": 0, "s3_verified": 8, "s3_unverified": 0,
+        "persist_errors": 0,
     }
 
 
@@ -43,15 +45,43 @@ def test_parse_summary_line_returns_none_when_absent():
     assert ca.parse_summary_line("") is None
 
 
+def test_parse_summary_line_extracts_persist_errors():
+    """OPEN-263: persist_errors is the newest field, appended at the end -- confirms it's
+    actually captured, not just tolerated as trailing text the regex ignores."""
+    output = (
+        "mi: 3 bills checked | fetched=3 skipped=0 archived=0 fetch_errors=0 blocked=0 "
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=0 s3_unverified=0 "
+        "persist_errors=3\n"
+    )
+    assert ca.parse_summary_line(output)["persist_errors"] == 3
+
+
+def test_parse_summary_line_defaults_persist_errors_to_zero_on_a_pre_open263_line():
+    """OPEN-263 (review round 1): openstates-core and ddp-open-states deploy as separate
+    images on their own schedules, so this runner can genuinely receive a summary line from a
+    build that predates persist_errors entirely. That must parse as 0, not None (which would
+    break every downstream consumer expecting an int) and not fail to match the line at all."""
+    output = (
+        "wa: 4 bills checked | fetched=4 skipped=0 archived=4 fetch_errors=0 blocked=0 "
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=4 s3_unverified=0\n"
+    )
+    counts = ca.parse_summary_line(output)
+    assert counts is not None
+    assert counts["persist_errors"] == 0
+    assert counts["archived"] == 4
+
+
 def test_parse_summary_line_takes_the_last_match_if_several_appear():
     # Defensive, not expected in practice: `archive()` only ever prints one summary line per
     # invocation, but if output were ever concatenated across runs, the last one is the one
     # that actually describes what THIS process's `os-text-extract archive` call did.
     output = (
         "fl: 1 bills checked | fetched=1 skipped=0 archived=1 fetch_errors=0 blocked=0 "
-        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=1 s3_unverified=0\n"
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=1 s3_unverified=0 "
+        "persist_errors=0\n"
         "fl: 2 bills checked | fetched=2 skipped=0 archived=2 fetch_errors=0 blocked=0 "
-        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=2 s3_unverified=0\n"
+        "extract_errors=0 conflicts=0 concurrent_writes=0 s3_verified=2 s3_unverified=0 "
+        "persist_errors=0\n"
     )
     assert ca.parse_summary_line(output)["archived"] == 2
 
@@ -75,7 +105,7 @@ def _fake_os_text_extract(tmp_path, *, exit_code=0, state="fl", archived=3,
     lines.append(
         f'echo "{state}: 5 bills checked | fetched={archived} skipped=2 archived={archived} '
         f'fetch_errors=0 blocked=0 extract_errors=0 conflicts=0 concurrent_writes=0 '
-        f's3_verified={archived} s3_unverified=0"'
+        f's3_verified={archived} s3_unverified=0 persist_errors=0"'
     )
     lines.append(f"exit {exit_code}")
     script.write_text("\n".join(lines) + "\n")

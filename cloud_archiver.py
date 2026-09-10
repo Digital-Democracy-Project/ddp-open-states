@@ -121,10 +121,17 @@ from cloud_collector import (
 
 # The summary line `archive()` (openstates-core, text_extract.py) prints on every run, win or
 # lose: "<state>: <N> bills checked | fetched=X skipped=Y archived=Z fetch_errors=A blocked=B
-# extract_errors=C conflicts=D concurrent_writes=E s3_verified=F s3_unverified=G". Parsed rather
-# than re-derived, per this repo's own "one place, sourced" rule -- the counts this runner
-# reports are exactly what the archiver itself already computed, not a second count of the same
-# thing arrived at a different way.
+# extract_errors=C conflicts=D concurrent_writes=E s3_verified=F s3_unverified=G
+# persist_errors=H" (OPEN-263 added persist_errors at the end, 2026-09-10). Parsed rather than
+# re-derived, per this repo's own "one place, sourced" rule -- the counts this runner reports
+# are exactly what the archiver itself already computed, not a second count of the same thing
+# arrived at a different way.
+#
+# OPEN-263 (review round 1): persist_errors is its own optional trailing group, not a required
+# part of the line, specifically so this parser can still read a summary line from an
+# openstates-core build that predates it -- these two repos deploy as separate images on their
+# own schedules, so a version skew window where ddp-open-states has this change and
+# openstates-core doesn't (or vice versa) is a real, expected case, not a hypothetical.
 _SUMMARY_LINE_RE = re.compile(
     r"(?P<state>\S+): (?P<checked>\d+) bills checked \| "
     r"fetched=(?P<fetched>\d+) skipped=(?P<skipped>\d+) "
@@ -132,6 +139,7 @@ _SUMMARY_LINE_RE = re.compile(
     r"blocked=(?P<blocked>\d+) extract_errors=(?P<extract_errors>\d+) "
     r"conflicts=(?P<conflicts>\d+) concurrent_writes=(?P<concurrent_writes>\d+) "
     r"s3_verified=(?P<s3_verified>\d+) s3_unverified=(?P<s3_unverified>\d+)"
+    r"(?: persist_errors=(?P<persist_errors>\d+))?"
 )
 
 
@@ -139,7 +147,13 @@ def parse_summary_line(output: str):
     """Returns the last matching summary line's counts as a dict of ints, or None if the
     archiver's output never produced one -- e.g. it crashed before printing anything, or
     printed only the WAF-abort line (`click.secho(f"{state}: aborted -- {e}", ...)`), which
-    has a different shape and is deliberately not matched here."""
+    has a different shape and is deliberately not matched here.
+
+    persist_errors defaults to 0 when parsing a summary line from a pre-OPEN-263
+    openstates-core build that never printed the field at all -- absence there means "this
+    archiver version couldn't have reported the failure," not "zero failures happened," but 0
+    is still the least-wrong value this runner can report rather than surfacing None into
+    every downstream consumer that expects an int."""
     match = None
     for line in output.splitlines():
         m = _SUMMARY_LINE_RE.search(line)
@@ -147,7 +161,10 @@ def parse_summary_line(output: str):
             match = m
     if match is None:
         return None
-    return {k: (v if k == "state" else int(v)) for k, v in match.groupdict().items()}
+    groups = match.groupdict()
+    if groups["persist_errors"] is None:
+        groups["persist_errors"] = "0"
+    return {k: (v if k == "state" else int(v)) for k, v in groups.items()}
 
 
 def emit_completion_record(*, status, source, run_id, session=None, counts=None,
