@@ -82,7 +82,7 @@ prod agent to pull: `notes/open266-data-request-20260910.md`.
 | # | Criterion | Status |
 |---|---|---|
 | 1 | Determine MA's ~75 excess `is_error=False` rows' actual cause | Open -- hypothesis written up above, blocked on production data |
-| 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by anything** (see above) |
+| 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by any current automatic or reusable mechanism** (see above) |
 | 3 | Determine VA's 4 rows' actual cause | Open -- hypothesis written up above, blocked on production data |
 | 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | Blocked -- depends on 1 and 3 resolving first; not decided here |
 
