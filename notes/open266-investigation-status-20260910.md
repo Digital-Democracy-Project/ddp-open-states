@@ -143,12 +143,18 @@ actually replaces it (with a new row id, but a real `archive_location`).
    except `ScrapeError`, which is deliberately re-raised and propagates all the way out of
    `archive_bill_versions()`, aborting the entire run, not just the current bill. There is no third
    path that silently exits one bill's link loop early while the run carries on to the next bill.
-   That means a run that's confirmed to have completed normally (not crashed, exit code 0, full
-   summary line printed) could not have hit a mid-run abort anywhere in it -- so a target bill
-   appearing anywhere in that run's processing had every one of its links, including its
-   `"Bill Text"` link, walked to one of those recorded outcomes. Cross-check MA's total distinct
-   bills processed this run against its known full bill count (and confirm no `n`-count limit was
-   active) to rule out a partial/limited run in the first place.
+   Checked the outer per-bill loop (`archive()`) directly too, since a per-bill catch-and-continue
+   there would be exactly the kind of gap that could break this argument: its only `except` clause
+   is `except ScrapeError as e: ... sys.exit(1)` -- it re-raises nothing, catches nothing else, and
+   exits the whole process rather than moving on to the next bill. So the only two outcomes for any
+   bill this run reaches are "every one of its links got a recorded outcome" or "the process
+   crashed/exited non-zero," never a silent partial skip. That means a run that's confirmed to
+   have completed normally (not crashed, exit code 0, full summary line printed) could not have hit
+   a mid-run abort anywhere in it -- so a target bill appearing anywhere in that run's processing
+   had every one of its links, including its `"Bill Text"` link, walked to one of those recorded
+   outcomes. Cross-check MA's total distinct bills processed this run against its known full bill
+   count (and confirm no `n`-count limit was active) to rule out a partial/limited run in the first
+   place.
 4. Distinguish two different claims here. A single confirmed-failed-again document (via 3a or 3b)
    is real evidence of a live failure for that one document -- weak and possibly transient on its
    own, but not nothing. Reserve "evidence of a systemic live bug" (the pattern this ticket is
