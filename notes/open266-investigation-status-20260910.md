@@ -136,20 +136,27 @@ actually replaces it (with a new row id, but a real `archive_location`).
    checked for these specific URLs (a `fetch_errors`/`blocked`/`persist_errors` line naming one of
    them is direct evidence of an attempt that failed again; no line at all is evidence, not proof,
    that it wasn't reached), or (b) confirming the run actually reached these specific *documents*,
-   not just these bills. `archive_bill_versions()`'s own loop structure makes bill-level and
-   document-level coverage the same fact here, not a leap: it walks `version.links.all()`
-   unconditionally for every version of a bill it processes, with no per-`version_note`/
-   media-type filtering that could skip a `"Bill Text"` link specifically while still touching the
-   rest of that bill -- so confirming a target bill was reached at all (not skipped by an `n`-count
-   limit, and the run wasn't aborted by a sustained-WAF-block `ScrapeError` before reaching it)
-   is sufficient to confirm its `"Bill Text"` link was too. Cross-check MA's total distinct bills
-   processed this run against its known full bill count to rule out a partial/limited run.
-4. A single confirmed-failed-again document (via 3a or 3b) is one real data point, not proof of a
-   systemic bug on its own -- a lone transient failure is still possible. Only report "evidence of
-   a live bug" if most or all of MA's 100 keys come back confirmed-attempted-and-still-null; a
-   handful failing while most recover looks like ordinary transient noise, not the systemic gap
-   this ticket is trying to characterize. The same check applies to VA's 4, even though a live bug
-   there is far less likely given the population is only 4 rows.
+   not just these bills. Checked directly against the current code for exactly this: every
+   exception type the per-link loop can raise either `continue`s to the next link (a fetch
+   exception, `WafBlockDetected`, a persist `OSError`) or falls through to the `create()` attempt
+   regardless (an extraction exception, which sets `is_error=True` but does not `continue`) --
+   except `ScrapeError`, which is deliberately re-raised and propagates all the way out of
+   `archive_bill_versions()`, aborting the entire run, not just the current bill. There is no third
+   path that silently exits one bill's link loop early while the run carries on to the next bill.
+   That means a run that's confirmed to have completed normally (not crashed, exit code 0, full
+   summary line printed) could not have hit a mid-run abort anywhere in it -- so a target bill
+   appearing anywhere in that run's processing had every one of its links, including its
+   `"Bill Text"` link, walked to one of those recorded outcomes. Cross-check MA's total distinct
+   bills processed this run against its known full bill count (and confirm no `n`-count limit was
+   active) to rule out a partial/limited run in the first place.
+4. Distinguish two different claims here. A single confirmed-failed-again document (via 3a or 3b)
+   is real evidence of a live failure for that one document -- weak and possibly transient on its
+   own, but not nothing. Reserve "evidence of a systemic live bug" (the pattern this ticket is
+   actually trying to characterize) for a result where most or all of MA's 100 keys come back
+   confirmed-attempted-and-still-null; a handful failing while most recover is still worth noting
+   as a genuine, if isolated, failure, just not evidence of the systemic gap hypothesized above.
+   The same check applies to VA's 4, even though a systemic pattern there is far less likely given
+   the population is only 4 rows.
 
 **The 35 `is_error=True` rows (ma: 30, mi: 4, wa: 1):** unaffected by any of the above --
 confirmed above (criterion 2) to have no existing retry path at all, self-heal or otherwise.
