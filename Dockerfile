@@ -24,8 +24,17 @@
 # openstates.txt has no prebuilt wheel for; the final image carries only the venv and this
 # repo's own runner, per the fargate draft's "no local filesystem assumptions" / small-image
 # requirements.
+#
+# python:3.10-slim-bookworm, not 3.9: found 2026-09-10 that python:3.9-slim (Debian 11
+# "bullseye") freezes every apt-installed package (poppler-utils here) at whatever bullseye had
+# in 2021 plus security-only backports -- poppler-utils 20.09.0-3.1, five years stale, silently
+# mis-extracting text from otherwise-valid PDFs (xref/trailer edge cases newer poppler handles
+# correctly). 3.10 is the ceiling: Django 3.2.14 (pinned in openstates-core/pyproject.toml) is
+# only officially supported through Python 3.10 -- Django 4.1 is the first release to support
+# 3.11 -- so going further requires a separate Django major-version upgrade, out of scope here.
+# Bookworm (Debian 12) gets the same six apt packages onto a current freeze instead.
 
-FROM python:3.9-slim AS builder
+FROM python:3.10-slim-bookworm AS builder
 
 # git: clones the two forks below. build-essential/libxml2-dev/libxslt-dev/libssl-dev: in case
 # a package in requirements-openstates.txt (lxml, cryptography) has no prebuilt wheel for this
@@ -84,7 +93,7 @@ RUN --mount=type=secret,id=github_token \
 RUN /opt/venv/bin/pip install --no-cache-dir --no-deps -e /opt/openstates-core
 
 
-FROM python:3.9-slim
+FROM python:3.10-slim-bookworm
 
 # poppler-utils: provides `pdftotext`, invoked as a subprocess at RUNTIME by spatula (fl/bills.py's
 # SubjectPDF page, openstates-scrapers) -- not a build-time dependency, so it belongs in this final
