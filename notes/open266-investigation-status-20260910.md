@@ -20,13 +20,20 @@ directly:
   `reextract` command exists; OPEN-33's own backfill was a one-off VA-specific mechanism, never
   generalized into a reusable per-state command."
 
-So these 35 rows are genuinely stuck today, the same way the OPEN-263 rows were before that
-fix -- just for a different underlying reason (a real extraction failure that happened *before*
-the S3 upload step, rather than a blocked upload after a successful extraction). Whoever scopes
-the eventual fix has two real options: a bespoke one-off script in OPEN-33's style (35 rows total
-across three jurisdictions is small), or building OPEN-229 first and using it generally. Not
-deciding that here -- this write-up is the input for that decision, not the decision itself,
-consistent with how the original stuck-rows breakdown was handled.
+**This is a permanent dead end, not a "not yet retried" -- unlike the `is_error=False` rows
+below.** OPEN-263's own skip-check fix is deliberately narrower than "retry anything not fully
+archived": it only reclassifies a row as retryable when `is_error=False` and `archive_location`
+is unset (a successful extraction whose upload failed). A row with `is_error=True` still matches
+the skip-check's other branch and is skipped on every future run, by design -- retrying every
+extraction failure automatically on each archive run would repeat the exact live-traffic cost
+OPEN-33/OPEN-229's own reprocess-in-place mechanism exists to avoid (reprocessing from an
+already-downloaded local file, not re-fetching). So these 35 rows do not self-heal the way the
+`is_error=False` rows do; recovering them requires one of the two real options below, not just
+waiting for the next scheduled run. Whoever scopes the eventual fix has two: a bespoke one-off
+script in OPEN-33's style (35 rows total across three jurisdictions is small), or building
+OPEN-229 first and using it generally. Not deciding that here -- this write-up is the input for
+that decision, not the decision itself, consistent with how the original stuck-rows breakdown was
+handled.
 
 ## Still open: MA's ~75 excess `is_error=False` rows
 
@@ -35,11 +42,12 @@ and `archive_location IS NULL`, against a 2026-09-09 `rev21` batch `archived` co
 roughly double, meaning about 75 of them predate yesterday's incident and have some other,
 unconfirmed cause.
 
-What's ruled in from history: MA had zero archiving activity at all before 2026-08-10
-(`project-archive-scheduler-al-ma-us-weekly` -- "AL, MA, US had zero archiving log lines ever in
-prod's `logs/scraper.log` before this"), so every MA `BillVersionDocument` row was created within
-the roughly one-month, weekly-cadence window between then and the 2026-09-09 incident. One
-plausible explanation -- not yet confirmed -- is that MA's weekly runs each hit a handful of the
+What's ruled in from history: a prior investigation found MA had zero archiving log lines at all
+in prod's `logs/scraper.log` before 2026-08-10 (`project-archive-scheduler-al-ma-us-weekly`).
+Taking that log record as complete and `BillVersionDocument` creation as tied to that archiving
+path (both reasonable but unverified assumptions, not independently re-confirmed here) would place
+every MA row within the roughly one-month, weekly-cadence window between then and the 2026-09-09
+incident. One plausible explanation -- not yet confirmed -- is that MA's weekly runs each hit a handful of the
 same class of S3-upload failure OPEN-263 just fixed at 100%-failure scale, accumulating a smaller
 number across several earlier runs rather than one big batch. This can't be confirmed or ruled
 out without row-level data (which specific bills/versions/URLs, and whether they cluster into
@@ -69,11 +77,33 @@ database. A data request (bill/version/URL identifiers for MA's excess rows and 
 minimum a legislative_session distribution for MA) has been filed on `notes/ops-handoff` for the
 prod agent to pull: `notes/open266-data-request-20260910.md`.
 
+## Acceptance criteria status (all four, for traceability)
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | Determine MA's ~75 excess `is_error=False` rows' actual cause | Open -- hypothesis written up above, blocked on production data |
+| 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by anything** (see above) |
+| 3 | Determine VA's 4 rows' actual cause | Open -- hypothesis written up above, blocked on production data |
+| 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | Blocked -- depends on 1 and 3 resolving first; not decided here |
+
 ## Disposition
 
-Not filing a backfill or code change here -- OPEN-263's own fix already makes all of these rows
-retryable on their jurisdiction's next real archive run (ma/mi/wa/va), the same mechanism that
-recovers the ~624-row incident set. This ticket's remaining scope is purely diagnostic: writing
-down the actual cause for MA's excess and VA's 4 before deciding whether any of it warrants a
-deliberate one-off action versus letting the next scheduled run recover it naturally. Will follow
-up with a second write-up once the requested data comes back.
+Not filing a backfill or code change here. The recovery story differs by row type, which is the
+one correction this write-up makes over its own first draft: OPEN-263's fix makes the
+`is_error=False`/null-`archive_location` rows (MA's ~75 excess, VA's 4) retryable on their
+jurisdiction's next real archive run, the same mechanism that recovers the ~624-row incident set --
+but it deliberately does **not** touch the 35 `is_error=True` rows (ma/mi/wa), which stay stuck
+until a separate action is taken (see above). This ticket's remaining scope is diagnostic and
+decision-making: confirm MA's and VA's actual causes, then decide (criterion 4) whether any of
+this -- including the `is_error=True` rows, which need action regardless of cause -- is worth a
+deliberate one-off script now versus waiting on OPEN-229.
+
+**Verification plan for the next write-up:** once the requested production data comes back,
+confirm or reject the VA hypothesis by checking whether the 4 rows fall within the specific
+23,516 rows OPEN-33's backfill touched, and confirm or reject the MA hypothesis by checking
+whether its excess rows cluster into distinct groups consistent with separate weekly runs (rather
+than one batch). Separately, after OPEN-263's fix has been live through at least one real archive
+run per jurisdiction (ma/mi/wa/va), re-count each jurisdiction's `is_error=False`/null-
+`archive_location` rows -- a drop to (near) zero for that subset would confirm the retry mechanism
+recovered them as expected; the `is_error=True` counts are expected to stay unchanged, since
+nothing in OPEN-263 touches them.
