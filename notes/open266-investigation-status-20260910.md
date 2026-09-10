@@ -1,4 +1,4 @@
-# OPEN-266 investigation status: MA's excess fully recovered and cause resolved (historical, not a live bug); VA's 4 rows still awaiting their own run
+# OPEN-266 investigation status: MA's excess fully recovered, no live bug found (original historical cause still not independently proven); VA's 4 rows still awaiting their own run
 
 OPEN-266 was split out of OPEN-263's investigation (see `notes/stuck-rows-correlation-breakdown-20260910.md`
 and `notes/backfill-scope-decided-split-filed-20260910.md`) to cover the ~123
@@ -35,27 +35,38 @@ OPEN-229 first and using it generally. Not deciding that here -- this write-up i
 that decision, not the decision itself, consistent with how the original stuck-rows breakdown was
 handled.
 
-## RESOLVED: MA's excess recovered in full -- historical/transient cause confirmed, not a live bug
+## RESOLVED (recovery), NOT independently proven (original cause): MA's excess fully recovered, no live bug found
 
-**The verification plan below this section originally called for was actually run, and it's
-unambiguous.** A real archive run against `ma` (task-definition revision **23** -- not 22; 22
-itself turned out to be blocked by an unrelated regression, see the "Detour" note further down)
-produced:
+**The verification plan below this section originally called for was actually run.** A real
+archive run against `ma` (task-definition revision **23** -- not 22; 22 itself turned out to be
+blocked by an unrelated regression, see the "Detour" note further down) produced:
 
 ```
 ma: fetched=149 archived=149 s3_verified=149 s3_unverified=0 persist_errors=0
 ```
 
-All 149 of MA's stuck `is_error=False`/null-`archive_location` rows -- both the ~49 remaining
-from the 2026-09-09 incident and OPEN-266's 100-row `"Bill Text"` excess -- got a real,
-S3-verified `archive_location` in this one pass. Zero `persist_errors`, zero `s3_unverified`,
-zero remaining null rows. This is the cleanest possible outcome the verification plan
-anticipated: there's no ambiguity to resolve here (no "still null, attempted or not" case to
-untangle) because nothing remained null at all. **Criterion 1 is answered: the 100-row
-`"Bill Text"` excess was historical/transient (almost certainly the same class of upload failure
-OPEN-263 fixed, just from an earlier, unlogged occurrence), not a live, still-present bug specific
-to that document type.** The total-vs-partial `"Bill Text"` archival-history pull that was
-pending is now moot -- the current state answers the practical question directly.
+`fetched=149` matches MA's known total stuck-row count exactly, and `archived=149`/
+`s3_verified=149`/`persist_errors=0`/`s3_unverified=0` means every single one of those 149 fetches
+ended in a real, verified `archive_location` -- the arithmetic itself is the evidence of complete
+recovery (every fetch succeeded all the way through persist and upload), not an assumption
+resting on the aggregate counters alone. All 149 of MA's stuck `is_error=False`/null-
+`archive_location` rows -- both the ~49 remaining from the 2026-09-09 incident and OPEN-266's
+100-row `"Bill Text"` excess -- are recovered.
+
+**Worth being precise about what this does and doesn't establish.** It rules out one specific
+hypothesis conclusively: there is no live, currently-reproducible bug in how MA's `"Bill Text"`
+documents get persisted or uploaded -- if there were, retrying the exact same 100 documents
+through the exact same code would have failed again, and it didn't, not once. That's a real,
+strong result. What it does *not* do is independently establish *why* the original 100 rows
+failed back whenever they were first created -- a clean retry succeeding today is consistent with
+"transient/historical cause, now resolved" (the leading explanation, and the one this result
+favors heavily), but it isn't a direct trace of the original failure's own mechanism, the way
+e.g. a matching log line or an original-incident timestamp would be. The distinction matters for
+how strongly to state this: **"no live bug" is resolved; "the original historical cause was X" is
+not independently proven, just no longer competing against a live-bug alternative.** The
+total-vs-partial `"Bill Text"` archival-history pull that was pending is now moot regardless --
+it existed specifically to help distinguish live-bug-vs-historical, and this result already
+settles that question by ruling out the live-bug branch directly.
 
 The below section is kept as the original characterization write-up, unedited, for the historical
 record of how this was investigated -- read it as the reasoning that led here, not as still-open.
@@ -145,16 +156,18 @@ up the same way MA's run just did, but that hasn't happened yet as of this write
 
 | # | Criterion | Status |
 |---|---|---|
-| 1 | Determine MA's excess `is_error=False` rows' actual cause | **RESOLVED**: all 100 rows (plus the ~49 remaining incident rows, 149 total) recovered with a real `archive_location` on the first real post-fix archive run (revision 23) -- `persist_errors=0`, `s3_unverified=0`. Historical/transient cause confirmed; not a live bug |
+| 1 | Determine MA's excess `is_error=False` rows' actual cause | **Recovery resolved, original cause not independently proven**: all 149 rows recovered on the first real post-fix run (revision 23), `persist_errors=0`/`s3_unverified=0` -- conclusively rules out a live, still-present bug (a real bug would have failed again on retry, and didn't). Does not itself prove the original failure's historical mechanism, only that no live alternative remains standing |
 | 2 | Confirm whether `is_error=True` rows are covered by an existing mechanism | **Confirmed: not covered by any current automatic or reusable mechanism** (see above) |
 | 3 | Determine VA's 4 rows' actual cause | **Strongly supported, not independently traced**: observed shape matches the OPEN-33 hypothesis's prediction exactly, but not row-traced against OPEN-33's specific backfill population, and not yet put through its own real archive run (VA wasn't part of the revision-23 verification pass -- see above) |
 | 4 | Decide, with real evidence, whether any of this is worth a backfill, scoped separately from OPEN-263 | **Decided for MA**: no backfill needed, confirmed self-healed for real. **Expected, not yet confirmed, for VA**: same mechanism should recover it on VA's own next run. **Not decided** for the 35 `is_error=True` rows -- that choice is still open |
 
 ## Disposition
 
-**MA's 100 `is_error=False` rows: done.** Recovered for real via a normal archive run
-(task-definition revision 23) -- no backfill was needed, and this is now confirmed rather than
-just expected. Nothing further to do here.
+**MA's 100 `is_error=False` rows: recovery done, no further action needed.** Recovered for real
+via a normal archive run (task-definition revision 23) -- no backfill was needed, and the live-bug
+question is conclusively closed. The original historical cause is not independently proven beyond
+"a live bug is ruled out," but nothing about that residual uncertainty calls for any further
+action here -- there's no code to fix and no data left to recover.
 
 **VA's 4 rows: expected to resolve the same way, not yet confirmed.** No separate backfill
 script needed if VA's next run behaves like MA's did -- but unlike MA, this hasn't actually been
