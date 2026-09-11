@@ -28,6 +28,17 @@
 # could exit the script before it ever reached the heartbeat-reporting step at the end, which is
 # exactly backwards for a health check: a failure is precisely when you most need the heartbeat to
 # report something (even BROKEN), not go silent. Every command below is checked explicitly instead.
+#
+# AC7 (plan §4) requires a real monitoring signal an operator will actually see -- this script
+# only produces one if something actually runs it on a schedule; a correct script no one invokes
+# is not a monitoring signal. Deliberately NOT installed as a live crontab entry by this change,
+# matching this repo's own existing convention for exactly this situation (sync-ddp-hot.sh /
+# OPEN-236 -- "build+test only," installed as a separate, deliberate step once the real database
+# name is known). To install for real, once OPEN-273's real subscription exists:
+#   */5 * * * * PG_CONTAINER=ddp-openstates-postgres-1 RDS_MONITORING_DATABASE_URL=<resolved> \
+#     /Users/agentsmith/Developer/repos/ddp-open-states/ops/postgres-replica/local/replica-status.sh \
+#     <real-database-name> >/dev/null 2>&1
+# 5 minutes matches EXPECTED_INTERVAL_S's own default below -- keep both in sync if either changes.
 set -uo pipefail
 
 DATABASE_NAME="${1:?Usage: $0 <database-name>}"
@@ -38,6 +49,12 @@ JOB_NAME="${JOB_NAME:-ddp_legbot_replica}"
 LAGGING_THRESHOLD_BYTES="${LAGGING_THRESHOLD_BYTES:-104857600}"  # 100MB, a starting number per
   # plan §9 open question 4 -- not derived from an observed steady-state, revisit once real data
   # exists.
+# AC7 (plan §4): a real monitoring signal needs a real expected cadence, not just a one-off
+# report -- reported as expected_interval_s below so cams status's own staleness display can
+# actually flag a stuck/silent heartbeat as such, instead of just showing elapsed time with no
+# threshold. 300s (5 min) matches the crontab line documented in this script's own header comment
+# above -- keep both in sync if either changes.
+EXPECTED_INTERVAL_S="${EXPECTED_INTERVAL_S:-300}"
 # Correction, pm-review round 2: an unvalidated non-integer here would make the later
 # `-gt "$LAGGING_THRESHOLD_BYTES"` comparison itself error out instead of cleanly failing status.
 if ! [[ "$LAGGING_THRESHOLD_BYTES" =~ ^[0-9]+$ ]]; then
@@ -192,9 +209,9 @@ print(json.dumps({
     'detail': sys.argv[1],
     'last_heartbeat_at': float(sys.argv[2]),
     'started_at': started_at,
-    'expected_interval_s': None,
+    'expected_interval_s': int(sys.argv[4]),
 }))
-" "$status: $detail" "$now_epoch" "$existing_entry" 2>/tmp/replica-status-err.$$)"
+" "$status: $detail" "$now_epoch" "$existing_entry" "$EXPECTED_INTERVAL_S" 2>/tmp/replica-status-err.$$)"
 heartbeat_build_rc=$?
 if [ "$heartbeat_build_rc" -ne 0 ]; then
   echo "WARN: failed to build heartbeat JSON: $(cat /tmp/replica-status-err.$$ 2>/dev/null)" >&2
