@@ -65,3 +65,57 @@ Tested end-to-end against a schema-only dump of the Mac's own current `openstate
 database and a temporary `api-v3` container, both cleaned up afterward, nothing in the real
 `openstates` database or the real `ddp-openstates-api-1` container touched. Also verified the
 database-name validation rejects an unsafe name before touching anything.
+
+## `replica-status.sh` (OPEN-274)
+
+The health-check script (plan §7.6) — a small CLI check, not a service. Reports subscription
+status, LSN-based apply lag (not just message-receipt time), retained WAL, and an overall
+HEALTHY/LAGGING/DISCONNECTED/BROKEN status, then registers with `cams status`'s existing
+generic background-jobs display (the `cams:background_jobs` Redis hash) — written directly via
+`redis-cli`, matching the exact JSON schema `ddp-agents/src/cams/background_jobs.py`'s own
+`report_heartbeat()` helper uses, without a cross-repo Python import (this script lives in
+`ddp-open-states-dev`, that module lives in `ddp-agents(-dev)`) — no new `cams status` display
+code needed, per that mechanism's own "any job reporting a heartbeat there shows up automatically"
+design.
+
+```bash
+RDS_MONITORING_DATABASE_URL=<resolved live, e.g. via resolve_rds_database_url()> \
+  ./replica-status.sh <database-name>
+```
+
+**Tested all four local-side status paths for real**, using a fully isolated Docker loopback
+(same pattern as OPEN-273): HEALTHY (subscription enabled, active apply worker), DISCONNECTED via
+a disabled subscription, DISCONNECTED via an unreachable publisher (active subscription, no apply
+worker), and BROKEN (local Postgres container down). Also verified the `cams status` heartbeat
+write/read round-trip against the real `ddp-agents-redis-1` container (under a clearly-named test
+job, deleted immediately after) and that `started_at` persists correctly across repeated
+invocations rather than resetting on every run, matching `report_heartbeat()`'s own semantics
+exactly.
+
+**The RDS-side portion (retained WAL, apply lag from RDS's own `pg_replication_slots`) is
+documented but not exercised from this session** — it needs a resolved RDS monitoring credential
+this session doesn't have (same constraint as everywhere else in this epic that touches RDS
+directly). The script degrades to a local-only `HEALTHY (local-only, ...)` status when
+`RDS_MONITORING_DATABASE_URL` isn't set, rather than silently claiming a check it didn't perform.
+
+## `drop-subscription-for-rebuild.sh` (OPEN-274) — the rebuild/recovery procedure, exercised
+
+Covers plan §7.8's "the only recovery path is rebuild, never repair in place": drops the local
+subscription, handling both the reachable-publisher case (drops the remote RDS slot automatically)
+and the unreachable-publisher case (detaches locally without touching a slot it can't reach).
+Re-running `rebuild-local-replica.sh` (OPEN-272) and `setup-subscription-and-readonly-role.sh`
+(OPEN-273) against a fresh database completes the cycle — both already independently tested with
+real execution in their own tickets, not re-duplicated here.
+
+**Actually exercised this drill, not just written it** — using a fresh Docker loopback: tested the
+reachable-publisher path (confirmed the remote slot really is dropped automatically) and the
+unreachable-publisher path (stopped the "RDS" container mid-subscription, confirmed the local
+subscription detaches cleanly without hanging).
+
+**A real bug found only by exercising this, not by reading the plan's own §7.8 text**: killing the
+publisher *during* the initial copy (not just after it) can leave behind an additional
+per-table **temporary tablesync slot** (named like `pg_<oid>_sync_<relid>_<random>`, distinct
+from the main `ddp_legbot_subscription` slot) that a recovery check for only the main slot name
+would miss entirely — confirmed by triggering exactly this scenario and finding the orphaned slot
+still present after cleanup. Fixed: the script's RDS-side cleanup guidance now checks for both the
+named subscription slot and any `pg_%_sync_%` pattern match, not just the former.
