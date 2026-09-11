@@ -100,22 +100,39 @@ their own default. Corrected order:
 **Additive changes — a brand-new table**: no ordering hazard the way a new column has (nothing is
 replicating a table that doesn't exist locally yet, so there's no crash-loop risk regardless of
 which side is created first) — but `ALTER PUBLICATION ... ADD TABLE` alone does **not** make the
-subscriber start receiving it. Confirmed via the same loopback: after adding a table to the
-publication, the subscriber has no knowledge of it at all until both of these run on the
-**local** side:
+subscriber start receiving it, and there's a second, separate requirement beyond the publication
+that's easy to miss. Confirmed via the same loopback: after adding a table to the publication, the
+subscriber has no knowledge of it at all until **both** of these run:
+
 ```sql
--- 1. The table must already exist locally with the matching schema (logical replication never
+-- On RDS:
+-- 1. GRANT SELECT on the new table to ddp_local_replication -- separate from, and just as
+--    required as, adding it to the publication. Confirmed via a real reproduction: without this
+--    grant, the tablesync worker crash-loops forever on "ERROR: permission denied for table
+--    <name>" / "could not start initial contents copy" (every ~5s) -- it does NOT fail once and
+--    stop, and does NOT silently skip the table; it retries indefinitely, visible in the
+--    subscriber's own logs, until the grant is added. This is the same GRANT SELECT statement
+--    §7.3/02-setup.sh already runs for the original 7 tables -- a new table needs the identical
+--    treatment, not just a publication membership change.
+GRANT SELECT ON public.<new_table> TO ddp_local_replication;
+ALTER PUBLICATION ddp_legbot_publication ADD TABLE public.<new_table>;
+
+-- On the local replica:
+-- 2. The table must already exist locally with the matching schema (logical replication never
 --    creates tables) -- e.g. via rebuild-local-replica.sh's own dump-and-apply approach, or a
---    manual CREATE TABLE matching RDS's new one.
--- 2. Then, still on the local side:
+--    manual CREATE TABLE matching RDS's new one. Then:
 ALTER SUBSCRIPTION ddp_legbot_subscription REFRESH PUBLICATION;
 -- This is what actually triggers a new tablesync worker to copy the new table's existing rows --
 -- confirmed: querying the new table locally before this returns "relation does not exist", and
--- its pre-existing RDS-side rows are present locally immediately after.
+-- (once the GRANT above is also in place) its pre-existing RDS-side rows are present locally
+-- immediately after.
 ```
+
 Then run `compare-schema.sh` and confirm subscription health, same as the column case above.
 New tables are **not** automatically included in this plan's table-scoped publication, unlike
-under `FOR ALL TABLES` — this has to be a deliberate, reviewable step each time.
+under `FOR ALL TABLES` — this has to be a deliberate, reviewable step each time, and forgetting
+either the grant or the publication membership produces a real, visible failure rather than a
+silent gap -- but the two are independent steps, and only checking one of them is a real trap.
 
 **Destructive or incompatible changes** (drop/rename a replicated column, change a column's type,
 add a `NOT NULL` without a default) — RDS must never be allowed to send a row shape the local
