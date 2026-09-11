@@ -347,6 +347,77 @@ if/when MI scraping breaks.
 
 ---
 
+## Deploying a Fargate image change (OPEN-180/200/263/268)
+
+**Build on the Mac. Never on the EC2 host, and never by asking the prod agent to build.**
+
+Found live 2026-09-10/11 (twice — the Python 3.10/poppler fix, then again drafting OPEN-268's
+own deploy instructions) that this is easy to get backwards: an agent working the *EC2* side of
+this project can look like the natural place to run `docker build`, since that's the box that
+actually runs Fargate tasks. It isn't. The standing division of labor (confirmed directly by
+Ramon, 2026-09-09) is deliberate: **the Mac has far more RAM/CPU than the EC2 host, and that EC2
+host runs `ddp-broker`/`api-v3`/`ddp-sync` in production, sharing its limited resources** — a
+full `--no-cache` multi-stage build (fresh venv, Playwright Chromium download) is real,
+sustained CPU/disk/network load, and running it there risks exactly the kind of contention that
+held up a real RDS backfill commit once already this week. Build and verify on the Mac; only
+*run* the already-tested image on Fargate.
+
+```bash
+# Fresh clone of main (not this dev checkout -- a clean build should not depend on whatever's
+# sitting uncommitted in a local working tree)
+git clone --branch main --depth 1 \
+    https://github.com/Digital-Democracy-Project/ddp-open-states.git /tmp/ddp-open-states-deploy
+cd /tmp/ddp-open-states-deploy
+cp ~/Developer/repos/ddp-open-states-dev/.env .env   # GITHUB_PERSONAL_ACCESS_TOKEN lives here
+set -a && source .env && set +a
+
+aws ecr get-login-password --region us-east-1 | docker login --username AWS \
+    --password-stdin 350941939790.dkr.ecr.us-east-1.amazonaws.com
+
+# vN = next unused tag; ECR's repo is IMMUTABLE, a reused tag is simply refused
+DOCKER_BUILDKIT=1 docker build --no-cache --platform linux/arm64 \
+    --secret id=github_token,env=GITHUB_PERSONAL_ACCESS_TOKEN \
+    -t 350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:vN \
+    -f Dockerfile .
+
+# Verify inside the image BEFORE pushing -- at minimum:
+docker run --rm --entrypoint /opt/venv/bin/python \
+    350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:vN --version
+docker run --rm --entrypoint pdftotext \
+    350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:vN -v
+
+docker push 350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:vN
+```
+
+Then register a new task-definition revision, identical to the current live one except the
+image tag:
+
+```bash
+aws ecs describe-task-definition --task-definition ddp-scrapers --query taskDefinition \
+    > /tmp/taskdef-current.json
+python3 -c "
+import json
+td = json.load(open('/tmp/taskdef-current.json'))
+td['containerDefinitions'][0]['image'] = td['containerDefinitions'][0]['image'].rsplit(':', 1)[0] + ':vN'
+for key in ['taskDefinitionArn','revision','status','requiresAttributes','compatibilities','registeredAt','registeredBy','deregisteredAt']:
+    td.pop(key, None)
+json.dump(td, open('/tmp/taskdef-register.json', 'w'), indent=2)
+"
+aws ecs register-task-definition --cli-input-json file:///tmp/taskdef-register.json \
+    --query "taskDefinition.{arn:taskDefinitionArn,revision:revision,image:containerDefinitions[0].image}"
+```
+
+Registering a new revision is additive and inert by itself — nothing currently running is
+disturbed until something explicitly launches a task against it. The previous revision stays
+live and untouched, so it's the rollback: nothing to undo, just don't point anything at the
+new one.
+
+If ad-hoc instructions ever need to reach the prod agent for this (via `notes/ops-handoff` or
+otherwise), they should say **"here's the new image tag/task-definition revision, please run
+it"** — never "please build this." Building is this checkout's/this Mac's job.
+
+---
+
 ## Development / testing environment (`ddp-open-states-dev`)
 
 **Never edit code or switch branches directly in this checkout while a scrape is running anywhere**
