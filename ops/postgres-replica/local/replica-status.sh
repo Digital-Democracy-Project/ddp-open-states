@@ -38,6 +38,12 @@ JOB_NAME="${JOB_NAME:-ddp_legbot_replica}"
 LAGGING_THRESHOLD_BYTES="${LAGGING_THRESHOLD_BYTES:-104857600}"  # 100MB, a starting number per
   # plan §9 open question 4 -- not derived from an observed steady-state, revisit once real data
   # exists.
+# Correction, pm-review round 2: an unvalidated non-integer here would make the later
+# `-gt "$LAGGING_THRESHOLD_BYTES"` comparison itself error out instead of cleanly failing status.
+if ! [[ "$LAGGING_THRESHOLD_BYTES" =~ ^[0-9]+$ ]]; then
+  echo "FAIL: LAGGING_THRESHOLD_BYTES must be a non-negative integer, got '$LAGGING_THRESHOLD_BYTES'" >&2
+  exit 1
+fi
 
 status="UNKNOWN"
 detail=""

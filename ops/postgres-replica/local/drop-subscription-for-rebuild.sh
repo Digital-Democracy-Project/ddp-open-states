@@ -37,6 +37,12 @@ worker_pid="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$DATABASE_NAME"
   WHERE subname = 'ddp_legbot_subscription' AND pid IS NOT NULL AND relid IS NULL;
 " 2>&1 || echo "")"
 
+# Whether the fallback below is reached because there was never an active worker (unambiguous:
+# treat as unreachable, proceed automatically) or because a normal DROP failed despite one being
+# active (ambiguous: could be a lock/permission problem on a fully reachable publisher, where
+# detaching locally would silently orphan the remote slot) -- set by whichever branch below is hit.
+fallback_is_ambiguous=false
+
 if [ -n "$worker_pid" ]; then
   echo "Apply worker is active (pid=$worker_pid) -- attempting a normal DROP SUBSCRIPTION, which"
   echo "also drops the remote replication slot on RDS automatically."
@@ -67,14 +73,36 @@ if [ -n "$worker_pid" ]; then
     echo "Normal DROP SUBSCRIPTION failed:" >&2
     echo "$drop_output" >&2
     echo >&2
-    echo "If the error above is NOT a connectivity/timeout issue (e.g. it's a permission or lock" >&2
-    echo "problem instead), investigate and fix that directly rather than proceeding to the" >&2
-    echo "detach-without-touching-the-remote-slot path below -- that path assumes RDS genuinely" >&2
-    echo "can't be reached, which a permission error does not confirm." >&2
+    if echo "$drop_output" | grep -q "canceling statement due to statement timeout"; then
+      echo "This is the statement_timeout above firing -- a worker that was active but not" >&2
+      echo "actually able to complete the drop within 15s is itself real evidence of an" >&2
+      echo "unreachable publisher, so proceeding to the detach path below is safe." >&2
+    else
+      echo "This is NOT a timeout -- it could be a permission or lock problem on a fully-" >&2
+      echo "reachable RDS, in which case detaching locally would orphan the remote slot instead" >&2
+      echo "of actually dropping it. You'll be asked to confirm below before that happens." >&2
+      fallback_is_ambiguous=true
+    fi
   fi
 fi
 
 echo
+if [ "$fallback_is_ambiguous" = true ]; then
+  # Correction, pm-review round 2: the message above used to tell the operator to "investigate...
+  # rather than proceeding" but the script proceeded to the destructive detach regardless of what
+  # they found -- a real inconsistency between what was printed and what the code did. Now it
+  # actually stops and requires confirmation in this ambiguous case, rather than only claiming to.
+  if [ -t 0 ]; then
+    read -r -p "Proceed with detaching locally anyway (remote slot will NOT be touched/verified)? [y/N] " confirm
+  else
+    confirm="${CONFIRM_AMBIGUOUS_DETACH:-}"
+    echo "Non-interactive shell -- set CONFIRM_AMBIGUOUS_DETACH=y to proceed without a prompt." >&2
+  fi
+  if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+    echo "FAIL: not proceeding without confirmation. The subscription was NOT modified." >&2
+    exit 1
+  fi
+fi
 echo "== Detaching locally without touching the remote slot (publisher unreachable, or the normal" \
      "drop failed for a reason confirmed above to actually be a connectivity issue) =="
 # Correction, found by actually pausing the simulated publisher mid-drill (not just reading the
@@ -110,8 +138,12 @@ echo "just after it), Postgres can leave behind an additional per-table TEMPORAR
 echo "(named like pg_<oid>_sync_<relid>_<random>, distinct from the main 'ddp_legbot_subscription'"
 echo "slot) that a check for the main slot name alone will miss entirely. Check for BOTH:"
 echo "  SELECT slot_name FROM pg_replication_slots WHERE slot_name = 'ddp_legbot_subscription'"
-echo "    OR slot_name LIKE 'pg_%_sync_%';"
+echo "    OR slot_name ~ '^pg_[0-9]+_sync_[0-9]+_[0-9]+\$';"
 echo "  -- drop each one found: SELECT pg_drop_replication_slot('<slot_name>');"
+echo "  -- (correction, pm-review round 2: a LIKE 'pg_%_sync_%' pattern is unsafe here -- LIKE's"
+echo "  -- underscore is a single-character wildcard, not a literal underscore, so it matches more"
+echo "  -- than the documented pg_<oid>_sync_<relid>_<random> shape. The ~ regex above anchors to"
+echo "  -- that exact shape instead.)"
 echo
 echo "Correction, pm-review round 1: dropping every slot matching 'pg_%_sync_%' is only safe"
 echo "because this plan's own design puts exactly one subscription (this one, from this Mac) on"

@@ -148,3 +148,26 @@ named subscription slot and any `pg_%_sync_%` pattern match, not just the former
   case now fails cleanly within ~30s (both timeouts combined) instead of hanging, and a follow-up
   retry after the publisher becomes reachable again completes normally and still re-confirms the
   orphaned-tablesync-slot cleanup guidance above.
+
+**Correction from pm-review round 2**:
+
+- Falling through to the destructive local-detach path after a normal `DROP SUBSCRIPTION` failure
+  used to happen unconditionally, even though the printed guidance told the operator to
+  "investigate... rather than proceeding" for a non-connectivity failure — a real inconsistency
+  between what the script said and what it did. Fixed by actually distinguishing the two cases:
+  a failure containing `canceling statement due to statement timeout` (our own bounded wait
+  firing) is itself real evidence of an unreachable publisher and proceeds automatically, same as
+  before; any other failure (a permission or lock problem on a fully-reachable RDS, where
+  detaching locally would silently orphan the remote slot instead of dropping it) now requires
+  explicit confirmation (`CONFIRM_AMBIGUOUS_DETACH=y`, or an interactive prompt) before the script
+  touches anything. Verified both branches: the timeout case still proceeds without a prompt
+  end-to-end via the same paused-publisher drill as round 1, and the confirmation gate itself
+  (deny without confirmation, proceed with `CONFIRM_AMBIGUOUS_DETACH=y`) was verified directly.
+- The recovery-drill's own recommended RDS-side cleanup query used `slot_name LIKE
+  'pg_%_sync_%'` — in SQL `LIKE`, `_` is a single-character wildcard, not a literal underscore,
+  so this matched more than the documented `pg_<oid>_sync_<relid>_<random>` shape. Replaced with
+  an anchored regex (`slot_name ~ '^pg_[0-9]+_sync_[0-9]+_[0-9]+$'`) that matches only that exact
+  shape.
+- `replica-status.sh`'s `LAGGING_THRESHOLD_BYTES` (an env var with a sane numeric default) had no
+  validation that an operator override was actually an integer, which would have made the later
+  numeric comparison error out instead of failing status cleanly. Added a one-line integer check.
