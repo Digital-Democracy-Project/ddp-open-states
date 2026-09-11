@@ -34,7 +34,9 @@
 # is not a monitoring signal. Deliberately NOT installed as a live crontab entry by this change,
 # matching this repo's own existing convention for exactly this situation (sync-ddp-hot.sh /
 # OPEN-236 -- "build+test only," installed as a separate, deliberate step once the real database
-# name is known). To install for real, once OPEN-273's real subscription exists:
+# name is known). Installation template (NOT copy-pasteable as-is -- <resolved> and
+# <real-database-name> are placeholders, filled in the same way as the RDS_MONITORING_DATABASE_URL
+# usage note above, once OPEN-273's real subscription exists):
 #   */5 * * * * PG_CONTAINER=ddp-openstates-postgres-1 RDS_MONITORING_DATABASE_URL=<resolved> \
 #     /Users/agentsmith/Developer/repos/ddp-open-states/ops/postgres-replica/local/replica-status.sh \
 #     <real-database-name> >/dev/null 2>&1
@@ -59,6 +61,13 @@ EXPECTED_INTERVAL_S="${EXPECTED_INTERVAL_S:-300}"
 # `-gt "$LAGGING_THRESHOLD_BYTES"` comparison itself error out instead of cleanly failing status.
 if ! [[ "$LAGGING_THRESHOLD_BYTES" =~ ^[0-9]+$ ]]; then
   echo "FAIL: LAGGING_THRESHOLD_BYTES must be a non-negative integer, got '$LAGGING_THRESHOLD_BYTES'" >&2
+  exit 1
+fi
+# Correction, pm-review (OPEN-274 PR round 1): same reasoning as LAGGING_THRESHOLD_BYTES above --
+# an unvalidated value here (empty, non-numeric, or 0) would either crash the heartbeat-building
+# python heredoc or report a nonsensical staleness threshold instead of failing clearly.
+if ! [[ "$EXPECTED_INTERVAL_S" =~ ^[0-9]+$ ]] || [ "$EXPECTED_INTERVAL_S" -eq 0 ]; then
+  echo "FAIL: EXPECTED_INTERVAL_S must be a positive integer, got '$EXPECTED_INTERVAL_S'" >&2
   exit 1
 fi
 

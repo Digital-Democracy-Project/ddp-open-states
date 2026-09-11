@@ -348,8 +348,8 @@ override each landing correctly in the real heartbeat JSON. Deliberately
 NOT installed as a live crontab entry by this change, matching this repo's own existing convention
 for exactly this situation (`sync-ddp-hot.sh`/OPEN-236 — "build+test only," installed as a
 separate, deliberate step once the real database name from OPEN-272/273 is known). See the
-script's own header comment for the exact cron line to install once that real subscription
-exists.
+script's own header comment for the installation template (placeholders filled in once that real
+subscription exists).
 
 ## `drop-subscription-for-rebuild.sh` (OPEN-274) — the rebuild/recovery procedure, exercised
 
