@@ -23,6 +23,128 @@ database — see the script's own header for exactly what it stops short of and 
 The schema-only dump must come from RDS (`pg_dump --schema-only` against the 7 tables, per
 `ops/postgres-replica/rds/`, run by whoever has RDS access) — this script doesn't fetch it.
 
+## `compare-schema.sh` (OPEN-277)
+
+The schema-comparison script (plan §7.7). Compares, for exactly the 7 tables this plan's
+publication carries (§3.2) — not a general schema-diff tool — whether the table exists on both
+sides and whether its column name/type/nullability triples match. Compared keyed by **column
+name** (not physical ordinal position, correction from pm-review round 1 — see below) via
+`pg_attribute`/`format_type()`. Run manually after any Django migration touching these 7 tables
+(§7.9's own procedure below), not on a schedule.
+
+```bash
+RDS_HOST=<rds-endpoint> RDS_REPLICATION_PASSWORD=<ddp_local_replication's password, from
+  Secrets Manager — ops/postgres-replica/rds/00-generate-role-secret.sh> \
+  ./compare-schema.sh <local-database-name>
+```
+
+Reuses the `ddp_local_replication` credential (§3.4 item 1) for this read — it already has
+`SELECT` scoped to exactly these 7 tables (OPEN-271). Not a new credential. The password is
+passed via `PGPASSWORD`, not embedded in the connection string, so it doesn't appear in this
+process's own argv.
+
+**Correction from pm-review round 1**: the original version compared columns by physical ordinal
+position via `information_schema.columns`' `data_type`/`character_maximum_length` pair. Both were
+real gaps: (a) Postgres logical replication itself matches columns by **name**, not position, so
+two schemas with the same named columns in a different physical order — plausible if a table was
+independently recreated at some point in either side's own history — replicate perfectly
+correctly, but ordinal comparison would have falsely flagged that as a mismatch; (b) confirmed
+against this schema's own actual array-typed columns (`opencivicdata_bill.classification`/
+`subject`, both `text[]`) that `information_schema.columns`' type pair doesn't capture element
+type or full precision the way `format_type(atttypid, atttypmod)` does in one string. Fixed by
+comparing sorted-by-name `pg_attribute` rows using `format_type()`.
+
+**Tested for real** (not just written): this Mac has no host-level `psql` binary, so the RDS-side
+connection — like `replica-status.sh`'s own RDS-side portion (OPEN-274) — assumes a runtime where
+`psql` is actually available, and isn't exercised directly from a bare shell on this Mac. Worked
+around that gap for testing only (not a change to the script itself) with a small `psql` shim
+that forwards to a throwaway container, letting the real script run genuinely end-to-end against
+a Docker-simulated "RDS" (schema dumped from the real local `openstates` database, `pg_dump
+--schema-only` against the same 7 tables, `ddp_local_replication` role created with the same
+`SELECT` grants OPEN-271 documents) — confirmed, both before and after the round-1 fixes: all 7
+tables PASS when schemas genuinely match (including correctly matching the real `text[]` columns
+after the fix); a column-type change (`media_type varchar(100)` → `varchar(50)`) is correctly
+caught as a column mismatch; a renamed table is correctly caught as "does not exist on RDS"; and a
+real connection failure (a deliberate `sslmode=verify-full` mismatch against a test container with
+no TLS configured) is correctly reported as FAIL with exit 1, not silently ignored. Real
+infrastructure (`ddp-openstates-postgres-1`, `ddp-openstates-api-1`, `ddp-agents-redis-1`)
+confirmed untouched throughout via `docker ps` and a row-count check on the real (not test)
+`opencivicdata_billversionlink` table.
+
+## Django migration procedure (OPEN-277, plan §7.9)
+
+Not a script — a documented procedure for when a Django migration touches any of the 7 tables
+this plan replicates. Logical replication does **not** propagate DDL, so RDS and the local
+replica never automatically agree on schema after a migration; how to reconcile them depends on
+the migration's own shape:
+
+**Additive changes — a new column on an already-replicated table** (nullable or with a default):
+**local FIRST, then RDS** — the reverse of the order the plan's own §7.9 text originally
+specified, and a real bug in that text, not just a documentation nit. Confirmed via an actual
+Docker logical-replication loopback (postgres:16, real `CREATE PUBLICATION`/`CREATE SUBSCRIPTION`,
+not a read of the docs): adding a column to the *publisher* first and then writing a row that
+populates it crashes the subscriber's apply worker in a loop —
+`ERROR: logical replication target relation "public.t" is missing replicated column: "extra"` —
+until the local (subscriber) side gets the same column. Postgres logical replication matches
+columns by name, and a row sent for a column the subscriber doesn't have is a hard error, not a
+tolerated no-op; the FK constraint/dump-ordering intuition that "additive means order doesn't
+matter" does not hold here. The reverse order (subscriber ahead of publisher) is safe: the
+subscriber tolerates extra local-only columns it was never sent a value for, filling them with
+their own default. Corrected order:
+1. Apply the equivalent schema change to the Mac's local replica FIRST (nullable or with a
+   default — the same shape the RDS-side migration will have).
+2. Apply the migration to RDS (whatever process OPEN-193's own load path already uses).
+3. Run `compare-schema.sh` to confirm the two sides agree after the change.
+4. Confirm the subscription is still healthy (`replica-status.sh`, OPEN-274).
+
+**Additive changes — a brand-new table**: no ordering hazard the way a new column has (nothing is
+replicating a table that doesn't exist locally yet, so there's no crash-loop risk regardless of
+which side is created first) — but `ALTER PUBLICATION ... ADD TABLE` alone does **not** make the
+subscriber start receiving it. Confirmed via the same loopback: after adding a table to the
+publication, the subscriber has no knowledge of it at all until both of these run on the
+**local** side:
+```sql
+-- 1. The table must already exist locally with the matching schema (logical replication never
+--    creates tables) -- e.g. via rebuild-local-replica.sh's own dump-and-apply approach, or a
+--    manual CREATE TABLE matching RDS's new one.
+-- 2. Then, still on the local side:
+ALTER SUBSCRIPTION ddp_legbot_subscription REFRESH PUBLICATION;
+-- This is what actually triggers a new tablesync worker to copy the new table's existing rows --
+-- confirmed: querying the new table locally before this returns "relation does not exist", and
+-- its pre-existing RDS-side rows are present locally immediately after.
+```
+Then run `compare-schema.sh` and confirm subscription health, same as the column case above.
+New tables are **not** automatically included in this plan's table-scoped publication, unlike
+under `FOR ALL TABLES` — this has to be a deliberate, reviewable step each time.
+
+**Destructive or incompatible changes** (drop/rename a replicated column, change a column's type,
+add a `NOT NULL` without a default) — RDS must never be allowed to send a row shape the local
+side isn't ready for, and applying the equivalent change to the local replica *ahead of* RDS does
+not reliably avoid that either (RDS keeps emitting the OLD row shape until its own migration
+lands, so a local schema already changed to the NEW shape can itself break apply in the
+interim). **Default to a full replica rebuild** (`drop-subscription-for-rebuild.sh` +
+`rebuild-local-replica.sh` + `setup-subscription-and-readonly-role.sh`, OPEN-274/272/273) —
+simplest and safest, and this plan already treats "rebuild, never repair in place" as the
+standing recovery philosophy, so this isn't a new procedure, just an existing one reused for
+this trigger too.
+
+**Explicit order for the full-rebuild default**: stop LegBot's batch pipeline and any other local
+consumer first, **then** apply the migration to RDS, **then** run the rebuild/resubscribe/verify
+steps and restart consumers. Applying the RDS migration before consumers are stopped risks a
+dispatch reading through the old replica while RDS has already moved on.
+
+## Ongoing jurisdiction widening (OPEN-277, plan §3.6, §6 step 8)
+
+Not a one-time build — as [OPEN-193](https://digitaldemocracyproject.atlassian.net/browse/OPEN-193)
+confirms each further jurisdiction is genuinely, currently RDS-fed, add it to
+`LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` (the mechanism OPEN-276 built, in `ddp-sync`) — not on
+a fixed calendar schedule independent of OPEN-193's own rollout, and not by changing the
+publication (which already carries all 7 tables' current contents regardless of jurisdiction).
+This ticket has no fixed acceptance criteria of its own beyond the artifacts above — it tracks
+that widening continuing to completion across every OPEN-193-migrated jurisdiction, alongside
+running the schema-comparison script and migration procedure above whenever a relevant Django
+migration lands.
+
 **Real findings from actually running this** (not just reading the plan's SQL):
 
 - `opencivicdata_jurisdiction` has a foreign key to `opencivicdata_division`, a table outside
