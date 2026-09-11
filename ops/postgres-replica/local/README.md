@@ -65,3 +65,109 @@ Tested end-to-end against a schema-only dump of the Mac's own current `openstate
 database and a temporary `api-v3` container, both cleaned up afterward, nothing in the real
 `openstates` database or the real `ddp-openstates-api-1` container touched. Also verified the
 database-name validation rejects an unsafe name before touching anything.
+
+## `replica-status.sh` (OPEN-274)
+
+The health-check script (plan §7.6) — a small CLI check, not a service. Reports subscription
+status, LSN-based apply lag (not just message-receipt time), retained WAL, and an overall
+HEALTHY/LAGGING/DISCONNECTED/BROKEN status, then registers with `cams status`'s existing
+generic background-jobs display (the `cams:background_jobs` Redis hash) — written directly via
+`redis-cli`, matching the exact JSON schema `ddp-agents/src/cams/background_jobs.py`'s own
+`report_heartbeat()` helper uses, without a cross-repo Python import (this script lives in
+`ddp-open-states-dev`, that module lives in `ddp-agents(-dev)`) — no new `cams status` display
+code needed, per that mechanism's own "any job reporting a heartbeat there shows up automatically"
+design.
+
+```bash
+RDS_MONITORING_DATABASE_URL=<resolved live, e.g. via resolve_rds_database_url()> \
+  ./replica-status.sh <database-name>
+```
+
+**Tested all four local-side status paths for real**, using a fully isolated Docker loopback
+(same pattern as OPEN-273): HEALTHY (subscription enabled, active apply worker), DISCONNECTED via
+a disabled subscription, DISCONNECTED via an unreachable publisher (active subscription, no apply
+worker), and BROKEN (local Postgres container down). Also verified the `cams status` heartbeat
+write/read round-trip against the real `ddp-agents-redis-1` container (under a clearly-named test
+job, deleted immediately after) and that `started_at` persists correctly across repeated
+invocations rather than resetting on every run, matching `report_heartbeat()`'s own semantics
+exactly.
+
+**The RDS-side portion (retained WAL, apply lag from RDS's own `pg_replication_slots`) is
+documented but not exercised from this session** — it needs a resolved RDS monitoring credential
+this session doesn't have (same constraint as everywhere else in this epic that touches RDS
+directly). The script degrades to a local-only `HEALTHY (local-only, ...)` status when
+`RDS_MONITORING_DATABASE_URL` isn't set, rather than silently claiming a check it didn't perform.
+
+## `drop-subscription-for-rebuild.sh` (OPEN-274) — the rebuild/recovery procedure, exercised
+
+Covers plan §7.8's "the only recovery path is rebuild, never repair in place": drops the local
+subscription, handling both the reachable-publisher case (drops the remote RDS slot automatically)
+and the unreachable-publisher case (detaches locally without touching a slot it can't reach).
+Re-running `rebuild-local-replica.sh` (OPEN-272) and `setup-subscription-and-readonly-role.sh`
+(OPEN-273) against a fresh database completes the cycle — both already independently tested with
+real execution in their own tickets, not re-duplicated here.
+
+**Actually exercised this drill, not just written it** — using a fresh Docker loopback: tested the
+reachable-publisher path (confirmed the remote slot really is dropped automatically) and the
+unreachable-publisher path (stopped the "RDS" container mid-subscription, confirmed the local
+subscription detaches cleanly without hanging).
+
+**A real bug found only by exercising this, not by reading the plan's own §7.8 text**: killing the
+publisher *during* the initial copy (not just after it) can leave behind an additional
+per-table **temporary tablesync slot** (named like `pg_<oid>_sync_<relid>_<random>`, distinct
+from the main `ddp_legbot_subscription` slot) that a recovery check for only the main slot name
+would miss entirely — confirmed by triggering exactly this scenario and finding the orphaned slot
+still present after cleanup. Fixed: the script's RDS-side cleanup guidance now checks for both the
+named subscription slot and any `pg_%_sync_%` pattern match, not just the former.
+
+**Correction from pm-review round 1, both confirmed real by actually exercising the script again
+(not just reading the diff)**:
+
+- The round-1 fix bounded the primary reachable-publisher `DROP SUBSCRIPTION` with
+  `SET statement_timeout = '15s'` — but combining `SET statement_timeout = ...; DROP SUBSCRIPTION
+  ...;` in one `-c "..."` string fails outright with `ERROR: DROP SUBSCRIPTION cannot run inside a
+  transaction block`, because a multi-statement string passed to one `-c` is sent as a single
+  simple-query message and Postgres wraps it in an implicit transaction. Fixed by passing `SET
+  statement_timeout` and `DROP SUBSCRIPTION` as two separate `-c` flags on the same `psql`
+  invocation — confirmed a `SET` from one `-c` flag persists to a later `-c` flag on the same
+  connection, and confirmed the retimed `DROP` genuinely gets cancelled (not just documented) by
+  pausing the simulated publisher and watching it fail with `canceling statement due to statement
+  timeout` after ~15s instead of the earlier fix's untested claim.
+- The unreachable-publisher fallback path (`DISABLE` → `slot_name = NONE` → `DROP SUBSCRIPTION`)
+  had no timeout of its own and was not checked for failure at all (this script has no `set -e`).
+  Testing it against a publisher that was paused (not just stopped) — simulating a genuinely hung
+  connection rather than a clean refusal — showed `DISABLE` and the `slot_name` change both return
+  instantly, but the final `DROP SUBSCRIPTION` still blocks waiting for the apply worker to
+  actually exit, and a worker stuck retrying a hung connection can block that wait indefinitely,
+  defeating the entire point of the "unreachable publisher" path. Confirmed a real, unbounded hang
+  first (the script sat unresponsive for 99+ seconds until the test publisher was manually
+  unpaused), then fixed by applying the same `statement_timeout` pattern to this block too, and by
+  capturing its exit code explicitly so a real failure now prints `FAIL` with the actual partial
+  state (`pg_subscription.subenabled`/`subslotname`) and exits 1, instead of silently falling
+  through to a `PASS` message regardless of what happened. Re-tested end to end: the hung-worker
+  case now fails cleanly within ~30s (both timeouts combined) instead of hanging, and a follow-up
+  retry after the publisher becomes reachable again completes normally and still re-confirms the
+  orphaned-tablesync-slot cleanup guidance above.
+
+**Correction from pm-review round 2**:
+
+- Falling through to the destructive local-detach path after a normal `DROP SUBSCRIPTION` failure
+  used to happen unconditionally, even though the printed guidance told the operator to
+  "investigate... rather than proceeding" for a non-connectivity failure — a real inconsistency
+  between what the script said and what it did. Fixed by actually distinguishing the two cases:
+  a failure containing `canceling statement due to statement timeout` (our own bounded wait
+  firing) is itself real evidence of an unreachable publisher and proceeds automatically, same as
+  before; any other failure (a permission or lock problem on a fully-reachable RDS, where
+  detaching locally would silently orphan the remote slot instead of dropping it) now requires
+  explicit confirmation (`CONFIRM_AMBIGUOUS_DETACH=y`, or an interactive prompt) before the script
+  touches anything. Verified both branches: the timeout case still proceeds without a prompt
+  end-to-end via the same paused-publisher drill as round 1, and the confirmation gate itself
+  (deny without confirmation, proceed with `CONFIRM_AMBIGUOUS_DETACH=y`) was verified directly.
+- The recovery-drill's own recommended RDS-side cleanup query used `slot_name LIKE
+  'pg_%_sync_%'` — in SQL `LIKE`, `_` is a single-character wildcard, not a literal underscore,
+  so this matched more than the documented `pg_<oid>_sync_<relid>_<random>` shape. Replaced with
+  an anchored regex (`slot_name ~ '^pg_[0-9]+_sync_[0-9]+_[0-9]+$'`) that matches only that exact
+  shape.
+- `replica-status.sh`'s `LAGGING_THRESHOLD_BYTES` (an env var with a sane numeric default) had no
+  validation that an operator override was actually an integer, which would have made the later
+  numeric comparison error out instead of failing status cleanly. Added a one-line integer check.
