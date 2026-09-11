@@ -1,5 +1,27 @@
 # OPEN-200 Fargate spike — infrastructure
 
+**Corrected 2026-09-11:** this doc predates real production use and describes the OPEN-200
+prototype phase specifically -- read the naming and RDS-reachability claims below with that in
+mind, not as this module's current state:
+
+- The cluster/task-family naming below (`ddp-scrapers-prototype`, `ddp-scraper-prototype`) was
+  the prototype's placeholder. Ramon settled the real names on 2026-08-28 (`variables.tf`'s own
+  `cluster_name`/`task_family` defaults: `ddp-scrapers`, no `-prototype` suffix) -- the IAM
+  policy JSON further down still had the old prototype ARNs in it, fixed below.
+- **This module has never needed to grant RDS reachability, and still doesn't.** `cloud_archiver.py`
+  (OPEN-192, added after this doc was written) runs `os-text-extract archive` inside the exact
+  same task definition and connects to production RDS directly -- but not via anything declared
+  here. `ddp-sync`'s launch code (`openstates_archive.py`, OPEN-260) resolves the current RDS
+  credential live from Secrets Manager on its own host, then hands the raw connection string to
+  the Fargate task as a plaintext `containerOverrides.environment` value at `ecs:RunTask` time,
+  using whatever subnets/security groups it passes at that same call -- none of which are
+  managed by this Terraform module or baked into the static task definition below. Found this
+  out the hard way 2026-09-10/11 after wrongly telling Ramon this module's isolated,
+  RDS-unreachable security group (see Setup step 3) meant no Fargate task could reach RDS at
+  all; he pointed out the archiver already does, which is what led here. OPEN-268 tracks
+  extending that same run-time-override pattern to ad-hoc `os-text-extract` backfill commands
+  (`reextract`/`refresh-extraction`/`recompute-diff-order`), not just the archiver.
+
 Terraform for the prototype described in `PLAN-scraper-execution-fargate-draft.md` and scoped
 by OPEN-200: one ECR repository, one Fargate-only ECS cluster, a CloudWatch log group, and a
 task definition. **Deliberately split in two, so a credential handed to an agent working this
@@ -111,7 +133,11 @@ role also needs `kms:Decrypt`/`kms:GenerateDataKey` scoped to the key's ARN, or 
 **3. Security group** — outbound HTTPS only, no inbound. Its own VPC, not the one the two
 existing production EC2 instances live in (see this ticket's discussion for why — no
 technical need to share it, and separation keeps this prototype's blast radius and teardown
-independent of anything production depends on):
+independent of anything production depends on). **This has never blocked RDS access for any
+workload that's actually needed it** — see the top-of-file 2026-09-11 correction: a Fargate
+task that needs RDS (the archiver today, ad-hoc backfill commands per OPEN-268 eventually)
+gets its own subnets/security groups passed at `run-task` time by whatever launches it
+(`ddp-sync`), not from this security group or this module at all:
 
 ```bash
 aws ec2 create-security-group --group-name ddp-scraper-task --vpc-id <vpc-id> \
@@ -159,7 +185,7 @@ IAM user key, so it just expires rather than needing manual cleanup afterward.
         "ecs:CreateCluster", "ecs:DescribeClusters", "ecs:DeleteCluster",
         "ecs:PutClusterCapacityProviders", "ecs:TagResource"
       ],
-      "Resource": "arn:aws:ecs:<region>:<account-id>:cluster/ddp-scrapers-prototype"
+      "Resource": "arn:aws:ecs:<region>:<account-id>:cluster/ddp-scrapers"
     },
     {
       "Sid": "ECSTaskDefinition",
@@ -171,8 +197,8 @@ IAM user key, so it just expires rather than needing manual cleanup afterward.
       "Sid": "ECSRun",
       "Effect": "Allow",
       "Action": ["ecs:RunTask", "ecs:DescribeTasks", "ecs:StopTask", "ecs:ListTasks"],
-      "Resource": "arn:aws:ecs:<region>:<account-id>:task-definition/ddp-scraper-prototype:*",
-      "Condition": { "ArnEquals": { "ecs:cluster": "arn:aws:ecs:<region>:<account-id>:cluster/ddp-scrapers-prototype" } }
+      "Resource": "arn:aws:ecs:<region>:<account-id>:task-definition/ddp-scrapers:*",
+      "Condition": { "ArnEquals": { "ecs:cluster": "arn:aws:ecs:<region>:<account-id>:cluster/ddp-scrapers" } }
     },
     {
       "Sid": "Logs",

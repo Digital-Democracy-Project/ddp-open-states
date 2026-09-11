@@ -65,6 +65,13 @@ resource "aws_ecs_task_definition" "scraper_prototype" {
         # silently collects zero bills. See variables.tf's own note on why this is plain env
         # for now rather than Secrets Manager.
         { name = "VA_API_KEY", value = var.va_api_key },
+        # No DATABASE_URL here on purpose, even though cloud_archiver.py (RUNNER_SCRIPT override,
+        # same task family) connects straight to RDS: whoever calls run-task for an archive
+        # launch (ddp-sync's openstates_archive.py, OPEN-260) resolves the current RDS credential
+        # live from Secrets Manager on its own host and passes it as a containerOverrides.environment
+        # value at launch time, never baked in statically here. Baking a DB credential into this
+        # static definition would also fight RDS's automatic 7-day rotation (OPEN-260's whole
+        # reason for existing) -- a value here would just go stale on its own schedule.
       ]
       logConfiguration = {
         logDriver = "awslogs"
