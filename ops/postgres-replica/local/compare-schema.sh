@@ -6,9 +6,19 @@
 #
 # Checks, per table:
 #   1. Does the table exist on both sides?
-#   2. Do the column name/type/nullability triples match, in the same order?
-# Does NOT check indexes, constraints, or anything beyond information_schema.columns -- the plan's
-# own scope for this script (§7.7) is column-level agreement, not a full schema audit.
+#   2. Do the column name/type/nullability triples match?
+# Compared keyed by COLUMN NAME (sorted), not physical ordinal position -- pm-review round 1:
+# Postgres logical replication itself matches columns by name, not position, so two schemas with
+# the same named columns in a different physical order (e.g. independently recreated at some
+# point in each side's own history) replicate perfectly correctly; comparing by ordinal position
+# would falsely flag that as a mismatch. Uses pg_attribute + format_type() rather than
+# information_schema.columns' data_type/character_maximum_length pair -- confirmed against the
+# real schema that format_type() correctly distinguishes array types (text[] vs text) and gives
+# full precision (e.g. "character varying(25)") in one string, which the information_schema pair
+# does not capture correctly for this schema's actual array-typed columns
+# (opencivicdata_bill.classification/subject).
+# Does NOT check indexes, constraints, or anything beyond column shape -- the plan's own scope for
+# this script (§7.7) is column-level agreement, not a full schema audit.
 #
 # Usage:
 #   RDS_HOST=<rds-endpoint> RDS_REPLICATION_PASSWORD=<ddp_local_replication's password, from
@@ -16,9 +26,9 @@
 #     ./compare-schema.sh <local-database-name>
 #
 # Reuses the ddp_local_replication credential (§3.4 item 1) for this read -- it already has
-# SELECT scoped to exactly these 7 tables (OPEN-271), which is also exactly what
-# information_schema.columns needs to expose their column metadata. Not a new credential: this is
-# a read against the same 7-table scope that role already exists for, not a wider grant.
+# SELECT scoped to exactly these 7 tables (OPEN-271), which is also exactly what pg_attribute
+# needs to expose their column metadata. Not a new credential: this is a read against the same
+# 7-table scope that role already exists for, not a wider grant.
 set -uo pipefail
 
 LOCAL_DB="${1:?Usage: $0 <local-database-name>}"
@@ -47,29 +57,31 @@ TABLES=(
   ddp_bill_version_document
 )
 
-RDS_CONN="host=$RDS_HOST port=$RDS_PORT dbname=$RDS_DATABASE user=ddp_local_replication password=$RDS_REPLICATION_PASSWORD sslmode=verify-full"
+# pm-review round 1: the password no longer appears in the connection string / process args
+# (visible to anything that can see this process's argv, e.g. `ps`) -- passed via PGPASSWORD
+# instead, matching psql's own documented mechanism for exactly this concern.
+RDS_CONN="host=$RDS_HOST port=$RDS_PORT dbname=$RDS_DATABASE user=ddp_local_replication sslmode=verify-full"
+
+COLUMN_QUERY="
+  SELECT a.attname || '|' || format_type(a.atttypid, a.atttypmod) || '|' || a.attnotnull
+  FROM pg_attribute a
+  JOIN pg_class c ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relname = '__TABLE__'
+    AND a.attnum > 0 AND NOT a.attisdropped
+  ORDER BY a.attname;
+"
 
 mismatch_found=0
 
 for table in "${TABLES[@]}"; do
   echo "== $table =="
+  query="${COLUMN_QUERY//__TABLE__/$table}"
 
-  rds_columns="$(psql "$RDS_CONN" -tAc "
-    SELECT column_name || '|' || data_type || '|' || is_nullable || '|' ||
-           COALESCE(character_maximum_length::text, '')
-    FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = '$table'
-    ORDER BY ordinal_position;
-  " 2>&1)"
+  rds_columns="$(PGPASSWORD="$RDS_REPLICATION_PASSWORD" psql "$RDS_CONN" -tAc "$query" 2>&1)"
   rds_rc=$?
 
-  local_columns="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$LOCAL_DB" -tAc "
-    SELECT column_name || '|' || data_type || '|' || is_nullable || '|' ||
-           COALESCE(character_maximum_length::text, '')
-    FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = '$table'
-    ORDER BY ordinal_position;
-  " 2>&1)"
+  local_columns="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$LOCAL_DB" -tAc "$query" 2>&1)"
   local_rc=$?
 
   if [ "$rds_rc" -ne 0 ]; then
