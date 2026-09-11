@@ -119,3 +119,32 @@ from the main `ddp_legbot_subscription` slot) that a recovery check for only the
 would miss entirely — confirmed by triggering exactly this scenario and finding the orphaned slot
 still present after cleanup. Fixed: the script's RDS-side cleanup guidance now checks for both the
 named subscription slot and any `pg_%_sync_%` pattern match, not just the former.
+
+**Correction from pm-review round 1, both confirmed real by actually exercising the script again
+(not just reading the diff)**:
+
+- The round-1 fix bounded the primary reachable-publisher `DROP SUBSCRIPTION` with
+  `SET statement_timeout = '15s'` — but combining `SET statement_timeout = ...; DROP SUBSCRIPTION
+  ...;` in one `-c "..."` string fails outright with `ERROR: DROP SUBSCRIPTION cannot run inside a
+  transaction block`, because a multi-statement string passed to one `-c` is sent as a single
+  simple-query message and Postgres wraps it in an implicit transaction. Fixed by passing `SET
+  statement_timeout` and `DROP SUBSCRIPTION` as two separate `-c` flags on the same `psql`
+  invocation — confirmed a `SET` from one `-c` flag persists to a later `-c` flag on the same
+  connection, and confirmed the retimed `DROP` genuinely gets cancelled (not just documented) by
+  pausing the simulated publisher and watching it fail with `canceling statement due to statement
+  timeout` after ~15s instead of the earlier fix's untested claim.
+- The unreachable-publisher fallback path (`DISABLE` → `slot_name = NONE` → `DROP SUBSCRIPTION`)
+  had no timeout of its own and was not checked for failure at all (this script has no `set -e`).
+  Testing it against a publisher that was paused (not just stopped) — simulating a genuinely hung
+  connection rather than a clean refusal — showed `DISABLE` and the `slot_name` change both return
+  instantly, but the final `DROP SUBSCRIPTION` still blocks waiting for the apply worker to
+  actually exit, and a worker stuck retrying a hung connection can block that wait indefinitely,
+  defeating the entire point of the "unreachable publisher" path. Confirmed a real, unbounded hang
+  first (the script sat unresponsive for 99+ seconds until the test publisher was manually
+  unpaused), then fixed by applying the same `statement_timeout` pattern to this block too, and by
+  capturing its exit code explicitly so a real failure now prints `FAIL` with the actual partial
+  state (`pg_subscription.subenabled`/`subslotname`) and exits 1, instead of silently falling
+  through to a `PASS` message regardless of what happened. Re-tested end to end: the hung-worker
+  case now fails cleanly within ~30s (both timeouts combined) instead of hanging, and a follow-up
+  retry after the publisher becomes reachable again completes normally and still re-confirms the
+  orphaned-tablesync-slot cleanup guidance above.
