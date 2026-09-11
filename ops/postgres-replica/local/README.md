@@ -150,3 +150,18 @@ within seconds (confirming live/steady-state replication, not just the initial c
 read-only role could read all 7 tables, and both write-refusal checks (session-default and
 post-override) passed. Also re-verified the pre-existing-object guard fails with the correct
 guidance on a repeat run against an already-populated database.
+
+**Correction found by review, not by pm-review round 1: the `override=true` write-refusal check
+was a no-op.** `default_transaction_read_only` only controls the mode a *future* `BEGIN` starts
+in — setting it after a transaction has already started (`BEGIN; SET default_transaction_read_only
+= off; ...`) has no effect on that transaction's own read/write mode. Confirmed directly against a
+real Postgres container: with that exact sequence the error is always `cannot execute INSERT in a
+read-only transaction`, never a permission check — including with an explicit `INSERT` grant added
+to the test role first. So `override=true` was silently identical to `override=false`; it would
+still have printed `PASS` even if `ddp_local_readonly` were accidentally granted
+INSERT/UPDATE/DELETE someday, exactly the regression this second check exists to catch. Fixed with
+`SET TRANSACTION READ WRITE` instead, which does flip the *current* transaction's mode — confirmed:
+with an `INSERT` grant added, the write now genuinely succeeds (correctly failing the check, as it
+must for a real regression); with that grant removed again, it correctly fails with `permission
+denied for table`, not `read-only transaction` — proving this check now actually exercises the
+`GRANT`-level boundary it claims to, not the session-default convenience setting a second time.

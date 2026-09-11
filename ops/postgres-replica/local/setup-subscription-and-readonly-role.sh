@@ -148,10 +148,24 @@ echo "== Verify the read-only role genuinely cannot write, even after overriding
 # in real replicated data. Also runs the check twice: once relying on the session default (as
 # before), and once after explicitly turning that default off, to prove the underlying GRANT-level
 # boundary holds even if the session default is bypassed.
+#
+# Correction, found live against a real database (not caught by pm-review round 1): the
+# override=true case originally used `BEGIN; SET default_transaction_read_only = off; ...` --
+# but default_transaction_read_only only controls the mode a FUTURE BEGIN starts in; setting it
+# after a transaction has already started has no effect on that transaction's own read/write
+# mode. Confirmed directly: with that sequence the error is always "cannot execute INSERT in a
+# read-only transaction" (session-default enforcement), never a permission check, EVEN with an
+# explicit INSERT grant added to the test role first -- meaning override=true was silently
+# identical to override=false and would have still printed PASS even if ddp_local_readonly were
+# accidentally granted INSERT/UPDATE/DELETE someday, exactly the regression this second check
+# exists to catch. Fixed with `SET TRANSACTION READ WRITE` instead, which does flip the CURRENT
+# transaction's mode -- confirmed: the same INSERT then succeeds against a role with a real
+# INSERT grant, and correctly fails with "permission denied for table" once that grant is
+# revoked, so this now actually exercises the GRANT-level boundary it claims to.
 for override in "false" "true"; do
   sql="BEGIN;"
   if [ "$override" = "true" ]; then
-    sql+=" SET default_transaction_read_only = off;"
+    sql+=" SET TRANSACTION READ WRITE;"
   fi
   sql+=" INSERT INTO opencivicdata_jurisdiction (id) VALUES ('__write_check_probe__'); ROLLBACK;"
   write_check_output="$(docker exec "$PG_CONTAINER" env PGPASSWORD="$READONLY_PASSWORD" \
