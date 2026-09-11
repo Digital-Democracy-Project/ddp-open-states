@@ -188,6 +188,106 @@ database and a temporary `api-v3` container, both cleaned up afterward, nothing 
 `openstates` database or the real `ddp-openstates-api-1` container touched. Also verified the
 database-name validation rejects an unsafe name before touching anything.
 
+## `generate-readonly-role-secret.sh` and `setup-subscription-and-readonly-role.sh` (OPEN-273)
+
+`generate-readonly-role-secret.sh` creates a Secrets Manager secret for `ddp_local_readonly`'s
+password, mirroring `ops/postgres-replica/rds/00-generate-role-secret.sh`'s existing convention
+for `ddp_local_replication` — run once by whoever has Secrets Manager access (not this session).
+
+`setup-subscription-and-readonly-role.sh` fetches both secrets, creates the actual
+`CREATE SUBSCRIPTION` against RDS and the local `ddp_local_readonly` role, waits for initial sync
+(`pg_subscription_rel.srsubstate = 'r'` for all 7 *expected* tables specifically, not just a count
+of 7), and verifies the read-only role can read all 7 tables and genuinely cannot write.
+
+```bash
+RDS_HOST=<rds-endpoint> RDS_CA_BUNDLE_PATH=<path to the RDS CA bundle> \
+  ./setup-subscription-and-readonly-role.sh <new-database-name>
+```
+
+**Prerequisite, confirmed missing on this Mac**: the RDS CA bundle `sslmode=verify-full` needs.
+AWS publishes it at `https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem` — fetch
+it and pass its path as `RDS_CA_BUNDLE_PATH`. Neither this bundle nor an equivalent exists inside
+`ddp-openstates-postgres-1` right now (checked directly) — this is a real prerequisite to fetch
+before running for real, not assumed to already be there.
+
+**Tested end-to-end against a real, fully isolated logical-replication loopback** — not just
+syntax-checked. Since neither RDS nor the Mac's own local Postgres has `wal_level=logical`
+enabled yet (RDS needs OPEN-271's still-pending parameter-group change + reboot; the Mac's real
+`ddp-openstates-postgres-1` container wasn't restarted to test this, since it's the actual
+container serving live `api-v3`/LegBot traffic), this was validated using two throwaway
+`postgres:16-alpine` containers on a dedicated Docker network — one configured with
+`wal_level=logical` as a stand-in "RDS", one as the "Mac" subscriber — both torn down afterward,
+nothing in real infrastructure touched or restarted. This loopback test does not, and cannot,
+validate the RDS CA bundle prerequisite above (`sslmode=disable` was substituted just for the
+test containers, which don't have their own certificates configured); confirm that separately
+against the real endpoint before trusting `verify-full` works there.
+
+**Round 1 found several real bugs, all fixed and re-verified by re-running the full loopback:**
+
+- **A race in the initial-sync wait loop.** The original version ran two *separate* queries (a
+  not-ready count, then a total count) — if relations registered between the two queries, a
+  transient state could misreport as "0 not ready, 7 total" before all 7 were genuinely ready.
+  Fixed to a single query returning every expected table's exact state from one snapshot, and now
+  checks the specific expected table *names*, not just a count of 7 (a count alone can't tell the
+  right 7 tables from some other 7).
+- **A silent timeout.** If sync never completed within the poll loop, the original version fell
+  through to the later steps anyway and printed "initial sync is complete" regardless. Fixed to
+  track completion explicitly and exit non-zero with the last observed state if the loop times out.
+- **`default_transaction_read_only` is a session default, not the real security boundary** — a
+  session can override it with `SET default_transaction_read_only = off`. The write-refusal check
+  now runs twice: once relying on the session default (as before), and once after explicitly
+  disabling it, to prove the underlying `GRANT`-level boundary (no INSERT/UPDATE/DELETE grant at
+  all) holds even when the convenience default is bypassed. Both wrapped in an explicit
+  transaction that's always rolled back, so an unexpected successful write wouldn't leave
+  `__write_check_probe__` sitting in real replicated data.
+- **The read-only role's read access was only verified against 1 of the 7 tables.** Now checks
+  all 7.
+- **No guard against a partial/repeat run.** Re-running against a database that already has the
+  subscription or role produced a raw Postgres duplicate-object error. Now checked explicitly
+  upfront, failing with guidance pointing at the plan's own "rebuild, never repair in place"
+  recovery philosophy (§3.7) rather than trying to patch a partial state.
+- **The readonly-role password was a positional shell argument** (visible in shell history and
+  `ps` output) and the RDS-side password came from an env var instead of the same Secrets-Manager
+  convention `ops/postgres-replica/rds/00-generate-role-secret.sh` already established. Both now
+  fetched from Secrets Manager directly (via the new `generate-readonly-role-secret.sh` for the
+  new role), matching that convention, plus a defense-in-depth check that neither fetched password
+  contains a single quote before it's interpolated into SQL/conninfo strings.
+- **A `pipefail` bug in the write-refusal check** (same root cause as the identical bug found and
+  fixed in the already-merged `ops/postgres-replica/rds/03-verify-role-can-read.sh`, OPEN-271, in
+  a separate follow-up PR): `psql -c "INSERT ..." | grep -q "..."` inside an `if` condition, with
+  `set -o pipefail` active, reports the pipeline's exit status as whichever command failed last
+  scanning right-to-left — since the INSERT is *expected* to fail, `psql` itself exits non-zero,
+  and `pipefail` reports that even when `grep` had already found the expected message. Fixed by
+  capturing output into a variable first, then grepping the variable.
+- **An apostrophe inside a `${VAR:?message}` parameter-expansion message broke bash's parser**,
+  even though the whole thing was double-quoted — a genuine, if obscure, bash quoting gotcha
+  specific to `:?`/`:-`/`:=`/`:+` expansion words, only caught by actually running `bash -n`, not
+  by reading the diff.
+
+With all of those fixed, the loopback test confirmed the whole pipeline works as designed: initial
+sync completed for all 7 expected tables (verified by name, not just count), a row present on the
+"RDS" side before the subscription was created replicated correctly (`copy_data=true` initial
+copy), a **new** row inserted on the "RDS" side *after* the subscription was live replicated
+within seconds (confirming live/steady-state replication, not just the initial copy), the
+read-only role could read all 7 tables, and both write-refusal checks (session-default and
+post-override) passed. Also re-verified the pre-existing-object guard fails with the correct
+guidance on a repeat run against an already-populated database.
+
+**Correction found by review, not by pm-review round 1: the `override=true` write-refusal check
+was a no-op.** `default_transaction_read_only` only controls the mode a *future* `BEGIN` starts
+in — setting it after a transaction has already started (`BEGIN; SET default_transaction_read_only
+= off; ...`) has no effect on that transaction's own read/write mode. Confirmed directly against a
+real Postgres container: with that exact sequence the error is always `cannot execute INSERT in a
+read-only transaction`, never a permission check — including with an explicit `INSERT` grant added
+to the test role first. So `override=true` was silently identical to `override=false`; it would
+still have printed `PASS` even if `ddp_local_readonly` were accidentally granted
+INSERT/UPDATE/DELETE someday, exactly the regression this second check exists to catch. Fixed with
+`SET TRANSACTION READ WRITE` instead, which does flip the *current* transaction's mode — confirmed:
+with an `INSERT` grant added, the write now genuinely succeeds (correctly failing the check, as it
+must for a real regression); with that grant removed again, it correctly fails with `permission
+denied for table`, not `read-only transaction` — proving this check now actually exercises the
+`GRANT`-level boundary it claims to, not the session-default convenience setting a second time.
+
 ## `replica-status.sh` (OPEN-274)
 
 The health-check script (plan §7.6) — a small CLI check, not a service. Reports subscription
