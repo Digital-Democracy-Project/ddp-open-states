@@ -10,10 +10,23 @@ set -euo pipefail
 SECRET_ID="ddp-openstates/ddp_local_readonly"
 REGION="us-east-1"
 
+# Bug fix, found live during OPEN-273's real execution: `create-secret` has no
+# `--generate-secret-string` flag at all (confirmed via `aws secretsmanager create-secret help`
+# showing no such parameter, on the AWS CLI version installed for this project) -- this script as
+# originally written would have failed outright. The correct two-step pattern is to generate the
+# password server-side via `get-random-password`, then pass it as `--secret-string` -- the
+# password still never appears in this script's own arguments, shell history, or any file other
+# than the pipe between these two commands.
+RANDOM_PASSWORD="$(aws secretsmanager get-random-password \
+  --region "$REGION" \
+  --password-length 32 \
+  --exclude-punctuation \
+  --query 'RandomPassword' --output text)"
+
 aws secretsmanager create-secret \
   --region "$REGION" \
   --name "$SECRET_ID" \
   --description "OPEN-273: password for the ddp_local_readonly role (the local Postgres replica's read-only consumer role, PLAN-rds-local-postgres-replication.md). Local-side only, SELECT-only, never the subscription-owner credential." \
-  --generate-secret-string '{"PasswordLength": 32, "ExcludePunctuation": true, "ExcludeUppercase": false}'
+  --secret-string "$RANDOM_PASSWORD"
 
 echo "Secret created at $SECRET_ID -- setup-subscription-and-readonly-role.sh reads this directly."
