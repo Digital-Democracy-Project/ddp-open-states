@@ -65,3 +65,48 @@ Tested end-to-end against a schema-only dump of the Mac's own current `openstate
 database and a temporary `api-v3` container, both cleaned up afterward, nothing in the real
 `openstates` database or the real `ddp-openstates-api-1` container touched. Also verified the
 database-name validation rejects an unsafe name before touching anything.
+
+## `setup-subscription-and-readonly-role.sh` (OPEN-273)
+
+Creates the actual `CREATE SUBSCRIPTION` against RDS (using `ddp_local_replication`'s credential,
+from `ops/postgres-replica/rds/`) and the local `ddp_local_readonly` role, waits for initial sync
+(`pg_subscription_rel.srsubstate = 'r'` for all 7 tables), and verifies the read-only role can
+read but not write.
+
+```bash
+RDS_HOST=<rds-endpoint> RDS_REPLICATION_PASSWORD=<from Secrets Manager> \
+  ./setup-subscription-and-readonly-role.sh <new-database-name> <readonly-role-password>
+```
+
+**Tested end-to-end against a real, fully isolated logical-replication loopback** — not just
+syntax-checked. Since neither RDS nor the Mac's own local Postgres has `wal_level=logical`
+enabled yet (RDS needs OPEN-271's still-pending parameter-group change + reboot; the Mac's real
+`ddp-openstates-postgres-1` container wasn't restarted to test this, since it's the actual
+container serving live `api-v3`/LegBot traffic), this was validated using two throwaway
+`postgres:16-alpine` containers on a dedicated Docker network — one configured with
+`wal_level=logical` as a stand-in "RDS", one as the "Mac" subscriber — both torn down afterward,
+nothing in real infrastructure touched or restarted.
+
+That real test caught two genuine bugs:
+
+- **A `pipefail` bug in the write-refusal check.** `psql -c "INSERT ..." | grep -q "..."` inside
+  an `if` condition, with `set -o pipefail` active, reports the *pipeline's* exit status as
+  whichever command failed last scanning right-to-left — since the INSERT is *expected* to fail,
+  `psql` itself exits non-zero, and `pipefail` reports that non-zero status even when `grep` had
+  already found the expected message. This made the check report FAIL on a write that was, in
+  fact, correctly refused (confirmed by running the identical `psql` command directly and getting
+  the correct refusal both times). Fixed by capturing output into a variable first, then grepping
+  the variable. **The identical bug existed in the already-merged `ops/postgres-replica/rds/03-verify-role-can-read.sh`**
+  (OPEN-271) — found and fixed there too, in a separate follow-up PR.
+- **An apostrophe inside a `${VAR:?message}` parameter-expansion message broke bash's parser**,
+  even though the whole thing was double-quoted (`"${RDS_REPLICATION_PASSWORD:?...ddp_local_replication's password}"`)
+  — a genuine, if obscure, bash quoting gotcha specific to `:?`/`:-`/`:=`/`:+` expansion words, not
+  something either linting or reading the diff would have caught without actually running
+  `bash -n` on it. Fixed by rewording the message to avoid the possessive apostrophe.
+
+With those two fixes, the loopback test confirmed the whole pipeline works as designed: initial
+sync completed for all 7 tables, a row present on the "RDS" side before the subscription was
+created replicated correctly (`copy_data=true` initial copy), a **new** row inserted on the "RDS"
+side *after* the subscription was live replicated within seconds (confirming live/steady-state
+replication works, not just the initial copy), and the read-only role could read the replicated
+data but was correctly refused when attempting to write.
