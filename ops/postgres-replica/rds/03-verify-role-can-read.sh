@@ -28,9 +28,21 @@ SELECT
 echo "PASS if all 7 counts above returned a real number (not a permission-denied error)."
 
 # Also confirm the role genuinely cannot write -- it should have SELECT only.
-PGPASSWORD="$ROLE_PASSWORD" psql "host=$PGHOST dbname=$PGDATABASE user=ddp_local_replication sslmode=verify-full" -c "
+#
+# Found by actually running the equivalent check in OPEN-273's local loopback test: with
+# `set -o pipefail` active, psql's own non-zero exit (expected here, since the INSERT should
+# fail) becomes the pipeline's reported exit status even when grep DOES find "permission denied"
+# in the output -- pipefail reports the rightmost command that failed, which is psql, not grep,
+# even though grep itself succeeded. That made the old `... | grep -q ... && ... || ...` version
+# of this check report FAIL even when the write was correctly refused. Capture output into a
+# variable first, then grep on the variable, to sidestep this entirely.
+write_check_output="$(PGPASSWORD="$ROLE_PASSWORD" psql "host=$PGHOST dbname=$PGDATABASE user=ddp_local_replication sslmode=verify-full" -c "
 INSERT INTO public.opencivicdata_bill (id) VALUES ('__write_check_probe__');
-" 2>&1 | grep -q "permission denied" && echo "PASS: write correctly refused (permission denied)" || {
+" 2>&1 || true)"
+if echo "$write_check_output" | grep -q "permission denied"; then
+  echo "PASS: write correctly refused (permission denied)"
+else
   echo "FAIL: write was NOT refused -- ddp_local_replication has write access it shouldn't." >&2
+  echo "Actual output: $write_check_output" >&2
   exit 1
-}
+fi
