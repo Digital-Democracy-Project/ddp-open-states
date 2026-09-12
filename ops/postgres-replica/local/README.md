@@ -424,3 +424,57 @@ named subscription slot and any `pg_%_sync_%` pattern match, not just the former
 - `replica-status.sh`'s `LAGGING_THRESHOLD_BYTES` (an env var with a sane numeric default) had no
   validation that an operator override was actually an integer, which would have made the later
   numeric comparison error out instead of failing status cleanly. Added a one-line integer check.
+
+## OPEN-280 — table inventory for full-schema replication, and the broadening procedure verified
+
+The current replica (OPEN-272/273) is deliberately scoped to exactly the 7 tables `api-v3`'s own
+bill-detail endpoint touches (plan §3.2). This Mac also has a whole family of direct-Postgres
+scripts that bypass `api-v3` entirely and were never in that scope — `quality_check.py` and
+several `fix-open*-vote-misattribution.py`/`fix-open*-voter-backfill.py`/`backfill-*.py`/
+`audit-*.py` one-off scripts. Confirmed via `grep -hoE "opencivicdata_[a-z_]+"` across their
+actual source (not assumed), consolidated across all of them:
+
+**5 additional tables needed**: `opencivicdata_person`, `opencivicdata_personidentifier`,
+`opencivicdata_membership`, `opencivicdata_personvote`, `opencivicdata_voteevent`.
+
+`ddp-sync`'s own direct-Postgres paths (`openstates_archive.py`, `openstates_backfill.py`,
+`rds_credentials.py`) were also checked — all RDS-side load/archive code already within the
+existing 7-table scope, not a new gap.
+
+**Verified the broadening procedure actually works for these 5 tables specifically**, not just
+assumed the existing "adding a new table" procedure (above) generalizes cleanly — real Docker
+loopback, a throwaway "RDS" container seeded with real data sampled from this Mac's own local
+`openstates` database (a real Utah jurisdiction/session/org/person/membership/vote chain,
+exercising these tables' real `jsonb`, `uuid`, and `text[]` columns, not synthetic data) and a
+throwaway subscriber database inside the real `ddp-openstates-postgres-1` container. All 12
+tables (the existing 7 plus these 5) reached `srsubstate='r'` and matched row-for-row between
+publisher and subscriber.
+
+**Three real, confirmed gotchas found this way, not by reading the schema** — three FK
+constraints reference tables outside even this widened 12-table scope, and schema creation
+fails outright until each is dropped (the same treatment already established for
+`opencivicdata_jurisdiction.division_id → opencivicdata_division`, plus two newly found here):
+
+```sql
+-- All three must be dropped when constructing the local replica's schema, same as the existing
+-- division exception above -- confirmed via real ALTER TABLE failures, not anticipated in advance:
+-- opencivicdata_jurisdiction.division_id -> opencivicdata_division (already known, OPEN-272)
+-- opencivicdata_membership.post_id -> opencivicdata_post (found here -- no script in scope
+--   queries opencivicdata_post itself, only the plain post_id column value on membership)
+-- opencivicdata_voteevent.bill_action_id -> opencivicdata_billaction (found here -- no script in
+--   scope queries opencivicdata_billaction itself, only voteevent's own columns)
+```
+
+Also confirmed live during this test: a throwaway container's *default* `max_replication_slots`/
+`max_wal_senders` (10 each, `postgres:16-alpine`'s stock value) is too low once enough tables sync
+in parallel — not a real concern for actual RDS (already configured with real production
+headroom, per OPEN-271's own setup), but worth knowing if reusing this test methodology for an
+even wider future scope.
+
+**Not done in this pass, and why**: broadening the real RDS-side publication (`ALTER PUBLICATION
+... ADD TABLE` + the matching `GRANT SELECT` for each of these 5 tables, per the procedure
+already documented above) needs RDS admin access this session doesn't have — the same constraint
+that's applied to every RDS-side change all epic. This section documents exactly what to run and
+proves it works; executing it for real, then migrating `quality_check.py` and the fix/backfill/
+audit scripts to the resulting database, and eventually retiring the old `openstates` database,
+remain OPEN-280's own next steps once that access is available.
