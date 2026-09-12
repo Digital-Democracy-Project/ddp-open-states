@@ -5,14 +5,24 @@
 # brings its own Redis and does not attach to any pre-existing external network. It should stand
 # up cleanly on a bare box with nothing else already running.
 #
-# DATABASE_URL is deliberately NOT hardcoded here (unlike docker-compose.ddp.yml's local dev
-# password) -- it's a real Secrets-Manager-managed RDS credential, supplied via a `.env` file
-# that stays on the host and is never committed. See infra/rds/README.md's own gotcha: the
-# password can contain `:`/`[`, which breaks a naive connection string unless URL-encoded
-# first (`urllib.parse.quote(password, safe="")`).
+# OPEN-279: credentials are resolved LIVE from Secrets Manager at connection time
+# (RESOLVE_RDS_LIVE=true), not baked into a static DATABASE_URL at container start. RDS's own
+# "manage master credentials in Secrets Manager" feature rotates this password every 7 days --
+# a value baked into DATABASE_URL at container start (the old approach here, via
+# deploy/rotate-database-url.sh's rendered .env) goes stale on that cadence regardless of how
+# recently the container started, and needed a manual script rerun + restart every time it
+# did. This container's own api/db/__init__.py now re-resolves the credential from Secrets
+# Manager whenever the connection pool opens a NEW physical connection (never later than one
+# pool_recycle interval, 7200s/2h, from whenever the secret actually rotated) -- see that
+# module and api/rds_credentials.py for the mechanism.
 #
-#   DATABASE_URL=postgresql://openstates_admin:<url-encoded-password>@ddp-openstates.cvxdhm1ogxug.us-east-1.rds.amazonaws.com:5432/openstates
+# Requires this host's IAM role/instance profile to have secretsmanager:GetSecretValue scoped
+# to RDS_CREDENTIALS_SECRET_ARN below (the same grant OPEN-260 already required for ddp-sync's
+# equivalent fix) -- a new grant if this host didn't already have it for another reason.
 #
+# .env (never committed) supplies just RDS_CREDENTIALS_SECRET_ARN below -- everything else
+# needed to connect (host/port/dbname) is fixed and doesn't rotate, so it's a plain value here,
+# not a secret.
 name: ddp-openstates-rds
 
 services:
@@ -27,7 +37,12 @@ services:
       redis:
         condition: service_started
     environment:
-      DATABASE_URL: "${DATABASE_URL}"
+      RESOLVE_RDS_LIVE: "true"
+      RDS_CREDENTIALS_SECRET_ARN: "${RDS_CREDENTIALS_SECRET_ARN}"
+      RDS_HOST: "ddp-openstates.cvxdhm1ogxug.us-east-1.rds.amazonaws.com"
+      RDS_PORT: "5432"
+      RDS_DBNAME: "openstates"
+      AWS_REGION: "us-east-1"
       RRL_REDIS_HOST: "redis"
       RRL_REDIS_PORT: "6379"
       RRL_REDIS_DB: "1"
