@@ -309,10 +309,10 @@ denied for table`, not `read-only transaction` — proving this check now actual
 
 The health-check script (plan §7.6) — a small CLI check, not a service. Reports subscription
 status, LSN-based apply lag (not just message-receipt time), retained WAL, and an overall
-HEALTHY/LAGGING/DISCONNECTED/BROKEN status, then registers with `cams status`'s existing
-generic background-jobs display (the `cams:background_jobs` Redis hash) — written directly via
-`redis-cli`, matching the exact JSON schema `ddp-agents/src/cams/background_jobs.py`'s own
-`report_heartbeat()` helper uses, without a cross-repo Python import (this script lives in
+HEALTHY/LAGGING/DISCONNECTED/BROKEN/INCOMPLETE status, then registers with `cams status`'s
+existing generic background-jobs display (the `cams:background_jobs` Redis hash) — written
+directly via `redis-cli`, matching the exact JSON schema `ddp-agents/src/cams/background_jobs.py`'s
+own `report_heartbeat()` helper uses, without a cross-repo Python import (this script lives in
 `ddp-open-states-dev`, that module lives in `ddp-agents(-dev)`) — no new `cams status` display
 code needed, per that mechanism's own "any job reporting a heartbeat there shows up automatically"
 design.
@@ -322,20 +322,34 @@ RDS_MONITORING_DATABASE_URL=<resolved live, e.g. via resolve_rds_database_url()>
   ./replica-status.sh <database-name>
 ```
 
-**Tested all four local-side status paths for real**, using a fully isolated Docker loopback
-(same pattern as OPEN-273): HEALTHY (subscription enabled, active apply worker), DISCONNECTED via
-a disabled subscription, DISCONNECTED via an unreachable publisher (active subscription, no apply
-worker), and BROKEN (local Postgres container down). Also verified the `cams status` heartbeat
-write/read round-trip against the real `ddp-agents-redis-1` container (under a clearly-named test
-job, deleted immediately after) and that `started_at` persists correctly across repeated
-invocations rather than resetting on every run, matching `report_heartbeat()`'s own semantics
-exactly.
+**Tested all four/five local-side status paths for real**, using a fully isolated Docker loopback
+(same pattern as OPEN-273): HEALTHY (subscription enabled, active apply worker), INCOMPLETE (no
+`RDS_MONITORING_DATABASE_URL` set — see below), DISCONNECTED via a disabled subscription,
+DISCONNECTED via an unreachable publisher (active subscription, no apply worker), and BROKEN
+(local Postgres container down). Also verified the `cams status` heartbeat write/read round-trip
+against the real `ddp-agents-redis-1` container (under a clearly-named test job, deleted
+immediately after) and that `started_at` persists correctly across repeated invocations rather
+than resetting on every run, matching `report_heartbeat()`'s own semantics exactly.
 
 **The RDS-side portion (retained WAL, apply lag from RDS's own `pg_replication_slots`) is
 documented but not exercised from this session** — it needs a resolved RDS monitoring credential
 this session doesn't have (same constraint as everywhere else in this epic that touches RDS
-directly). The script degrades to a local-only `HEALTHY (local-only, ...)` status when
-`RDS_MONITORING_DATABASE_URL` isn't set, rather than silently claiming a check it didn't perform.
+directly). **Correction from pm-review round 1**: a local apply worker existing does NOT mean
+replication is actually caught up — that requires the RDS-side check. The script used to report
+`HEALTHY (local-only, ...)` and exit 0 in this case, a false "all clear." It now reports
+`INCOMPLETE` and fails the exit code, since this is not a complete health assessment, not a pass.
+
+**Scheduling (AC7, plan §4)**: a correct script no one invokes isn't a monitoring signal an
+operator will actually see. Reports a real `expected_interval_s` in its heartbeat JSON (default
+300s, override via the `EXPECTED_INTERVAL_S` env var) so `cams status`'s own staleness display can
+flag a stuck/silent heartbeat, not just show elapsed time with no threshold — confirmed directly
+against the real `ddp-agents-redis-1` container, both the 300s default and an `EXPECTED_INTERVAL_S=600`
+override each landing correctly in the real heartbeat JSON. Deliberately
+NOT installed as a live crontab entry by this change, matching this repo's own existing convention
+for exactly this situation (`sync-ddp-hot.sh`/OPEN-236 — "build+test only," installed as a
+separate, deliberate step once the real database name from OPEN-272/273 is known). See the
+script's own header comment for the installation template (placeholders filled in once that real
+subscription exists).
 
 ## `drop-subscription-for-rebuild.sh` (OPEN-274) — the rebuild/recovery procedure, exercised
 
