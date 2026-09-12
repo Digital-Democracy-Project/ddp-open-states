@@ -43,7 +43,49 @@ services:
       # was silently resolving to CAMS's stale pre-WS0b-migration copy instead of this stack's
       # own dedicated Postgres since this container's first boot (2026-06-24) -- see
       # PLAN-open-states.md §8.1a for the full diagnosis. Fixed 2026-07-28.
-      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates"
+      #
+      # OPEN-272: repointed at the RDS-replicated database (PLAN-rds-local-postgres-replication.md
+      # §3.5/§7.4), same Postgres server, different database name -- "openstates" (the old,
+      # frozen-since-scrapers-turned-off local database) is intentionally left running alongside,
+      # untouched, for the plan's own retention window (until a full scheduled LegBot batch run
+      # against this database completes with no reported regression). Rollback is a one-line
+      # revert of this env var back to "openstates" plus a container recreate -- both databases
+      # live on the same Postgres server, so no data movement is needed to roll back.
+      #
+      # Known gap, accepted deliberately (not by omission): this new database only carries the
+      # seven tables the replication publication scopes (§3.2) plus a one-time copied-over
+      # `profiles_profile` snapshot (needed for api-v3's own API-key auth, which is local-only
+      # data RDS never had) -- it does NOT carry the ~38 other tables the old database has
+      # (opencivicdata_person/vote/committee/event data, pupa_* scraping metadata, etc.). Any
+      # api-v3 endpoint beyond the bill-detail path this plan traced (§3.2) will fail against this
+      # database if actually called. `profiles_profile` will also drift out of sync with the old
+      # database going forward (new API keys created after this point won't appear here) since it
+      # isn't part of the replication scope -- it's a one-time snapshot, not an ongoing sync.
+      #
+      # Also known and accepted: North Carolina has zero rows in this database (OPEN-193 hasn't
+      # migrated it to RDS yet) -- confirmed acceptable, NC has no production consumers yet.
+      #
+      # Confirmed via real code inspection: production `ddp-broker` (EC2, 10.0.0.11) was pointed
+      # at THIS Mac's api-v3 for all 8 DDP jurisdictions (DDP_OPENSTATES_API_ROOT=
+      # http://host.docker.internal:8002) and calls `/people` (representative-roster sync,
+      # openstates_service.py's update_representatives_for_jurisdiction) -- which needs tables
+      # this database doesn't have. Per Ramon: production ddp-broker is being switched to the
+      # already-live, RDS-connected api-v3 instance on its own EC2 host instead (INFRA-1) rather
+      # than staying dependent on this Mac at all -- see notes/ops-handoff branch,
+      # switch-ddp-broker-to-ec2-api-v3-20260912.md, for the handoff to the prod agent. This
+      # Mac's api-v3 should not be treated as a dependency for ddp-broker going forward.
+      #
+      # HARD PRECONDITION (pm-review round 2, correctly caught as a sequencing bug, not paperwork):
+      # merging this compose change is safe (it only changes committed config, not the running
+      # container), but do NOT actually recreate this container -- e.g. `docker compose up -d api`
+      # -- until the ddp-broker EC2 switch above is confirmed done AND a real representative-roster
+      # sync has been verified to succeed against the EC2 api-v3. Recreating this container first
+      # would knowingly break that sync for all 8 jurisdictions the moment it's next exercised.
+      # (Separately confirmed via this container's own real access logs, last 72h: zero /people
+      # requests have hit THIS Mac's api-v3 in that window -- the dependency is real per the code,
+      # just not yet observed firing here; that's not a reason to skip the precondition, only
+      # evidence it hasn't already broken something by accident.)
+      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates_rds_repl_20260911"
       RRL_REDIS_HOST: "ddp-agents-redis-1"
       RRL_REDIS_PORT: "6379"
       RRL_REDIS_DB: "1"
