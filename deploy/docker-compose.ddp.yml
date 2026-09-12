@@ -74,6 +74,17 @@ services:
       # than staying dependent on this Mac at all -- see notes/ops-handoff branch,
       # switch-ddp-broker-to-ec2-api-v3-20260912.md, for the handoff to the prod agent. This
       # Mac's api-v3 should not be treated as a dependency for ddp-broker going forward.
+      #
+      # HARD PRECONDITION (pm-review round 2, correctly caught as a sequencing bug, not paperwork):
+      # merging this compose change is safe (it only changes committed config, not the running
+      # container), but do NOT actually recreate this container -- e.g. `docker compose up -d api`
+      # -- until the ddp-broker EC2 switch above is confirmed done AND a real representative-roster
+      # sync has been verified to succeed against the EC2 api-v3. Recreating this container first
+      # would knowingly break that sync for all 8 jurisdictions the moment it's next exercised.
+      # (Separately confirmed via this container's own real access logs, last 72h: zero /people
+      # requests have hit THIS Mac's api-v3 in that window -- the dependency is real per the code,
+      # just not yet observed firing here; that's not a reason to skip the precondition, only
+      # evidence it hasn't already broken something by accident.)
       DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates_rds_repl_20260911"
       RRL_REDIS_HOST: "ddp-agents-redis-1"
       RRL_REDIS_PORT: "6379"
