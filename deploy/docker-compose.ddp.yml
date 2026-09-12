@@ -61,6 +61,19 @@ services:
       # database if actually called. `profiles_profile` will also drift out of sync with the old
       # database going forward (new API keys created after this point won't appear here) since it
       # isn't part of the replication scope -- it's a one-time snapshot, not an ongoing sync.
+      #
+      # Also known and accepted: North Carolina has zero rows in this database (OPEN-193 hasn't
+      # migrated it to RDS yet) -- confirmed acceptable, NC has no production consumers yet.
+      #
+      # Confirmed via real code inspection: production `ddp-broker` (EC2, 10.0.0.11) was pointed
+      # at THIS Mac's api-v3 for all 8 DDP jurisdictions (DDP_OPENSTATES_API_ROOT=
+      # http://host.docker.internal:8002) and calls `/people` (representative-roster sync,
+      # openstates_service.py's update_representatives_for_jurisdiction) -- which needs tables
+      # this database doesn't have. Per Ramon: production ddp-broker is being switched to the
+      # already-live, RDS-connected api-v3 instance on its own EC2 host instead (INFRA-1) rather
+      # than staying dependent on this Mac at all -- see notes/ops-handoff branch,
+      # switch-ddp-broker-to-ec2-api-v3-20260912.md, for the handoff to the prod agent. This
+      # Mac's api-v3 should not be treated as a dependency for ddp-broker going forward.
       DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates_rds_repl_20260911"
       RRL_REDIS_HOST: "ddp-agents-redis-1"
       RRL_REDIS_PORT: "6379"
