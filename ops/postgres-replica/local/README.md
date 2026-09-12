@@ -424,3 +424,109 @@ named subscription slot and any `pg_%_sync_%` pattern match, not just the former
 - `replica-status.sh`'s `LAGGING_THRESHOLD_BYTES` (an env var with a sane numeric default) had no
   validation that an operator override was actually an integer, which would have made the later
   numeric comparison error out instead of failing status cleanly. Added a one-line integer check.
+
+## OPEN-280 — table inventory for a 12-table consumer-driven replication scope
+
+The current replica (OPEN-272/273) is deliberately scoped to exactly the 7 tables `api-v3`'s own
+bill-detail endpoint touches (plan §3.2). This Mac also has a whole family of direct-Postgres
+scripts that bypass `api-v3` entirely and were never in that scope. This section widens that
+scope to cover them specifically — it is not full-schema replication (the real `openstates`
+database has ~45 tables total; this covers 12), so it's named for what it actually is: the
+consumer-driven set this ticket's own inventory found necessary.
+
+**Exact inventory command, reproducible** (run from `ddp-open-states-dev`'s repo root):
+
+```bash
+grep -rln "5433\|localhost:5433\|dbname=.openstates.\|DATABASE_URL.*openstates" . --include="*.py" \
+  | grep -v "\.git/\|api-v3/\|openstates-core/\|openstates-scrapers/\|__pycache__"
+```
+
+This returned 13 files (excluding the two `test_*.py` files, which only exercise the others):
+`quality_check.py`, `backfill-vote-person-resolution.py`, `audit-motion-texts.py`,
+`backfill-motion-classification.py`, and eight `fix-open*`/`fix-*` one-off vote-misattribution and
+voter-backfill scripts (`fix-open110-fl-smith-vote-misattribution.py`,
+`fix-open113-wa-cortes-valdez-vote-misattribution.py`,
+`fix-open114-mi-outman-vote-misattribution.py`,
+`fix-open115-fl-smith-senate-vote-misattribution.py`, `fix-open116-blank-voter-id-same-surname-backfill.py`,
+`fix-open174-mi-myers-phillips-voter-backfill.py`, `fix-grijalva-vote-misattribution.py`). For each,
+`grep -hoE "opencivicdata_[a-z_]+|ddp_bill_version_document|pupa_[a-z_]+|profiles_profile" <file> | sort -u`
+gives its own exact table list; consolidated across all of them, beyond the existing 7:
+
+**5 additional tables needed**: `opencivicdata_person`, `opencivicdata_personidentifier`,
+`opencivicdata_membership`, `opencivicdata_personvote`, `opencivicdata_voteevent`.
+
+`ddp-sync`'s own direct-Postgres paths (`openstates_archive.py`, `openstates_backfill.py`,
+`rds_credentials.py`) were also checked — all RDS-side load/archive code already within the
+existing 7-table scope, not a new gap.
+
+**Verified two ways, not just asserted:**
+
+1. **Replication mechanics**: real Docker loopback, a throwaway "RDS" container seeded with real
+   data sampled from this Mac's own local `openstates` database (a real Utah
+   jurisdiction/session/organization/person/membership/voteevent/personvote chain, exercising
+   these tables' real `jsonb`, `uuid`, and `text[]` columns, not synthetic data) and a throwaway
+   subscriber database inside the real `ddp-openstates-postgres-1` container. All 12 tables (the
+   existing 7 plus these 5) reached `srsubstate='r'` and matched row-for-row between publisher and
+   subscriber.
+2. **Consumer compatibility**: `quality_check.py`'s own real queries (copied verbatim from its
+   source, not paraphrased), run directly against a second throwaway database built with this
+   same 12-table schema and a real referentially-connected data sample — both its
+   bill/legislativesession/jurisdiction/voteevent/personvote join (lines 509–513) and its
+   person/membership/organization/jurisdiction join (lines 350–355) returned correct, real rows
+   (a real Utah joint resolution, HJR 4, with its real roll-call vote; four real Utah legislators
+   connected through real membership rows) — not just "no error," actual matching data flowing
+   through every join. Also directly confirmed (`grep`) that no in-scope script's query touches
+   `opencivicdata_post` or `opencivicdata_billaction` even indirectly — the one hit for
+   `bill_action` in `backfill-motion-classification.py` is `voteevent.extras->>'bill_action'`, a
+   JSONB field, not the `bill_action_id` foreign key.
+
+**Three real, confirmed gotchas found via the replication test, not by reading the schema** —
+three FK constraints reference tables outside even this widened 12-table scope, and schema
+creation fails outright with a real `ALTER TABLE` error until each is dropped (the same treatment
+already established for `opencivicdata_jurisdiction.division_id → opencivicdata_division`, plus
+two newly found here, real constraint names confirmed via this Mac's own real schema):
+
+```sql
+-- Real, tested statements -- confirmed via actual ALTER TABLE failures against this Mac's own
+-- real schema, not anticipated in advance. Drop all three when constructing the local replica's
+-- schema for this widened scope (division was already required for the existing 7 tables):
+ALTER TABLE opencivicdata_jurisdiction DROP CONSTRAINT opencivicdata_jurisd_division_id_70d82947_fk_opencivic;
+ALTER TABLE opencivicdata_membership DROP CONSTRAINT opencivicdata_member_post_id_c7e554f4_fk_opencivic;
+ALTER TABLE opencivicdata_voteevent DROP CONSTRAINT opencivicdata_voteev_bill_action_id_a4847ddd_fk_opencivic;
+-- The referencing columns themselves (division_id, post_id, bill_action_id) are left in place --
+-- only the FK constraint is dropped. Confirmed above that no in-scope consumer ever dereferences
+-- what these columns point to, so a locally-unenforced/dangling reference is an accepted,
+-- intentional gap, not silently discovered later.
+```
+
+Then, on RDS (once RDS admin access is available), for each of the 5 new tables:
+
+```sql
+GRANT SELECT ON public.opencivicdata_person TO ddp_local_replication;
+GRANT SELECT ON public.opencivicdata_personidentifier TO ddp_local_replication;
+GRANT SELECT ON public.opencivicdata_membership TO ddp_local_replication;
+GRANT SELECT ON public.opencivicdata_personvote TO ddp_local_replication;
+GRANT SELECT ON public.opencivicdata_voteevent TO ddp_local_replication;
+ALTER PUBLICATION ddp_legbot_publication ADD TABLE
+  public.opencivicdata_person, public.opencivicdata_personidentifier,
+  public.opencivicdata_membership, public.opencivicdata_personvote, public.opencivicdata_voteevent;
+```
+
+Then on the Mac: create the 5 tables locally (schema dump from RDS, with the 3 FK drops above
+applied), then `ALTER SUBSCRIPTION ddp_legbot_subscription REFRESH PUBLICATION;` — same procedure
+already documented above for a single new table, now confirmed to work for this specific 5-table
+set as a batch.
+
+Also confirmed live during this test: a throwaway container's *default* `max_replication_slots`/
+`max_wal_senders` (10 each, `postgres:16-alpine`'s stock value) is too low once enough tables sync
+in parallel — not a real concern for actual RDS (already configured with real production
+headroom, per OPEN-271's own setup), but worth knowing if reusing this test methodology again.
+
+**Not done in this pass, and why**: broadening the real RDS-side publication, migrating
+`quality_check.py` and the fix/backfill/audit scripts to the resulting database, and retiring the
+old `openstates` database all need RDS admin access this session doesn't have — the same
+constraint applied to every RDS-side change all epic. Attempting any of those now would mean
+repointing scripts at a database that doesn't exist yet, or writing an execution/rollback runbook
+for a change nobody can currently run or verify — both premature. OPEN-280 itself remains the
+tracking ticket for that real execution once access exists; this section is what to run and the
+proof that it works, not a substitute for actually running it.
