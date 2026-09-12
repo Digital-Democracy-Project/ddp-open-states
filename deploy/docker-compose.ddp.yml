@@ -43,7 +43,25 @@ services:
       # was silently resolving to CAMS's stale pre-WS0b-migration copy instead of this stack's
       # own dedicated Postgres since this container's first boot (2026-06-24) -- see
       # PLAN-open-states.md §8.1a for the full diagnosis. Fixed 2026-07-28.
-      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates"
+      #
+      # OPEN-272: repointed at the RDS-replicated database (PLAN-rds-local-postgres-replication.md
+      # §3.5/§7.4), same Postgres server, different database name -- "openstates" (the old,
+      # frozen-since-scrapers-turned-off local database) is intentionally left running alongside,
+      # untouched, for the plan's own retention window (until a full scheduled LegBot batch run
+      # against this database completes with no reported regression). Rollback is a one-line
+      # revert of this env var back to "openstates" plus a container recreate -- both databases
+      # live on the same Postgres server, so no data movement is needed to roll back.
+      #
+      # Known gap, accepted deliberately (not by omission): this new database only carries the
+      # seven tables the replication publication scopes (§3.2) plus a one-time copied-over
+      # `profiles_profile` snapshot (needed for api-v3's own API-key auth, which is local-only
+      # data RDS never had) -- it does NOT carry the ~38 other tables the old database has
+      # (opencivicdata_person/vote/committee/event data, pupa_* scraping metadata, etc.). Any
+      # api-v3 endpoint beyond the bill-detail path this plan traced (§3.2) will fail against this
+      # database if actually called. `profiles_profile` will also drift out of sync with the old
+      # database going forward (new API keys created after this point won't appear here) since it
+      # isn't part of the replication scope -- it's a one-time snapshot, not an ongoing sync.
+      DATABASE_URL: "postgresql://openstates:openstates_dev@ddp-openstates-postgres-1:5432/openstates_rds_repl_20260911"
       RRL_REDIS_HOST: "ddp-agents-redis-1"
       RRL_REDIS_PORT: "6379"
       RRL_REDIS_DB: "1"
