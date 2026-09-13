@@ -1480,6 +1480,12 @@ land in their queue.
 `quality_check.py` samples bills and people from the local DB, fetches the same records
 from both `localhost:8002` and `v3.openstates.org`, and diffs key fields.
 
+**`RESOLVE_RDS_LIVE=true`** (OPEN-260): opt-in, default off. When set, the script resolves its
+RDS database credential live from Secrets Manager at call time instead of a cached `.env` value —
+RDS's own master-credential rotation (every 7 days) makes a cached value go stale on that cadence
+regardless of how recently the script last ran. Only relevant when pointing this at RDS directly
+rather than the Mac's local Postgres; leave unset for a normal local run.
+
 **Expected warnings** (not failures):
 - `local has MORE votes/data than live` — likely one of our fork-only fixes that hasn't been
   contributed upstream yet (the FL WAF session fix, AZ empty-vote-event filtering, MI/WA
