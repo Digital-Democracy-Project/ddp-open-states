@@ -4,7 +4,7 @@
 # Can also be run manually.
 set -e
 
-SCRIPT_DIR="/Users/agentsmith/Developer/repos/ddp-open-states"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 
 source "$SCRIPT_DIR/activate.sh"
