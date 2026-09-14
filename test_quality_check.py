@@ -661,6 +661,16 @@ def test_parse_govbot_ref_non_string_returns_empty_dict():
     assert _parse_govbot_ref({"already": "a dict"}) == {}
 
 
+def test_parse_govbot_ref_valid_json_but_not_an_object_returns_empty_dict():
+    """pm-review: '~[]', '~"x"', '~null' are all valid JSON but not the object
+    shape every real govbot reference actually is -- letting one through as-is
+    would break the first .get(...) call any caller makes on it."""
+    assert _parse_govbot_ref("~[]") == {}
+    assert _parse_govbot_ref('~"just a string"') == {}
+    assert _parse_govbot_ref("~null") == {}
+    assert _parse_govbot_ref("~42") == {}
+
+
 def test_govbot_latest_action_picks_max_by_date_not_array_order():
     """Deliberately out-of-order input -- must not just take actions[-1]."""
     actions = [
@@ -926,3 +936,85 @@ def test_coverage_with_fallback_falls_back_when_session_not_yet_synced(tmp_path)
     mock_live.assert_called_once()
     assert result["source"] == "live_api_fallback"
     assert "no" in result["source_fallback_reason"] and "2026" in result["source_fallback_reason"]
+
+
+def test_coverage_with_fallback_falls_back_when_bills_dir_exists_but_is_empty(tmp_path):
+    """pm-review: the real bug this test pins down. An empty (or entirely
+    unreadable) bills/ directory used to pass the old "does the directory exist"
+    check and run Tier 1 against zero govbot bills -- missing = public_ids(empty)
+    - local_ids is always empty, so the check silently reported a clean PASS
+    ("no missing bills") while comparing against nothing at all. Must fall back
+    to the live API instead, the same as a session that was never synced."""
+    os.makedirs(str(tmp_path / "country:us" / "state:fl" / "sessions" / "2026" / "bills"))
+    report = MagicMock()
+    conn = MagicMock()
+
+    with patch("quality_check._ensure_govbot_repo",
+               return_value=(True, str(tmp_path), "synced main @ abc1234")), \
+         patch("quality_check.run_coverage_check",
+               return_value={"live": 0, "local": 0}) as mock_live:
+        result = run_coverage_check_with_fallback(report, conn, "fl", "2026", api_key="key123")
+
+    mock_live.assert_called_once()
+    assert result["source"] == "live_api_fallback"
+    report.record.assert_not_called()  # never got as far as claiming a Tier 1 PASS
+
+
+def test_govbot_bill_end_to_end_through_compare_bills(tmp_path):
+    """Real Tier 2 adapter coverage, not just isolated field-parsing tests: build a
+    realistic govbot bill (metadata.json + a real vote_event log, mirroring the
+    actual UT SB 60 fixture this feature was verified against by hand) and a
+    matching api-v3-shaped "local" bill, and confirm compare_bills() reports every
+    category as a match -- title, latest action, vote event count, vote tally
+    (including the per-voter diff path), and sponsorship count."""
+    bill_dir = tmp_path / "SB60"
+    _write_json(str(bill_dir / "metadata.json"), {
+        "identifier": "SB 60",
+        "title": "Income Tax Rate Amendments",
+        "actions": [
+            {"date": "2025-10-27T20:31:52+00:00", "description": "first action"},
+            {"date": "2026-03-23T13:29:00+00:00", "description": "Governor Signed"},
+        ],
+        "sponsorships": [
+            {"name": "McCay, Daniel", "classification": "primary", "entity_type": "person",
+             "primary": True, "person_id": None, "organization_id": None},
+        ],
+    })
+    _write_json(str(bill_dir / "logs" / "20260209T222457Z.vote_event.pass.upper.json"), {
+        "motion_text": "Senate/ passed 2nd reading",
+        "start_date": "2026-02-09T22:24:57+00:00",
+        "organization": '~{"classification": "upper"}',
+        "counts": [{"option": "yes", "value": 2}, {"option": "no", "value": 1}],
+        "votes": [
+            {"option": "yes", "voter_name": "Adams, J. Stuart", "note": ""},
+            {"option": "yes", "voter_name": "Weiler, T.", "note": ""},
+            {"option": "no", "voter_name": "Blouin, N.", "note": ""},
+        ],
+    })
+    govbot_bill = _load_govbot_bill(str(bill_dir))
+
+    local_bill = {
+        "identifier": "SB 60",
+        "title": "Income Tax Rate Amendments",
+        "latest_action_description": "Governor Signed",
+        "sponsorships": [{"name": "McCay, Daniel"}],
+        "votes": [{
+            "start_date": "2026-02-09T22:24:57+00:00",
+            "motion_text": "Senate/ passed 2nd reading",
+            "organization": {"classification": "upper"},
+            "counts": [{"option": "yes", "value": 2}, {"option": "no", "value": 1}],
+            "votes": [
+                {"voter_name": "Adams, J. Stuart", "option": "yes"},
+                {"voter_name": "Weiler, T.", "option": "yes"},
+                {"voter_name": "Blouin, N.", "option": "no"},
+            ],
+        }],
+    }
+
+    report = Report()
+    compare_bills(report, local_bill, govbot_bill, "UT SB 60 (2026)")
+
+    symbols = [s for s, _, _ in report.checks]
+    assert FAIL not in symbols, report.checks
+    assert WARN not in symbols, report.checks
+    assert symbols.count(PASS) >= 5  # title, latest_action, vote count, tally, sponsorships

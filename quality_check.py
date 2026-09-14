@@ -39,6 +39,7 @@ import random
 import argparse
 import textwrap
 import subprocess
+import shutil
 import psycopg2
 import requests
 from collections import defaultdict
@@ -527,9 +528,19 @@ def _ensure_govbot_repo(jurisdiction_code):
     repo_url = f"https://github.com/govbot-data/{_govbot_slug(jurisdiction_code)}-legislation.git"
 
     if not os.path.isdir(os.path.join(repo_path, ".git")):
-        os.makedirs(GOVBOT_DATA_DIR, exist_ok=True)
+        try:
+            os.makedirs(GOVBOT_DATA_DIR, exist_ok=True)
+        except OSError as e:
+            return False, None, f"could not create {GOVBOT_DATA_DIR!r}: {e}"
         ok, detail = _run_git(["clone", "--depth", "1", repo_url, repo_path])
         if not ok:
+            # pm-review: an interrupted/partial clone leaves a directory behind
+            # with no usable .git -- left alone, every future run would see
+            # "not a fresh clone" (no .git dir yet, so this same branch), retry
+            # the clone into a non-empty directory, and fail again forever.
+            # Clearing it here is what makes the next run's clone attempt a
+            # real retry instead of a permanent, self-inflicted failure.
+            shutil.rmtree(repo_path, ignore_errors=True)
             return False, None, f"clone failed: {detail}"
     else:
         ok, detail = _run_git(["fetch", "--depth", "1", "origin", "main"], cwd=repo_path)
@@ -558,9 +569,14 @@ def _parse_govbot_ref(raw):
     if not isinstance(raw, str) or not raw.startswith("~"):
         return {}
     try:
-        return json.loads(raw[1:])
+        parsed = json.loads(raw[1:])
     except (json.JSONDecodeError, ValueError):
         return {}
+    # pm-review: valid JSON that isn't itself an object (e.g. "~[]", "~\"x\"", "~null")
+    # would otherwise pass through as-is and break every caller's .get(...) -- every
+    # real govbot reference is an object, so anything else is treated the same as
+    # malformed input.
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def _govbot_latest_action_description(actions):
@@ -584,7 +600,14 @@ def _load_govbot_vote_events(bill_dir):
     events = []
     if not os.path.isdir(logs_dir):
         return events
-    for fname in os.listdir(logs_dir):
+    try:
+        fnames = os.listdir(logs_dir)
+    except OSError:
+        # pm-review: a permissions error or a directory that disappears mid-run
+        # (concurrent govbot update) must degrade to "no votes found for this
+        # bill," the same as no logs/ dir at all -- not crash the whole check.
+        return events
+    for fname in fnames:
         if ".vote_event." not in fname:
             continue
         try:
@@ -639,7 +662,15 @@ def build_govbot_bill_index(jurisdiction_code, session, repo_path):
     index = {}
     if not os.path.isdir(bills_dir):
         return index
-    for name in os.listdir(bills_dir):
+    try:
+        names = os.listdir(bills_dir)
+    except OSError:
+        # pm-review: same reasoning as _load_govbot_vote_events -- an unreadable
+        # bills/ dir must degrade to "no bills found," which
+        # run_coverage_check_with_fallback() already treats as "govbot isn't
+        # usable here, fall back to the live API," not a crash.
+        return index
+    for name in names:
         bill_dir = os.path.join(bills_dir, name)
         if not os.path.isdir(bill_dir):
             continue
@@ -649,7 +680,7 @@ def build_govbot_bill_index(jurisdiction_code, session, repo_path):
     return index
 
 
-def run_govbot_coverage_check(report, conn, jurisdiction, session, repo_path, tier2_limit=None,
+def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index, tier2_limit=None,
                                tier2_random=False, blast_radius_cache=None):
     """govbot-backed equivalent of run_coverage_check() below -- same Tier 1 (full
     identifier-set diff) + Tier 2 (compare_bills() over every shared identifier)
@@ -658,6 +689,12 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, repo_path, ti
     sleep: reading local files has no rate limit to respect, which is the whole
     point of OPEN-289 -- a full sweep of every bill, not a capped sample, and
     faster in wall-clock time too.
+
+    Takes an already-built govbot_index (pm-review, OPEN-289) rather than a
+    repo_path -- run_coverage_check_with_fallback() below has to build the index
+    first anyway, to tell a real (if small) session apart from an empty/unreadable
+    one before deciding whether govbot is even usable. Building it twice would
+    silently double the disk I/O for no benefit.
     """
     if blast_radius_cache is None:
         blast_radius_cache = {}
@@ -665,8 +702,6 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, repo_path, ti
     print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session}  (source: govbot)")
     print(f"{'═'*60}")
 
-    print("  Reading govbot's local clone...")
-    govbot_index = build_govbot_bill_index(jurisdiction, session, repo_path)
     public_ids = set(govbot_index)
     local_ids = fetch_all_local_identifiers(conn, jurisdiction, session)
 
@@ -739,19 +774,30 @@ def run_coverage_check_with_fallback(report, conn, jurisdiction, session, api_ke
     fallback path either way. Always prints and returns which source actually
     backed the result (OPEN-289 item 4) -- a reader must never have to guess which
     methodology a given pass/fail came from.
+
+    pm-review: an existing-but-EMPTY bills/ directory (govbot mid-sync, a
+    permissions problem, every metadata.json unreadable) used to pass the old
+    os.path.isdir(bills_dir) check and go straight to run_govbot_coverage_check()
+    with zero real bills indexed -- Tier 1's own diff logic (missing = public_ids
+    - local_ids) then finds nothing "missing" against an empty public_ids and
+    reports a clean PASS, which is worse than useless: a real gap would be
+    silently invisible. The index is built here, once, specifically so "govbot
+    has any bills to compare against at all" can gate the fallback decision
+    before Tier 1 ever runs, not just "the directory exists."
     """
     ok, repo_path, detail = _ensure_govbot_repo(jurisdiction)
     if ok:
-        if os.path.isdir(os.path.join(_govbot_session_dir(jurisdiction, session, repo_path), "bills")):
+        govbot_index = build_govbot_bill_index(jurisdiction, session, repo_path)
+        if govbot_index:
             print(f"  Source: govbot (govbot-data/{_govbot_slug(jurisdiction)}-legislation, {detail})")
             result = run_govbot_coverage_check(
-                report, conn, jurisdiction, session, repo_path,
+                report, conn, jurisdiction, session, govbot_index,
                 tier2_limit=tier2_limit, tier2_random=tier2_random,
                 blast_radius_cache=blast_radius_cache,
             )
             result["source"] = "govbot"
             return result
-        detail = f"repo synced but has no {session!r} session data yet"
+        detail = f"repo synced but has no readable bill data for {session!r} yet"
 
     print(f"  Source: live API (fallback — {detail})")
     result = run_coverage_check(report, conn, jurisdiction, session, api_key,
