@@ -6,10 +6,17 @@ v3.openstates.org API, and diffs the key fields.
 
 Designed to stay well within the 250 req/day API rate limit by default.
 
+--coverage (OPEN-289): full Tier 1+2 sweep of every bill in a jurisdiction/session,
+sourced from that jurisdiction's govbot-data git clone (https://github.com/chihacknight/
+govbot) rather than the live API -- no per-request rate limit, so it isn't capped to a
+sample. Falls back automatically to the live-API methodology only when govbot doesn't
+have that jurisdiction/session locally synced.
+
 Usage:
     OPENSTATES_API_KEY=<key> python3 quality_check.py
     OPENSTATES_API_KEY=<key> python3 quality_check.py --bills 10 --people 5
     OPENSTATES_API_KEY=<key> python3 quality_check.py --jurisdiction fl
+    OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage fl 2026
 
 Environment:
     OPENSTATES_API_KEY   Real API key for v3.openstates.org (required)
@@ -19,6 +26,8 @@ Environment:
                          RDS_DATABASE_URL, which goes stale every time RDS's own automatic
                          7-day credential rotation fires. Requires RDS_CREDENTIALS_SECRET_ARN
                          to also be set.
+    GOVBOT_DATA_DIR      Where --coverage clones/updates govbot-data repos (OPEN-289).
+                         Default: ~/.govbot-data
 """
 
 import os
@@ -29,6 +38,8 @@ import time
 import random
 import argparse
 import textwrap
+import subprocess
+import shutil
 import psycopg2
 import requests
 from collections import defaultdict
@@ -449,6 +460,352 @@ def fetch_person(base_url, api_key, person_id):
         return results[0] if results else None
     except Exception as e:
         return {"_error": _redact(str(e))}
+
+# ── Govbot-backed comparison (OPEN-289) ────────────────────────────────────────
+#
+# govbot (https://github.com/chihacknight/govbot) publishes one git repo per
+# jurisdiction (govbot-data/<slug>-legislation) built by running the real upstream
+# openstates/scrapers image on its own CI schedule -- no API, no rate limit, just a
+# `git clone`. Verified directly against a real bill (FL SR 1402, 2026) before this
+# was built: title, latest action/date, sponsor, and full action sequence all matched
+# the live v3.openstates.org API exactly. Because govbot and the live API both run
+# essentially the same *unforked* upstream scraper logic (unlike DDP's own fork,
+# which carries jurisdiction-specific patches), they track each other closely --
+# govbot is a credible, verified-in-practice proxy for "what would the live API say,"
+# not just a theoretical one.
+#
+# Ramon's decision (OPEN-289): govbot is the PRIMARY comparison source for
+# --coverage, not a parallel/alongside check. The live-API methodology above
+# (fetch_all_public_identifiers/fetch_bill) becomes the fallback, used only when a
+# jurisdiction's govbot repo can't be cloned/updated, or doesn't have the requested
+# session yet -- never as a standing second check run alongside govbot.
+
+GOVBOT_DATA_DIR = os.environ.get("GOVBOT_DATA_DIR", os.path.expanduser("~/.govbot-data"))
+
+# govbot's federal repo is govbot-data/usa-legislation, not govbot-data/us-legislation --
+# confirmed directly (git ls-remote) before writing this, since an earlier investigation
+# had assumed "us" and gotten a 404. Every other jurisdiction code in this file maps to
+# an identically-named govbot repo, so this map only needs the one exception.
+GOVBOT_REPO_SLUG = {"us": "usa"}
+
+
+def _govbot_slug(jurisdiction_code):
+    return GOVBOT_REPO_SLUG.get(jurisdiction_code, jurisdiction_code)
+
+
+def _govbot_repo_path(jurisdiction_code):
+    return os.path.join(GOVBOT_DATA_DIR, f"{_govbot_slug(jurisdiction_code)}-legislation")
+
+
+def _run_git(args, cwd=None, timeout=300):
+    """subprocess.run wrapper for the git calls below -- never raises, always returns
+    a (ok, stdout_or_stderr) pair, so a clone/fetch failure becomes a normal fallback
+    decision rather than an uncaught exception aborting the whole coverage check."""
+    try:
+        result = subprocess.run(
+            ["git", *args], cwd=cwd, timeout=timeout,
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            return False, (result.stderr or result.stdout).strip()[:300]
+        return True, result.stdout.strip()
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return False, f"{e.__class__.__name__}: {e}"
+
+
+def _ensure_govbot_repo(jurisdiction_code):
+    """Clone this jurisdiction's govbot-data repo if we don't have it locally yet, or
+    update it (shallow fetch + hard reset to origin/main) if we do. Never raises --
+    every failure mode (repo doesn't exist upstream, network error, clone timeout)
+    comes back as (False, <reason>) so the caller can fall back to the live API
+    cleanly, matching every other never-raise contract in this file.
+
+    Returns (ok, repo_path_or_None, detail) -- detail is a short human-readable string
+    for the "which source was used" signal OPEN-289 requires either way: on success,
+    what got synced; on failure, why.
+    """
+    repo_path = _govbot_repo_path(jurisdiction_code)
+    repo_url = f"https://github.com/govbot-data/{_govbot_slug(jurisdiction_code)}-legislation.git"
+
+    if not os.path.isdir(os.path.join(repo_path, ".git")):
+        try:
+            os.makedirs(GOVBOT_DATA_DIR, exist_ok=True)
+        except OSError as e:
+            return False, None, f"could not create {GOVBOT_DATA_DIR!r}: {e}"
+        ok, detail = _run_git(["clone", "--depth", "1", repo_url, repo_path])
+        if not ok:
+            # pm-review: an interrupted/partial clone leaves a directory behind
+            # with no usable .git -- left alone, every future run would see
+            # "not a fresh clone" (no .git dir yet, so this same branch), retry
+            # the clone into a non-empty directory, and fail again forever.
+            # Clearing it here is what makes the next run's clone attempt a
+            # real retry instead of a permanent, self-inflicted failure.
+            shutil.rmtree(repo_path, ignore_errors=True)
+            return False, None, f"clone failed: {detail}"
+    else:
+        ok, detail = _run_git(["fetch", "--depth", "1", "origin", "main"], cwd=repo_path)
+        if not ok:
+            return False, None, f"update failed: {detail}"
+        ok, detail = _run_git(["reset", "--hard", "origin/main"], cwd=repo_path)
+        if not ok:
+            return False, None, f"update failed (reset): {detail}"
+
+    ok, sha = _run_git(["rev-parse", "--short", "HEAD"], cwd=repo_path)
+    return True, repo_path, f"synced main @ {sha if ok else '?'}"
+
+
+def _govbot_session_dir(jurisdiction_code, session, repo_path):
+    return os.path.join(repo_path, "country:us", f"state:{_govbot_slug(jurisdiction_code)}",
+                        "sessions", session)
+
+
+def _parse_govbot_ref(raw):
+    """govbot encodes entity references (a vote_event's own `organization` field,
+    `organization_id`, `person_id`, `from_organization`) as a string prefixed with
+    `~` followed by a JSON object -- e.g. `'~{"classification": "upper"}'` -- rather
+    than the nested dict api-v3 returns for the same information. Returns {} for
+    None/non-string/malformed input instead of raising; this file only ever reads
+    `.get("classification")` off the result, which degrades to None either way."""
+    if not isinstance(raw, str) or not raw.startswith("~"):
+        return {}
+    try:
+        parsed = json.loads(raw[1:])
+    except (json.JSONDecodeError, ValueError):
+        return {}
+    # pm-review: valid JSON that isn't itself an object (e.g. "~[]", "~\"x\"", "~null")
+    # would otherwise pass through as-is and break every caller's .get(...) -- every
+    # real govbot reference is an object, so anything else is treated the same as
+    # malformed input.
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _govbot_latest_action_description(actions):
+    """The live API's own `latest_action_description` is a precomputed field;
+    govbot's metadata.json only has the full `actions` list. Sorts by date rather
+    than trusting array order -- govbot's own actions do appear chronological in
+    practice, but nothing in the schema guarantees it, and getting this wrong would
+    silently corrupt the one field compare_bills() diffs most often."""
+    if not actions:
+        return ""
+    return max(actions, key=lambda a: a.get("date") or "").get("description") or ""
+
+
+def _load_govbot_vote_events(bill_dir):
+    """Read every `*.vote_event.*.json` log file for one bill, reshaping each into
+    the same {start_date, motion_text, organization: {classification}, counts,
+    votes} shape compare_bills() already expects from a live api-v3 bill's own
+    votes[] (see fetch_bill()'s include=votes). Most bills never get a roll call and
+    simply have no matching log files -- an empty list here, not an error."""
+    logs_dir = os.path.join(bill_dir, "logs")
+    events = []
+    if not os.path.isdir(logs_dir):
+        return events
+    try:
+        fnames = os.listdir(logs_dir)
+    except OSError:
+        # pm-review: a permissions error or a directory that disappears mid-run
+        # (concurrent govbot update) must degrade to "no votes found for this
+        # bill," the same as no logs/ dir at all -- not crash the whole check.
+        return events
+    for fname in fnames:
+        if ".vote_event." not in fname:
+            continue
+        try:
+            with open(os.path.join(logs_dir, fname)) as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        events.append({
+            "start_date": raw.get("start_date") or "",
+            "motion_text": raw.get("motion_text") or "",
+            "organization": _parse_govbot_ref(raw.get("organization")),
+            "counts": raw.get("counts") or [],
+            "votes": [
+                {"voter_name": v.get("voter_name"), "option": v.get("option")}
+                for v in (raw.get("votes") or [])
+            ],
+        })
+    return events
+
+
+def _load_govbot_bill(bill_dir):
+    """Read one govbot bill directory (metadata.json + logs/*.vote_event.*.json)
+    into the same shape compare_bills() expects from a live api-v3 bill response --
+    identifier, title, latest_action_description, votes[], sponsorships[]. govbot's
+    own sponsorships already carry the same name/classification/entity_type/primary
+    fields api-v3 does, so no reshaping is needed there. Returns None if
+    metadata.json is missing or unreadable, matching fetch_bill()'s own
+    None-on-not-found contract."""
+    try:
+        with open(os.path.join(bill_dir, "metadata.json")) as f:
+            meta = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    return {
+        "identifier": meta.get("identifier"),
+        "title": meta.get("title") or "",
+        "latest_action_description": _govbot_latest_action_description(meta.get("actions")),
+        "votes": _load_govbot_vote_events(bill_dir),
+        "sponsorships": meta.get("sponsorships") or [],
+    }
+
+
+def build_govbot_bill_index(jurisdiction_code, session, repo_path):
+    """One pass over a govbot session's bills/ directory, keyed by each bill's own
+    metadata.json `identifier` field -- NOT the directory name, which strips spaces
+    (a real bill directory is "SB60", but its own identifier field is "SB 60", the
+    same format DDP's local DB uses) and can't be trusted to reconstruct that format
+    for every jurisdiction. Shared by both the Tier 1 identifier-set diff and Tier
+    2's per-bill lookups below, so a govbot-backed coverage check reads each bill's
+    files exactly once regardless of how many times it's referenced."""
+    bills_dir = os.path.join(_govbot_session_dir(jurisdiction_code, session, repo_path), "bills")
+    index = {}
+    if not os.path.isdir(bills_dir):
+        return index
+    try:
+        names = os.listdir(bills_dir)
+    except OSError:
+        # pm-review: same reasoning as _load_govbot_vote_events -- an unreadable
+        # bills/ dir must degrade to "no bills found," which
+        # run_coverage_check_with_fallback() already treats as "govbot isn't
+        # usable here, fall back to the live API," not a crash.
+        return index
+    for name in names:
+        bill_dir = os.path.join(bills_dir, name)
+        if not os.path.isdir(bill_dir):
+            continue
+        bill = _load_govbot_bill(bill_dir)
+        if bill and bill.get("identifier"):
+            index[bill["identifier"]] = bill
+    return index
+
+
+def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index, tier2_limit=None,
+                               tier2_random=False, blast_radius_cache=None):
+    """govbot-backed equivalent of run_coverage_check() below -- same Tier 1 (full
+    identifier-set diff) + Tier 2 (compare_bills() over every shared identifier)
+    shape and the same return-dict keys, but sourcing "live" data from a local
+    govbot-data clone's files instead of paginating the live API. No per-request
+    sleep: reading local files has no rate limit to respect, which is the whole
+    point of OPEN-289 -- a full sweep of every bill, not a capped sample, and
+    faster in wall-clock time too.
+
+    Takes an already-built govbot_index (pm-review, OPEN-289) rather than a
+    repo_path -- run_coverage_check_with_fallback() below has to build the index
+    first anyway, to tell a real (if small) session apart from an empty/unreadable
+    one before deciding whether govbot is even usable. Building it twice would
+    silently double the disk I/O for no benefit.
+    """
+    if blast_radius_cache is None:
+        blast_radius_cache = {}
+    print(f"\n{'═'*60}")
+    print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session}  (source: govbot)")
+    print(f"{'═'*60}")
+
+    public_ids = set(govbot_index)
+    local_ids = fetch_all_local_identifiers(conn, jurisdiction, session)
+
+    missing = public_ids - local_ids
+    extra = local_ids - public_ids
+    both = public_ids & local_ids
+
+    split = split_missing_by_docket_prefix(missing, jurisdiction)
+    real_missing = split["real"]
+    docket_duplicate = split["docket_duplicate"]
+
+    print(f"  govbot={len(public_ids)}  local={len(local_ids)}  "
+          f"missing={len(missing)}  extra={len(extra)}  both={len(both)}")
+    if docket_duplicate:
+        print(f"  ...of which {len(docket_duplicate)} are docket-stage duplicates, "
+              f"not a real gap (see PLAN-coverage-completeness-check.md §10) -- "
+              f"real gap: {len(real_missing)}")
+        print(f"  missing by prefix: {breakdown_by_prefix(missing)}")
+
+    if real_missing:
+        report.record(FAIL, f"{jurisdiction.upper()} {session}: Tier 1 coverage (govbot) — "
+                             f"{len(real_missing)} bills exist in govbot but not locally at all")
+    else:
+        report.record(PASS, f"{jurisdiction.upper()} {session}: Tier 1 coverage (govbot) — "
+                             f"no missing bills ({len(local_ids)} local == {len(public_ids)} govbot)")
+    if docket_duplicate:
+        report.record(WARN, f"{jurisdiction.upper()} {session}: {len(docket_duplicate)} "
+                             f"docket-stage duplicates in the raw diff, not a real gap "
+                             f"(see PLAN-coverage-completeness-check.md §10)")
+    if extra:
+        report.record(WARN, f"{jurisdiction.upper()} {session}: {len(extra)} bills local-only "
+                             f"(not automatically a failure -- see plan §4)")
+
+    tier2_ids = sorted(both)
+    if tier2_limit:
+        if tier2_random:
+            tier2_ids = sorted(random.sample(tier2_ids, min(tier2_limit, len(tier2_ids))))
+        else:
+            tier2_ids = tier2_ids[:tier2_limit]
+    print(f"  Running Tier 2 sub-record checks on {len(tier2_ids)} of {len(both)} "
+          f"bills present in both...")
+    for i, identifier in enumerate(tier2_ids):
+        label = f"{jurisdiction.upper()} {identifier} ({session})"
+        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
+        live = govbot_index.get(identifier)
+        compare_bills(report, local, live, label,
+                      conn=conn, jurisdiction_code=jurisdiction, session=session,
+                      blast_radius_cache=blast_radius_cache)
+        if i % 250 == 0:
+            print(f"    ...{i}/{len(tier2_ids)}")
+
+    return {
+        "govbot": len(public_ids), "local": len(local_ids),
+        "missing": sorted(missing), "extra": sorted(extra),
+        "missing_real": sorted(real_missing),
+        "missing_docket_duplicate": sorted(docket_duplicate),
+        "missing_by_prefix": breakdown_by_prefix(missing),
+        "tier2_checked": len(tier2_ids),
+    }
+
+
+def run_coverage_check_with_fallback(report, conn, jurisdiction, session, api_key,
+                                      tier2_limit=None, tier2_random=False,
+                                      blast_radius_cache=None):
+    """OPEN-289: the real entry point --coverage now uses. Tries govbot first
+    (clone/update this jurisdiction's govbot-data repo); only falls back to the
+    existing live-API methodology (run_coverage_check(), unchanged) when that repo
+    can't be synced at all, or doesn't have the requested session yet -- covers both
+    a git failure and a jurisdiction govbot simply doesn't publish, the same
+    fallback path either way. Always prints and returns which source actually
+    backed the result (OPEN-289 item 4) -- a reader must never have to guess which
+    methodology a given pass/fail came from.
+
+    pm-review: an existing-but-EMPTY bills/ directory (govbot mid-sync, a
+    permissions problem, every metadata.json unreadable) used to pass the old
+    os.path.isdir(bills_dir) check and go straight to run_govbot_coverage_check()
+    with zero real bills indexed -- Tier 1's own diff logic (missing = public_ids
+    - local_ids) then finds nothing "missing" against an empty public_ids and
+    reports a clean PASS, which is worse than useless: a real gap would be
+    silently invisible. The index is built here, once, specifically so "govbot
+    has any bills to compare against at all" can gate the fallback decision
+    before Tier 1 ever runs, not just "the directory exists."
+    """
+    ok, repo_path, detail = _ensure_govbot_repo(jurisdiction)
+    if ok:
+        govbot_index = build_govbot_bill_index(jurisdiction, session, repo_path)
+        if govbot_index:
+            print(f"  Source: govbot (govbot-data/{_govbot_slug(jurisdiction)}-legislation, {detail})")
+            result = run_govbot_coverage_check(
+                report, conn, jurisdiction, session, govbot_index,
+                tier2_limit=tier2_limit, tier2_random=tier2_random,
+                blast_radius_cache=blast_radius_cache,
+            )
+            result["source"] = "govbot"
+            return result
+        detail = f"repo synced but has no readable bill data for {session!r} yet"
+
+    print(f"  Source: live API (fallback — {detail})")
+    result = run_coverage_check(report, conn, jurisdiction, session, api_key,
+                                 tier2_limit=tier2_limit, tier2_random=tier2_random,
+                                 blast_radius_cache=blast_radius_cache)
+    result["source"] = "live_api_fallback"
+    result["source_fallback_reason"] = detail
+    return result
 
 # ── Comparison logic ──────────────────────────────────────────────────────────
 
@@ -984,7 +1341,12 @@ def main():
                         help="Skip people checks")
     parser.add_argument("--coverage", nargs=2, metavar=("JURISDICTION", "SESSION"),
                         help="Run a Tier 1+2 coverage/completeness check instead of the "
-                             "default sample-based check (PLAN-coverage-completeness-check.md)")
+                             "default sample-based check (PLAN-coverage-completeness-check.md). "
+                             "OPEN-289: sources every bill from that jurisdiction's govbot-data "
+                             "git clone by default (cloned/updated automatically to "
+                             "$GOVBOT_DATA_DIR, no live-API rate limit) -- falls back to the "
+                             "live API's own 250-bill-style sample only if govbot doesn't have "
+                             "that jurisdiction/session available.")
     parser.add_argument("--tier2", nargs=2, metavar=("JURISDICTION", "SESSION"),
                         help="Run Tier 2 sub-record completeness standalone, with no Tier 1 "
                              "identifier diff first -- samples bills directly from the local "
@@ -1023,12 +1385,16 @@ def main():
             try:
                 report = Report()
                 conn = psycopg2.connect(DB_URL)
-                run_coverage_check(report, conn, jurisdiction, session, LIVE_KEY,
-                                   tier2_limit=args.tier2_limit,
-                                   tier2_random=args.tier2_random,
-                                   blast_radius_cache={})
+                coverage_result = run_coverage_check_with_fallback(
+                    report, conn, jurisdiction, session, LIVE_KEY,
+                    tier2_limit=args.tier2_limit,
+                    tier2_random=args.tier2_random,
+                    blast_radius_cache={})
                 conn.close()
                 ok = report.summary()
+                print(f"  source: {coverage_result['source']}"
+                      + (f" ({coverage_result['source_fallback_reason']})"
+                         if coverage_result.get("source_fallback_reason") else ""))
             finally:
                 sys.stdout = old_stdout
         print(f"\n  (full output also written to {log_path})")
