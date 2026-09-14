@@ -8,6 +8,9 @@ installed in this environment, so the module imports standalone with no real Pos
 connection needed for any test here -- every DB-touching test uses a fake conn/cursor.
 """
 
+import os
+import json
+
 import pytest
 
 from quality_check import (
@@ -576,3 +579,350 @@ def test_resolve_rds_live_zero_does_not_enable_live_resolution(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://local/openstates")
 
     assert _resolve_db_url() == "postgresql://local/openstates"
+
+
+# ── OPEN-289: govbot-backed comparison ──────────────────────────────────────────
+#
+# Every function below was also verified directly against a real govbot-data clone
+# (govbot-data/ut-legislation, UT 2026: 1016 bills indexed -- the exact known-good
+# Tier 1 count for that jurisdiction/session -- and a real 15-bill Tier 2 sample run
+# through compare_bills() producing 0 failures, warnings matching the same "local has
+# more votes than live" pattern the live-API path already shows for UT). These tests
+# use synthetic fixtures instead of a real clone so the suite has no network
+# dependency and runs in milliseconds, not because the real-data check wasn't done.
+
+import subprocess as _subprocess_module
+from unittest.mock import patch, MagicMock
+
+from quality_check import (
+    _govbot_slug,
+    _govbot_repo_path,
+    _govbot_session_dir,
+    _parse_govbot_ref,
+    _govbot_latest_action_description,
+    _load_govbot_vote_events,
+    _load_govbot_bill,
+    _run_git,
+    _ensure_govbot_repo,
+    build_govbot_bill_index,
+    run_coverage_check_with_fallback,
+    GOVBOT_DATA_DIR,
+)
+
+
+def test_govbot_slug_maps_us_to_usa():
+    """The one real naming exception, confirmed directly against the actual govbot-
+    data GitHub org before this was built -- govbot-data/us-legislation is a 404,
+    govbot-data/usa-legislation is real (OPEN-289's own ticket text had assumed the
+    former and concluded govbot doesn't cover federal at all, which was wrong)."""
+    assert _govbot_slug("us") == "usa"
+
+
+def test_govbot_slug_is_identity_for_every_other_jurisdiction():
+    for code in ("fl", "wa", "mi", "ut", "al", "ma", "az"):
+        assert _govbot_slug(code) == code
+
+
+def test_govbot_repo_path_uses_the_slug_not_the_raw_code():
+    path = _govbot_repo_path("us")
+    assert path == os.path.join(GOVBOT_DATA_DIR, "usa-legislation")
+
+
+def test_govbot_session_dir_shape():
+    path = _govbot_session_dir("ut", "2026", "/repo")
+    assert path == "/repo/country:us/state:ut/sessions/2026"
+
+
+def test_govbot_session_dir_uses_slug_for_federal():
+    path = _govbot_session_dir("us", "119", "/repo")
+    assert path == "/repo/country:us/state:usa/sessions/119"
+
+
+def test_parse_govbot_ref_valid():
+    assert _parse_govbot_ref('~{"classification": "upper"}') == {"classification": "upper"}
+
+
+def test_parse_govbot_ref_none_returns_empty_dict():
+    assert _parse_govbot_ref(None) == {}
+
+
+def test_parse_govbot_ref_missing_tilde_prefix_returns_empty_dict():
+    """A value that happens to already be a plain dict (or any non-tilde string)
+    should not raise -- this is defensive against a govbot format change, not just
+    the documented shape."""
+    assert _parse_govbot_ref('{"classification": "upper"}') == {}
+
+
+def test_parse_govbot_ref_malformed_json_returns_empty_dict_not_raise():
+    assert _parse_govbot_ref("~{not valid json") == {}
+
+
+def test_parse_govbot_ref_non_string_returns_empty_dict():
+    assert _parse_govbot_ref({"already": "a dict"}) == {}
+
+
+def test_govbot_latest_action_picks_max_by_date_not_array_order():
+    """Deliberately out-of-order input -- must not just take actions[-1]."""
+    actions = [
+        {"date": "2026-03-01T00:00:00+00:00", "description": "middle"},
+        {"date": "2025-10-27T00:00:00+00:00", "description": "earliest"},
+        {"date": "2026-06-15T00:00:00+00:00", "description": "latest"},
+    ]
+    assert _govbot_latest_action_description(actions) == "latest"
+
+
+def test_govbot_latest_action_empty_list_returns_empty_string():
+    assert _govbot_latest_action_description([]) == ""
+
+
+def test_govbot_latest_action_none_returns_empty_string():
+    assert _govbot_latest_action_description(None) == ""
+
+
+def _write_json(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f)
+
+
+def test_load_govbot_vote_events_reshapes_to_compare_bills_shape(tmp_path):
+    bill_dir = tmp_path / "SB60"
+    _write_json(str(bill_dir / "logs" / "20260209T222457Z.vote_event.pass.upper.json"), {
+        "motion_text": "Senate/ passed 2nd reading",
+        "start_date": "2026-02-09T22:24:57+00:00",
+        "organization": '~{"classification": "upper"}',
+        "counts": [{"option": "yes", "value": 20}, {"option": "no", "value": 7}],
+        "votes": [{"option": "yes", "voter_name": "Adams, J. Stuart", "note": ""}],
+    })
+    events = _load_govbot_vote_events(str(bill_dir))
+    assert len(events) == 1
+    assert events[0]["organization"] == {"classification": "upper"}
+    assert events[0]["counts"] == [{"option": "yes", "value": 20}, {"option": "no", "value": 7}]
+    assert events[0]["votes"] == [{"voter_name": "Adams, J. Stuart", "option": "yes"}]
+
+
+def test_load_govbot_vote_events_ignores_non_vote_event_log_files(tmp_path):
+    bill_dir = tmp_path / "SB60"
+    _write_json(str(bill_dir / "logs" / "20260210T000528Z_house_1st_reading.json"), {
+        "description": "House/ 1st reading",
+    })
+    assert _load_govbot_vote_events(str(bill_dir)) == []
+
+
+def test_load_govbot_vote_events_skips_malformed_file_not_raise(tmp_path):
+    bill_dir = tmp_path / "SB60"
+    logs_dir = bill_dir / "logs"
+    os.makedirs(logs_dir)
+    (logs_dir / "20260209T000000Z.vote_event.pass.upper.json").write_text("{not valid json")
+    assert _load_govbot_vote_events(str(bill_dir)) == []
+
+
+def test_load_govbot_vote_events_no_logs_dir_returns_empty_list(tmp_path):
+    """Most bills never get a roll call -- no logs/ dir at all is normal, not an error."""
+    bill_dir = tmp_path / "HB1"
+    os.makedirs(bill_dir)
+    assert _load_govbot_vote_events(str(bill_dir)) == []
+
+
+def test_load_govbot_bill_assembles_full_shape(tmp_path):
+    bill_dir = tmp_path / "SB60"
+    _write_json(str(bill_dir / "metadata.json"), {
+        "identifier": "SB 60",
+        "title": "Income Tax Rate Amendments",
+        "actions": [
+            {"date": "2025-10-27T00:00:00+00:00", "description": "first"},
+            {"date": "2026-03-23T13:29:00+00:00", "description": "Governor Signed"},
+        ],
+        "sponsorships": [
+            {"name": "McCay, Daniel", "classification": "primary", "entity_type": "person",
+             "primary": True, "person_id": None, "organization_id": None},
+        ],
+    })
+    bill = _load_govbot_bill(str(bill_dir))
+    assert bill["identifier"] == "SB 60"
+    assert bill["title"] == "Income Tax Rate Amendments"
+    assert bill["latest_action_description"] == "Governor Signed"
+    assert bill["votes"] == []
+    assert len(bill["sponsorships"]) == 1
+
+
+def test_load_govbot_bill_missing_metadata_returns_none(tmp_path):
+    """Matches fetch_bill()'s own None-on-not-found contract."""
+    bill_dir = tmp_path / "NOBILL"
+    os.makedirs(bill_dir)
+    assert _load_govbot_bill(str(bill_dir)) is None
+
+
+def test_load_govbot_bill_malformed_metadata_returns_none_not_raise(tmp_path):
+    bill_dir = tmp_path / "SB60"
+    os.makedirs(bill_dir)
+    (bill_dir / "metadata.json").write_text("{not valid")
+    assert _load_govbot_bill(str(bill_dir)) is None
+
+
+def test_build_govbot_bill_index_keys_by_identifier_not_directory_name(tmp_path):
+    """The real-world case this exists for: govbot's directory is "SB60" (no space)
+    but the bill's own identifier field is "SB 60" (with a space, matching DDP's
+    local DB format) -- confirmed directly against a real govbot clone."""
+    session_dir = tmp_path / "country:us" / "state:ut" / "sessions" / "2026"
+    _write_json(str(session_dir / "bills" / "SB60" / "metadata.json"), {
+        "identifier": "SB 60", "title": "Some Bill", "actions": [], "sponsorships": [],
+    })
+    index = build_govbot_bill_index("ut", "2026", str(tmp_path))
+    assert list(index.keys()) == ["SB 60"]
+    assert "SB60" not in index
+
+
+def test_build_govbot_bill_index_skips_bills_missing_metadata(tmp_path):
+    session_dir = tmp_path / "country:us" / "state:ut" / "sessions" / "2026"
+    os.makedirs(str(session_dir / "bills" / "BROKEN"))
+    _write_json(str(session_dir / "bills" / "SB60" / "metadata.json"), {
+        "identifier": "SB 60", "title": "Real Bill", "actions": [], "sponsorships": [],
+    })
+    index = build_govbot_bill_index("ut", "2026", str(tmp_path))
+    assert list(index.keys()) == ["SB 60"]
+
+
+def test_build_govbot_bill_index_missing_session_dir_returns_empty_dict(tmp_path):
+    """The exact shape run_coverage_check_with_fallback() checks to decide whether
+    a synced govbot repo actually has data for the requested session."""
+    assert build_govbot_bill_index("ut", "2099", str(tmp_path)) == {}
+
+
+def test_run_git_returns_true_and_stdout_on_success():
+    ok, output = _run_git(["--version"])
+    assert ok is True
+    assert "git version" in output
+
+
+def test_run_git_returns_false_and_stderr_on_failure():
+    ok, output = _run_git(["not-a-real-git-subcommand"])
+    assert ok is False
+
+
+def test_run_git_returns_false_on_timeout():
+    with patch("subprocess.run", side_effect=_subprocess_module.TimeoutExpired("git", 1)):
+        ok, output = _run_git(["fetch"], timeout=1)
+    assert ok is False
+    assert "TimeoutExpired" in output
+
+
+def test_ensure_govbot_repo_clones_when_not_present_locally(tmp_path, monkeypatch):
+    monkeypatch.setattr("quality_check.GOVBOT_DATA_DIR", str(tmp_path))
+    calls = []
+
+    def fake_run_git(args, cwd=None, timeout=300):
+        calls.append((args, cwd))
+        if args[0] == "clone":
+            # Simulate a real clone by creating the .git dir the isdir check looks for.
+            os.makedirs(os.path.join(args[-1], ".git"))
+            return True, ""
+        if args[0] == "rev-parse":
+            return True, "abc1234"
+        return True, ""
+
+    with patch("quality_check._run_git", side_effect=fake_run_git):
+        ok, repo_path, detail = _ensure_govbot_repo("fl")
+
+    assert ok is True
+    assert repo_path == os.path.join(str(tmp_path), "fl-legislation")
+    assert "abc1234" in detail
+    assert calls[0][0][0] == "clone"
+
+
+def test_ensure_govbot_repo_updates_when_already_present_locally(tmp_path, monkeypatch):
+    monkeypatch.setattr("quality_check.GOVBOT_DATA_DIR", str(tmp_path))
+    repo_path = os.path.join(str(tmp_path), "fl-legislation")
+    os.makedirs(os.path.join(repo_path, ".git"))
+    calls = []
+
+    def fake_run_git(args, cwd=None, timeout=300):
+        calls.append(args[0])
+        if args[0] == "rev-parse":
+            return True, "def5678"
+        return True, ""
+
+    with patch("quality_check._run_git", side_effect=fake_run_git):
+        ok, path, detail = _ensure_govbot_repo("fl")
+
+    assert ok is True
+    assert path == repo_path
+    assert calls == ["fetch", "reset", "rev-parse"]  # never re-clones an existing repo
+
+
+def test_ensure_govbot_repo_clone_failure_returns_false_with_reason(tmp_path, monkeypatch):
+    monkeypatch.setattr("quality_check.GOVBOT_DATA_DIR", str(tmp_path))
+    with patch("quality_check._run_git", return_value=(False, "repository not found")):
+        ok, path, detail = _ensure_govbot_repo("us")
+
+    assert ok is False
+    assert path is None
+    assert "clone failed" in detail
+    assert "repository not found" in detail
+
+
+def test_ensure_govbot_repo_fetch_failure_returns_false_with_reason(tmp_path, monkeypatch):
+    monkeypatch.setattr("quality_check.GOVBOT_DATA_DIR", str(tmp_path))
+    repo_path = os.path.join(str(tmp_path), "fl-legislation")
+    os.makedirs(os.path.join(repo_path, ".git"))
+
+    with patch("quality_check._run_git", return_value=(False, "network unreachable")):
+        ok, path, detail = _ensure_govbot_repo("fl")
+
+    assert ok is False
+    assert path is None
+    assert "update failed" in detail
+
+
+def test_coverage_with_fallback_uses_govbot_when_repo_and_session_available(tmp_path):
+    session_dir = tmp_path / "country:us" / "state:fl" / "sessions" / "2026"
+    _write_json(str(session_dir / "bills" / "SB1" / "metadata.json"), {
+        "identifier": "SB 1", "title": "x", "actions": [], "sponsorships": [],
+    })
+    report = MagicMock()
+    conn = MagicMock()
+    conn.cursor.return_value.fetchall.return_value = []
+
+    with patch("quality_check._ensure_govbot_repo",
+               return_value=(True, str(tmp_path), "synced main @ abc1234")):
+        result = run_coverage_check_with_fallback(report, conn, "fl", "2026", api_key="unused")
+
+    assert result["source"] == "govbot"
+    assert "source_fallback_reason" not in result
+
+
+def test_coverage_with_fallback_falls_back_when_repo_sync_fails():
+    """The exact scenario OPEN-289 exists to handle gracefully: a jurisdiction with no
+    govbot repo at all (or a network failure) must not crash the check -- it falls
+    back to the pre-existing live-API methodology."""
+    report = MagicMock()
+    conn = MagicMock()
+
+    with patch("quality_check._ensure_govbot_repo",
+               return_value=(False, None, "clone failed: repository not found")), \
+         patch("quality_check.run_coverage_check",
+               return_value={"live": 0, "local": 0}) as mock_live:
+        result = run_coverage_check_with_fallback(report, conn, "xx", "2026", api_key="key123")
+
+    mock_live.assert_called_once()
+    assert result["source"] == "live_api_fallback"
+    assert "repository not found" in result["source_fallback_reason"]
+
+
+def test_coverage_with_fallback_falls_back_when_session_not_yet_synced(tmp_path):
+    """A real govbot repo that simply doesn't have this session yet (e.g. a
+    brand-new session govbot's CI hasn't caught up on) -- distinct from a clone
+    failure, but the same fallback behavior either way."""
+    os.makedirs(str(tmp_path / "country:us" / "state:fl" / "sessions"))  # no session subdir
+    report = MagicMock()
+    conn = MagicMock()
+
+    with patch("quality_check._ensure_govbot_repo",
+               return_value=(True, str(tmp_path), "synced main @ abc1234")), \
+         patch("quality_check.run_coverage_check",
+               return_value={"live": 0, "local": 0}) as mock_live:
+        result = run_coverage_check_with_fallback(report, conn, "fl", "2026", api_key="key123")
+
+    mock_live.assert_called_once()
+    assert result["source"] == "live_api_fallback"
+    assert "no" in result["source_fallback_reason"] and "2026" in result["source_fallback_reason"]
