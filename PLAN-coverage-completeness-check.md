@@ -1018,11 +1018,15 @@ sessions per local DB) — checked against what govbot actually has, not a full 
   the 26 bills that already had at least one vote recorded: **100% of them are missing exactly
   one `"On Passage"` vote event** for that `HJRES`/`SJRES` bill (e.g. `HJRES 104` has govbot's
   `On Passage` roll call, 211-208, entirely absent locally, while its `Motion to Proceed` vote on
-  the same bill is present). This is a real, well-defined scraper gap specific to `On Passage`
-  votes on US Joint Resolutions — worth a ticket against the US congress scraper, not something
-  this pass fixes. (The 27th case, `HJRES 117`, is different in shape — its only vote is a
+  the same bill is present). **Confirmed not scraper lag**: pulled the actual date of all 26
+  missing `On Passage` votes -- they span 2025-02-26 through 2026-02-11 (the full year-plus of
+  this Congress), with the newest miss already 7+ months old as of this sweep. Ordinary lag (the
+  correct explanation for US's separate 35-missing-bills finding above, all introduced the day
+  before the check) would cluster right up against "yesterday" -- this doesn't, at all. Filed as
+  [OPEN-293](https://digitaldemocracyproject.atlassian.net/browse/OPEN-293) against the US
+  congress scraper. (The 27th case, `HJRES 117`, is different in shape — its only vote is a
   discharge-motion roll call, not an `On Passage` vote — one data point, not folded into the
-  pattern above.)
+  pattern above or into OPEN-293.)
 - **NC: 8 Tier 2 failures — CONFIRMED real, but scattered, not one root cause.** Checked the
   actual missing vote event for all 8 (`HB 116/147/268/377/562/834/958`, `SB 445`): unlike US's
   clean single pattern, these are a genuine mix — `Second Reading`, `Third Reading`, `Conference
@@ -1037,9 +1041,9 @@ sessions per local DB) — checked against what govbot actually has, not a full 
   miss; not enough to characterize from a single bill.
 
 **Still open after today:**
-- **A real scraper ticket worth filing**: US congress bills are missing their `On Passage` vote
-  specifically for Joint Resolutions (HJRES/SJRES) — confirmed, clean, 26-for-26 in what was
-  checked. Not filed yet.
+- **US's `On Passage`/Joint Resolution gap** — filed as
+  [OPEN-293](https://digitaldemocracyproject.atlassian.net/browse/OPEN-293), confirmed real and
+  not lag (see above). Ticket only, not fixed.
 - NC's 8 specific vote-count gaps — confirmed real, scattered causes, short named list, no ticket
   filed yet.
 - AZ's 2 vote-count gaps and VA's 1 sponsorship gap — flagged, not individually root-caused.
