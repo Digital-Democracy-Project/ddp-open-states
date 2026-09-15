@@ -996,37 +996,58 @@ sessions per local DB) — checked against what govbot actually has, not a full 
 - **FL's "local has MORE votes than live"** pattern (already flagged §18's own carry-forward
   list) shows up again throughout FL's Tier 2 warnings — same known, pre-existing pattern.
 
-**New findings from this sweep, not previously logged:**
-- **US: 35 missing bills** — `HR`: 26, `HRES`: 8, `HJRES`: 1. The missing `HR`/`HRES` numbers
-  form tight, contiguous, high-numbered blocks (e.g. `HR 10351`-`10376`, `HRES 1530`-`1537`) —
-  same shape as MI's tail-lag pattern, consistent with ordinary recent-introduction scraper lag
-  rather than a structural gap, but **not independently confirmed** against scrape timing the
-  way MI's was.
-- **US: 819 Tier 2 failures, overwhelmingly one pattern** — 791 of 819 (664 `HR` + 76 `S` + 45
-  unlabeled + 6 `HCONRES`) are `sponsorship count mismatch`, and every sampled instance has
-  **local higher than live** (e.g. `HCONRES 106: local=12 live=10`, `HJRES 108: local=186
-  live=182`) — never the reverse. Leading hypothesis, **not confirmed**: local's own sync is
-  simply more current than govbot's snapshot (cosponsors accrue over a bill's life), the same
-  shape as FL's already-known "local has MORE votes" pattern, just hitting FAIL instead of WARN
-  for sponsorships specifically. Remaining 27 are vote-related (21 unlabeled + 6 `SJRES`,
-  "local is MISSING votes vs live"). Given the scale (791 of 18670 US bills, ~4%), this is worth
-  a real follow-up rather than assuming the hypothesis above without checking a sample directly.
-- **NC: 8 Tier 2 failures**, all the same shape — `"local is MISSING votes vs live"` on 8
-  specific bills (`HB 116/147/268/377/562/834/958`, `SB 445`), local consistently short by 1-2
-  votes. Small, real, and specific enough to look at directly (bill list is short) rather than
-  broad-brush explained here.
+**New findings from this sweep, not previously logged — investigated same-day, 2026-09-15:**
+- **US: 35 missing bills — CONFIRMED benign, ordinary lag.** `HR`: 26, `HRES`: 8, `HJRES`: 1.
+  Checked govbot's own `metadata.json` actions directly for 6 samples across the range (`HR
+  10351`, `10360`, `10376`, `HRES 1530`, `1537`, `HJRES 215`): every one was introduced
+  **2026-09-14 — one day before this sweep ran.** Same shape as MI's tail-lag pattern, now
+  independently confirmed the same way MI's was: these simply haven't reached local yet, not a
+  structural gap.
+- **US: 791 of 819 Tier 2 failures — CONFIRMED benign, not a data problem.** All `sponsorship
+  count mismatch`, local always higher than live. Checked sponsor *names*, not just counts, for
+  5 sample bills (`HCONRES 106/37/4`, `HJRES 108/121`): in every single case local's sponsor list
+  is an **exact superset** of govbot's — the same people, plus 1-6 more recent cosponsors govbot's
+  snapshot doesn't have yet (e.g. `HCONRES 106`: local adds Jesús G. "Chuy" García and Yassamin
+  Ansari on top of govbot's 10). Confirmed real explanation, not a hypothesis: this is the exact
+  same "local is more current than govbot's periodic snapshot" shape as FL's already-known
+  "local has MORE votes" pattern — it only shows as FAIL rather than WARN because the
+  sponsorship-count check (unlike the vote-event check) has no direction-aware leniency built in.
+  Not a real data-quality problem; a design gap in the check itself, if anyone wants it changed.
+- **US: the remaining 27 (SJRES + most of the "unlabeled" group) — CONFIRMED real, and a single,
+  clean pattern.** Checked the actual missing vote event, not just the count, for every one of
+  the 26 bills that already had at least one vote recorded: **100% of them are missing exactly
+  one `"On Passage"` vote event** for that `HJRES`/`SJRES` bill (e.g. `HJRES 104` has govbot's
+  `On Passage` roll call, 211-208, entirely absent locally, while its `Motion to Proceed` vote on
+  the same bill is present). This is a real, well-defined scraper gap specific to `On Passage`
+  votes on US Joint Resolutions — worth a ticket against the US congress scraper, not something
+  this pass fixes. (The 27th case, `HJRES 117`, is different in shape — its only vote is a
+  discharge-motion roll call, not an `On Passage` vote — one data point, not folded into the
+  pattern above.)
+- **NC: 8 Tier 2 failures — CONFIRMED real, but scattered, not one root cause.** Checked the
+  actual missing vote event for all 8 (`HB 116/147/268/377/562/834/958`, `SB 445`): unlike US's
+  clean single pattern, these are a genuine mix — `Second Reading`, `Third Reading`, `Conference
+  Rpt Second Reading`, `M11 Not Concur`, an amendment motion — spanning dates from 2025-05 through
+  2026-07. Reads as several small, independent scraper misses rather than one bug; short enough
+  list to hand to whoever owns NC's scraper directly.
 - **AZ: 2 Tier 2 failures** — `HR 2001`/`HR 2007`, both "local is MISSING votes vs live" by
-  exactly 1. Small enough to plausibly be the same lag/timing shape as the others; not chased
-  further.
-- **VA: 1 Tier 2 failure** — `HR 2002`, sponsorship count mismatch (local=89, live=91 — this one
-  the *opposite* direction from US's pattern, local lower). One data point, not a pattern yet.
+  exactly 1. Not individually checked this pass; plausibly the same small-miss shape as NC's.
+- **VA: 1 Tier 2 failure** — `HR 2002`, sponsorship count mismatch, but **the opposite direction**
+  from US's pattern: local is missing 2 cosponsors (Barry D. Knight, Candi Mundon King) that
+  govbot has. One data point — could be ordinary lag in the other direction, could be a real
+  miss; not enough to characterize from a single bill.
 
 **Still open after today:**
-- US's two new findings (819 sponsorship/vote failures, 35 missing bills) — neither
-  root-caused, both flagged with a leading hypothesis only.
-- NC's 8 specific vote-count gaps — short, named list, worth a direct look.
+- **A real scraper ticket worth filing**: US congress bills are missing their `On Passage` vote
+  specifically for Joint Resolutions (HJRES/SJRES) — confirmed, clean, 26-for-26 in what was
+  checked. Not filed yet.
+- NC's 8 specific vote-count gaps — confirmed real, scattered causes, short named list, no ticket
+  filed yet.
+- AZ's 2 vote-count gaps and VA's 1 sponsorship gap — flagged, not individually root-caused.
 - VA's govbot coverage gap itself — only `2026S1` is clonable from govbot today; the larger
   `2026` (3637 local bills) and `2027` (443 local bills) sessions have no govbot mirror to check
   against, so VA's real Tier 1/2 coverage is largely unverified by this tool.
+- Whether the sponsorship-count check should get the same local-ahead-is-just-a-WARN leniency
+  the vote-event check already has, given US showed it can produce hundreds of FAILs for a
+  completely benign reason — a real design question, not filed as a ticket.
 - The deferred `quality_check.py` api-v3-routing refactor (still not started, no ticket filed).
 - Everything already carried forward from §14 through §18 that this sweep didn't touch.
