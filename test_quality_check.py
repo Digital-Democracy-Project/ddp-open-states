@@ -605,6 +605,7 @@ from quality_check import (
     _run_git,
     _ensure_govbot_repo,
     build_govbot_bill_index,
+    _normalize_bill_identifier,
     run_coverage_check_with_fallback,
     GOVBOT_DATA_DIR,
 )
@@ -797,6 +798,36 @@ def test_build_govbot_bill_index_missing_session_dir_returns_empty_dict(tmp_path
     """The exact shape run_coverage_check_with_fallback() checks to decide whether
     a synced govbot repo actually has data for the requested session."""
     assert build_govbot_bill_index("ut", "2099", str(tmp_path)) == {}
+
+
+def test_normalize_bill_identifier_strips_zero_padding():
+    """govbot zero-pads MI's identifiers ("SB 0001"); DDP's local DB/api-v3 don't
+    ("SB 1"). Confirmed 2026-09-14: unfixed, this alone made 1503 of 1590 MI bills
+    look "missing" in Tier 1 when every one of them was actually present locally."""
+    assert _normalize_bill_identifier("SB 0001") == "SB 1"
+    assert _normalize_bill_identifier("HCR 0009") == "HCR 9"
+
+
+def test_normalize_bill_identifier_leaves_unpadded_identifier_unchanged():
+    assert _normalize_bill_identifier("HB 6244") == "HB 6244"
+
+
+def test_normalize_bill_identifier_leaves_unrecognized_shape_unchanged():
+    """Anything beyond a plain PREFIX-space-digits shape (e.g. a version suffix)
+    is passed through as-is rather than risk mangling a format not seen yet."""
+    assert _normalize_bill_identifier("SB 1071 (S-1)") == "SB 1071 (S-1)"
+
+
+def test_build_govbot_bill_index_keys_are_normalized_for_zero_padded_identifier(tmp_path):
+    """The index key -- not just the bill's own `identifier` field -- must be in
+    DDP's local unpadded format, since Tier 1's identifier-set diff and Tier 2's
+    govbot_index.get(identifier) lookup both key off it directly."""
+    session_dir = tmp_path / "country:us" / "state:mi" / "sessions" / "2025-2026"
+    _write_json(str(session_dir / "bills" / "SB0001" / "metadata.json"), {
+        "identifier": "SB 0001", "title": "Some Bill", "actions": [], "sponsorships": [],
+    })
+    index = build_govbot_bill_index("mi", "2025-2026", str(tmp_path))
+    assert list(index.keys()) == ["SB 1"]
 
 
 def test_run_git_returns_true_and_stdout_on_success():

@@ -650,14 +650,31 @@ def _load_govbot_bill(bill_dir):
     }
 
 
+def _normalize_bill_identifier(identifier):
+    """govbot's metadata.json `identifier` field zero-pads the bill number for some
+    jurisdictions (e.g. MI: "SB 0001"), while DDP's local DB/api-v3 use OpenStates'
+    own unpadded convention ("SB 1") -- confirmed 2026-09-14 against MI, where this
+    alone accounted for 1503 of 1590 "missing" Tier 1 bills (every one of them
+    actually present locally, just under the unpadded key). Strip the padding so
+    both sides compare on the same format. Anything that doesn't match a simple
+    PREFIX-space-digits shape is returned unchanged rather than risk mangling an
+    identifier format we don't recognize."""
+    match = re.match(r"^([A-Z]+)\s*0*(\d+)$", identifier)
+    if match:
+        return f"{match.group(1)} {match.group(2)}"
+    return identifier
+
+
 def build_govbot_bill_index(jurisdiction_code, session, repo_path):
     """One pass over a govbot session's bills/ directory, keyed by each bill's own
     metadata.json `identifier` field -- NOT the directory name, which strips spaces
-    (a real bill directory is "SB60", but its own identifier field is "SB 60", the
-    same format DDP's local DB uses) and can't be trusted to reconstruct that format
-    for every jurisdiction. Shared by both the Tier 1 identifier-set diff and Tier
-    2's per-bill lookups below, so a govbot-backed coverage check reads each bill's
-    files exactly once regardless of how many times it's referenced."""
+    (a real bill directory is "SB60", but its own identifier field is "SB 60") and
+    can't be trusted to reconstruct that format for every jurisdiction. The key is
+    run through _normalize_bill_identifier() first since govbot's own identifier
+    field isn't always DDP's local format either (see that function's docstring).
+    Shared by both the Tier 1 identifier-set diff and Tier 2's per-bill lookups
+    below, so a govbot-backed coverage check reads each bill's files exactly once
+    regardless of how many times it's referenced."""
     bills_dir = os.path.join(_govbot_session_dir(jurisdiction_code, session, repo_path), "bills")
     index = {}
     if not os.path.isdir(bills_dir):
@@ -676,7 +693,7 @@ def build_govbot_bill_index(jurisdiction_code, session, repo_path):
             continue
         bill = _load_govbot_bill(bill_dir)
         if bill and bill.get("identifier"):
-            index[bill["identifier"]] = bill
+            index[_normalize_bill_identifier(bill["identifier"])] = bill
     return index
 
 
