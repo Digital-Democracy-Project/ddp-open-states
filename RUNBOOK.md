@@ -1504,7 +1504,14 @@ Default run uses 5 bills + 3 people per jurisdiction ≈ 56 requests, well withi
 
 **Coverage/completeness mode** (`--coverage`, see `PLAN-coverage-completeness-check.md` for the
 full design): checks whether upstream has any bills we never scraped at all, not just whether
-scraped bills match:
+scraped bills match. **As of OPEN-289, "upstream" here primarily means each jurisdiction's
+govbot-data git clone** (`GOVBOT_DATA_DIR`, default `~/.govbot-data`), not the live API — govbot
+has no per-request rate limit, so coverage isn't capped to a sample. It falls back to the
+live-API methodology only when a jurisdiction's govbot repo can't be cloned/updated or doesn't
+have the requested session yet, never as a standing second check run alongside govbot. **MI's
+govbot identifiers are zero-padded** (e.g. `"SB 0001"` vs the live API's `"SB 1"`) — coverage
+normalizes both sides before comparing (`_normalize_bill_identifier`), so don't be alarmed by
+raw identifier strings looking different in govbot's own `metadata.json`.
 
 ```bash
 OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage <jurisdiction> <session>
