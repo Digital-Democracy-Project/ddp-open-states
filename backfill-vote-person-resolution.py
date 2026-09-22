@@ -30,6 +30,10 @@ scrape) are excluded by the `voter_id IS NULL` filter.
 
 Usage:
     python3 backfill-vote-person-resolution.py [--dry-run]
+
+Connects via DATABASE_URL if set (how the Fargate backfill runner passes a live-resolved
+RDS credential), otherwise via the individual OPENSTATES_DB_* vars (local/manual runs,
+defaults matching the local Postgres replica).
 """
 import argparse
 import os
@@ -39,6 +43,12 @@ from collections import defaultdict
 import psycopg2
 import psycopg2.extras
 
+# DATABASE_URL takes priority when set -- this is how the Fargate backfill runner
+# (ddp-sync's vote_person_backfill.py) passes a live-resolved RDS credential, matching the
+# same convention os-text-extract/os-update already use. psycopg2.connect() accepts a libpq
+# URI directly, so no separate parsing is needed. Falls back to the individual
+# OPENSTATES_DB_* vars for local/manual runs, unchanged from before.
+DATABASE_URL = os.getenv("DATABASE_URL")
 DB_CONFIG = {
     "host": os.getenv("OPENSTATES_DB_HOST", "localhost"),
     "port": int(os.getenv("OPENSTATES_DB_PORT", "5433")),
@@ -109,7 +119,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print changes without writing")
     args = parser.parse_args()
 
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(DATABASE_URL) if DATABASE_URL else psycopg2.connect(**DB_CONFIG)
     conn.autocommit = False
 
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
