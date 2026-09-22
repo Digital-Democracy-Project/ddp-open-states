@@ -131,7 +131,12 @@ WORKDIR /app
 # rather than needing their own build -- same installed openstates-core, same boto3, same
 # S3_BILL_ARCHIVE_BUCKET constant. Selected at task-launch time via docker-entrypoint.sh's
 # RUNNER_SCRIPT env var, not a separate image/task definition.
-COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py import-summary.sh docker-entrypoint.sh ./
+#
+# backfill-vote-person-resolution.py (VOTEBOT-7/OPEN-2 recurrence) is already a complete,
+# directly-executable script (argparse --dry-run, connects via DATABASE_URL when set) -- unlike
+# cloud_text_extract.py it needs no separate thin runner wrapper, so RUNNER_SCRIPT can point at
+# it directly.
+COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
