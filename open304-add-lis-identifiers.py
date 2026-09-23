@@ -53,6 +53,7 @@ FIXES = [
 
 PERSON_EXISTS_SQL = "SELECT 1 FROM opencivicdata_person WHERE id = %s"
 CHECK_SQL = "SELECT 1 FROM opencivicdata_personidentifier WHERE person_id = %s AND scheme = 'lis'"
+CONFLICT_SQL = "SELECT person_id FROM opencivicdata_personidentifier WHERE scheme = 'lis' AND identifier = %s"
 INSERT_SQL = """
     INSERT INTO opencivicdata_personidentifier (id, person_id, scheme, identifier)
     VALUES (%s, %s, 'lis', %s)
@@ -67,7 +68,7 @@ def main() -> None:
     conn = psycopg2.connect(DATABASE_URL) if DATABASE_URL else psycopg2.connect(**DB_CONFIG)
     conn.autocommit = False
 
-    inserted = skipped = missing = 0
+    inserted = skipped = missing = conflicts = 0
     with conn.cursor() as cur:
         for person_id, lis_id in FIXES:
             cur.execute(PERSON_EXISTS_SQL, (person_id,))
@@ -80,6 +81,12 @@ def main() -> None:
                 print(f"SKIP  {person_id} already has an lis identifier")
                 skipped += 1
                 continue
+            cur.execute(CONFLICT_SQL, (lis_id,))
+            row = cur.fetchone()
+            if row and row[0] != person_id:
+                print(f"CONFLICT  lis={lis_id} is already claimed by {row[0]}, not {person_id} -- skipping")
+                conflicts += 1
+                continue
             if args.dry_run:
                 print(f"WOULD ADD  {person_id} -> lis={lis_id}")
             else:
@@ -87,12 +94,16 @@ def main() -> None:
                 print(f"ADDED  {person_id} -> lis={lis_id}")
             inserted += 1
 
+    summary = (
+        f"{inserted}, {skipped} already present, {missing} person not found, "
+        f"{conflicts} lis conflicts."
+    )
     if args.dry_run:
-        print(f"Dry run complete. Would add {inserted}, {skipped} already present, {missing} person not found.")
+        print(f"Dry run complete. Would add {summary}")
         conn.rollback()
     else:
         conn.commit()
-        print(f"Done. Added {inserted}, {skipped} already present, {missing} person not found.")
+        print(f"Done. Added {summary}")
     conn.close()
 
 
