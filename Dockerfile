@@ -135,8 +135,9 @@ WORKDIR /app
 # backfill-vote-person-resolution.py (VOTEBOT-7/OPEN-2 recurrence) is already a complete,
 # directly-executable script (argparse --dry-run, connects via DATABASE_URL when set) -- unlike
 # cloud_text_extract.py it needs no separate thin runner wrapper, so RUNNER_SCRIPT can point at
-# it directly.
-COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py import-summary.sh docker-entrypoint.sh ./
+# it directly. open304-add-lis-identifiers.py (OPEN-304) is the same shape -- a one-off,
+# idempotent, safe-to-re-run data patch, same DATABASE_URL convention.
+COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
