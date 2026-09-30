@@ -94,6 +94,19 @@ assert inspect(engine).has_table(DataExport.__tablename__)
 fi
 log "bulk_dataexport table present (created if missing)"
 
+# OPEN-310 / PLAN-enterprise-search.md §4.5.4: ddp_bill_search (and pg_trgm) back the /ddp/search/* endpoints.
+# Idempotent (CREATE ... IF NOT EXISTS), like the bulk_dataexport step above.
+# DO NOT MERGE this block until the Mac's api-v3 image has been rebuilt from a commit that contains
+# api/search_projection.py (ce1447c or later) and `docker exec ddp-openstates-api-1 python -c "import api.ddp_search,
+# api.search_projection"` exits 0: on the older image the module does not exist, so this block fails, the script exits 1,
+# posts a Slack alert on every boot, and the smoke test below never runs.
+if ! docker exec ddp-openstates-api-1 python -m api.search_projection ensure >>"$LOG" 2>&1; then
+    log "ERROR: failed to ensure ddp_bill_search exists"
+    slack_fail ":red_circle: openstates api-v3 could not create ddp_bill_search at boot — /ddp/search/* will 500 — check logs/os-api.log"
+    exit 1
+fi
+log "ddp_bill_search present (created if missing)"
+
 # Regression guard for the exact OPEN-12 failure mode: smoke-test the include that broke
 # (500'd for every tracked jurisdiction, not just some) so a future schema drift alerts
 # instead of silently breaking ddp-broker-py's session picker again.
