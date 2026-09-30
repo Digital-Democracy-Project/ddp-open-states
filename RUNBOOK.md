@@ -58,6 +58,7 @@ GROUP BY j.name ORDER BY j.name;"
 | db backup | — | **system LaunchDaemon** `com.ddp.openstates-db-backup` (07:00 local) | `backup-openstates-db.sh` (nightly pg_dump, keep-7) |
 | Scraper | 8001 | ddp-sync APScheduler — **system LaunchDaemon** `com.ddp.ddp-sync` (not a GUI agent) | `run-scrape.sh` (per jurisdiction) |
 | Staleness watchdog | — | **system LaunchDaemon** `com.ddp.health-monitor` (ddp-agents, every 5 min) — **live, see below** | `check-scrape-staleness.sh` via one-line hook in `ddp-agents/deployment/scripts/health-check-slack.sh` |
+| Replica health (RDS→Mac) | — | `check-replica-health.sh`; **the `health-check-slack.sh` hook is not added yet** (OPEN-312), see `ops/postgres-replica/local/README.md` → "OPEN-312" | `check-replica-health.sh` (credential-free checks every 5 min; the schema check needs an RDS credential) |
 
 **api-v3 deployment (containerized 2026-06-24, per `PLAN-production-hardening.md`):** api-v3
 runs as the `ddp-openstates` Docker compose project — container `ddp-openstates-api-1` on

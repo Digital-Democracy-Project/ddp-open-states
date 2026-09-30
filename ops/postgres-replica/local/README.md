@@ -25,8 +25,10 @@ The schema-only dump must come from RDS (`pg_dump --schema-only` against the 7 t
 
 ## `compare-schema.sh` (OPEN-277)
 
-The schema-comparison script (plan §7.7). Compares, for exactly the 7 tables this plan's
-publication carries (§3.2) — not a general schema-diff tool — whether the table exists on both
+The schema-comparison script (plan §7.7). Compares, for every table the RDS publication
+carries (OPEN-312: read from `pg_publication_tables` and checked against what the Mac actually
+subscribes to; it was written for the original 7, so where this section still says 7, read "every
+published table") — not a general schema-diff tool — whether the table exists on both
 sides and whether its column name/type/nullability triples match. Compared keyed by **column
 name** (not physical ordinal position, correction from pm-review round 1 — see below) via
 `pg_attribute`/`format_type()`. Run manually after any Django migration touching these 7 tables
@@ -530,3 +532,71 @@ repointing scripts at a database that doesn't exist yet, or writing an execution
 for a change nobody can currently run or verify — both premature. OPEN-280 itself remains the
 tracking ticket for that real execution once access exists; this section is what to run and the
 proof that it works, not a substitute for actually running it.
+
+
+## OPEN-312 — what "exact replica" means, and what watches it
+
+**What the replica actually carries (read from the Mac on 2026-09-30).** The subscription
+`ddp_legbot_subscription` (database `openstates_rds_repl_20260911`, publication
+`ddp_legbot_publication`) carries **47 of the database's 48 public tables**, all in state `r`
+(ready). The docs above describe 7 tables (plan §3.2), later 12 (OPEN-280); the publication has since
+grown to cover essentially the whole schema, and nothing written down says when or why. The RDS-side
+definition could not be read from the Mac; to read it, on RDS:
+`SELECT pubname, puballtables FROM pg_publication;` and
+`SELECT tablename FROM pg_publication_tables WHERE pubname = 'ddp_legbot_publication' ORDER BY 1;`
+
+**The contract for "exact".** Every published table arrives, with the same column names, types and
+nullability (`compare-schema.sh` enforces this). Intentionally different, and not drift:
+- `profiles_profile` (local API keys) exists only here and is not published.
+- Three foreign keys were dropped locally because the tables they point at are not replicated
+  (`opencivicdata_jurisdiction.division_id`, `opencivicdata_membership.post_id`,
+  `opencivicdata_voteevent.bill_action_id`; see OPEN-280 above). The columns remain.
+- Local-only extras are fine (the subscriber ignores columns it was never sent). The search table
+  `ddp_bill_search` and the `pg_trgm` extension are built per-instance and are NOT published.
+
+**Not a mirror of the scrape database.** The Mac's other database, `openstates` (scrape-fed, used by
+the local api-v3), is a different thing from this replica. As of 2026-09-30 the replica holds
+abstracts (`opencivicdata_billabstract`, 27,673 rows) and people (`opencivicdata_person`, 4,088 rows);
+a statement elsewhere that "the Mac subscriber does not replicate abstracts or people" (plan §4.5.6)
+does not describe this replica.
+
+### `check-replica-health.sh` (repo root) — the scheduled check
+
+Until OPEN-312 nothing ran `replica-status.sh` or `compare-schema.sh`. On 2026-09-27 the publisher
+refused connections for ~3h50m (06:22–10:12 UTC), the subscription crash-looped every 5 s, and nobody
+was told. This script is only glue: it runs the two scripts above and turns a *persistent* bad result
+into one Slack message to `#automation-errors`, plus a recovery message.
+
+- **Every run** (`replica-status.sh`): no apply worker, or no message from the publisher for
+  `RECEIPT_STALE_S` (default 300 s) → `DISCONNECTED`. Needs no RDS credential. This is what the
+  2026-09-27 outage, and the crash loop a missing column causes, look like. With
+  `RDS_MONITORING_DATABASE_URL` in the environment it also reports lag (`LAGGING` past 100 MB) and
+  the retained WAL RDS is holding for the slot, which is what grows while the Mac is disconnected.
+- **Every 6 h** (`compare-schema.sh`, only when `RDS_HOST` and `RDS_REPLICATION_PASSWORD` are in the
+  environment): a table published but never `REFRESH`ed into the subscription (silent: no error, the
+  table just never arrives), a table no longer published, or a column mismatch.
+- **Alerting:** a bad replica verdict alerts after 2 consecutive runs (one blip never pages) and
+  re-alerts every 6 h; a schema failure alerts on the first check and re-alerts daily. `INCOMPLETE`
+  (local checks passed, RDS side not configured) counts as OK. State: one small file per check,
+  `logs/last-run/replica-health.<replica|schema>.state`; log: `logs/replica-check.log` (quiet runs
+  log nothing). Deleting a state file re-arms the alert.
+- **To run it:** one line in `ddp-agents/deployment/scripts/health-check-slack.sh`, next to the
+  `check-scrape-staleness.sh` hook (the same 5-minute `com.ddp.health-monitor` daemon):
+  `bash /Users/agentsmith/Developer/repos/ddp-open-states/check-replica-health.sh >/dev/null 2>&1 || true`
+  That hook lives in the `ddp-agents` repo, so it is a separate, deliberate step (as it was for
+  OPEN-40). **How the scheduled hook gets an RDS credential is an open deploy question:** ddp-sync
+  resolves it in Python (`resolve_rds_database_url()`), which a shell hook cannot. Until one is
+  supplied, only the credential-free checks run; that already covers the outage above.
+- **Tests:** `bash test-replica-monitoring.sh` (no network, no database; `docker` is a stub).
+
+### Changing the replicated schema (checklist — the long form is "Django migration procedure" above)
+
+1. **New column on a published table:** add it locally FIRST (nullable or with a default), then on RDS.
+   The reverse order crash-loops the subscriber the moment a row carries the column.
+2. **New table that should replicate:** create it locally, then on RDS `GRANT SELECT ... TO
+   ddp_local_replication` and `ALTER PUBLICATION ddp_legbot_publication ADD TABLE ...`, then locally
+   `ALTER SUBSCRIPTION ddp_legbot_subscription REFRESH PUBLICATION`.
+3. **New table that should NOT replicate** (derived/search tables): do nothing to the publication.
+   Never create it on RDS while the publication is `FOR ALL TABLES` (`puballtables = t`).
+4. Afterwards: `RDS_HOST=... RDS_REPLICATION_PASSWORD=... ./compare-schema.sh <db>` then
+   `./replica-status.sh <db>`. The scheduled check will also notice within 6 h, but do not rely on it.

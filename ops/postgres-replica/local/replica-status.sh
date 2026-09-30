@@ -14,6 +14,14 @@
 #     resolve_rds_database_url(), pointed at a role with visibility into pg_replication_slots> \
 #     LAGGING_THRESHOLD_BYTES=<n> ./replica-status.sh <database-name>
 #
+# OPEN-312: the RDS-side query runs through the local Postgres container's own psql (this Mac has no
+# host-level psql, and that container already reaches RDS because it IS the subscriber), and the
+# connection string is handed over by environment-variable NAME so it never appears in a process
+# listing on the host. Separately, a credential-free staleness check (RECEIPT_STALE_S below) now
+# flags a subscription that has stopped hearing from the publisher even when a worker process still
+# exists -- e.g. a half-open connection -- so a scheduled run with no RDS credential still catches
+# the failure that actually happened on 2026-09-27 (publisher refused connections for ~3h50m).
+#
 # The RDS-side retained-WAL/replication-slot query needs a credential with visibility into
 # pg_replication_slots (instance-wide, not just this database) -- never ddp_local_replication
 # itself for this (plan §3.4 item 3's reasoning: this is a one-off read, not the replication
@@ -61,6 +69,14 @@ EXPECTED_INTERVAL_S="${EXPECTED_INTERVAL_S:-300}"
 # `-gt "$LAGGING_THRESHOLD_BYTES"` comparison itself error out instead of cleanly failing status.
 if ! [[ "$LAGGING_THRESHOLD_BYTES" =~ ^[0-9]+$ ]]; then
   echo "FAIL: LAGGING_THRESHOLD_BYTES must be a non-negative integer, got '$LAGGING_THRESHOLD_BYTES'" >&2
+  exit 1
+fi
+# OPEN-312: how long the subscriber may go without ANY message from the publisher (data or keepalive)
+# before it counts as disconnected. A healthy idle subscription hears a keepalive every few tens of
+# seconds (observed 2026-09-30: last message 11 s old), so 300 s is generous, not tight.
+RECEIPT_STALE_S="${RECEIPT_STALE_S:-300}"
+if ! [[ "$RECEIPT_STALE_S" =~ ^[0-9]+$ ]] || [ "$RECEIPT_STALE_S" -eq 0 ]; then
+  echo "FAIL: RECEIPT_STALE_S must be a positive integer, got '$RECEIPT_STALE_S'" >&2
   exit 1
 fi
 # Correction, pm-review (OPEN-274 PR round 1): same reasoning as LAGGING_THRESHOLD_BYTES above --
@@ -111,7 +127,8 @@ else
     local_state_stdout="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$DATABASE_NAME" -tAc "
       SELECT pid || '|' || COALESCE(received_lsn::text, 'null') || '|' ||
              COALESCE(latest_end_lsn::text, 'null') || '|' ||
-             COALESCE(last_msg_receipt_time::text, 'null')
+             COALESCE(last_msg_receipt_time::text, 'null') || '|' ||
+             COALESCE(EXTRACT(EPOCH FROM (now() - last_msg_receipt_time))::bigint::text, 'null')
       FROM pg_stat_subscription
       WHERE subname = 'ddp_legbot_subscription' AND pid IS NOT NULL AND relid IS NULL;
     " 2>/tmp/replica-status-err.$$)"
@@ -126,14 +143,14 @@ else
       detail="subscription is enabled but has no active main apply worker (pg_stat_subscription has no matching row)"
       echo "FAIL: $detail" >&2
     else
-      IFS='|' read -r worker_pid received_lsn latest_end_lsn last_receipt <<< "$local_state_stdout"
-      echo "worker pid=$worker_pid received_lsn=$received_lsn latest_end_lsn=$latest_end_lsn last_receipt=$last_receipt"
+      IFS='|' read -r worker_pid received_lsn latest_end_lsn last_receipt receipt_age_s <<< "$local_state_stdout"
+      echo "worker pid=$worker_pid received_lsn=$received_lsn latest_end_lsn=$latest_end_lsn last_receipt=$last_receipt receipt_age_s=$receipt_age_s"
 
       echo
       echo "== RDS-side: retained WAL and apply lag (needs RDS access -- NOT exercised by this" \
            "session's own testing, see header comment) =="
       if [ -n "${RDS_MONITORING_DATABASE_URL:-}" ]; then
-        rds_state_stdout="$(psql "$RDS_MONITORING_DATABASE_URL" -tAc "
+        rds_state_stdout="$(docker exec -e RDS_MONITORING_DATABASE_URL "$PG_CONTAINER" sh -c 'exec psql "$RDS_MONITORING_DATABASE_URL" -tAc "$1"' _ "
           -- Correction, pm-review round 1: found by actually running this and getting a wrong
           -- result -- boolean::text in Postgres yields 'true'/'false', NOT 't'/'f', but the
           -- comparison below checks for 't'. Casting via ''::text picks up the plain -tA output
@@ -184,6 +201,17 @@ else
         echo "that a local apply worker process exists." >&2
         status="INCOMPLETE"
         detail="local apply worker running (pid=$worker_pid), but RDS-side lag was NOT checked (no RDS_MONITORING_DATABASE_URL) -- this is not a full health assessment"
+      fi
+
+      # OPEN-312: a worker process that exists but has heard nothing for RECEIPT_STALE_S is not
+      # healthy (half-open connection, publisher gone). Only downgrades a passing verdict -- a
+      # BROKEN/LAGGING/DISCONNECTED one already says something more specific. "null" means the
+      # worker just started and has not received its first message yet: not stale.
+      if [ "$receipt_age_s" != "null" ] && [ "$receipt_age_s" -gt "$RECEIPT_STALE_S" ] \
+         && { [ "$status" = "HEALTHY" ] || [ "$status" = "INCOMPLETE" ]; }; then
+        status="DISCONNECTED"
+        detail="no message from the publisher for ${receipt_age_s}s (limit ${RECEIPT_STALE_S}s) although an apply worker exists; $detail"
+        echo "FAIL: $detail" >&2
       fi
     fi
   fi
