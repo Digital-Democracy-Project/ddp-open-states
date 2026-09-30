@@ -65,8 +65,8 @@ where `ensure`/first build run, ddp-sync `local_openstates_api_base`, and ddp-ap
 broker `DDP_OPENSTATES_API_ROOT`.
 
 1. Update the checkout and rebuild the `api` image from `main` (contains `api/search_projection.py` and
-   `api/ddp_search.py`). Mac: `ddp-open-states/refresh-api-v3.sh` (after `git pull` of api-v3 `main`; it
-   scopes to `api`). RDS-backed host: use the deploy method already in place for `docker-compose.rds.yml`,
+   `api/ddp_search.py`). Mac: `ddp-open-states/refresh-api-v3.sh` (it does the checkout, pull, rebuild and
+   a redeploy scoped to the `api` service, and verifies Postgres did not restart). RDS-backed host: use the deploy method already in place for `docker-compose.rds.yml`,
    scoped to the `api` service only.
 2. Import check on the running container (must exit 0):
    `docker exec <api-container> python -c "import api.ddp_search, api.search_projection"`
