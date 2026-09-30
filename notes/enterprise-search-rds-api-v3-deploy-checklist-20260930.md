@@ -14,6 +14,25 @@ What is being deployed: api-v3 `main` at `ce1447c` or later (contains OPEN-308 `
 routes. It adds one table and the `pg_trgm` extension and changes nothing that exists. Nothing calls
 the routes yet.
 
+### What changes where
+
+There are **no Django migrations** in this deploy: api-v3 has no migration system, and the search table is
+created by hand with plain `CREATE ... IF NOT EXISTS` (`python -m api.search_projection ensure`, step 5), on
+purpose, to avoid migration-number collisions with upstream in the openstates-core fork. Structure changes
+never replicate, so each database is listed separately.
+
+| Where | What changes | How / when | Copied to the Mac replica? | Undo |
+|---|---|---|---|---|
+| **api-v3 container on the broker host** (`ddp-openstates-api-1`) | New image: code only (`api/search_projection.py`, `api/ddp_search.py`). No database change by itself. | Step 4 (`up -d --no-deps --build api`) | n/a | Re-tag the `pre-open308` image (section 9) |
+| **RDS `ddp-openstates` Postgres** | **Yes, additive:** extension `pg_trgm`, table `ddp_bill_search`, 4 indexes; then about 75k rows and roughly 509 MB from the first build. No existing table is touched. | Step 5: `ensure`, then `refresh`. Run by hand; nothing happens automatically on deploy or boot. | **No**, as long as the publication lists tables by name. The section 2 gate (`puballtables = f`) proves this before anything is created. | `DROP TABLE ddp_bill_search;` (the extension can stay) |
+| **Mac replica DB** (`openstates_rds_repl_20260911`, read by LegBot) | Nothing. | Structure changes are not replicated and the new table is not in the publication. | n/a | n/a |
+| **Mac api-v3 / local `openstates` DB** | Nothing, unless the new image is deployed there and `ensure` is run there. | Not part of this checklist. | n/a | `DROP TABLE ddp_bill_search;` |
+| **Broker's own Django database** | **Not this checklist.** The ddp-broker-py release (handoff note section 4.2) runs migrations 0064 (`pg_trgm` and fields), 0065 (two concurrent GIN trigram indexes) and 0066 (help text). | `manage.py migrate` in that release. Different host and database role; needs its own `pg_trgm` permission check first (plan 10.1 stop condition). | n/a (separate database) | Reversible: `migrate common 0063` (see handoff 4.2 rollback) |
+
+Later changes to `ddp_bill_search`'s own structure go into `DDL_STATEMENTS` in `api/search_projection.py` as
+idempotent `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` lines, and `ensure` must be re-run on every instance
+that builds the table (RDS and, if ever used, the Mac). They do not apply themselves on deploy.
+
 ---
 
 ## 0. Decisions to settle BEFORE starting (write the answer next to each)
