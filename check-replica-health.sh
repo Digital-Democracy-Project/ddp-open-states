@@ -30,7 +30,8 @@
 #
 # ALERTING. One Slack message to #automation-errors when a check has been bad for CONSECUTIVE runs in
 # a row (default 2: one blip never pages), a reminder every REMIND_S (default 6 h) while it stays bad,
-# and a recovery message. State is one small file per check under logs/last-run/. This is the Slack
+# and a recovery message. State is one small file per check under logs/last-run/, and it advances only
+# when Slack answers "ok":true (a rejected message or missing token is retried, not recorded as sent). This is the Slack
 # block PRIMITIVES.md tells new scripts to copy (token read from ddp-agents/.env, fail open). It
 # deliberately does not post to CAMS /api/v1/failures: that feeds CodeBot code triage, which can do
 # nothing about a network outage or a forgotten REFRESH PUBLICATION. Extracting the shared Slack
@@ -68,26 +69,39 @@ if [ -z "${DOCKER_HOST:-}" ]; then
     done
 fi
 
-SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-    2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+if [ "${REPLICA_SLACK_TOKEN+set}" = set ]; then
+    SLACK_TOKEN="$REPLICA_SLACK_TOKEN"   # test seam (may be empty, to exercise the no-token path)
+else
+    SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
+        2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+fi
 
 post_slack() {
-    # $1 = message. Callers pass it through clean_text() first: detail strings come from psql/docker
-    # output, so unlike the watchdog's hardcoded values they are NOT safe to inline into JSON as-is.
+    # $1 = message, already passed through clean_text(). Returns 0 ONLY if Slack accepted it.
+    # Slack answers HTTP 200 with {"ok":false,...} for a bad token, missing scope or bad channel, and
+    # the no-token case posts nothing at all; both must leave the alert state unadvanced so the next
+    # run retries, otherwise a failed page is recorded as sent and then silenced for REMIND_S.
     if [ "$DRY_RUN" = "1" ]; then
         echo "DRY_RUN slack: $1"
         return 0
     fi
-    [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
-        -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $SLACK_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "{\"channel\": \"#automation-errors\", \"text\": \"$1\"}" \
-        >/dev/null || true
+    if [ -z "$SLACK_TOKEN" ]; then
+        log "no Slack token available: message NOT delivered, will retry next run"
+        return 1
+    fi
+    local resp
+    resp="$(curl -s --max-time 10 -X POST https://slack.com/api/chat.postMessage \
+        -H "Authorization: Bearer $SLACK_TOKEN" -H "Content-Type: application/json" \
+        -d "{\"channel\": \"#automation-errors\", \"text\": \"$1\"}")" || resp=""
+    case "$resp" in
+        *'"ok":true'*) return 0 ;;
+    esac
+    log "Slack did not accept the message (${resp:0:120}): will retry next run"
+    return 1
 }
 
-# One line, no quotes or backslashes (JSON-breaking), capped.
-clean_text() { printf '%s' "$1" | tr '\n\r' '  ' | tr -d '"\\' | cut -c1-400; }
+# One line, no quotes, backslashes or other control characters (all JSON-breaking), capped.
+clean_text() { printf '%s' "$1" | tr '\n\r\t' '   ' | tr -d '\000-\037"\\' | cut -c1-400; }
 
 # track <key> <ok|bad> <message> [alert_after_bad_runs] [remind_seconds]
 # State file replica-health.<key>.state holds "<bad_runs> <last_alert_epoch> <first_bad_epoch>".
@@ -105,7 +119,9 @@ track() {
         if [ -f "$state" ]; then
             if [ "$last" -gt 0 ]; then
                 log "RECOVERED: $key"
-                post_slack "✅ *Mac replica of RDS — $key recovered* (was bad for ~$(( (NOW_EPOCH - first) / 60 )) min)"
+                if ! post_slack "✅ *Mac replica of RDS — $key recovered* (was bad for ~$(( (NOW_EPOCH - first) / 60 )) min)"; then
+                    return 0   # keep the state: the recovery message is retried on the next run
+                fi
             fi
             rm -f "$state"
         fi
@@ -116,11 +132,10 @@ track() {
     if [ "$bad" -ge "$need" ] && { [ "$last" -eq 0 ] || [ $(( NOW_EPOCH - last )) -ge "$remind" ]; }; then
         log "ALERT: $key — $msg"
         if [ "$last" -eq 0 ]; then
-            post_slack "⚠️ *Mac replica of RDS — $key is bad:* $msg — LegBot reads this replica. See ops/postgres-replica/local/README.md."
+            post_slack "⚠️ *Mac replica of RDS — $key is bad:* $msg — LegBot reads this replica. See ops/postgres-replica/local/README.md." && last=$NOW_EPOCH
         else
-            post_slack "⚠️ *Mac replica of RDS — $key is STILL bad* (~$(( (NOW_EPOCH - first) / 60 )) min): $msg"
+            post_slack "⚠️ *Mac replica of RDS — $key is STILL bad* (~$(( (NOW_EPOCH - first) / 60 )) min): $msg" && last=$NOW_EPOCH
         fi
-        last=$NOW_EPOCH
     fi
     mkdir -p "$LAST_RUN_DIR"
     echo "$bad $last $first" > "$state"

@@ -93,8 +93,11 @@ if [ "$subscribed_rc" -ne 0 ] || [ -z "$subscribed" ]; then
   exit 1
 fi
 
-only_published="$(comm -23 <(echo "$published") <(echo "$subscribed"))"
-only_subscribed="$(comm -13 <(echo "$published") <(echo "$subscribed"))"
+# comm needs both inputs sorted the SAME way. They arrive ordered by two different databases' collations
+# (RDS vs. the local container), which can disagree on underscores, so re-sort both in the C locale.
+# Assumes one publication and the public schema (pg_subscription_rel gives bare relation names).
+only_published="$(comm -23 <(echo "$published" | LC_ALL=C sort) <(echo "$subscribed" | LC_ALL=C sort))"
+only_subscribed="$(comm -13 <(echo "$published" | LC_ALL=C sort) <(echo "$subscribed" | LC_ALL=C sort))"
 if [ -n "$only_published" ]; then
   echo "FAIL: published on RDS but NOT subscribed locally (never arrives; run ALTER SUBSCRIPTION $SUBSCRIPTION REFRESH PUBLICATION after creating the table locally):" >&2
   echo "$only_published" | sed 's/^/  /' >&2

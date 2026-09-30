@@ -206,7 +206,9 @@ else
       # OPEN-312: a worker process that exists but has heard nothing for RECEIPT_STALE_S is not
       # healthy (half-open connection, publisher gone). Only downgrades a passing verdict -- a
       # BROKEN/LAGGING/DISCONNECTED one already says something more specific. "null" means the
-      # worker just started and has not received its first message yet: not stale.
+      # worker just started and has not received its first message yet: not stale. A worker cannot stay in
+      # that state: it must connect to the publisher to start, and one that cannot exits and restarts
+      # (the 2026-09-27 crash loop), which shows up as "no active apply worker" on most samples.
       if [ "$receipt_age_s" != "null" ] && [ "$receipt_age_s" -gt "$RECEIPT_STALE_S" ] \
          && { [ "$status" = "HEALTHY" ] || [ "$status" = "INCOMPLETE" ]; }; then
         status="DISCONNECTED"

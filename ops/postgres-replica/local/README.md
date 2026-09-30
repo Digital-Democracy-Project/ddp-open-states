@@ -579,7 +579,13 @@ into one Slack message to `#automation-errors`, plus a recovery message.
   re-alerts every 6 h; a schema failure alerts on the first check and re-alerts daily. `INCOMPLETE`
   (local checks passed, RDS side not configured) counts as OK. State: one small file per check,
   `logs/last-run/replica-health.<replica|schema>.state`; log: `logs/replica-check.log` (quiet runs
-  log nothing). Deleting a state file re-arms the alert.
+  log nothing). Deleting a state file re-arms the alert. An alert or recovery counts as sent only
+  when Slack answers `"ok":true`; a rejected message (bad token, wrong channel) or a missing token is
+  logged and retried on the next run rather than recorded as delivered.
+- **Confirming it is actually running.** A healthy run is silent by design, so silence proves nothing.
+  `replica-status.sh` writes a `ddp_legbot_replica` heartbeat to CAMS on every run: after the hook
+  is installed, `cams status` should show that job with a heartbeat under 5 minutes old. No heartbeat
+  movement means the hook is not running.
 - **To run it:** one line in `ddp-agents/deployment/scripts/health-check-slack.sh`, next to the
   `check-scrape-staleness.sh` hook (the same 5-minute `com.ddp.health-monitor` daemon):
   `bash /Users/agentsmith/Developer/repos/ddp-open-states/check-replica-health.sh >/dev/null 2>&1 || true`

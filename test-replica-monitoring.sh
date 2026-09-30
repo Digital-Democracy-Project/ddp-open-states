@@ -136,6 +136,59 @@ printf 'PASS: all 47 published tables match\n' > "$G/compare.out"; echo 0 > "$G/
 out=$(run_glue $(( 12 * 3600 + 120 )) env RDS_HOST=rds.example RDS_REPLICATION_PASSWORD=pw)
 assert_contains "schema recovery posts" "$out" "schema recovered"
 
+echo "--- glue: a message Slack did not accept must not count as delivered (pm-review)"
+CB="$T/bin-curl"; mkdir -p "$CB"
+cat > "$CB/curl" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" >> "$CURL_LOG"; cat "$CURL_REPLY"
+EOF
+chmod +x "$CB/curl"
+echo '{"ok":false,"error":"invalid_auth"}' > "$G/curl.reply"; : > "$G/curl.log"
+run_glue_live() {  # <now_offset_s> [env args]
+    local off="$1"; shift
+    env REPLICA_LAST_RUN_DIR="$G/last-run" REPLICA_LOG_FILE="$G/test.log" REPLICA_DRY_RUN=0 \
+        REPLICA_NOW_EPOCH=$(( NOW + off )) REPLICA_DB=fixture_db REPLICA_SLACK_TOKEN=xoxb-test \
+        REPLICA_STATUS_CMD="$G/status.sh" REPLICA_COMPARE_CMD="$G/compare.sh" \
+        GLUE_STATUS_FILE="$G/status.out" CURL_LOG="$G/curl.log" CURL_REPLY="$G/curl.reply" \
+        PATH="$CB:$PATH" "$@" bash "$GLUE" 2>&1
+}
+rm -f "$G/last-run/"replica-health.*
+set_status DISCONNECTED "publisher gone"
+run_glue_live 0 >/dev/null; out=$(run_glue_live 300)
+assert_contains "Slack HTTP-200 ok:false is reported as not delivered" "$out" "Slack did not accept the message"
+assert_eq "a rejected alert leaves last_alert_epoch at 0 (not recorded as sent)" "$(awk '{print $2}' "$G/last-run/replica-health.replica.state")" "0"
+before=$(wc -l < "$G/curl.log")
+run_glue_live 600 >/dev/null
+assert_eq "the next run retries the alert instead of staying silent for 6h" "$(( $(wc -l < "$G/curl.log") - before ))" "1"
+echo '{"ok":true}' > "$G/curl.reply"
+run_glue_live 900 >/dev/null
+assert_eq "once Slack accepts, the alert is recorded as sent" "$(awk '{print ($2>0)}' "$G/last-run/replica-health.replica.state")" "1"
+before=$(wc -l < "$G/curl.log"); run_glue_live 1200 >/dev/null
+assert_eq "and is then silent (no duplicate within the reminder window)" "$(( $(wc -l < "$G/curl.log") - before ))" "0"
+
+echo '{"ok":false,"error":"channel_not_found"}' > "$G/curl.reply"
+set_status HEALTHY "ok"
+out=$(run_glue_live 1500)
+assert_contains "a recovery Slack rejects is not silently dropped" "$out" "Slack did not accept the message"
+assert_file "...and its state is kept so the recovery is retried" "$G/last-run/replica-health.replica.state" exists
+echo '{"ok":true}' > "$G/curl.reply"; run_glue_live 1800 >/dev/null
+assert_file "recovery delivered on the retry: state cleared" "$G/last-run/replica-health.replica.state" absent
+
+rm -f "$G/last-run/"replica-health.*
+set_status DISCONNECTED "publisher gone"
+run_glue_live 0 env REPLICA_SLACK_TOKEN= >/dev/null; out=$(run_glue_live 300 env REPLICA_SLACK_TOKEN=)
+assert_contains "no Slack token: reported as not delivered" "$out" "no Slack token available"
+assert_eq "no Slack token: alert not recorded as sent" "$(awk '{print $2}' "$G/last-run/replica-health.replica.state")" "0"
+rm -f "$G/last-run/"replica-health.*; set_status HEALTHY "ok"
+
+echo "--- glue: tabs and other control characters are stripped too (pm-review)"
+set_status BROKEN "$(printf 'tab\there bell\a end')"
+run_glue 0 >/dev/null; out=$(run_glue 300)
+assert_not_contains "no tab in the alert text" "$out" "$(printf '\t')"
+assert_not_contains "no bell character in the alert text" "$out" "$(printf '\a')"
+assert_contains "the rest of the text survives" "$out" "tab here bell end"
+set_status HEALTHY "ok"; run_glue 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
+
 echo "--- glue: discovery failures alert (docker stub)"
 B="$T/bin-glue"; mkdir -p "$B"
 cat > "$B/docker" <<'EOF'
@@ -251,6 +304,10 @@ echo "--- compare-schema"
 reset_fx; out=$(run_compare)
 assert_contains "matching sets and columns: PASS with a dynamic table count" "$out" "all 2 published tables are subscribed and match"
 assert_contains "exit 0 when everything matches" "$out" "exit=0"
+
+reset_fx; printf 'opencivicdata_person\nopencivicdata_bill\n' > "$FX/published"; out=$(run_compare)
+assert_contains "same tables in a different ORDER (two databases' collations disagree) still PASS" "$out" "all 2 published tables are subscribed and match"
+assert_contains "and exit 0" "$out" "exit=0"
 
 reset_fx; printf 'opencivicdata_bill\nopencivicdata_person\nopencivicdata_newtable\n' > "$FX/published"; out=$(run_compare)
 assert_contains "table published but never subscribed is reported" "$out" "published on RDS but NOT subscribed locally"
