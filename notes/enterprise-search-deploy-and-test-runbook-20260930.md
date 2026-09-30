@@ -85,7 +85,7 @@ broker `DDP_OPENSTATES_API_ROOT`.
 5. Coverage must show `projected == bills` for the 8 enrolled jurisdictions (US, FL, MI, AZ, VA, WA, UT, NC):
    `GET /ddp/search/coverage?jurisdiction=US&jurisdiction=FL&...` (needs an api-v3 key). Local reference
    counts: US 37,809; FL 7,685; VA 4,380; MI 4,013; WA 3,411; NC 2,338; AZ 2,190; UT 1,021 (production will be
-   larger). `with_abstract` is nonzero only for FL and VA; `people` nonzero for all.
+   larger). `with_abstract` is nonzero only for FL and VA; `people` is nonzero for all except possibly NC (0 NC people in the Mac replica on 2026-09-30, while the Mac's scrape database has 508). Check RDS first with `SELECT count(*) FROM opencivicdata_person WHERE current_jurisdiction_id = 'ocd-jurisdiction/country:us/state:nc/government';` and if RDS also has none, legislator search will find no NC legislators until they are loaded.
 6. Timing, warm, one client, local numbers as reference: `GET /ddp/search` p95 about 116 ms, `suggest` p95
    about 83 ms, `hydrate` of 50 ids about 6 ms. **Known slow shapes (not fixed):** `q=S 1` about 1.25 s;
    3-character `suggest` about 150 ms. Then measure `suggest` p95 through ddp-api from the broker host with
