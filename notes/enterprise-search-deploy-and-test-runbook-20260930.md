@@ -58,9 +58,13 @@ deploy or test yet**; this handoff gets the plumbing in place and verified.
 
 ### 4.1 api-v3 (OPEN-308 + OPEN-309)
 
-Two instances exist and **search must be served from the RDS-backed one** (broker host `10.0.0.11`,
-`deploy/docker-compose.rds.yml`): the Mac subscriber does not replicate abstracts or people (plan §4.5.6).
-Decide and record which instance serves production, and make three things name the SAME instance:
+Two instances exist: the RDS-backed one (broker host `10.0.0.11`, `deploy/docker-compose.rds.yml`) and the
+Mac's (:8002). **Correction 2026-09-30 (OPEN-312):** an earlier version of this note said search must be
+served from the RDS-backed one because the Mac replica lacks abstracts and people. That is stale: the live
+subscription covers 47 tables and the Mac replica holds 27,673 abstracts and 4,088 people, so either instance
+can serve search. Prefer the RDS-backed one because it is authoritative and the replica runs about 11 s behind,
+but it is a choice, not a requirement. If you do build on the Mac, remember it is the database LegBot reads
+(rule 1 above). Decide and record which instance serves production, and make three things name the SAME instance:
 where `ensure`/first build run, ddp-sync `local_openstates_api_base`, and ddp-api `OPENSTATES_SERVICE_URL` /
 broker `DDP_OPENSTATES_API_ROOT`.
 
