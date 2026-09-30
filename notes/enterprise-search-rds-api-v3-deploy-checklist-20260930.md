@@ -43,11 +43,16 @@ that builds the table (RDS and, if ever used, the Mac). They do not apply themse
       `up --build` compiles on the host. The api-v3 image is small, but decide on purpose:
       (a) build on the host, accepting that, or (b) build on the Mac and ship the image. Also confirm the
       host's CPU type (arm64 vs x86) matches the image. Decision: ______
-- [ ] **Which instance serves search in production.** The handoff says the RDS-backed one (the Mac
-      replica was believed to lack abstracts and people; OPEN-312 found it actually holds them, so
-      re-confirm). Whatever is chosen, these three must name the SAME instance: where `ensure` and the
-      first build run, ddp-sync `local_openstates_api_base`, and ddp-api `OPENSTATES_SERVICE_URL` /
-      broker `DDP_OPENSTATES_API_ROOT`. Decision: ______
+- [ ] **Which instance serves search in production.** Either can: the Mac replica now carries 47 tables,
+      including abstracts (23,291 bills: FL, VA, MA, AL) and people (4,088), so the old reason for requiring
+      the RDS-backed one (the replica lacking abstracts and people) no longer holds (corrected in the main
+      handoff note, commit `9bf63db`). The RDS-backed one is still the sensible default because it is
+      authoritative (the replica trails by seconds and lost its connection for ~3h50m on 2026-09-27) and
+      building the index on the Mac writes a table into the database LegBot reads. One real gap applies to
+      both: the replica has **0 NC people** (the Mac's scrape database has 508), so unless RDS has them, NC
+      legislator search will find nothing (see section 6). Whatever is chosen, these three must name the SAME
+      instance: where `ensure` and the first build run, ddp-sync `local_openstates_api_base`, and ddp-api
+      `OPENSTATES_SERVICE_URL` / broker `DDP_OPENSTATES_API_ROOT`. Decision: ______
 - [ ] **A quiet window.** No LegBot run in progress (it reads the Mac replica; the first build writes
       heavily on RDS). Window: ______
 - [ ] **Path of the api-v3 checkout and the `deploy/` directory on the host**, and whether that host uses
@@ -127,7 +132,10 @@ curl -s -H "X-API-KEY: $K" "$B/coverage?jurisdiction=US&jurisdiction=FL&jurisdic
 - [ ] **Done condition:** `projected == bills` for all 8 enrolled jurisdictions (US, FL, MI, AZ, VA, WA, UT, NC).
       Local reference counts: US 37,809; FL 7,685; VA 4,380; MI 4,013; WA 3,411; NC 2,338; AZ 2,190; UT 1,021
       (production will be larger).
-- [ ] `with_abstract` is nonzero for FL and VA; `people` is nonzero for all eight.
+- [ ] `with_abstract` is nonzero for FL and VA; `people` is nonzero for all eight **except possibly NC**
+      (0 NC people in the Mac replica on 2026-09-30). Check RDS first:
+      `SELECT count(*) FROM opencivicdata_person WHERE current_jurisdiction_id = 'ocd-jurisdiction/country:us/state:nc/government';`
+      Zero NC people is a data gap (they were never loaded there), not a search bug.
 - [ ] Size: `SELECT pg_size_pretty(pg_total_relation_size('ddp_bill_search'));` (local reference about 509 MB). Result: ______
 - [ ] Spot checks return sensible results: an exact bill number, a misspelling, a topic word, a legislator name.
 - [ ] No key gives 403, a bad key gives 401, `limit=101` gives 422.
