@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # OPEN-277: schema-comparison script (PLAN-rds-local-postgres-replication.md §7.7, §7.9). Compares
-# RDS vs. the local replica for exactly the 7 tables this plan's publication carries (§3.2) --
-# not a general schema-diff tool. Run manually after any Django migration touching these 7
-# tables (§7.9's own procedure), not on a schedule.
+# RDS vs. the local replica for every table the RDS publication carries (OPEN-312: read from
+# pg_publication_tables, no longer the original hardcoded 7) -- not a general schema-diff tool.
+# Run after any Django migration touching a replicated table (§7.9's own procedure); the scheduled
+# check-replica-health.sh (repo root) also runs it, but only when an RDS credential is supplied.
 #
 # Checks, per table:
 #   1. Does the table exist on both sides?
@@ -45,17 +46,11 @@ if [[ ! "$LOCAL_DB" =~ ^[a-z_][a-z0-9_]*$ ]]; then
   exit 1
 fi
 
-# The plan's own §3.2 table list, read directly from api-v3's actual query construction -- not a
-# guessed subset. Order matters for nothing here; this is just what gets iterated.
-TABLES=(
-  opencivicdata_bill
-  opencivicdata_legislativesession
-  opencivicdata_jurisdiction
-  opencivicdata_organization
-  opencivicdata_billversion
-  opencivicdata_billversionlink
-  ddp_bill_version_document
-)
+# OPEN-312: the table list is no longer hardcoded (it was the original 7 while the live publication
+# grew to 47, so drift in the other 40 went unchecked). It is read from RDS's own publication below,
+# so this script cannot fall behind the publication it is meant to check.
+PUBLICATION="${PUBLICATION:-ddp_legbot_publication}"
+SUBSCRIPTION="${SUBSCRIPTION:-ddp_legbot_subscription}"
 
 # pm-review round 1: the password no longer appears in the connection string / process args
 # (visible to anything that can see this process's argv, e.g. `ps`) -- passed via PGPASSWORD
@@ -74,11 +69,62 @@ COLUMN_QUERY="
 
 mismatch_found=0
 
+# Runs psql against RDS INSIDE the local Postgres container: this Mac has no host psql, and that
+# container already reaches RDS (it is the subscriber). The password is passed by env-var NAME, so
+# it never shows up in `docker exec`'s own argument list on the host.
+rds_psql() {  # <sql>
+  PGPASSWORD="$RDS_REPLICATION_PASSWORD" docker exec -e PGPASSWORD "$PG_CONTAINER" psql "$RDS_CONN" -tAc "$1" 2>&1
+}
+
+# --- 1. Are we comparing the right set of tables? -------------------------------------------------
+# Published on RDS vs. subscribed locally. A table in the publication that the subscription does not
+# carry is SILENT data loss on the replica: no error, no crash loop, the table just never arrives (the
+# usual cause is ALTER PUBLICATION ... ADD TABLE without ALTER SUBSCRIPTION ... REFRESH PUBLICATION).
+published="$(rds_psql "SELECT tablename FROM pg_publication_tables WHERE pubname = '$PUBLICATION' AND schemaname = 'public' ORDER BY 1")"
+published_rc=$?
+if [ "$published_rc" -ne 0 ] || [ -z "$published" ]; then
+  echo "FAIL: could not read publication '$PUBLICATION' from RDS (or it lists no tables): $published" >&2
+  exit 1
+fi
+subscribed="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$LOCAL_DB" -tAc "SELECT c.relname FROM pg_subscription_rel r JOIN pg_class c ON c.oid = r.srrelid JOIN pg_subscription s ON s.oid = r.srsubid WHERE s.subname = '$SUBSCRIPTION' ORDER BY 1" 2>&1)"
+subscribed_rc=$?
+if [ "$subscribed_rc" -ne 0 ] || [ -z "$subscribed" ]; then
+  echo "FAIL: could not read subscription '$SUBSCRIPTION' tables from $LOCAL_DB: $subscribed" >&2
+  exit 1
+fi
+
+# comm needs both inputs sorted the SAME way. They arrive ordered by two different databases' collations
+# (RDS vs. the local container), which can disagree on underscores, so re-sort both in the C locale.
+# Assumes one publication and the public schema (pg_subscription_rel gives bare relation names).
+only_published="$(comm -23 <(echo "$published" | LC_ALL=C sort) <(echo "$subscribed" | LC_ALL=C sort))"
+only_subscribed="$(comm -13 <(echo "$published" | LC_ALL=C sort) <(echo "$subscribed" | LC_ALL=C sort))"
+if [ -n "$only_published" ]; then
+  echo "FAIL: published on RDS but NOT subscribed locally (never arrives; run ALTER SUBSCRIPTION $SUBSCRIPTION REFRESH PUBLICATION after creating the table locally):" >&2
+  echo "$only_published" | sed 's/^/  /' >&2
+  mismatch_found=1
+fi
+if [ -n "$only_subscribed" ]; then
+  echo "FAIL: subscribed locally but no longer in the RDS publication:" >&2
+  echo "$only_subscribed" | sed 's/^/  /' >&2
+  mismatch_found=1
+fi
+
+# --- 2. Do the columns match, table by table? -----------------------------------------------------
+TABLES=()
+while IFS= read -r t; do
+  # Names come from a remote system and are interpolated into SQL below: refuse anything unexpected.
+  if [[ ! "$t" =~ ^[a-z_][a-z0-9_]*$ ]]; then
+    echo "FAIL: refusing unexpected table name from RDS publication: '$t'" >&2
+    exit 1
+  fi
+  TABLES+=("$t")
+done <<< "$published"
+
 for table in "${TABLES[@]}"; do
   echo "== $table =="
   query="${COLUMN_QUERY//__TABLE__/$table}"
 
-  rds_columns="$(PGPASSWORD="$RDS_REPLICATION_PASSWORD" psql "$RDS_CONN" -tAc "$query" 2>&1)"
+  rds_columns="$(rds_psql "$query")"
   rds_rc=$?
 
   local_columns="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$LOCAL_DB" -tAc "$query" 2>&1)"
@@ -120,7 +166,7 @@ done
 
 echo
 if [ "$mismatch_found" -eq 0 ]; then
-  echo "PASS: all 7 tables match between RDS and the local replica."
+  echo "PASS: all ${#TABLES[@]} published tables are subscribed and match between RDS and the local replica."
   exit 0
 else
   echo "FAIL: at least one table has a schema mismatch or is missing -- see above." >&2

@@ -101,7 +101,8 @@ should reuse rather than reimplement:
   token found → just skips the post, never blocks the scrape). **Reused verbatim in
   `backup-openstates-db.sh`** (`slack_fail()`, same token-read line, different channel message).
   **Update 2026-08-08 (OPEN-40):** the copy count reached five (`run-scrape.sh`,
-  `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`, `check-scrape-staleness.sh`)
+  `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`, `check-scrape-staleness.sh`; a sixth,
+  Slack-only, arrived with `check-replica-health.sh` in OPEN-312)
   — extraction into a shared sourced helper is now tracked as **OPEN-43**; don't add a sixth
   copy, wait for (or do) that ticket instead. The watchdog may deliberately remain a copy even
   after extraction (monitoring shouldn't share code with what it monitors).
@@ -277,6 +278,21 @@ ddp-sync schedule changes (keep in sync with `sync_schedule.yaml`); backfill mar
 (`fl_session_2023`…, `usa_session_118_*`) must never be added to it. `STALE_*` env vars are
 test seams only — `test-check-scrape-staleness.sh` runs the whole lifecycle against a mktemp
 fixture dir with no network. Full operator doc: `RUNBOOK.md` → "Scraper staleness watchdog".
+
+## `check-replica-health.sh` — RDS→Mac replica health + alerting (repo root, OPEN-312)
+
+The scheduled, alerting wrapper for the logical replica LegBot reads. **Reuses, does not reimplement:**
+`ops/postgres-replica/local/replica-status.sh` (worker state, lag, retained WAL, CAMS heartbeat) and
+`compare-schema.sh` (published-vs-subscribed table set + column agreement) do all the assessing; this
+script only runs them, keeps a two-strikes alert state per check in `logs/last-run/replica-health.*.state`,
+and posts one Slack message (plus recovery) to `#automation-errors`. Credential-free checks run every
+time; the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL` /
+`RDS_HOST`+`RDS_REPLICATION_PASSWORD` are in the environment. Same invocation model as
+`check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
+Sets `DOCKER_HOST` to Colima itself when run as a root daemon (copied from `start-os-api.sh`).
+**This is the sixth copy of the Slack block** (Slack only, no CAMS: CodeBot triage cannot act on a
+network outage), still waiting on OPEN-43. Test seams: `REPLICA_*` env vars, see
+`test-replica-monitoring.sh`. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)
 
@@ -826,10 +842,10 @@ that they can reject a broken one, which is the easier half to get right by acci
   in one of these shapes, not a new top-level directory.
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
-  assertions)` and exit 0 or the first failing assertion and exit 1. Seven of these now exist
+  assertions)` and exit 0 or the first failing assertion and exit 1. Eight of these now exist
   (`test-import-summary.sh`, `test-check-scrape-staleness.sh`, `test-scrape-outcome.sh`,
   `test-no-op-side-effects.sh`, `test-scrape-lock.sh`, `test-completion-record.sh`,
-  `test-scraper-memory.sh`) and they all share that shape — copy the nearest one rather than
+  `test-scraper-memory.sh`, `test-replica-monitoring.sh`) and they all share that shape — copy the nearest one rather than
   introducing a runner. Four of them drive
   **`run-scrape.sh` itself** against a stub `os-update`, which is the only way to assert what the
   script *does* with a decision rather than just what a matcher returns.
