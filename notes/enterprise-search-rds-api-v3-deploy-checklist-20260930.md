@@ -5,7 +5,9 @@ Written 2026-09-30 for Ramon / the ops agent. Companion to
 prose; this is the tick-as-you-go version). Runbook for the feature itself: `docs/runbook/ddp-bill-search.md`
 in api-v3 PR #14 (not merged yet).
 
-**Nothing in this checklist has been run against RDS or the broker host.** The same steps were run
+**STATUS 2026-10-01: superseded by what happened.** Sections 2 to 6 were run on the RDS-backed instance and most of section 7 was checked; results are in `report-api-v3-search-deploy-on-rds-instance-20260930.md`, `report-api-v3-search-section7-ddp-api-checks-20260930.md`, and the merged api-v3 runbook (`docs/runbook/ddp-bill-search.md`, section 7). Still open: importer freshness test, the refresh hook (SYNC-87), the boot-script block, loading NC people, and the `suggest` latency miss. The text below is kept as written.
+
+~~**Nothing in this checklist has been run against RDS or the broker host.**~~ The same steps were run
 end to end on the dev database (`openstates_dev`) on 2026-09-30 and all passed (see section 9). The
 session that wrote this had no AWS credentials and did not log in to the broker host.
 
@@ -56,7 +58,7 @@ that builds the table (RDS and, if ever used, the Mac). They do not apply themse
 - [ ] **A quiet window.** No LegBot run in progress (it reads the Mac replica; the first build writes
       heavily on RDS). Window: ______
 - [ ] **Path of the api-v3 checkout and the `deploy/` directory on the host**, and whether that host uses
-      `docker-compose` or `docker compose`. The steps below use `<api-v3-dir>` and `<deploy-dir>`. Filled in: ______
+      `docker-compose` or `docker compose` (answered 2026-09-30: the broker host has only `docker compose`; the checkout is `/opt/ddp-open-states`). The steps below use `<api-v3-dir>` and `<deploy-dir>`. Filled in: ______
 
 ## 1. Safety rules (same as the main handoff note, repeated because they matter here)
 
@@ -97,7 +99,8 @@ SELECT count(*) FROM pg_publication_tables WHERE pubname = 'ddp_legbot_publicati
 - [ ] `git -C <api-v3-dir> checkout main && git -C <api-v3-dir> pull --ff-only origin main`
       Expect head at `ce1447c` or later.
 - [ ] From `<deploy-dir>`:
-      `docker-compose -f docker-compose.rds.yml up -d --no-deps --build api`
+      `docker compose -f docker-compose.rds.yml up -d --no-deps --build api`
+      (the broker host has only the `docker compose` v2 plugin, no hyphenated `docker-compose`; the Mac is the opposite)
       (This recreates `api` only. The host's own Redis, `ddp-openstates-redis-1`, is left alone.)
 - [ ] Container healthy: `docker ps` shows `(healthy)`; `curl -s http://localhost:8002/healthz` returns 200.
 - [ ] **Import check, must exit 0:**
@@ -165,7 +168,7 @@ curl -s -H "X-API-KEY: $K" "$B/coverage?jurisdiction=US&jurisdiction=FL&jurisdic
 ## 9. Rollback
 
 - Image: `docker tag ddp-openstates-api:pre-open308 ddp-openstates-api:local`, then
-  `docker-compose -f docker-compose.rds.yml up -d --no-deps --force-recreate api` (still scoped to `api`).
+  `docker compose -f docker-compose.rds.yml up -d --no-deps --force-recreate api` (still scoped to `api`).
 - The table is derived and nothing else reads it: `DROP TABLE ddp_bill_search;` loses nothing rebuildable. The
   routes return 500 until `ensure` plus a full refresh finish, so do it only with nothing consuming them
   (nothing does today). One `POST /ddp/search/refresh` (no jurisdiction) recreates and refills it.
