@@ -592,9 +592,13 @@ into one Slack message to `#automation-errors`, plus a recovery message.
   That hook lives in the `ddp-agents` repo, so it is a separate, deliberate step (as it was for
   OPEN-40). **Decided 2026-10-01: no RDS credential for now.** ddp-sync resolves it in
   Python (`resolve_rds_database_url()`), which a shell hook cannot, and the credential-free checks
-  already cover the outage above. So the steady state in `cams status` is `INCOMPLETE` ("RDS-side lag
-  was NOT checked"); that is expected, not a fault. What this gives up: the early warning on lag and
-  on the WAL RDS retains for the subscription, and the 6-hourly table comparison. **Run
+  already cover the outage above. So the steady state in `cams status` is `INCOMPLETE`. **It is expected only when the detail reads
+  "local apply worker running …, but RDS-side lag was NOT checked (no RDS_MONITORING_DATABASE_URL)"**
+  (that is the only way `replica-status.sh` produces `INCOMPLETE`: the local checks passed and the RDS
+  side was skipped); any other `INCOMPLETE` detail needs investigating. What this gives up: the early
+  warning on lag, on the WAL RDS retains for the subscription, and the 6-hourly table-and-column
+  comparison (`compare-schema.sh`: which tables are published versus subscribed, and whether their
+  columns match). **Run
   `compare-schema.sh` by hand after any change to a replicated table on RDS** (checklist below), and
   revisit this if OPEN-314 (automatic pickup of new tables) needs a credential anyway.
 - **Tests:** `bash test-replica-monitoring.sh` (no network, no database; `docker` is a stub).
