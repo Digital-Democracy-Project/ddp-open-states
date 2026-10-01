@@ -189,6 +189,25 @@ assert_not_contains "no bell character in the alert text" "$out" "$(printf '\a')
 assert_contains "the rest of the text survives" "$out" "tab here bell end"
 set_status HEALTHY "ok"; run_glue 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
 
+echo "--- glue: runs under launchd's bare environment (no HOME, minimal PATH) -- found live 2026-10-01"
+# The health-monitor daemon gets PATH=/usr/bin:/bin:/usr/sbin:/sbin and no HOME. With `set -u` the
+# first $HOME reference used to abort the whole script silently, so the monitor never ran at all.
+rm -f "$G/last-run/"replica-health.*
+set_status DISCONNECTED "daemon-env check"
+run_glue_bare() {  # <now_offset_s>
+    env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+        REPLICA_LAST_RUN_DIR="$G/last-run" REPLICA_LOG_FILE="$G/test.log" REPLICA_DRY_RUN=1 \
+        REPLICA_NOW_EPOCH=$(( NOW + $1 )) REPLICA_DB=fixture_db REPLICA_SLACK_TOKEN=x \
+        REPLICA_STATUS_CMD="$G/status.sh" GLUE_STATUS_FILE="$G/status.out" \
+        bash "$GLUE" 2>&1
+}
+out=$(run_glue_bare 0)
+assert_not_contains "no HOME: does not abort on an unbound variable" "$out" "unbound variable"
+assert_file "no HOME: the check actually ran (recorded its first bad run)" "$G/last-run/replica-health.replica.state" exists
+out=$(run_glue_bare 300)
+assert_contains "no HOME: second bad run alerts as normal" "$out" "DRY_RUN slack"
+set_status HEALTHY "ok"; run_glue_bare 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
+
 echo "--- glue: discovery failures alert (docker stub)"
 B="$T/bin-glue"; mkdir -p "$B"
 cat > "$B/docker" <<'EOF'

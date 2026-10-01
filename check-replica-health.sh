@@ -61,10 +61,17 @@ SCHEMA_EVERY_S="${REPLICA_SCHEMA_EVERY_S:-21600}"
 # clutter scraper.log. Quiet runs (all healthy) log nothing.
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 
+# The daemon this runs under (com.ddp.health-monitor) gets launchd's bare environment: PATH is only
+# /usr/bin:/bin:/usr/sbin:/sbin and HOME is UNSET (verified with `launchctl print`, 2026-10-01).
+# Without the two lines below this script aborted silently on its first `$HOME` under `set -u` and
+# could not have found `docker` (it lives in /opt/homebrew/bin) even if it had not. Children
+# (replica-status.sh, compare-schema.sh) inherit both.
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"   # appended: a caller's own PATH (and test stubs) still win
+
 # A root LaunchDaemon has no GUI docker context: reach Colima's socket directly, exactly as
-# start-os-api.sh does. Children (replica-status.sh, compare-schema.sh) inherit it.
+# start-os-api.sh does.
 if [ -z "${DOCKER_HOST:-}" ]; then
-    for _sock in "$HOME/.colima/default/docker.sock" "/Users/agentsmith/.colima/default/docker.sock"; do
+    for _sock in "${HOME:-/var/root}/.colima/default/docker.sock" "/Users/agentsmith/.colima/default/docker.sock"; do
         [ -S "$_sock" ] && export DOCKER_HOST="unix://$_sock" && break
     done
 fi
