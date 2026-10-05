@@ -266,7 +266,8 @@ should reuse rather than reimplement:
 ## `check-scrape-staleness.sh` — RETIRED (OPEN-324, 2026-10-05)
 
 Removed, along with `test-check-scrape-staleness.sh` and its `ddp-agents` hook. It was broken
-(no PyYAML under the daemon, so it watched nothing from 2026-08-23) and obsolete (the
+(its YAML watchlist failed on `import yaml` under the daemon, so it watched nothing from
+2026-08-23) and obsolete (the
 `logs/last-run/*.ts` markers it read stopped updating on 2026-09-01 when scraping moved to the cloud
 path). Don't resurrect it to cover "a scheduled scrape never started" -- that belongs next to the
 scheduler in ddp-sync, not on this Mac. Full account: `RUNBOOK.md` → "Scraper staleness watchdog --

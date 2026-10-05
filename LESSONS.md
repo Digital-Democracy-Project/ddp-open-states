@@ -201,7 +201,8 @@ retry. Everything downstream was resilient; the first call was not.
   (The staleness watchdog, once the case for staying a copy, was retired in OPEN-324.)
 * **A watchdog that reads the old system's markers goes blind, silently, when the system moves
   (OPEN-324).** The staleness watchdog logged "watching NOTHING" every 5 minutes for six weeks
-  (12,330 lines) and alerted on nothing -- its YAML parse had never worked under the daemon -- and
+  (12,330 lines) and alerted on nothing -- its YAML parse failed on `import yaml` from the first
+  run after it was introduced -- and
   even working, it read Mac markers that stopped updating when scraping moved to the cloud. A
   monitor's own "I cannot see anything" state is an alert condition, not a log line; and when you
   move the thing being monitored, move or retire its monitor in the same change.

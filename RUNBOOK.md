@@ -145,10 +145,12 @@ tail -f logs/os-api.log
 
 `check-scrape-staleness.sh` (OPEN-40/130/135) and its test are gone. It had two independent faults:
 
-1. **Broken since 2026-08-23.** The YAML-derived watchlist (OPEN-135) parses
-   `ddp-sync/config/sync_schedule.yaml` with `import yaml`, and the python3 the root-run
-   `com.ddp.health-monitor` daemon resolves has no PyYAML. Every run logged `cannot derive the
-   watchlist ... watching NOTHING` (12,330 times by 2026-10-05) and alerted on nothing.
+1. **Broken since 2026-08-23.** *Observed:* from the first run after OPEN-135 introduced the
+   YAML-derived watchlist, every invocation logged `cannot derive the watchlist from
+   .../sync_schedule.yaml -- watching NOTHING this run: ... ModuleNotFoundError: No module named
+   'yaml'` (12,330 lines by 2026-10-05), and it alerted on nothing. *Inferred, not verified:* that
+   the python3 the root-run `com.ddp.health-monitor` daemon resolves simply has no PyYAML (it is
+   importable in this repo's `.venv` and in an interactive shell; nobody ran it as root).
 2. **Obsolete since 2026-09-01.** It read `logs/last-run/<key>.ts` on this Mac, but scrapes moved to
    the cloud path: the live watermarks are in the S3 memory store, and this Mac's ddp-sync registers
    no OpenStates scrape jobs. Every Mac marker had stopped updating by 2026-09-01, so simply
@@ -159,9 +161,12 @@ tail -f logs/os-api.log
 `#automation-errors` -- e.g. the 2026-10-04 UT/NC/MI scrape and MA archive failures), and
 `_alert_quiet_jurisdiction` when a jurisdiction imports nothing for several runs in a row.
 
-**Known gap, accepted:** nothing alerts when a cloud-owned scrape never *starts* (e.g. the EC2
-scheduler is down). If that is ever wanted, build it next to the scheduler in ddp-sync, which has the
-schedule and AWS access; this Mac cannot read the S3 memory store.
+**Known gap, accepted:** no alert that we know of fires when a cloud-owned scrape never *starts*
+(e.g. the EC2 scheduler is down) -- checked against ddp-sync's OpenStates alerting
+(`_alert_quiet_jurisdiction` and the failure alerts), not an audit of every AWS or infrastructure
+alarm. If it is ever wanted, build it next to the scheduler in ddp-sync, which has the schedule and
+AWS access; this Mac has no AWS credentials of its own (S3 reads go through the sudo-gated proxy
+wrappers), so a Mac-side monitor cannot read the memory store.
 
 **Leftovers, safe to delete:** `logs/staleness-check.log` and `logs/last-run/*.stale-alerted`. The
 `ddp-agents` hook that called the script was removed in the companion `ddp-agents` PR (until that
