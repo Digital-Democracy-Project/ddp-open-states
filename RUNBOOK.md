@@ -57,7 +57,6 @@ GROUP BY j.name ORDER BY j.name;"
 | openstates-postgres | 5433 | container `restart:unless-stopped` (same compose) | dedicated DB (volume `os_pg_data`) |
 | db backup | — | **system LaunchDaemon** `com.ddp.openstates-db-backup` (07:00 local) | `backup-openstates-db.sh` (nightly pg_dump, keep-7) |
 | Scraper | 8001 | ddp-sync APScheduler — **system LaunchDaemon** `com.ddp.ddp-sync` (not a GUI agent) | `run-scrape.sh` (per jurisdiction) |
-| Staleness watchdog | — | **system LaunchDaemon** `com.ddp.health-monitor` (ddp-agents, every 5 min) — **live, see below** | `check-scrape-staleness.sh` via one-line hook in `ddp-agents/deployment/scripts/health-check-slack.sh` |
 | Replica health (RDS→Mac) | — | `check-replica-health.sh` via a one-line hook in `health-check-slack.sh` (same `com.ddp.health-monitor` daemon). **Live since 2026-10-01** (OPEN-312/313); confirm with the `ddp_legbot_replica` heartbeat in `cams status`. Steady state shows `INCOMPLETE` **only if** its detail says the RDS side was skipped for lack of a credential (any other `INCOMPLETE` detail needs investigating): by decision no RDS credential is supplied, so lag, the WAL RDS retains for the replica, and the table-and-column comparison are not automatic. The alert path was proven once by a labelled test on 2026-10-01; the heartbeat alone shows only that the check runs. See `ops/postgres-replica/local/README.md` → "OPEN-312" | `check-replica-health.sh` (every 5 min; a silent run is healthy) |
 
 **api-v3 deployment (containerized 2026-06-24, per `PLAN-production-hardening.md`):** api-v3
@@ -142,101 +141,36 @@ tail -f logs/os-api.log
 
 ---
 
-## Scraper staleness watchdog (`check-scrape-staleness.sh`, OPEN-40)
+## Scraper staleness watchdog — RETIRED (OPEN-324, 2026-10-05)
 
-Detects jurisdictions that **silently stop scraping** — the failure mode every in-run alert
-path (`run-scrape.sh`'s `ERR` trap / `on_failure`) can't see, and how MA ran wrong for six
-weeks unnoticed. It compares the age of each watched `logs/last-run/<key>.ts` marker against
-that job's cadence, alerts with the evidence needed to act on it, and escalates at 2× and 4×
-threshold rather than going silent (OPEN-130).
+`check-scrape-staleness.sh` (OPEN-40/130/135) and its test are gone. It had two independent faults:
 
-**Status: live.** The companion hook in `ddp-agents/deployment/scripts/health-check-slack.sh`
-merged and reached production the same day (2026-08-08), and this script itself landed in the
-production checkout shortly after ([ddp-open-states#98](https://github.com/Digital-Democracy-Project/ddp-open-states/pull/98)).
-Confirmed actually running, not just deployed: `logs/staleness-check.log` shows a real first-run
-alert (`STALE: mi last-run age 333h exceeds 228h threshold — alerting`, 2026-08-08 19:57:29 —
-the expected MI true-positive called out when this was built), and the matching
-`logs/last-run/mi.stale-alerted` sentinel exists, root-owned (written by the LaunchDaemon).
+1. **Broken since 2026-08-23.** *Observed:* from the first run after OPEN-135 introduced the
+   YAML-derived watchlist, every invocation logged `cannot derive the watchlist from
+   .../sync_schedule.yaml -- watching NOTHING this run: ... ModuleNotFoundError: No module named
+   'yaml'` (12,330 lines by 2026-10-05), and it alerted on nothing. *Inferred, not verified:* that
+   the python3 the root-run `com.ddp.health-monitor` daemon resolves simply has no PyYAML (it is
+   importable in this repo's `.venv` and in an interactive shell; nobody ran it as root).
+2. **Obsolete since 2026-09-01.** It read `logs/last-run/<key>.ts` on this Mac, but scrapes moved to
+   the cloud path: the live watermarks are in the S3 memory store, and this Mac's ddp-sync registers
+   no OpenStates scrape jobs. Every Mac marker had stopped updating by 2026-09-01, so simply
+   installing PyYAML would have turned a silent failure into false stale alerts for every
+   jurisdiction.
 
-**How it runs:** the existing `com.ddp.health-monitor` system LaunchDaemon
-(ddp-agents) calls it every 5 minutes via a one-line `bash …/check-scrape-staleness.sh || true`
-hook in `ddp-agents/deployment/scripts/health-check-slack.sh`. That placement is deliberate — the
-watchdog lives **outside** ddp-sync and the scrape scripts, so it still fires when the
-scheduler daemon itself is dead (which happened 2026-07-04→08 with zero alerts). The `|| true`
-means a watchdog bug can never break CAMS/os-api monitoring. Note: the §11.3 design originally
-said to append this to `run-all-scrapes.sh` under `com.ddp.openstates-scraper` — that launchd
-job was deleted 2026-06-24, and a watchdog inside the pipeline can't see "the pipeline never
-started" anyway; the canonical `ddp-infra/PLAN-open-states.md` §11.3 records the correction.
+**What still alerts:** a scrape or archive that *fails* (the EC2-broker ddp-sync posts to
+`#automation-errors` -- e.g. the 2026-10-04 UT/NC/MI scrape and MA archive failures), and
+`_alert_quiet_jurisdiction` when a jurisdiction imports nothing for several runs in a row.
 
-**Watched keys and thresholds** (hardcoded allowlist in the script — backfill markers like
-`fl_session_2023`…`2025C` / `usa_session_118_*` must never be watched, so no globbing):
+**Known gap, accepted:** no alert that we know of fires when a cloud-owned scrape never *starts*
+(e.g. the EC2 scheduler is down) -- checked against ddp-sync's OpenStates alerting
+(`_alert_quiet_jurisdiction` and the failure alerts), not an audit of every AWS or infrastructure
+alarm. If it is ever wanted, build it next to the scheduler in ddp-sync, which has the schedule and
+AWS access; this Mac has no AWS credentials of its own (S3 reads go through the sudo-gated proxy
+wrappers), so a Mac-side monitor cannot read the memory store.
 
-| Threshold | Keys | Basis |
-|---|---|---|
-| 48h | `wa`, `usa_session_119_chamber_lower`, `usa_session_119_chamber_upper` | daily jobs |
-| 228h | `fl_session_2026`, `fl_session_2026D`, `fl_session_2026E`, `fl_session_2026F` | **weekly while `primary.fl.sync_day: sunday`** (out-of-session since 2026-07-16) — move to 48h when FL reverts to daily for the 2027 session |
-| 228h | `va`, `mi`, `ut`, `az`, `ma` | Sunday secondaries. Bare `ma`, not `ma_session_194th` — ddp-sync passes no session arg (OPEN-24), so the live marker is `ma.ts` |
-
-A **missing** `.ts` marker is treated as maximally stale (alerts, never skips). This map is
-the thing to update when the ddp-sync schedule changes — keep it in sync with
-`ddp-sync/config/sync_schedule.yaml`.
-
-**Alert lifecycle:** first detection posts to Slack `#automation-errors` **and** CAMS
-`/api/v1/failures` (`error_type=ScrapeStalenessDetected`, so it reaches Agent Smith triage),
-then writes a `logs/last-run/<key>.stale-alerted` sentinel recording the escalation tier —
-subsequent 5-minute runs at the same tier stay silent. When the marker freshens, the sentinel
-is removed and a recovery message posts. Sentinels are written by the root-owned daemon so they
-land root-owned; `logs/last-run/` is agentsmith-owned, so `rm` still works without sudo.
-
-**Escalation tiers (OPEN-130).** The one-alert-per-episode version fired at the moment the
-condition looked *least* serious — `az last run 229h, threshold 228h` reads as a rounding
-error — and then went correctly silent while az grew to 14 days. All three staleness alerts
-ever sent were declined by CodeBot triage as "not a code bug", the designed response to a
-one-line signal indistinguishable from a scraper legitimately quiet out of session. So now:
-
-* Each alert **carries its own evidence**: staleness in days, the absolute last-success
-  timestamp, the count of **missed scheduled runs** (derived from the key's threshold — 48h ⇒
-  daily, 228h ⇒ weekly), and the multiple of threshold. The CAMS payload puts that block in
-  `stacktrace` (previously `(none provided)` in triage) plus `severity_hint` and
-  `escalation_tier`/`scheduled_runs_missed` metadata. No ddp-agents change was needed — those
-  fields were always accepted.
-* It **re-alerts at 2× and 4× threshold** with wording that says it is the same episode
-  growing, not a new outage. Between tiers, and above 4×, it stays silent. The wording (not
-  just the numbers) differs per tier on purpose: CAMS fingerprints failures with digits
-  normalized to `<n>`, so tiers differing only numerically would de-dupe into one signal.
-* The missed-run count is the load-bearing fact for triage, because `run-scrape.sh`'s
-  `finish_no_op()` stamps `<key>.ts` even on a zero-bill run — an out-of-session jurisdiction
-  still refreshes its marker, so a stale marker means the scheduled job is not completing.
-* A **missing** marker is recorded at the top tier: "never" cannot grow, so it fires once.
-* A **malformed** `tier=` value (typo in the hand-silence recipe below, truncated write) logs a
-  warning and is treated as un-alerted, so the run alerts and rewrites the sentinel — silence
-  is never the failure mode.
-
-**Know the remaining gap.** On a weekly job the threshold is 228h, so 2× is ~19 days: the
-az incident that motivated this (14 days stale) would *still* have received only one alert.
-What changed is that the one alert now reads "no successful scrape in 9 days … 1 scheduled
-weekly run missed", not "229h vs 228h". Moving that second signal earlier means moving the
-threshold, which is a separate decision — file it against the watchlist, not the tiers.
-
-```bash
-# See current staleness state (who has alerted, when, and at which tier)
-ls -la logs/last-run/*.stale-alerted 2>/dev/null; cat logs/last-run/*.stale-alerted 2>/dev/null
-
-# Watchdog's own activity log (quiet runs log nothing)
-tail logs/staleness-check.log
-
-# Silence a known/expected staleness episode without fixing it yet.
-# tier=4 is the top tier, so this suppresses escalations too; a bare-timestamp
-# sentinel (the pre-OPEN-130 recipe) only suppresses up to 2x. Remove it to re-arm.
-printf 'tier=4\n' > logs/last-run/<key>.stale-alerted
-
-# Run the fixture tests (no network, no production paths)
-bash test-check-scrape-staleness.sh
-```
-
-Alert copies the `run-scrape.sh` Slack/CAMS pattern (fifth copy in this repo — extraction
-tracked as OPEN-43; this script may deliberately stay a copy since monitoring shouldn't share
-code with what it monitors).
+**Leftovers, safe to delete:** `logs/staleness-check.log` and `logs/last-run/*.stale-alerted`. The
+`ddp-agents` hook that called the script was removed in the companion `ddp-agents` PR (until that
+deploys, the hook runs `... || true` against a missing file, which is harmless).
 
 ---
 

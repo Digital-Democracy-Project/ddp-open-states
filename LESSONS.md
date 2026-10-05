@@ -197,9 +197,15 @@ retry. Everything downstream was resilient; the first call was not.
 * **Alert when a scheduled thing did not happen, not when a clock ran out.** The watchdog's
   deadlines are *derived from the scheduler's own config* rather than typed out separately, so the
   two cannot drift (OPEN-135).
-* **The same alert function is copied in five scripts** (OPEN-43). Extraction is tracked; the
-  watchdog may deliberately stay a copy, because monitoring should not share code with the thing it
-  monitors.
+* **The same alert function is copied in several scripts** (OPEN-43). Extraction is tracked.
+  (The staleness watchdog, once the case for staying a copy, was retired in OPEN-324.)
+* **A watchdog that reads the old system's markers goes blind, silently, when the system moves
+  (OPEN-324).** The staleness watchdog logged "watching NOTHING" every 5 minutes for six weeks
+  (12,330 lines) and alerted on nothing -- its YAML parse failed on `import yaml` from the first
+  run after it was introduced -- and
+  even working, it read Mac markers that stopped updating when scraping moved to the cloud. A
+  monitor's own "I cannot see anything" state is an alert condition, not a log line; and when you
+  move the thing being monitored, move or retire its monitor in the same change.
 * **A retry wrapper must suppress intermediate alerts**, or a blip that recovered on attempt two
   still pages someone twice (OPEN-87).
 

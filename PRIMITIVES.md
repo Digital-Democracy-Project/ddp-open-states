@@ -106,6 +106,9 @@ should reuse rather than reimplement:
   — extraction into a shared sourced helper is now tracked as **OPEN-43**; don't add a sixth
   copy, wait for (or do) that ticket instead. The watchdog may deliberately remain a copy even
   after extraction (monitoring shouldn't share code with what it monitors).
+  **Update 2026-10-05 (OPEN-324):** `check-scrape-staleness.sh` was retired, so four full copies
+  remain (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`) plus
+  `check-replica-health.sh`'s Slack-only one.
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
@@ -260,24 +263,15 @@ should reuse rather than reimplement:
   branch-by-branch audit trail (names, commits, which were deliberately left alone and why):
   `notes/open-99-branch-hygiene-sweep-20260821.md`.
 
-## `check-scrape-staleness.sh` — scraper staleness watchdog (repo root, OPEN-40)
+## `check-scrape-staleness.sh` — RETIRED (OPEN-324, 2026-10-05)
 
-Read-only consumer of the `logs/last-run/<key>.ts` marker primitive: compares each watched
-marker's mtime age against a **hardcoded key→threshold allowlist** (48h daily / 228h weekly;
-missing marker = maximally stale, alerts) and alerts Slack `#automation-errors` + CAMS
-`/api/v1/failures` once per staleness episode, de-duped via `logs/last-run/<key>.stale-alerted`
-sentinel files (cleared on recovery, with a recovery post). Designed to be invoked every 5
-minutes by the `com.ddp.health-monitor` LaunchDaemon via a one-line hook in `ddp-agents`'s
-`health-check-slack.sh` — **live as of 2026-08-08**, confirmed by a real first-run alert in
-`logs/staleness-check.log` (MI, the expected true positive) and its sentinel file. Placement is
-deliberately outside ddp-sync and the scrape scripts, so it
-survives the failure modes it exists to catch (including the scheduler daemon itself dying).
-Deliberately **self-contained** — sources nothing, copies the Slack/CAMS pattern (see the
-extraction note under `run-scrape.sh` above). The allowlist is the thing to touch when the
-ddp-sync schedule changes (keep in sync with `sync_schedule.yaml`); backfill markers
-(`fl_session_2023`…, `usa_session_118_*`) must never be added to it. `STALE_*` env vars are
-test seams only — `test-check-scrape-staleness.sh` runs the whole lifecycle against a mktemp
-fixture dir with no network. Full operator doc: `RUNBOOK.md` → "Scraper staleness watchdog".
+Removed, along with `test-check-scrape-staleness.sh` and its `ddp-agents` hook. It was broken
+(its YAML watchlist failed on `import yaml` under the daemon, so it watched nothing from
+2026-08-23) and obsolete (the
+`logs/last-run/*.ts` markers it read stopped updating on 2026-09-01 when scraping moved to the cloud
+path). Don't resurrect it to cover "a scheduled scrape never started" -- that belongs next to the
+scheduler in ddp-sync, not on this Mac. Full account: `RUNBOOK.md` → "Scraper staleness watchdog --
+RETIRED", and `LESSONS.md` §6.
 
 ## `check-replica-health.sh` — RDS→Mac replica health + alerting (repo root, OPEN-312)
 
@@ -288,7 +282,7 @@ script only runs them, keeps a two-strikes alert state per check in `logs/last-r
 and posts one Slack message (plus recovery) to `#automation-errors`. Credential-free checks run every
 time; the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL` /
 `RDS_HOST`+`RDS_REPLICATION_PASSWORD` are in the environment. Same invocation model as
-`check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
+the retired `check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
 Sets `DOCKER_HOST` to Colima itself when run as a root daemon (copied from `start-os-api.sh`).
 **This is the sixth copy of the Slack block** (Slack only, no CAMS: CodeBot triage cannot act on a
 network outage), still waiting on OPEN-43. Test seams: `REPLICA_*` env vars, see
@@ -842,8 +836,8 @@ that they can reject a broken one, which is the easier half to get right by acci
   in one of these shapes, not a new top-level directory.
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
-  assertions)` and exit 0 or the first failing assertion and exit 1. Eight of these now exist
-  (`test-import-summary.sh`, `test-check-scrape-staleness.sh`, `test-scrape-outcome.sh`,
+  assertions)` and exit 0 or the first failing assertion and exit 1. Seven of these now exist
+  (`test-import-summary.sh`, `test-scrape-outcome.sh`,
   `test-no-op-side-effects.sh`, `test-scrape-lock.sh`, `test-completion-record.sh`,
   `test-scraper-memory.sh`, `test-replica-monitoring.sh`) and they all share that shape — copy the nearest one rather than
   introducing a runner. Four of them drive
