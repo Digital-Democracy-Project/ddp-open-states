@@ -9,6 +9,7 @@ name: Validate jurisdictions manifest
 on:
   pull_request:
     paths:
+      - ".github/workflows/validate-jurisdictions.yml"
       - "jurisdictions.yaml"
       - "validate_jurisdictions.py"
       - "test_validate_jurisdictions.py"
@@ -44,4 +45,6 @@ jobs:
       - name: Run the drift check's own test suite
         run: python3 -m pytest test_check_jurisdiction_drift.py -v
       - name: Check every hard-coded jurisdiction list against the manifest (OPEN-318)
-        run: python3 check-jurisdiction-drift.py --ddp-sync-root ddp-sync --require-ddp-sync
+        run: |
+          echo "comparing against ddp-sync main at $(git -C ddp-sync rev-parse HEAD)"   # main moves: say which commit
+          python3 check-jurisdiction-drift.py --ddp-sync-root ddp-sync --require-ddp-sync

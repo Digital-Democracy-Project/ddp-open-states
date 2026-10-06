@@ -48,7 +48,7 @@ except ImportError:  # pragma: no cover - broken environment only
                      "run it with the repo's venv python.\n")
     sys.exit(2)
 
-from validate_jurisdictions import load_and_validate
+from validate_jurisdictions import load_and_validate, _DuplicateKeyCheckingLoader
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -97,13 +97,13 @@ def shell_for_loop(path, variable):
 def python_list(path, name):
     """NAME = ["a", "b"] at module level, evaluated as a literal."""
     tree = ast.parse(_read(path), filename=path)
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
-            try:
-                return set(ast.literal_eval(node.value))
-            except ValueError as exc:
-                raise SourceError(f"{path}: {name} is not a literal list: {exc}")
-    raise SourceError(f"{path}: no module-level {name} assignment found")
+    found = [n for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in n.targets)]
+    if len(found) != 1:
+        raise SourceError(f"{path}: expected exactly one module-level {name} assignment, found {len(found)}")
+    try:
+        return set(ast.literal_eval(found[0].value))
+    except ValueError as exc:
+        raise SourceError(f"{path}: {name} is not a literal list: {exc}")
 
 
 def _const_int(node, path):
@@ -119,16 +119,25 @@ def _const_int(node, path):
 def python_int_table(path, name):
     """NAME: dict[str, int] = {"fl": 16 * 3600, ..., "default": ...} -> {key: seconds}."""
     tree = ast.parse(_read(path), filename=path)
+    found = []
     for node in tree.body:
         target = node.target if isinstance(node, ast.AnnAssign) else (node.targets[0] if isinstance(node, ast.Assign) else None)
-        if isinstance(target, ast.Name) and target.id == name and isinstance(node.value, ast.Dict):
-            return {k.value: _const_int(v, path) for k, v in zip(node.value.keys, node.value.values)}
-    raise SourceError(f"{path}: no module-level {name} dict found")
+        if isinstance(target, ast.Name) and target.id == name:
+            found.append(node)
+    if len(found) != 1 or not isinstance(found[0].value, ast.Dict):
+        raise SourceError(f"{path}: expected exactly one module-level {name} dict, found {len(found)}")
+    keys = [k.value for k in found[0].value.keys]
+    if len(keys) != len(set(keys)):
+        raise SourceError(f"{path}: {name} has a duplicate key")
+    return {k.value: _const_int(v, path) for k, v in zip(found[0].value.keys, found[0].value.values)}
 
 
 def sync_yaml(root):
     path = os.path.join(root, "config", "sync_schedule.yaml")
-    data = yaml.safe_load(_read(path))
+    try:
+        data = yaml.load(_read(path), Loader=_DuplicateKeyCheckingLoader)  # duplicate keys are an error, not last-wins
+    except yaml.YAMLError as exc:
+        raise SourceError(f"{path}: not valid YAML (or has a duplicate key): {exc}")
     if not isinstance(data, dict):
         raise SourceError(f"{path}: not a YAML mapping")
     return data
@@ -200,7 +209,10 @@ def sync_checks(sync_root, manifest, expect):
 
     def primary():
         block = scrape("primary", d="openstates_scrape.primary")
-        return {_from_sync_code(k) for k, v in block.items() if isinstance(v, dict) and v.get("enabled", True)}
+        for k, v in block.items():
+            if not isinstance(v, dict) or not isinstance(v.get("enabled"), bool):
+                raise SourceError(f"ddp-sync openstates_scrape.primary.{k}: expected a mapping with a boolean `enabled`")
+        return {_from_sync_code(k) for k, v in block.items() if v["enabled"]}
 
     sets = [
         ("archive.enabled", "ddp-sync openstates_archive.jurisdictions", expect["archive"],
@@ -236,8 +248,9 @@ def memory_backend_floor(data, expect):
     """memory_backend_jurisdictions is a FLOOR: everyone who has ever been split to the cloud path, never
     removed on rollback (sync_schedule.yaml's own comment). So it must CONTAIN the cloud_path set."""
     cp = _sync_list(data, "openstates_scrape", "cloud_path", path_desc="cloud_path")
-    floor = {_from_sync_code(c) for c in cp.get("memory_backend_jurisdictions", [])}
-    return floor
+    if not isinstance(cp.get("memory_backend_jurisdictions"), list):
+        raise SourceError("ddp-sync sync_schedule.yaml: no openstates_scrape.cloud_path.memory_backend_jurisdictions list")
+    return {_from_sync_code(c) for c in cp["memory_backend_jurisdictions"]}
 
 
 # ---------------------------------------------------------------------------------------------------

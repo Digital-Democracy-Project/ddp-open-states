@@ -825,7 +825,7 @@ scope line was deliberate, not an oversight.
   `start-os-api.sh`, `quality_check.py`, `run-scrape.sh`, and (with `--ddp-sync-root`) ddp-sync's
   `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. Run in CI against
   ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
-  who is enrolled in what, which is where today's gaps show (NC is on 3 of the 6 feature lists, MA on 3).
+  who is enrolled in what, which is where today's gaps show (NC is on 2 of the 6 feature lists, MA on 3, AL on 2: these are today's real enrollment, not checker omissions).
   This is a **comparison, not consumption**: no script reads the manifest to decide anything yet, so the
   "do not wire this file into another repo" rule above still stands for consumers; ddp-sync's own lists
   stay where they are until the dual-read migration the plan's §4.1 requires. Written by hitting two real

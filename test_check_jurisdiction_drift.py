@@ -187,6 +187,77 @@ def test_an_ambiguous_pattern_is_an_error(world):
     assert code == 2 and "found 2" in out
 
 
+def test_a_commented_out_assignment_is_not_the_assignment(world):
+    """The real one is on the next line; a commented decoy above it must be ignored, not matched or counted."""
+    _edit(world, "activate.sh", 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
+          '# export ARCHIVE_ENABLED_STATES="fl"\nexport ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n')
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+
+
+def test_a_similarly_named_variable_is_not_the_assignment(world):
+    _edit(world, "activate.sh", 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
+          'export ARCHIVE_ENABLED_STATES_OLD="fl"\nexport ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n')
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+
+
+def test_an_indented_or_commented_loop_is_not_the_loop_but_a_second_top_level_one_is_ambiguous(world):
+    _edit(world, "run-people-refresh.sh", "for state in fl us al; do",
+          "# for state in fl; do\nif true; then\n    for state in nc; do :; done\nfi\nfor state in fl us al; do")
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+    _edit(world, "run-people-refresh.sh", "if true; then", "for state in nc; do :; done\nif true; then")
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "found 2" in out
+
+
+def test_two_definitions_of_a_python_list_are_ambiguous_not_last_wins(world):
+    _edit(world, "quality_check.py", 'JURISDICTIONS = ["fl", "al"]\n', 'JURISDICTIONS = ["fl", "al"]\nJURISDICTIONS = ["fl"]\n')
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "exactly one module-level JURISDICTIONS" in out
+
+
+def test_a_decoy_name_in_a_python_file_is_not_the_list(world):
+    _edit(world, "quality_check.py", 'JURISDICTIONS = ["fl", "al"]\n', 'JURISDICTIONS_LEGACY = ["fl"]\nJURISDICTIONS = ["fl", "al"]\n')
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+
+
+def test_two_definitions_of_a_timeout_table_are_ambiguous(world):
+    _edit(world, "src/ddp_sync/pipelines/openstates_scrape.py", 'SCRAPE_TIMEOUT_S: dict[str, int] = {',
+          'SCRAPE_TIMEOUT_S: dict[str, int] = {"default": 1}\nSCRAPE_TIMEOUT_S: dict[str, int] = {', root="sync")
+    code, out = _run(world)
+    assert code == 2 and "exactly one module-level SCRAPE_TIMEOUT_S" in out
+
+
+def test_a_duplicate_key_in_the_ddp_sync_yaml_is_an_error_not_last_wins(world):
+    path = os.path.join(world[1], "config", "sync_schedule.yaml")
+    text = open(path).read()
+    _write(path, text + "openstates_archive:\n  jurisdictions: [fl]\n")
+    code, out = _run(world)
+    assert code == 2 and "duplicate key" in out
+
+
+def test_a_duplicate_key_in_the_manifest_is_an_error(world):
+    text = open(world[2]).read()
+    open(world[2], "w").write(text + "fl:\n  name: again\n")
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "does not validate" in out
+
+
+def test_a_primary_entry_that_is_not_a_mapping_with_enabled_is_an_error(world):
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["primary"].update({"usa": True}))
+    code, out = _run(world)
+    assert code == 2 and "openstates_scrape.primary.usa" in out
+
+
+def test_a_missing_memory_backend_list_is_an_error_not_an_empty_floor(world):
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"].pop("memory_backend_jurisdictions"))
+    code, out = _run(world)
+    assert code == 2 and "memory_backend_jurisdictions" in out
+
+
 def test_a_missing_file_is_an_error(world):
     os.remove(os.path.join(world[0], "run-people-refresh.sh"))
     code, out = _run(world, with_sync=False)
@@ -307,7 +378,7 @@ def test_the_real_checked_in_files_agree_with_the_real_manifest():
 
 
 def test_the_real_manifest_enrolls_every_archived_jurisdiction_somewhere_visible():
-    """The matrix is how today's gaps (NC on 3 of 6 feature lists, MA on 3, AL on 2) stay visible: it must
+    """The matrix is how today's gaps (NC on 2 of 6 feature lists, MA on 3, AL on 2) stay visible: it must
     cover every manifest entry, including paused al."""
     out = io.StringIO()
     assert drift.main(["check", "--matrix"], out) == 0
