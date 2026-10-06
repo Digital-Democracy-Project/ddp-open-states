@@ -96,19 +96,15 @@ should reuse rather than reimplement:
   ages out after 24h. Losing the lock also sets `DO_NOT_RETRY_FLAG` — exit 90 alone does **not**
   stop `run-scrape-retrying.sh`, which decides on the flag file, so without it the wrapper would
   have spun through every attempt against a jurisdiction that was already being scraped.
-- **Slack alert-on-failure** — `on_failure()` posts to `#automation-errors` via a bot token read
-  from `ddp-agents/.env` (`SLACK_BOT_TOKEN`), fired via `trap 'on_failure' ERR`. Fails open (no
-  token found → just skips the post, never blocks the scrape). **Reused verbatim in
-  `backup-openstates-db.sh`** (`slack_fail()`, same token-read line, different channel message).
-  **Update 2026-08-08 (OPEN-40):** the copy count reached five (`run-scrape.sh`,
-  `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`, `check-scrape-staleness.sh`; a sixth,
-  Slack-only, arrived with `check-replica-health.sh` in OPEN-312)
-  — extraction into a shared sourced helper is now tracked as **OPEN-43**; don't add a sixth
-  copy, wait for (or do) that ticket instead. The watchdog may deliberately remain a copy even
-  after extraction (monitoring shouldn't share code with what it monitors).
-  **Update 2026-10-05 (OPEN-324):** `check-scrape-staleness.sh` was retired, so four full copies
-  remain (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`) plus
-  `check-replica-health.sh`'s Slack-only one.
+- **Slack alert-on-failure** — `post_slack_alert TEXT [CHANNEL]` from **`lib/slack-alert.sh`** (OPEN-325, which
+  is the extraction OPEN-43 asked for), sourced by `run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh` and
+  `start-os-api.sh`. The first two call it from `on_failure()` (fired via `trap 'on_failure' ERR`), the others from
+  `slack_fail()`. It posts to `#automation-errors` as **CodeBot** (not the Slack app's own name, Agent Smith), reads
+  `SLACK_BOT_TOKEN` and `CODEBOT_SLACK_USERNAME` / `CODEBOT_SLACK_ICON_EMOJI` from the environment first and then
+  from `ddp-agents/.env`, JSON-escapes the text, and **always returns 0**: it never blocks or fails the script that
+  called it, and a post it cannot send (no token, Slack refused) goes to stderr instead of vanishing. Before
+  OPEN-325 each script carried its own `curl` (four copies, none setting an identity, none escaping the text). See
+  the `lib/slack-alert.sh` section below. **Not yet live-verified against Slack** (PR #264, 2026-10-05).
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
@@ -273,6 +269,26 @@ path). Don't resurrect it to cover "a scheduled scrape never started" -- that be
 scheduler in ddp-sync, not on this Mac. Full account: `RUNBOOK.md` → "Scraper staleness watchdog --
 RETIRED", and `LESSONS.md` §6.
 
+## `lib/slack-alert.sh` — shared Slack alert helper (OPEN-325, extraction requested by OPEN-43)
+Source it, don't run it: `source "$SCRIPT_DIR/lib/slack-alert.sh"`, then `post_slack_alert "text" ["#channel"]`
+(channel defaults to `#automation-errors`). It owns the token lookup, the 10s timeout, the CodeBot sender identity
+(defaults `CodeBot` / `:robot_face:`; an empty setting means the default; a multi-word name is kept whole), JSON
+escaping, and the stderr line when Slack answers anything but `"ok":true`. Needs the `chat:write.customize` scope;
+without it Slack ignores the name and icon and the post still succeeds under the default name.
+- **Always returns 0.** An alert is best-effort and must never change a caller's exit status or trip its `set -e`.
+- **Source it only if readable:** every caller uses `[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source ... || post_slack_alert() { ...stderr...; return 0; }`.
+  Under `set -e`, macOS's bash 3.2 exits the whole script when `source` hits a missing file *even with a `||`
+  fallback*, and a scrape that dies because its alert helper is missing is worse than a missing alert.
+- **bash 3.2:** it is written for macOS's `/bin/bash` (no `${!var}`, no associative arrays) and safe under
+  `set -euo pipefail`.
+- **Tests:** `test-slack-alert.sh` (fake `curl` on `PATH`, `SLACK_ALERT_ENV_FILE` pointing at a throwaway env
+  file; no network). Its last block **fails if any other shell script contains `chat.postMessage`**, so a new alert
+  cannot copy the old two-key payload and post as Agent Smith. The one exemption, `check-replica-health.sh`, is on
+  an `EXEMPT` list in that test; remove it from the list when that script adopts the helper.
+- **Mirrors:** `ddp-sync` has the same idea in Python (`ddp_sync/slack_alerts.py::post_alert`) and `ddp-agents` owns
+  the persona registry (`cams/slack_identity.py`); all three read the same `CODEBOT_SLACK_*` variables.
+- Mac only (none of these scripts are in the Docker image). No test here has run against live Slack.
+
 ## `check-replica-health.sh` — RDS→Mac replica health + alerting (repo root, OPEN-312)
 
 The scheduled, alerting wrapper for the logical replica LegBot reads. **Reuses, does not reimplement:**
@@ -284,8 +300,11 @@ time; the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL`
 `RDS_HOST`+`RDS_REPLICATION_PASSWORD` are in the environment. Same invocation model as
 the retired `check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
 Sets `DOCKER_HOST` to Colima itself when run as a root daemon (copied from `start-os-api.sh`).
-**This is the sixth copy of the Slack block** (Slack only, no CAMS: CodeBot triage cannot act on a
-network outage), still waiting on OPEN-43. Test seams: `REPLICA_*` env vars, see
+**It still carries its own copy of the Slack block** (Slack only, no CAMS: CodeBot triage cannot act on a
+network outage). OPEN-325 moved the other four scripts onto `lib/slack-alert.sh` and left this one alone because
+OPEN-312/313 were changing it, so **until it adopts `post_slack_alert` its alerts post as Agent Smith**, not CodeBot.
+It is the single entry on `test-slack-alert.sh`'s `EXEMPT` list. (A monitor may reasonably stay self-contained, as
+OPEN-43 noted for the retired staleness watchdog: it should not break because the thing it watches did.) Test seams: `REPLICA_*` env vars, see
 `test-replica-monitoring.sh`. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)
@@ -406,7 +425,7 @@ step matters — a newer pip breaks one of the pinned deps' build.
 - **`backup-openstates-db.sh`** — nightly `pg_dump -Fc` of the dedicated Postgres, keep-7 local
   copies (`ls -1t ... | tail -n +8 | xargs rm -f` — the same "keep-N" idiom `run-scrape.sh` uses
   for gzipped log archives). Off-host S3 push is wired but commented out (blocked on AWS creds —
-  WS9). Shares the Slack-alert-on-failure pattern with `run-scrape.sh` (see above).
+  WS9). Alerts through the shared `post_slack_alert` (see Slack alert-on-failure above).
 - **`deploy/`** — DDP-owned deploy assets for api-v3, kept **out of** the public `api-v3/`
   checkout on purpose (so that checkout stays pristine/upstream-mergeable):
   `docker-compose.ddp.yml` (live stack, build context → `../api-v3`), `Dockerfile.ddp` (adds
@@ -875,8 +894,9 @@ that they can reject a broken one, which is the easier half to get right by acci
 3. **Logging?** Copy the exact `log()` one-liner from a sibling script (bash) — pick the local-
    time variant (`run-scrape.sh` family) or the UTC variant (`start-os-api.sh` family) to match
    whichever log file you're appending to.
-4. **Failure alerting?** If it needs a Slack alert, copy `on_failure()`/`slack_fail()`'s
-   token-read-from-`ddp-agents/.env` + fail-open pattern — don't add a new alerting path.
+4. **Failure alerting?** If it needs a Slack alert, source `lib/slack-alert.sh` (with the readable-check guard the
+   other scripts use) and call `post_slack_alert "text"`. Don't write another `curl` to `chat.postMessage`: it
+   would post as Agent Smith instead of CodeBot, and `test-slack-alert.sh` fails on it.
 5. **Touching `openstates-core`'s checkout?** Respect the worktree lock protocol
    (`/tmp/ddp-openstates-scrapes/`) both ways — check it before mutating, and if your script runs
    for a long time while reading the checkout, drop a marker in it.
