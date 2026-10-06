@@ -395,6 +395,57 @@ def test_main_michigan_proceeds_with_baseline_and_fresh_cookie_present(tmp_path,
     assert record["status"] == "ok"
 
 
+def test_main_michigan_logs_the_cookie_age_from_minted_at(tmp_path, monkeypatch, capsys):
+    """OPEN-232: a real cookie's `expires` is ~1 year out, so the run says how old the mint is."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    body = json.loads(_fresh_mi_cookie_body())
+    body["_meta"]["minted_at"] = time.time() - 5.5 * 3600
+    client.objects["dev-open201/mi/_cache/mi_waf_cookies.json"] = json.dumps(body).encode()
+
+    assert cc.main(["mi"], s3_client=client) == 0
+    assert "Michigan WAF cookie: minted 5.5 h ago" in capsys.readouterr().err
+
+
+def test_main_michigan_says_so_when_the_cookie_has_no_minted_at(tmp_path, monkeypatch, capsys):
+    """A cookie published before OPEN-232 (the one in S3 today) still runs; the log says the age is unknown."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1))
+    client = FakeS3Client()
+    client.objects["dev-open201/mi/_cache/mi_last_actions_2025-2026.json"] = b"[]"
+    client.objects["dev-open201/mi/_cache/mi_waf_cookies.json"] = _fresh_mi_cookie_body()
+
+    assert cc.main(["mi"], s3_client=client) == 0
+    assert "no minted_at recorded" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("meta", [
+    {"user_agent": "ua"},                         # published before OPEN-232
+    {"user_agent": "ua", "minted_at": True},      # a bool is not a timestamp
+    {"user_agent": "ua", "minted_at": "today"},
+    {"user_agent": "ua", "minted_at": float("nan")},
+    {"user_agent": "ua", "minted_at": float("inf")},
+])
+def test_mi_waf_cookie_minted_age_is_none_unless_a_real_timestamp(tmp_path, meta):
+    (tmp_path / "mi_waf_cookies.json").write_text(json.dumps({"x-bni-fpc": {"value": "v", "expires": 1}, "_meta": meta}))
+    assert cc._mi_waf_cookie_minted_age_seconds(str(tmp_path), "mi_waf_cookies.json", 1000.0) is None
+
+
+def test_mi_waf_cookie_minted_age_is_none_for_a_missing_or_unparsable_file(tmp_path):
+    assert cc._mi_waf_cookie_minted_age_seconds(str(tmp_path), "mi_waf_cookies.json", 1000.0) is None
+    (tmp_path / "mi_waf_cookies.json").write_text("not json")
+    assert cc._mi_waf_cookie_minted_age_seconds(str(tmp_path), "mi_waf_cookies.json", 1000.0) is None
+
+
+def test_mi_waf_cookie_minted_age_is_now_minus_minted_at(tmp_path):
+    (tmp_path / "mi_waf_cookies.json").write_text(json.dumps({"_meta": {"user_agent": "ua", "minted_at": 400.0}}))
+    assert cc._mi_waf_cookie_minted_age_seconds(str(tmp_path), "mi_waf_cookies.json", 1000.0) == 600.0
+
+
 def test_main_michigan_refuses_without_a_published_cookie(tmp_path, monkeypatch, capsys):
     """OPEN-188: a bare run (baseline present, but no published cookie at all) must be
     impossible by construction -- exactly the OPEN-152/153 mistake."""

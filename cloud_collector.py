@@ -120,6 +120,23 @@ def _mi_waf_cookies_are_fresh(cache_dir, filename, now, min_remaining_seconds):
     return True
 
 
+def _mi_waf_cookie_minted_age_seconds(cache_dir, filename, now):
+    """OPEN-232: how long ago the published cookie set was minted, from `_meta.minted_at`
+    (written by ddp-sync's write_cookie_cache), or None when it is not recorded -- a file
+    published before OPEN-232 has none, and so does anything malformed. Informational only:
+    a real Michigan cookie's `expires` is about a year out, so `_mi_waf_cookies_are_fresh()`
+    cannot say how old a cookie is, and nothing refuses on this value (whether the site still
+    honours the cookie is what `mi_waf_get()`'s own rejection handling finds out)."""
+    try:
+        with open(os.path.join(cache_dir, filename)) as f:
+            minted_at = json.load(f)["_meta"]["minted_at"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if isinstance(minted_at, bool) or not isinstance(minted_at, (int, float)) or not math.isfinite(minted_at):
+        return None
+    return now - minted_at
+
+
 class MemoryUnavailable(Exception):
     """The store could not be read (found/absent could not be determined). Never guess."""
 
@@ -647,6 +664,14 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
                     emit_completion_record(status="failed", mode="full", source=source,
                                             run_id=run_id, session=session)
                     return 1
+                age = _mi_waf_cookie_minted_age_seconds(cache_dir, _MI_WAF_COOKIE_GLOB, time.time())
+                print(
+                    "Michigan WAF cookie: minted "
+                    + (f"{age / 3600:.1f} h ago" if age is not None
+                       else "at an unknown time (no minted_at recorded)")
+                    + " (OPEN-232)",
+                    file=sys.stderr,
+                )
 
             found_watermark = memory.hydrate_markers(source, scrape_key, last_run_dir)
         except MemoryUnavailable as e:

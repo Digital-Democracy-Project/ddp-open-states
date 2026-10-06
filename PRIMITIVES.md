@@ -161,6 +161,10 @@ should reuse rather than reimplement:
   (`_mi_waf_cookies_are_fresh()` — every cookie in the published set must have `MI_WAF_COOKIE_MIN_
   FRESHNESS_SECONDS` of life left, default 600s; a Michigan cookie is minted and published on its
   own schedule by `ddp-sync`'s `mi_cookie_publish.py`, not by this file, which never mints its own).
+  A real cookie's `expires` is about a year out, so that check cannot say how old a cookie is or whether
+  the site still honours it (OPEN-232); `ddp-sync` now records `_meta.minted_at` and each Michigan run that gets past that
+  check logs the cookie's age to stderr (a refused run prints its own ERROR instead) ("no minted_at recorded" for one published before that). Informational only:
+  nothing refuses on age.
 - **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
   **one** cloud collection run, identified by its manifest (never bare object presence): fetches
   every object the manifest names into a staging directory, refuses on an absent/unparsable/
