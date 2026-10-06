@@ -26,6 +26,13 @@ aws sts get-caller-identity >/dev/null 2>&1 || die "the AWS credentials in $DEV_
 aws sts get-caller-identity --query Arn --output text
 [ -n "${GITHUB_PERSONAL_ACCESS_TOKEN:-}" ] || die "GITHUB_PERSONAL_ACCESS_TOKEN not set in $DEV_ENV"
 
+if [ -n "${ONLY_REGISTER:-}" ]; then
+    # Resume: the image was already built, verified and pushed (e.g. a run that failed at step 6).
+    TAG="$ONLY_REGISTER"; IMG="$REPO:$TAG"
+    say "Resuming: registering the already-pushed $TAG (steps 1-5 skipped)"
+    aws ecr describe-images --repository-name ddp-scrapers --region "$REGION" --image-ids imageTag="$TAG" >/dev/null \
+        || die "$TAG is not in ECR; run without ONLY_REGISTER to build it"
+else
 say "1. Fresh clone of main + build token (the token copy is deleted when this script exits)"
 rm -rf "$WORK"
 git clone -q --branch main --depth 1 https://github.com/Digital-Democracy-Project/ddp-open-states.git "$WORK"
@@ -73,15 +80,19 @@ echo "all image checks passed"
 say "5. Push $IMG"
 docker push "$IMG" | tail -3
 
+fi
+
 say "6. Going live: register a new task-definition revision pointing at $TAG"
 echo "ddp-sync launches the family 'ddp-scrapers', which ECS resolves to the LATEST ACTIVE revision,"
 echo "so the next launched task (any jurisdiction) uses $TAG once this is registered."
-echo "Tasks currently running on the cluster:"
-aws ecs list-tasks --cluster "$CLUSTER" --region "$REGION" --query 'taskArns' --output text
+echo "Tasks currently running on the cluster (informational; skipped if this IAM user can't list them):"
+aws ecs list-tasks --cluster "$CLUSTER" --region "$REGION" --query 'taskArns' --output text \
+    || echo "(could not list tasks: continuing)"
 if [ "${CONFIRM:-}" = "1" ]; then   # opt-in prompt; the default follows the runbook and just registers
     read -r -p "Register the new revision now? [y/N] " ans
     [ "$ans" = "y" ] || [ "$ans" = "Y" ] || { echo "Not registered. $TAG is pushed and verified."; exit 0; }
 fi
+trap 'echo; echo "Registration failed. $TAG is pushed and verified; fix the cause, then register it without rebuilding:  ONLY_REGISTER=$TAG bash $0"' ERR
 aws ecs describe-task-definition --task-definition ddp-scrapers --region "$REGION" \
     --query taskDefinition > /tmp/taskdef-current.json
 TAG="$TAG" python3 - <<'EOF'
