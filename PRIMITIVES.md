@@ -429,6 +429,17 @@ step matters — a newer pip breaks one of the pinned deps' build.
   `main` — no cron yet, same "not worth it until deploy volume justifies it" call
   `PLAN-fork-management.md` §5.F made for drift visibility.
 
+- **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
+  scraper changes to Fargate: build `ddp-scrapers:vN` on the Mac, smoke-test it, push to ECR, and
+  register a new task-definition revision. `RUNBOOK.md` → "Deploying a Fargate image change" is the
+  process; this is its implementation, so **don't re-assemble those steps by hand or write a second
+  deploy script**. It loads the AWS IAM credentials and the GitHub token from the dev checkout's `.env`
+  itself (no `aws login`), picks the next unused tag from ECR, and fails before pushing if the image
+  can't import the scrapers or scrape one Utah bill end to end. Registering the revision is the
+  cutover: `ddp-sync` launches the family name, so the next launched task uses it. Deliberately
+  outside the discipline checklist's resumability/logging/Slack-alert items: it is an operator-run,
+  foreground, run-once script whose output *is* the log, and a failure is seen by the person running it.
+
 ## `quality_check.py` — live-vs-replica data quality diff (repo root)
 
 Samples bills/people from the local DB, fetches the same records from both `localhost:8002`

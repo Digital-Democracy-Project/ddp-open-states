@@ -297,6 +297,50 @@ sustained CPU/disk/network load, and running it there risks exactly the kind of 
 held up a real RDS backfill commit once already this week. Build and verify on the Mac; only
 *run* the already-tested image on Fargate.
 
+### The deploy is one command, run by a human operator
+
+```bash
+bash ~/Developer/repos/ddp-open-states/deploy-scrapers-image.sh
+```
+
+**This is the process. Don't paste the steps below by hand, and don't have an agent assemble them.**
+The deploy needs the dev checkout's `.env` (the AWS IAM credentials *and* the `GITHUB_PERSONAL_ACCESS_TOKEN`
+the build clones the forks with). An agent session may be blocked from copying or sourcing that file,
+and has no terminal for `aws login` (the first attempt at this, 2026-10-05, lost time to exactly both:
+the credentials were in `.env` all along, and `aws login` is the wrong path -- the script loads them
+itself). So the split is: **an agent confirms what is merged and tells the operator to run the one line;
+the operator runs it; the operator (or the script's output) hands the new tag and revision back.**
+
+The script does, in order, and stops at the first failure (nothing is live until its last step):
+
+1. loads the dev `.env`, sets the region (`us-east-1`), and checks the AWS credentials work;
+2. fresh-clones `main` to `/tmp/ddp-open-states-deploy` (the `.env` copy there is deleted on exit);
+3. picks the **next unused tag** from ECR (highest `vN` + 1; ECR is immutable);
+4. builds with `--no-cache` for `linux/arm64` (required: both forks are cloned from `main` at build
+   time, so a cached build would silently ship old scraper code);
+5. smoke-tests the image **before pushing**: Python and poppler versions, the scraper and extractor
+   modules import, and one real Utah bill scrapes end to end through `os-update` (catches TLS,
+   packaging and import breakage that unit tests can't);
+6. pushes, lists the tasks currently running on the `ddp-scrapers` cluster, and registers a new
+   task-definition revision identical to the live one except for the image tag;
+7. prints the new tag and revision, and the rollback command.
+
+`CONFIRM=1 bash ...` asks before step 6. Re-running after a failed run is safe: it rebuilds, and if the
+push never happened it reuses the same tag.
+
+**Registering the revision IS the cutover for new launches.** The EC2 `ddp-sync` launches
+`task_definition: "ddp-scrapers"` (`ddp-sync/config/sync_schedule.yaml`, `cloud_path.fargate`) with no
+revision number, so ECS resolves it to the **latest ACTIVE revision**: the next task launched for any
+jurisdiction uses the new image. Tasks already running keep the image they started with. **Rollback:**
+`aws ecs deregister-task-definition --region us-east-1 --task-definition ddp-scrapers:<new-revision>`;
+the family then resolves to the previous revision again.
+
+When it finishes, tell the prod agent (via `notes/ops-handoff`) the **new tag and revision** and, if
+you want a confirmation run, which jurisdiction to trigger. Never "please build this" -- building is
+the Mac's job.
+
+### The same steps by hand (reference only: this is what the script runs)
+
 ```bash
 # Fresh clone of main (not this dev checkout -- a clean build should not depend on whatever's
 # sitting uncommitted in a local working tree)
@@ -342,10 +386,9 @@ aws ecs register-task-definition --cli-input-json file:///tmp/taskdef-register.j
     --query "taskDefinition.{arn:taskDefinitionArn,revision:revision,image:containerDefinitions[0].image}"
 ```
 
-Registering a new revision is additive and inert by itself — nothing currently running is
-disturbed until something explicitly launches a task against it. The previous revision stays
-live and untouched, so it's the rollback: nothing to undo, just don't point anything at the
-new one.
+Registering a new revision does not disturb anything *currently running*, but it is **not inert for
+new launches**: `ddp-sync` launches the family name, which resolves to the latest ACTIVE revision (see
+above). The previous revision stays registered, so rollback is deregistering the new one.
 
 If ad-hoc instructions ever need to reach the prod agent for this (via `notes/ops-handoff` or
 otherwise), they should say **"here's the new image tag/task-definition revision, please run
