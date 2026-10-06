@@ -30,6 +30,14 @@ def _valid_entry():
             "enabled": True,
             "timeout_s": 14400,
         },
+        "enrollment": {
+            "people_refresh": True,
+            "search_refresh": True,
+            "embedding": True,
+            "cloud_path": True,
+            "api_smoke_test": True,
+            "qa_sweep": True,
+        },
         "waf": {
             "profile": "none",
         },
@@ -81,6 +89,30 @@ def test_quality_walk_direction_field_rejected():
     entry["quality"]["walk_direction"] = "forward"
     errors = validate({"ts": entry})
     assert any("ts.quality.walk_direction: unknown field" in e for e in errors)
+
+
+def test_missing_enrollment_block_reported():
+    entry = _valid_entry()
+    del entry["enrollment"]
+    assert "ts.enrollment: missing required field" in validate({"ts": entry})
+
+
+def test_missing_enrollment_flag_reported():
+    entry = _valid_entry()
+    del entry["enrollment"]["embedding"]
+    assert "ts.enrollment.embedding: missing required field" in validate({"ts": entry})
+
+
+def test_unknown_enrollment_flag_reported():
+    entry = _valid_entry()
+    entry["enrollment"]["legbot"] = True
+    assert any("ts.enrollment.legbot: unknown field" in e for e in validate({"ts": entry}))
+
+
+def test_enrollment_flags_must_be_booleans():
+    entry = _valid_entry()
+    entry["enrollment"]["people_refresh"] = "yes"
+    assert any("ts.enrollment.people_refresh: expected bool" in e for e in validate({"ts": entry}))
 
 
 def test_bad_status_enum_reported():
@@ -194,6 +226,7 @@ def test_real_manifest_covers_the_eight_tracked_jurisdictions():
     with open(DEFAULT_MANIFEST_PATH) as f:
         data = yaml.safe_load(f)
     assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= set(data.keys())
+    assert "al" in data  # OPEN-318: on the archive and people lists, so it belongs in the manifest (status paused)
 
 
 def test_real_manifest_has_no_walk_direction_field():
@@ -228,7 +261,8 @@ def test_real_manifest_matches_known_live_config_values():
     assert data["fl"]["archive"]["timeout_s"] == 16 * 3600
     assert data["wa"]["archive"]["timeout_s"] == 8 * 3600
     assert data["us"]["archive"]["timeout_s"] == 24 * 3600
-    for code in ("va", "mi", "ut", "az", "ma"):
+    assert data["mi"]["archive"]["timeout_s"] == 24 * 3600  # ARCHIVE_TIMEOUT_S["mi"]; this once pinned the 4h default
+    for code in ("va", "ut", "az", "ma"):
         assert data[code]["archive"]["timeout_s"] == 4 * 3600
 
     # activate.sh ARCHIVE_ENABLED_STATES -- all 8 originally-tracked jurisdictions are enabled.
@@ -242,7 +276,8 @@ def test_real_manifest_matches_known_live_config_values():
     assert data["mi"]["scrape"]["allow_duplicates"] is True
     assert data["fl"]["scrape"]["allow_duplicates"] is True
     assert data["va"]["scrape"]["allow_duplicates"] is True
-    for code in ("wa", "ut", "az", "ma", "us"):
+    assert data["ma"]["scrape"]["allow_duplicates"] is True  # in run-scrape.sh's list since OPEN-55; this once pinned False
+    for code in ("wa", "ut", "az", "us"):
         assert data[code]["scrape"]["allow_duplicates"] is False
 
     # ddp-sync sync_schedule.yaml primary/secondary

@@ -817,6 +817,23 @@ scope line was deliberate, not an oversight.
 - **Failure mode is fail-open, loudly:** an unreadable or invalid manifest makes consuming
   scripts keep their pre-manifest behavior and print a loud warning, rather than silently
   proceeding on bad data or hard-crashing a scheduled scrape.
+- **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
+  also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
+  `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`
+  and `tier`), seeded from the lists' real values, and **`check-jurisdiction-drift.py` compares every list
+  it knows about to the manifest and fails on any disagreement**: `activate.sh`, `run-people-refresh.sh`,
+  `start-os-api.sh`, `quality_check.py`, `run-scrape.sh`, and (with `--ddp-sync-root`) ddp-sync's
+  `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. Run in CI against
+  ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
+  who is enrolled in what, which is where today's gaps show (NC is on 2 of the 6 feature lists, MA on 3, AL on 2: these are today's real enrollment, not checker omissions).
+  This is a **comparison, not consumption**: no script reads the manifest to decide anything yet, so the
+  "do not wire this file into another repo" rule above still stands for consumers; ddp-sync's own lists
+  stay where they are until the dual-read migration the plan's §4.1 requires. Written by hitting two real
+  stale manifest values on its first run (`ma` allow_duplicates, MI's archive timeout), which the
+  hand-written spot checks in `test_validate_jurisdictions.py` had pinned wrong. **Not yet covered** (each a
+  follow-up under OPEN-318): ddp-sync's in-code fallbacks and manual-trigger allow-list (SYNC-57), the
+  `DDP_OPENSTATES_JURISDICTIONS` / `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` env values, ddp-broker-py,
+  votebot, ddp-agents, and the per-feature opt-in lists (`sweep_import`, `scrape_retry`, `full_walk`).
 
 ## `verify-jurisdiction <state>` — the onboarding probe (repo root, OPEN-222, 2026-08-31)
 
