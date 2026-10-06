@@ -5,6 +5,13 @@
 # Storage class (STANDARD_IA) is set by the proxy itself; do not pass --storage-class here.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+# Slack alerts go through lib/slack-alert.sh (OPEN-325). Test -r first: under `set -e`, bash 3.2 exits the
+# whole script when `source` hits a missing file even with a `||` fallback, and a missing alert helper
+# must not take the job down with it.
+[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
+    || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2; return 0; }
+
 OUT="/Users/agentsmith/Developer/repos/ddp-open-states/logs/db-backups"
 LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
 mkdir -p "$OUT"
@@ -14,13 +21,7 @@ DUMP="$OUT/openstates_${STAMP}.dump"
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [db-backup] $*" | tee -a "$LOG"; }
 
 slack_fail() {
-    local token
-    token=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-        2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
-    [ -n "${token:-}" ] && curl -sf --max-time 10 -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $token" -H "Content-Type: application/json" \
-        -d '{"channel":"#automation-errors","text":":red_circle: openstates DB backup FAILED — check logs/os-api.log"}' \
-        >/dev/null 2>&1 || true
+    post_slack_alert ":red_circle: openstates DB backup FAILED — check logs/os-api.log"
 }
 
 if ! docker exec ddp-openstates-postgres-1 pg_dump -U openstates -Fc openstates > "$DUMP" 2>>"$LOG"; then
