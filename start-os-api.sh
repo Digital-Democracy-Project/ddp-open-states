@@ -4,6 +4,13 @@
 # restart:unless-stopped policy owns the lifecycle thereafter. Idempotent — safe to re-run.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+# Slack alerts go through lib/slack-alert.sh (OPEN-325). Test -r first: under `set -e`, bash 3.2 exits the
+# whole script when `source` hits a missing file even with a `||` fallback, and a missing alert helper
+# must not take the job down with it.
+[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
+    || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2; return 0; }
+
 COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/deploy"
 COMPOSE_FILE="docker-compose.ddp.yml"
 LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
@@ -53,13 +60,7 @@ docker-compose -f "$COMPOSE_FILE" up -d
 log "api-v3 stack up; container restart policy now owns the lifecycle"
 
 slack_fail() {
-    local text="$1" token
-    token=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-        2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
-    [ -n "${token:-}" ] && curl -sf --max-time 10 -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $token" -H "Content-Type: application/json" \
-        -d "{\"channel\":\"#automation-errors\",\"text\":\"$text\"}" \
-        >/dev/null 2>&1 || true
+    post_slack_alert "$1"
 }
 
 # Wait for the api-v3 container's own healthcheck (GET /healthz) before touching its DB —

@@ -161,6 +161,11 @@ tail -f logs/os-api.log
 `#automation-errors` -- e.g. the 2026-10-04 UT/NC/MI scrape and MA archive failures), and
 `_alert_quiet_jurisdiction` when a jurisdiction imports nothing for several runs in a row.
 
+**Who these appear as:** CodeBot. ddp-sync's alerts get that from `ddp_sync/slack_alerts.py::post_alert`, and this
+repo's scripts (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`) from
+`lib/slack-alert.sh`. An alert that shows up as **Agent Smith** is a sender that posts without the identity: today
+`check-replica-health.sh` (not yet migrated). See `PRIMITIVES.md`. (OPEN-325 / SYNC-99, pending merge as of 2026-10-05.)
+
 **Known gap, accepted:** no alert that we know of fires when a cloud-owned scrape never *starts*
 (e.g. the EC2 scheduler is down) -- checked against ddp-sync's OpenStates alerting
 (`_alert_quiet_jurisdiction` and the failure alerts), not an audit of every AWS or infrastructure

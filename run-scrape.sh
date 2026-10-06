@@ -8,6 +8,11 @@ SESSION_ARG=${2:-""}
 # OPEN-172: derived here, at the top, because LOG_DIR below depends on it. (It was
 # previously defined further down, next to the import-summary.sh source.)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Slack alerts go through lib/slack-alert.sh (OPEN-325). Test -r first: under `set -e`, bash 3.2 exits the
+# whole script when `source` hits a missing file even with a `||` fallback, and a missing alert helper
+# must not take the job down with it.
+[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
+    || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2; return 0; }
 
 # OPEN-172: LOG_DIR follows the checkout, like everything OPEN-159 fixed in activate.sh.
 # It used to default to the production path outright, which meant a run from the dev
@@ -268,9 +273,8 @@ source "$SCRIPT_DIR/activate.sh"
 [ -n "$_OVERRIDE_DATA_DIR" ] && export SCRAPED_DATA_DIR="$_OVERRIDE_DATA_DIR"
 [ -n "$_OVERRIDE_CACHE_DIR" ] && export CACHE_DIR="$_OVERRIDE_CACHE_DIR"
 
-# Slack alert on any scrape/import failure
-SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-    2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+# Slack alert on any scrape/import failure: post_slack_alert in on_failure below (token and CodeBot
+# identity are handled by lib/slack-alert.sh).
 
 # CAMS's CodeBot failure listener (PLAN-failure-to-codebot) — a real, repeated
 # scrape bug should reach Agent Smith triage, not just the Slack alert below.
@@ -342,12 +346,7 @@ on_failure() {
         log "SUPPRESS_FAILURE_ALERT=1 — skipping Slack/CAMS alert (retry wrapper will alert if attempts are exhausted)"
         return 0
     fi
-    [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
-        -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $SLACK_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "{\"channel\": \"#automation-errors\", \"text\": \"⚠️ *OpenStates scrape failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log\"}" \
-        >/dev/null || true
+    post_slack_alert "⚠️ *OpenStates scrape failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log"
     report_failure_to_cams
 }
 

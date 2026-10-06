@@ -25,24 +25,22 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=activate.sh
 source "$SCRIPT_DIR/activate.sh"
+# Slack alerts go through lib/slack-alert.sh (OPEN-325). Test -r first: under `set -e`, bash 3.2 exits the
+# whole script when `source` hits a missing file even with a `||` fallback, and a missing alert helper
+# must not take the job down with it.
+[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
+    || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2; return 0; }
 
-# Same Slack/CAMS failure-alerting pattern as run-scrape.sh — copied, not shared, per this
-# repo's existing convention of copying the log()/on_failure() one-liners between sibling
-# scripts rather than introducing a shared library for two callers.
-SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-    2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+# Same Slack/CAMS failure-alerting pattern as run-scrape.sh. The Slack half is now shared
+# (lib/slack-alert.sh, OPEN-325): four scripts each carried their own copy of the call, and none
+# set the CodeBot sender identity. The CAMS half is still copied between the two scripts.
 CAMS_TOKEN=$(grep -E '^CAMS_API_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
     2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
 CAMS_URL="${CAMS_URL:-http://localhost:8000}"
 
 on_failure() {
     log "ERROR: archive failed for $STATE"
-    [ -n "$SLACK_TOKEN" ] && curl -sf --max-time 10 \
-        -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $SLACK_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "{\"channel\": \"#automation-errors\", \"text\": \"⚠️ *OpenStates archive failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log\"}" \
-        >/dev/null || true
+    post_slack_alert "⚠️ *OpenStates archive failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log"
     report_failure_to_cams
 }
 
