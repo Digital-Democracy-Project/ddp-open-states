@@ -1,5 +1,15 @@
 # ddp-open-states/jurisdictions.yaml — single source of truth for tracked jurisdictions.
 #
+# OPEN-318 (2026-10-05): this file also says which per-feature lists each jurisdiction is on (the
+# `enrollment:` block, plus archive.enabled and tier), populated from the lists' real values that day, and
+# check-jurisdiction-drift.py (run in CI, see .github/workflows/validate-jurisdictions.yml) fails when any
+# hard-coded list -- this repo's, or ddp-sync's sync_schedule.yaml and timeout tables -- disagrees with it.
+# That is a COMPARISON, not consumption: nothing reads this file at run time yet, so the paragraph below
+# about what consumes it is still true. To add a state or enroll one in a feature, edit this file first
+# (RUNBOOK.md -> "Adding a jurisdiction, or enrolling one in a feature"). `python3
+# check-jurisdiction-drift.py --matrix` prints who is enrolled in what. `al` was added then: it is on the
+# archive, people-refresh and QA lists, so it belongs here (status paused: its bills are not scraped).
+#
 # OPEN-221 / PLAN-push-button-onboarding.md §4.1 ("Manifest v0"). This is deliberately a SMALL
 # first step: the file + validate_jurisdictions.py + jurisdiction-field.sh, consumed ONLY by
 # ddp-open-states scripts and the (separate, not-yet-built) onboarding probe. It is NOT yet wired
@@ -69,6 +79,13 @@ us:
   archive:
     enabled: true
     timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: false
   waf:
     profile: none
   quality:
@@ -94,6 +111,13 @@ fl:
   archive:
     enabled: true
     timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: true
   waf:
     profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
   quality:
@@ -118,6 +142,13 @@ wa:
   archive:
     enabled: true
     timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: true
   waf:
     profile: none
   quality:
@@ -142,6 +173,13 @@ va:
   archive:
     enabled: true
     timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: false
   waf:
     profile: none
   quality:
@@ -168,7 +206,15 @@ mi:
                                         # by intro date, not last-action date (RUNBOOK.md caveat)
   archive:
     enabled: true
-    timeout_s: 14400                   # ARCHIVE_TIMEOUT_S default, 4h (no MI-specific entry)
+    timeout_s: 86400                   # ARCHIVE_TIMEOUT_S["mi"], 24h (ddp-sync; this said the 4h default, which MI's
+                                        # archive outgrew)
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: true
   waf:
     profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
                                          # WAF (OPEN-19/21/22/23), 10 req/min hard cap
@@ -193,6 +239,13 @@ ut:
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: true
   waf:
     profile: none
   quality:
@@ -216,6 +269,13 @@ az:
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
+  enrollment:
+    people_refresh: true
+    search_refresh: true
+    embedding: true
+    cloud_path: true
+    api_smoke_test: true
+    qa_sweep: true
   waf:
     profile: none
   quality:
@@ -235,7 +295,8 @@ ma:
                                      # not an onboarding-stage regression
   tier: secondary                    # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
-    allow_duplicates: false
+    allow_duplicates: true             # run-scrape.sh ALLOW_DUPLICATES_STATES has had ma since OPEN-55 (a completed
+                                        # 9,496-bill MA scrape lost its whole import without it); this manifest said false
     timeout_s: 57600                   # SCRAPE_TIMEOUT_S["ma"], 16h -- same ceiling as FL
     session_arg: null                   # ALWAYS null for secondaries (OPEN-24 resolution)
     votes_scraper: true                  # "votes": MAVoteScraper IS registered and live in
@@ -247,6 +308,13 @@ ma:
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
+  enrollment:
+    people_refresh: true
+    search_refresh: false    # not on ddp-sync's bill_search_refresh list
+    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    cloud_path: true
+    api_smoke_test: false    # start-os-api.sh's boot smoke test predates MA
+    qa_sweep: true
   waf:
     profile: none
   quality:
@@ -288,6 +356,13 @@ nc:
                                         # sample), same "measure before committing to a cadence"
                                         # convention Stage 2 already followed.
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h -- no NC-specific entry
+  enrollment:
+    people_refresh: false    # run-people-refresh.sh has no nc (NC legislators never refresh)
+    search_refresh: true
+    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    cloud_path: true
+    api_smoke_test: false    # start-os-api.sh's boot smoke test predates NC
+    qa_sweep: false    # quality_check.py's JURISDICTIONS has no nc
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
   quality:
@@ -300,3 +375,33 @@ nc:
                                         # (see OPEN-230's decision notes), so there is nothing
                                         # yet to scope a fix-cycle ticket against
     evidence: notes/nc-onboarding-probe-20260831.md
+
+al:
+  name: Alabama
+  status: paused                      # bills are NOT scraped: not on any ddp-sync scrape list, removed from the bill loop
+                                       # (people-only since 2026-06). Its archive and people refresh still run.
+  tier: secondary                      # a required field; meaningless while paused (the drift check skips it)
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry); never runs while paused
+    session_arg: null
+    votes_scraper: false
+    start_filter: false                   # scrapers/al/bills.py's scrape(self, session) takes no start= (cf. OPEN-321)
+  archive:
+    enabled: true
+    timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
+  enrollment:
+    people_refresh: true
+    search_refresh: false    # not on ddp-sync's bill_search_refresh list
+    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    cloud_path: false    # AL bills are not scraped
+    api_smoke_test: false    # start-os-api.sh's boot smoke test predates AL
+    qa_sweep: true
+  waf:
+    profile: none
+  quality:
+    diff_cleaner: none
+  api_keys: []
+  onboarding:
+    epic: null
+    evidence: null

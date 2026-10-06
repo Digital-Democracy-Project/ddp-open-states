@@ -12,12 +12,26 @@ on:
       - "jurisdictions.yaml"
       - "validate_jurisdictions.py"
       - "test_validate_jurisdictions.py"
+      # OPEN-318: the drift check, and the in-repo lists it compares to the manifest
+      - "check-jurisdiction-drift.py"
+      - "test_check_jurisdiction_drift.py"
+      - "activate.sh"
+      - "run-people-refresh.sh"
+      - "start-os-api.sh"
+      - "quality_check.py"
+      - "run-scrape.sh"
 
 jobs:
   validate:
     runs-on: ubuntu-latest  # pure Python + PyYAML, no macOS-specific dependency
     steps:
       - uses: actions/checkout@v4
+      # OPEN-318: ddp-sync keeps the other half of the jurisdiction lists (its sync_schedule.yaml and timeout
+      # tables). Public repo, so no token; its main is what the drift check compares the manifest with.
+      - uses: actions/checkout@v4
+        with:
+          repository: Digital-Democracy-Project/ddp-sync
+          path: ddp-sync
       - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
@@ -27,3 +41,7 @@ jobs:
         run: python3 validate_jurisdictions.py
       - name: Run the validator's own test suite
         run: python3 -m pytest test_validate_jurisdictions.py -v
+      - name: Run the drift check's own test suite
+        run: python3 -m pytest test_check_jurisdiction_drift.py -v
+      - name: Check every hard-coded jurisdiction list against the manifest (OPEN-318)
+        run: python3 check-jurisdiction-drift.py --ddp-sync-root ddp-sync --require-ddp-sync

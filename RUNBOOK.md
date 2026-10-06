@@ -177,6 +177,25 @@ wrappers), so a Mac-side monitor cannot read the memory store.
 `ddp-agents` hook that called the script was removed in the companion `ddp-agents` PR (until that
 deploys, the hook runs `... || true` against a missing file, which is harmless).
 
+
+## Adding a jurisdiction, or enrolling one in a feature (OPEN-318)
+
+`jurisdictions.yaml` is the one place that says which jurisdictions are on which list, and
+`check-jurisdiction-drift.py` keeps every list that still exists in step with it. The lists used to drift
+(NC was on 8 of ~25 and missing from 6): forgetting one parameter half-enrolled a state silently.
+
+1. Edit `jurisdictions.yaml`: the new entry, or the flag (`archive.enabled`, `enrollment.*`).
+2. `python3 check-jurisdiction-drift.py --ddp-sync-root ~/Developer/repos/ddp-sync` names every list that now
+   disagrees, with both sides. (`--matrix` shows who is enrolled in what.)
+3. Bring each list into agreement. **ddp-sync's lists live in the ddp-sync repo: merge that change first**,
+   because CI compares the manifest with ddp-sync's `main`; then the manifest change goes green.
+4. Not checked yet (change these by hand and check them): ddp-sync's in-code fallbacks and the manual trigger
+   allow-list (SYNC-57), the `DDP_OPENSTATES_JURISDICTIONS` and `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST`
+   env values on each host, ddp-broker-py, votebot and ddp-agents.
+
+Enrolling a state in the **embedding** list still needs its knowledge-base backfill run by hand first
+(SYNC-95); the manifest records enrollment, it does not make that safe.
+
 ---
 
 ## Database

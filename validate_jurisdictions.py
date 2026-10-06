@@ -66,6 +66,7 @@ TOP_LEVEL_FIELDS = {
     "tier": str,
     "scrape": dict,
     "archive": dict,
+    "enrollment": dict,
     "waf": dict,
     "quality": dict,
     "api_keys": list,
@@ -83,6 +84,18 @@ SCRAPE_FIELDS = {
 ARCHIVE_FIELDS = {
     "enabled": bool,
     "timeout_s": int,
+}
+
+# OPEN-318: which per-feature jurisdiction lists this jurisdiction belongs to. Each is the manifest's
+# statement of a list that is otherwise hard-coded somewhere (see check-jurisdiction-drift.py for where),
+# so adding a state means editing the manifest and then bringing every list it names into agreement.
+ENROLLMENT_FIELDS = {
+    "people_refresh": bool,   # run-people-refresh.sh
+    "search_refresh": bool,   # ddp-sync openstates_archive.bill_search_refresh
+    "embedding": bool,        # ddp-sync openstates_archive.knowledge_base_embedding
+    "cloud_path": bool,       # ddp-sync openstates_scrape.cloud_path (+ memory_backend)
+    "api_smoke_test": bool,   # start-os-api.sh's boot smoke test
+    "qa_sweep": bool,         # quality_check.py JURISDICTIONS
 }
 
 WAF_FIELDS = {
@@ -189,6 +202,9 @@ def validate(data):
             timeout = entry["archive"].get("timeout_s")
             if isinstance(timeout, int) and not isinstance(timeout, bool) and timeout <= 0:
                 errors.append(f"{code}.archive.timeout_s: must be positive, got {timeout}")
+
+        if isinstance(entry.get("enrollment"), dict):
+            _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors)
 
         if isinstance(entry.get("waf"), dict):
             _check_block(entry["waf"], WAF_FIELDS, f"{code}.waf", errors)
