@@ -60,6 +60,18 @@ assert_benign "MI genuine empty result" "$(fixture mi_empty \
     "12:00:02 INFO openstates: MI search returned a results page with no matching bills -- genuine empty result for this window" \
     "openstates.exceptions.ScrapeError: no objects returned from MIBillScraper scrape")"
 
+# OPEN-334: the two log lines openstates-core/openstates-scrapers now emit for Michigan. A block that
+# was retried and recovered, and a warm-up that was issued no WAF cookies, are not "site unreachable"
+# (the second is the normal state while the site is not challenging us); neither may flip a run to failed.
+assert_benign "OPEN-334 retried block warning (marker, status, path)" "$(fixture mi_retried_block \
+    "13:01:02 WARNING openstates: mi: block detected despite cached cookies (response matched known WAF block-page marker 'captcha_resp' (HTTP 200) on /Search/ExecuteSearch); invalidating cache and re-warming once" \
+    "13:01:09 INFO openstates: MI search returned a results page with no matching bills -- genuine empty result for this window" \
+    "openstates.exceptions.ScrapeError: no objects returned from MIBillScraper scrape")"
+
+assert_benign "OPEN-334 warm-up line (required cookies not issued)" "$(fixture mi_warm_up \
+    "13:01:03 INFO openstates: mi: warm-up page set cookies ['.AspNetCore.Session', 'ARRAffinity']; required cookies not issued: ['x-bni-fpc', 'x-bni-rncf']" \
+    "openstates.exceptions.ScrapeError: no objects returned from MIBillScraper scrape")"
+
 # A jurisdiction that emits none of the markers behaves exactly as it did before this change.
 # VA is the real example: a genuinely quiet run that logs nothing distinctive at all.
 assert_benign "output with no markers at all (unchanged behaviour)" "$(fixture va_quiet \
