@@ -83,6 +83,8 @@ should reuse rather than reimplement:
   future benign `no WAF block detected` diagnostic can't turn every quiet week into an alert.
   **Add a new marker to `_SCRAPE_UNREACHABLE_MARKERS`, not a second matcher** — and add a fixture
   to `test-scrape-outcome.sh` in the same change, because both failure directions here are silent.
+  **OPEN-334** added two Michigan log lines (a retried block's marker/status/path, and what a cookie warm-up
+  received); `test-scrape-outcome.sh` pins both as benign, so keep new diagnostics clear of the marker phrases.
 - **Same-jurisdiction scrape lock (OPEN-154, 2026-08-25)** — `/tmp/ddp-openstates-scrape-locks/$STATE`,
   taken for the whole run and released by the `EXIT` trap. **This is not the same lock as the
   worktree lock below, and the difference has already misled a reader once.** The worktree lock is
