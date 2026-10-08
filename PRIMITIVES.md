@@ -162,7 +162,9 @@ should reuse rather than reimplement:
   (same rule as the old script), and separately refuses without a fresh published WAF cookie
   (`_mi_waf_cookies_are_fresh()` — every cookie in the published set must have `MI_WAF_COOKIE_MIN_
   FRESHNESS_SECONDS` of life left, default 600s; a Michigan cookie is minted and published on its
-  own schedule by `ddp-sync`'s `mi_cookie_publish.py`, not by this file, which never mints its own).
+  own schedule by `ddp-sync`'s `mi_cookie_publish.py` — monthly since 2026-10-07, Mac only — not by this file, which
+  never mints its own; see `RUNBOOK.md` → "Michigan WAF cookie publishing". The check reads only `expires`, so it cannot
+  tell a cookie the site has stopped honouring from a good one; a run now also logs the cookie's age).
   A real cookie's `expires` is about a year out, so that check cannot say how old a cookie is or whether
   the site still honours it (OPEN-232); `ddp-sync` now records `_meta.minted_at` and each Michigan run that gets past that
   check logs the cookie's age to stderr (a refused run prints its own ERROR instead) ("no minted_at recorded" for one published before that). Informational only:
