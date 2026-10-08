@@ -178,6 +178,53 @@ wrappers), so a Mac-side monitor cannot read the memory store.
 deploys, the hook runs `... || true` against a missing file, which is harmless).
 
 
+## Michigan WAF cookie publishing (OPEN-188 / OPEN-232 / OPEN-333)
+
+Michigan's site sits behind Barracuda, which issues two cookies (`x-bni-fpc`, `x-bni-rncf`) to a client that
+passes its challenge. The Fargate collector refuses a Michigan run unless a cookie set exists at
+`s3://ddp-openstates-scraper-memory/prod/mi/_cache/mi_waf_cookies.json` with at least 600 s of `expires` left.
+
+**Who publishes it (as of 2026-10-08).** The **Mac's** ddp-sync only: job `mi_cookie_publish`, **monthly, day 1 at
+08:00 UTC** (ddp-sync PR #202; it was every 6 h before). Next run: 2026-11-01. The EC2 host has it off
+(`MI_COOKIE_PUBLISH_ENABLED=false` since 2026-09-02), so there is exactly one publisher. The job asks ScrapeBot
+(CAMS) to open a real browser on `legislature.mi.gov` (about $0.33 and 15-40 s per mint), then uploads the result.
+
+**How the Mac job is configured.** `ddp-sync/.env` on the Mac holds `SCRAPER_MEMORY_PREFIX=prod` and the
+`ddp-scraper` IAM user's three `AWS_*` values (added 2026-10-07; `scripts/start-ddp-sync.sh` sources that file, no
+LaunchDaemon change needed). `ddp-scraper` can **write** objects but **cannot delete them or list versions**, and it
+cannot read the `ddp-sync/credentials` secret, so the service's settings still fall back to `.env` as before
+(startup logs `Secrets Manager unavailable ... AccessDeniedException`; that line is expected). Restart with
+`sudo launchctl kickstart -k system/com.ddp.ddp-sync`. `.env.bak-20261007` next to it is a copy of the old file and
+contains secrets: delete it.
+
+**A failed mint is expected right now, and harmless.** The `x-bni` cookies are issued only after a challenge, and a
+quiet client is not currently challenged, so ScrapeBot's page visit gets only `.AspNetCore.Session` and
+`ARRAffinity`. The mint then fails with `mint_incomplete: missing required cookies [...]` and **nothing is uploaded**:
+the object in S3 stays as it was (current version `z42h6F7n...`, 2026-09-03, both cookies `expires` 2027-09-10). The
+real reason is only in CAMS's log (`ddp-agents/logs/cams-server.log`, grep the task id); `#scrapebot_updates` shows just
+"Unknown error" (OPEN-333 acceptance item). To mint by hand: `cd ~/Developer/repos/ddp-sync && set -a && . ./.env &&
+set +a && .venv/bin/python -c "import asyncio; from ddp_sync.pipelines.mi_cookie_publish import run_mi_cookie_publish_job
+as r; print(asyncio.run(r()))"`. **Do not loop it**: it is real traffic against a live WAF (OPEN-53); OPEN-333's rule
+is one deliberate mint at a time, and three were run on 2026-10-06/07.
+
+**The printed expiry proves nothing about the site.** `_mi_waf_cookies_are_fresh()` checks only `expires`, a year out
+for a real mint, so the stored file passes the gate until about 2027-09 whether or not Michigan still honours it.
+Age is now visible instead: new mints record `_meta.minted_at` (ddp-sync #201) and a run logs the cookie's age
+(ddp-open-states #267, needs scraper image v31 to take effect; a file without it logs "no minted_at recorded").
+
+**Rollback / undo.** To restore the old cookie after a bad publish, copy version `z42h6F7n3L3FYoFkiwAVLxskif0BC7n7`
+back over the current object (S3 versioning is on). To switch the Mac publisher off again, remove the four lines added
+to `ddp-sync/.env` and restart the service.
+
+**Gate and open items.** OPEN-232's rule was not to enable publishing until its refresh-cycle test closes; the Mac
+publisher was enabled anyway on 2026-10-07 as a deliberate exception (it can only make one failing visit a month
+while no challenge is served). Still open: OPEN-232 (a real mint that publishes and is picked up needs a challenge to
+be served), OPEN-333 (a useful failure message in Slack). Next signal: the Michigan run on **Sunday 2026-10-11, 02:00
+UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it):
+`prod/_scratch-write-test/claude-write-test-20261007T211251Z.txt`; remove it from the S3 console.
+
+---
+
 ## Adding a jurisdiction, or enrolling one in a feature (OPEN-318)
 
 `jurisdictions.yaml` is the one place that says which jurisdictions are on which list, and

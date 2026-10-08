@@ -169,6 +169,16 @@ retry. Everything downstream was resilient; the first call was not.
 
 > **Rule.** Resilience belongs on every request to a source, including the small ones.
 
+### A printed expiry is not proof the site still honours it (OPEN-232, OPEN-333)
+
+Michigan's WAF cookies carry an `expires` about a year out, so the collector's freshness check passes
+for about a year **whether or not the site still accepts them**. And when the site stopped challenging
+a quiet client, the mint that exists to refresh them found nothing to collect and failed, with the
+reason visible only in a log while the Slack alert said "Unknown error".
+
+> **Rule.** Record when a credential was *obtained*, not just when it claims to expire. An alert
+> must carry the reason, or the person who sees it cannot tell a harmless failure from a real one.
+
 ---
 
 ## 5. Per-jurisdiction facts are load-bearing and easy to miss
