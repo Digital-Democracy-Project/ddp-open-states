@@ -577,7 +577,16 @@ patched state.
 
 **Day-to-day workflow:**
 - New fix: `git checkout -b feat/my-change` → PR to fork `main`
-- Upstream sync (monthly): `git fetch upstream && git merge upstream/main && git push origin main`
+- Upstream sync (OPEN-336, plan §8.4): a nightly job keeps one standing `sync/upstream` PR open in each code fork
+  (core, scrapers, api-v3) whose body lists the files that would conflict. A person merges it (real merge
+  commit, daytime, after the plan §5.B smoke test); if it shows conflicts, branch from `main`, `git merge
+  upstream/main`, resolve (`poetry.lock`: take upstream's, re-lock with our `pyproject.toml`), PR into `main`.
+  The next nightly run closes the standing PR once `main` contains upstream.
+- `people` (plan §8.3): fork `main` = upstream + carried fixes; the nightly job `ddp-sync-upstream.yml` merges
+  upstream and pushes only if lint passes. A carried fix goes in through a fork PR with a green `Lint YAML` and
+  `Upstream-PR:` / `Source:` trailers (blank line before them). Hosts switch remotes once with the plan's aborting,
+  self-restoring script (`origin` = fork, `upstream` = public); rollback is `git remote rename origin ddp && git
+  remote rename upstream origin`, `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
 - Upstream contribution: branch off `upstream/main`, cherry-pick the commit, PR to `openstates/openstates-scrapers`
 
 ### DDP commits on fork main (newest first)
