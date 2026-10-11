@@ -229,13 +229,24 @@ should reuse rather than reimplement:
   scraper bug, a patch-step side effect. See `RUNBOOK.md` for the current instance of this and
   the `SKIP_PATCHES=1` workaround. Don't "fix" this by adding a `git stash` here — that would
   silently blow away someone's in-progress work on `openstates-core`.
-- **`people` also has a formal DDP fork now** (`Digital-Democracy-Project/people`, since
-  2026-07-27 — first use: openstates/people#3902, Susan Valdés's missing 2022-2024 FL House
-  term). It follows `openstates-core`'s convention, not `openstates-scrapers`'s: `origin` stays
-  on public upstream so `run-people-refresh.sh`'s weekly `git pull --ff-only` — the thing a real
-  production WireGuard tunnel reads from — never silently drifts behind community data; `ddp` is
-  purely a staging remote for pushing a local fix branch and opening a PR back upstream, never a
-  pull source. See `PLAN-fork-management.md` §1 for the full reasoning.
+- **`people` is a formal DDP fork too** (`Digital-Democracy-Project/people`, since 2026-07-27;
+  carried-fix model and nightly sync from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` =
+  upstream + our fixes, like the other forks. **Remote convention, once the host switch is done:**
+  `origin` = the fork, `upstream` = the public project, identical to core/scrapers/api-v3.
+  A nightly GitHub Actions job (`ddp-sync-upstream.yml`, 01:30 UTC) merges upstream `main` into
+  fork `main` and pushes only if the merge is clean and passes yamllint, `os-people lint` per
+  changed state and the duplicate-person check; `run-people-refresh.sh` and ddp-sync's
+  `people-pull` just `git pull --ff-only` from `origin`. **A fix does not wait for upstream:** it
+  enters fork `main` through a PR in the fork with a green `Lint YAML`, and its commit message
+  carries `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them) so the
+  weekly drift report can show which carried files upstream has merged or declined. When upstream
+  merges the same change, the nightly merge produces no difference.
+- **The three code forks (core, scrapers, api-v3) get a nightly standing PR instead of an
+  auto-merge** (`ddp-sync-upstream-pr.yml` + `.github/scripts/ddp-sync-pr.sh`): one open PR from the
+  mirror branch `sync/upstream` into `main`, whose body lists the files that would conflict. A person
+  merges it (real merge commit, in daytime, after the smoke test in plan §5.B); when `main` contains
+  upstream the next run closes it. Nothing on a host cron-merges or writes to git; the hosts only
+  fast-forward. See `RUNBOOK.md` → "Scraper state" for the commands.
 - **Branch hygiene (OPEN-99): once a PR merges, delete its fix branch, local and remote.** This
   directly prevents a recurrence of the exact failure mode the worktree-lock/freshness-guard
   bullets above exist for — a merged branch left checked out (or just left lying around) is
