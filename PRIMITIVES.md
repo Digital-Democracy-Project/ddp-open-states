@@ -240,7 +240,10 @@ should reuse rather than reimplement:
   enters fork `main` through a PR in the fork with a green `Lint YAML`, and its commit message
   carries `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them) so the
   weekly drift report can show which carried files upstream has merged or declined. When upstream
-  merges the same change, the nightly merge produces no difference.
+  merges the same change, the nightly merge produces no difference. If the merge conflicts or a
+  check fails, nothing is pushed (fork `main` is left exactly as it was), a Slack notice is
+  posted, and the next night retries. So: **`people` merges automatically after validation; the
+  three code forks below never do.**
 - **The three code forks (core, scrapers, api-v3) get a nightly standing PR instead of an
   auto-merge** (`ddp-sync-upstream-pr.yml` + `.github/scripts/ddp-sync-pr.sh`): one open PR from the
   mirror branch `sync/upstream` into `main`, whose body lists the files that would conflict. A person
