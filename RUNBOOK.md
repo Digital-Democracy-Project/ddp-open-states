@@ -577,21 +577,24 @@ patched state.
 
 **Day-to-day workflow:**
 - New fix: `git checkout -b feat/my-change` → PR to fork `main`
-- Upstream sync (OPEN-336, plan §8.4): a nightly job keeps one standing `sync/upstream` PR open in each code fork
-  (core, scrapers, api-v3) whose body lists the files that would conflict. The dev-side agent prepares and tests it
-  (real merge commit, daytime, after the plan §5.B smoke test); Ramon reviews before it is merged; limit one week
-  from the day it first appears. If it shows conflicts, branch from `main`, `git merge upstream/main`, resolve
-  (`poetry.lock`: take upstream's, re-lock with our `pyproject.toml`, except core while OPEN-348 (Python 3.13) is
-  open: core keeps our lock), PR into `main`. The next nightly run closes the standing PR once `main` contains upstream.
-- `people` (plan §8.3): fork `main` = upstream + carried fixes. The nightly job `ddp-sync-upstream-pr.yml` keeps one
-  standing sync PR open (checks run on it, role-date check against a baseline of known errors); a person approves it
-  before it reaches `main`. A carried fix goes in through a fork PR with a green `Lint YAML` and `Upstream-PR:` /
-  `Source:` trailers (blank line before them); never put "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves, resolved) directly
-  before an upstream reference in a PR body or commit message (GitHub would close the upstream PR when ours merges). Hosts
-  switch remotes once with the plan's aborting, self-restoring script (`origin` = fork, `upstream` = public);
-  rollback is `git remote rename origin ddp && git remote rename upstream origin`,
-  `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
-  The sync secrets (`DDP_SYNC_TOKEN`, `SLACK_WEBHOOK_URL`) live in a `ddp-sync` Environment limited to `main` on each fork, not in repository secrets, because the standing sync PR comes from a branch in the same repo (plan §8.6).
+- Upstream sync (OPEN-336, plan §8): ddp-sync's daily `fork_upstream_check` job (01:30 UTC, Mac only, needs
+  `FORK_UPSTREAM_CHECK_ENABLED=true`) tells #automation-errors when a fork lacks an upstream commit older than
+  3 days, and writes `logs/fork-upstream-status.json` for the agent to read; run it by hand with
+  `POST /trigger/openstates-scrape/fork-check`.
+  The dev-side agent prepares and tests a catch-up PR (branch `catchup-<fork>-<date>`, real merge commit, daytime,
+  after the plan §5.B smoke test); Ramon reviews before it is merged; limit one week from the first report. If there
+  are conflicts, branch from `main`, `git merge upstream/main`, resolve (`poetry.lock`: take upstream's, re-lock with
+  our `pyproject.toml`, except core while OPEN-348 (Python 3.13) is open: core keeps our lock), PR into `main`.
+  Preview conflicts read-only with `git merge-tree --write-tree --name-only --no-messages origin/main upstream/main`.
+- `people` (plan §8.3): fork `main` = upstream + carried fixes. The same daily check covers it; the catch-up PR
+  runs `Lint YAML` (yamllint, `os-people lint` per changed state, duplicate-person and role-date checks); on a
+  `catchup-*` branch a dead link in upstream's own data only warns. A carried fix goes in through a fork PR with a green
+  `Lint YAML` and `Upstream-PR:` / `Source:` trailers (blank line before them); never put "fix", "close" or "resolve"
+  (or fixes, fixed, closes, closed, resolves, resolved) directly before an upstream reference in a PR body or commit
+  message (GitHub would close the upstream PR when ours merges). Hosts switch remotes once with the plan's aborting,
+  self-restoring script (`origin` = fork, `upstream` = public); rollback is `git remote rename origin ddp && git remote
+  rename upstream origin`, `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
+  No sync tokens or Environment secrets are used.
 - Upstream contribution: branch off `upstream/main`, cherry-pick the commit, PR to `openstates/openstates-scrapers`
 
 ### DDP commits on fork main (newest first)

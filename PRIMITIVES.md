@@ -230,38 +230,40 @@ should reuse rather than reimplement:
   the `SKIP_PATCHES=1` workaround. Don't "fix" this by adding a `git stash` here — that would
   silently blow away someone's in-progress work on `openstates-core`.
 - **`people` is a formal DDP fork too** (`Digital-Democracy-Project/people`, since 2026-07-27;
-  carried-fix model and standing sync PR from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` =
-  upstream + our fixes, like the other forks. **Remote convention, once the host switch is done:**
-  `origin` = the fork, `upstream` = the public project, identical to core/scrapers/api-v3.
-  A nightly GitHub Actions job (`ddp-sync-upstream-pr.yml`, 01:30 UTC) keeps **one standing sync PR**
-  open from upstream `main` into fork `main`, with `yamllint`, `os-people lint` per changed state, the
-  duplicate-person check and the role-date check (blocking only on errors new against a checked-in
-  baseline of upstream's known ones) run on it. **A person approves it before anything reaches fork
-  `main`** (decided 2026-10-11: "review before import", so an imported upstream workflow cannot run
-  with the fork's secrets unread; this is procedure, since `main` has no branch protection on these
-  forks); `run-people-refresh.sh` and ddp-sync's `people-pull` just
-  `git pull --ff-only` from `origin`. **A fix does not wait for upstream:** it enters fork `main`
-  through a PR in the fork with a green `Lint YAML`, and its commit message carries
-  `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them), so the weekly
-  drift report can show which carried files upstream has merged or declined. Never put
-  "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves, resolved) directly before an
-  upstream reference in a PR body or commit message: GitHub reads that as an instruction to close the
-  upstream PR when ours merges. A fix upstream
-  rejects but our source supports stays carried. When upstream merges the same change, the standing
-  PR shows no difference for it.
-- **The three code forks (core, scrapers, api-v3) get the same kind of nightly standing PR**
-  (`ddp-sync-upstream-pr.yml` + `.github/scripts/ddp-sync-pr.sh`): one open PR from the mirror branch
-  `sync/upstream` into `main`, whose body lists the files that would conflict. **The dev-side agent
-  prepares and tests it (real merge commit, in daytime, after the smoke test in plan §5.B) and Ramon
-  reviews before it is merged;** the limit is one week from the day the PR first appears, and the
-  Monday report flags an overdue one. When `main` contains upstream the next run closes it. Nothing
-  on a host cron-merges or writes to git; the hosts only fast-forward. The upstream-owned workflows
-  that need secrets we lack or that we do not use (`Update Database` on people; `Scout Scrape` and
-  both Docker workflows on scrapers; the Docker and `Release Steps` workflows on core; the Docker
-  workflow on api-v3) were switched off on 2026-10-11; `Lint YAML`, `Lint Python` and `Test Python`
-  stay on. All four sync jobs read their secrets (`DDP_SYNC_TOKEN`, `SLACK_WEBHOOK_URL`) from a
-  `ddp-sync` Environment limited to `main`, not repository secrets (the sync PR comes from a branch in
-  the same repo; plan §8.6). See `RUNBOOK.md` → "Scraper state" for the commands.
+  carried-fix model from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` = upstream + our
+  fixes, like the other forks. **Remote convention, once the host switch is done:** `origin` = the
+  fork, `upstream` = the public project, identical to core/scrapers/api-v3. **A fix does not wait
+  for upstream:** it enters fork `main` through a PR in the fork with a green `Lint YAML`, and its
+  commit message carries `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line
+  before them), so the weekly drift report can show which carried files upstream has merged or
+  declined. Never put "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves,
+  resolved) directly before an upstream reference in a PR body or commit message: GitHub reads that
+  as an instruction to close the upstream PR when ours merges. A fix upstream rejects but our
+  source supports stays carried. When upstream merges the same change, the next catch-up shows no
+  difference for it. `run-people-refresh.sh` and ddp-sync's `people-pull` just
+  `git pull --ff-only` from `origin`.
+- **Keeping all four forks current: one daily ddp-sync job, then a catch-up PR by hand**
+  (decided 2026-10-12; replaces the GitHub-hosted standing-PR design, plan §8). `fork_upstream_check`
+  (ddp-sync PR #211; 01:30 UTC; Mac instance only; off unless `FORK_UPSTREAM_CHECK_ENABLED=true`)
+  fetches the public repositories with no credentials into its own cache folder and writes
+  `logs/fork-upstream-status.json` (per fork: commits behind, age of the oldest, titles, whether
+  `.github` or migrations changed). It posts to #automation-errors when a fork lacks an upstream
+  commit older than 3 days (again at 7 and 14 days, then weekly) or a fetch fails. It never merges,
+  pushes or opens a PR. **The dev-side agent reads the status file, prepares and tests a catch-up PR
+  (branch `catchup-<fork>-<date>`; real merge commit; daytime; after the smoke test in plan §5.B)
+  and Ramon reviews before it is merged;** the limit is one week from the day the check first
+  reports the fork behind, and the Monday report flags an overdue one. **A person approves before
+  anything reaches fork `main`** ("review before import", decided 2026-10-11; this is procedure,
+  since `main` has no branch protection on these forks). Nothing on a host cron-merges or writes to
+  git; the hosts only fast-forward. On a `catchup-*` or `sync/upstream` branch a dead link in
+  upstream's own data warns instead of failing the `people` link check; our own fix PRs still fail
+  on one. The role-date check still blocks: upstream's nine missing start dates are carried in the
+  first `people` catch-up (fork PR 14) as fixes for upstream PRs 4155 to 4160. The upstream-owned
+  workflows that need secrets we lack or that we do not use (`Update Database` on people; `Scout
+  Scrape` and both Docker workflows on scrapers; the Docker and `Release Steps` workflows on core;
+  the Docker workflow on api-v3) were switched off on 2026-10-11; `Lint YAML`, `Lint Python` and
+  `Test Python` stay on. No sync tokens, `ddp-sync` Environment or Slack webhook are used (dropped
+  2026-10-12). See `RUNBOOK.md` → "Scraper state" for the commands.
 - **Branch hygiene (OPEN-99): once a PR merges, delete its fix branch, local and remote.** This
   directly prevents a recurrence of the exact failure mode the worktree-lock/freshness-guard
   bullets above exist for — a merged branch left checked out (or just left lying around) is
