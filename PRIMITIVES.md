@@ -230,26 +230,34 @@ should reuse rather than reimplement:
   the `SKIP_PATCHES=1` workaround. Don't "fix" this by adding a `git stash` here — that would
   silently blow away someone's in-progress work on `openstates-core`.
 - **`people` is a formal DDP fork too** (`Digital-Democracy-Project/people`, since 2026-07-27;
-  carried-fix model and nightly sync from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` =
+  carried-fix model and standing sync PR from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` =
   upstream + our fixes, like the other forks. **Remote convention, once the host switch is done:**
   `origin` = the fork, `upstream` = the public project, identical to core/scrapers/api-v3.
-  A nightly GitHub Actions job (`ddp-sync-upstream.yml`, 01:30 UTC) merges upstream `main` into
-  fork `main` and pushes only if the merge is clean and passes yamllint, `os-people lint` per
-  changed state and the duplicate-person check; `run-people-refresh.sh` and ddp-sync's
-  `people-pull` just `git pull --ff-only` from `origin`. **A fix does not wait for upstream:** it
-  enters fork `main` through a PR in the fork with a green `Lint YAML`, and its commit message
-  carries `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them) so the
-  weekly drift report can show which carried files upstream has merged or declined. When upstream
-  merges the same change, the nightly merge produces no difference. If the merge conflicts or a
-  check fails, nothing is pushed (fork `main` is left exactly as it was), a Slack notice is
-  posted, and the next night retries. So: **`people` merges automatically after validation; the
-  three code forks below never do.**
-- **The three code forks (core, scrapers, api-v3) get a nightly standing PR instead of an
-  auto-merge** (`ddp-sync-upstream-pr.yml` + `.github/scripts/ddp-sync-pr.sh`): one open PR from the
-  mirror branch `sync/upstream` into `main`, whose body lists the files that would conflict. A person
-  merges it (real merge commit, in daytime, after the smoke test in plan §5.B); when `main` contains
-  upstream the next run closes it. Nothing on a host cron-merges or writes to git; the hosts only
-  fast-forward. See `RUNBOOK.md` → "Scraper state" for the commands.
+  A nightly GitHub Actions job (`ddp-sync-upstream.yml`, 01:30 UTC) keeps **one standing sync PR**
+  open from upstream `main` into fork `main`, with `yamllint`, `os-people lint` per changed state, the
+  duplicate-person check and the role-date check (blocking only on errors new against a checked-in
+  baseline of upstream's known ones) run on it. **A person approves it before anything reaches fork
+  `main`** (decided 2026-10-11: "review before import", so an imported upstream workflow cannot run
+  with the fork's secrets unread); `run-people-refresh.sh` and ddp-sync's `people-pull` just
+  `git pull --ff-only` from `origin`. **A fix does not wait for upstream:** it enters fork `main`
+  through a PR in the fork with a green `Lint YAML`, and its commit message carries
+  `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them), so the weekly
+  drift report can show which carried files upstream has merged or declined. Never put "fix",
+  "fixes", "close" or "resolve" directly before an upstream reference in a PR body or commit message:
+  GitHub reads that as an instruction to close the upstream PR when ours merges. A fix upstream
+  rejects but our source supports stays carried. When upstream merges the same change, the standing
+  PR shows no difference for it.
+- **The three code forks (core, scrapers, api-v3) get the same kind of nightly standing PR**
+  (`ddp-sync-upstream-pr.yml` + `.github/scripts/ddp-sync-pr.sh`): one open PR from the mirror branch
+  `sync/upstream` into `main`, whose body lists the files that would conflict. **The dev-side agent
+  prepares and tests it (real merge commit, in daytime, after the smoke test in plan §5.B) and Ramon
+  reviews before it is merged;** the limit is one week from the day the PR first appears, and the
+  Monday report flags an overdue one. When `main` contains upstream the next run closes it. Nothing
+  on a host cron-merges or writes to git; the hosts only fast-forward. The upstream-owned workflows
+  that need secrets we lack or that we do not use (`Update Database` on people; `Scout Scrape` and
+  both Docker workflows on scrapers; the Docker and `Release Steps` workflows on core; the Docker
+  workflow on api-v3) were switched off on 2026-10-11; `Lint YAML`, `Lint Python` and `Test Python`
+  stay on. See `RUNBOOK.md` → "Scraper state" for the commands.
 - **Branch hygiene (OPEN-99): once a PR merges, delete its fix branch, local and remote.** This
   directly prevents a recurrence of the exact failure mode the worktree-lock/freshness-guard
   bullets above exist for — a merged branch left checked out (or just left lying around) is
