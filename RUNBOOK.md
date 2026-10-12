@@ -577,7 +577,24 @@ patched state.
 
 **Day-to-day workflow:**
 - New fix: `git checkout -b feat/my-change` → PR to fork `main`
-- Upstream sync (monthly): `git fetch upstream && git merge upstream/main && git push origin main`
+- Upstream sync (OPEN-336, plan §8): ddp-sync's daily `fork_upstream_check` job (01:30 UTC, Mac only, needs
+  `FORK_UPSTREAM_CHECK_ENABLED=true`) tells #automation-errors when a fork lacks an upstream commit older than
+  3 days, and writes `logs/fork-upstream-status.json` for the agent to read; run it by hand with
+  `POST /trigger/openstates-scrape/fork-check`.
+  The dev-side agent prepares and tests a catch-up PR (branch `catchup-<fork>-<date>`, real merge commit, daytime,
+  after the plan §5.B smoke test); Ramon reviews before it is merged; limit one week from the first report. If there
+  are conflicts, branch from `main`, `git merge upstream/main`, resolve (`poetry.lock`: take upstream's, re-lock with
+  our `pyproject.toml`, except core while OPEN-348 (Python 3.13) is open: core keeps our lock), PR into `main`.
+  Preview conflicts read-only with `git merge-tree --write-tree --name-only --no-messages origin/main upstream/main`.
+- `people` (plan §8.3): fork `main` = upstream + carried fixes. The same daily check covers it; the catch-up PR
+  runs `Lint YAML` (yamllint, `os-people lint` per changed state, duplicate-person and role-date checks); on a
+  `catchup-*` branch a dead link in upstream's own data only warns. A carried fix goes in through a fork PR with a green
+  `Lint YAML` and `Upstream-PR:` / `Source:` trailers (blank line before them); never put "fix", "close" or "resolve"
+  (or fixes, fixed, closes, closed, resolves, resolved) directly before an upstream reference in a PR body or commit
+  message (GitHub would close the upstream PR when ours merges). Hosts switch remotes once with the plan's aborting,
+  self-restoring script (`origin` = fork, `upstream` = public); rollback is `git remote rename origin ddp && git remote
+  rename upstream origin`, `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
+  No sync tokens or Environment secrets are used.
 - Upstream contribution: branch off `upstream/main`, cherry-pick the commit, PR to `openstates/openstates-scrapers`
 
 ### DDP commits on fork main (newest first)
