@@ -583,7 +583,7 @@ patched state.
   from the day it first appears. If it shows conflicts, branch from `main`, `git merge upstream/main`, resolve
   (`poetry.lock`: take upstream's, re-lock with our `pyproject.toml`, except core while OPEN-348 (Python 3.13) is
   open: core keeps our lock), PR into `main`. The next nightly run closes the standing PR once `main` contains upstream.
-- `people` (plan §8.3): fork `main` = upstream + carried fixes. The nightly job `ddp-sync-upstream.yml` keeps one
+- `people` (plan §8.3): fork `main` = upstream + carried fixes. The nightly job `ddp-sync-upstream-pr.yml` keeps one
   standing sync PR open (checks run on it, role-date check against a baseline of known errors); a person approves it
   before it reaches `main`. A carried fix goes in through a fork PR with a green `Lint YAML` and `Upstream-PR:` /
   `Source:` trailers (blank line before them); never put "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves, resolved) directly

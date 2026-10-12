@@ -233,7 +233,7 @@ should reuse rather than reimplement:
   carried-fix model and standing sync PR from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` =
   upstream + our fixes, like the other forks. **Remote convention, once the host switch is done:**
   `origin` = the fork, `upstream` = the public project, identical to core/scrapers/api-v3.
-  A nightly GitHub Actions job (`ddp-sync-upstream.yml`, 01:30 UTC) keeps **one standing sync PR**
+  A nightly GitHub Actions job (`ddp-sync-upstream-pr.yml`, 01:30 UTC) keeps **one standing sync PR**
   open from upstream `main` into fork `main`, with `yamllint`, `os-people lint` per changed state, the
   duplicate-person check and the role-date check (blocking only on errors new against a checked-in
   baseline of upstream's known ones) run on it. **A person approves it before anything reaches fork
@@ -259,7 +259,9 @@ should reuse rather than reimplement:
   that need secrets we lack or that we do not use (`Update Database` on people; `Scout Scrape` and
   both Docker workflows on scrapers; the Docker and `Release Steps` workflows on core; the Docker
   workflow on api-v3) were switched off on 2026-10-11; `Lint YAML`, `Lint Python` and `Test Python`
-  stay on. See `RUNBOOK.md` → "Scraper state" for the commands.
+  stay on. All four sync jobs read their secrets (`DDP_SYNC_TOKEN`, `SLACK_WEBHOOK_URL`) from a
+  `ddp-sync` Environment limited to `main`, not repository secrets (the sync PR comes from a branch in
+  the same repo; plan §8.6). See `RUNBOOK.md` → "Scraper state" for the commands.
 - **Branch hygiene (OPEN-99): once a PR merges, delete its fix branch, local and remote.** This
   directly prevents a recurrence of the exact failure mode the worktree-lock/freshness-guard
   bullets above exist for — a merged branch left checked out (or just left lying around) is
