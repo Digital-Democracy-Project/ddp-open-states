@@ -238,13 +238,15 @@ should reuse rather than reimplement:
   duplicate-person check and the role-date check (blocking only on errors new against a checked-in
   baseline of upstream's known ones) run on it. **A person approves it before anything reaches fork
   `main`** (decided 2026-10-11: "review before import", so an imported upstream workflow cannot run
-  with the fork's secrets unread); `run-people-refresh.sh` and ddp-sync's `people-pull` just
+  with the fork's secrets unread; this is procedure, since `main` has no branch protection on these
+  forks); `run-people-refresh.sh` and ddp-sync's `people-pull` just
   `git pull --ff-only` from `origin`. **A fix does not wait for upstream:** it enters fork `main`
   through a PR in the fork with a green `Lint YAML`, and its commit message carries
   `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line before them), so the weekly
-  drift report can show which carried files upstream has merged or declined. Never put "fix",
-  "fixes", "close" or "resolve" directly before an upstream reference in a PR body or commit message:
-  GitHub reads that as an instruction to close the upstream PR when ours merges. A fix upstream
+  drift report can show which carried files upstream has merged or declined. Never put
+  "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves, resolved) directly before an
+  upstream reference in a PR body or commit message: GitHub reads that as an instruction to close the
+  upstream PR when ours merges. A fix upstream
   rejects but our source supports stays carried. When upstream merges the same change, the standing
   PR shows no difference for it.
 - **The three code forks (core, scrapers, api-v3) get the same kind of nightly standing PR**

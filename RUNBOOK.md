@@ -586,8 +586,8 @@ patched state.
 - `people` (plan §8.3): fork `main` = upstream + carried fixes. The nightly job `ddp-sync-upstream.yml` keeps one
   standing sync PR open (checks run on it, role-date check against a baseline of known errors); a person approves it
   before it reaches `main`. A carried fix goes in through a fork PR with a green `Lint YAML` and `Upstream-PR:` /
-  `Source:` trailers (blank line before them); never put "fix", "fixes", "close" or "resolve" directly before an
-  upstream reference in a PR body or commit message (GitHub would close the upstream PR when ours merges). Hosts
+  `Source:` trailers (blank line before them); never put "fix", "close" or "resolve" (or fixes, fixed, closes, closed, resolves, resolved) directly
+  before an upstream reference in a PR body or commit message (GitHub would close the upstream PR when ours merges). Hosts
   switch remotes once with the plan's aborting, self-restoring script (`origin` = fork, `upstream` = public);
   rollback is `git remote rename origin ddp && git remote rename upstream origin`,
   `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
