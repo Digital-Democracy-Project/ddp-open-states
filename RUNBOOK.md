@@ -591,6 +591,7 @@ patched state.
   switch remotes once with the plan's aborting, self-restoring script (`origin` = fork, `upstream` = public);
   rollback is `git remote rename origin ddp && git remote rename upstream origin`,
   `git branch --set-upstream-to=origin/main main`, `git reset --hard <previous HEAD>`.
+  The sync secrets (`DDP_SYNC_TOKEN`, `SLACK_WEBHOOK_URL`) live in a `ddp-sync` Environment limited to `main` on each fork, not in repository secrets, because the standing sync PR comes from a branch in the same repo (plan §8.6).
 - Upstream contribution: branch off `upstream/main`, cherry-pick the commit, PR to `openstates/openstates-scrapers`
 
 ### DDP commits on fork main (newest first)
