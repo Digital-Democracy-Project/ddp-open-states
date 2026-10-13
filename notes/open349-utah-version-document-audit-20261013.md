@@ -38,8 +38,8 @@ All 762 distinct Utah notes fall into exactly seven families; no note is left ov
 | `Substitute #N` (xml + pdf) | 2,328 | all | 865 | 23,035 | 1,018,572 |
 | `Enrolled` (xml + pdf) | 1,094 | all | 865 | 17,466 | 1,014,787 |
 | `Amended <ts>` (xml + pdf) | 736 | all | 1,193 | 16,513 | 1,017,710 |
-| `Comparison to Original Bill` / `Comparison to Sub #N` (pdf only, 7 distinct notes) | 2,239 | all | 704 | 21,731 | 593,304 |
-| `Amended Excerpts <ts>` (pdf only, 367 distinct notes) | 368 | all | 181 | 753 | 10,114 |
+| `Comparison to Original Bill` / `Comparison to Sub #N` (pdf only, 7 distinct notes) | 2,239 | all 2,239 | 704 | 21,731 | 593,304 |
+| `Amended Excerpts <ts>` (pdf only, 367 distinct notes) | 368 | all 368 | 181 | 753 | 10,114 |
 | `House/Senate Amendment N` (pdf only) | 563 | **0** | 114 | 738 | 13,232 |
 
 - **OPEN-224's Utah entry is active.** All 563 `House/Senate Amendment N` documents carry no diff, matching the 563 that OPEN-224 recorded as nulled.
@@ -59,7 +59,9 @@ From a random sample of 250 bills that have `Introduced`, `Substitute #1` and `C
 | Its own wording found in **neither** draft | 17% | 14% | 23% |
 | Length against `Substitute #1` | 0.68 | 0.56 | 1.21 |
 
-It holds struck-out and inserted wording together, plus part of the unchanged text, with no markup to say which is which. It is neither the old text, the new text nor a clean diff, so a changelog built on it cannot tell added from removed. The 17% in neither draft is probably extraction and layout noise; the shingle method also under-counts matches across differently typeset PDFs, so read these as lower bounds. HB8's redline at about half the length of its real text (0.47, the prod agent's example) is at the low end of this spread (p10 is 0.56), not the typical case.
+Its extracted text holds struck-out and inserted wording together, plus part of the unchanged text, and carries no marker saying which is which (that is a statement about the text the pipeline stores and diffs; I did not inspect how the PDFs show the markup visually). It is neither the old text, the new text nor a clean diff, so a changelog built on it cannot tell added from removed. The 17% in neither draft is probably extraction and layout noise; differently typeset PDFs also depress shingle matches, so these are sample-based lower bounds, not exact coverage.
+
+**What the sample covers.** Only `Comparison to Original Bill` (1,164 of the 2,239 Comparison documents). The `Comparison to Sub #N` notes (1,075 documents) and the 67 resolution documents were not sampled for content: for them the case rests on the same publisher naming and PDF-only form, the sort-key collision with `Substitute #N`, the report's HB438 observation, and (for resolutions) the lower sizes above. OPEN-350 should not read these percentages as direct evidence for every matched note. HB8's redline at about half the length of its real text (0.47, the prod agent's example) is at the low end of this spread (p10 is 0.56), not the typical case.
 
 ## What it does to the changelogs
 
@@ -71,13 +73,15 @@ Of the 3,574 changelog targets api-v3 would offer for Utah (versions whose chose
 | `Comparison to …` | 1,164 | 32.6% |
 | `Amended Excerpts <ts>` | 368 | 10.3% |
 
+The 1,164 `Comparison to …` targets are *versions*, not documents: one version can hold several PDFs under one note (the report found five under "Comparison to Original Bill" on HB438) and api-v3 chooses one per version, so the 2,239 documents are 1,164 versions. The same holds for the other rows.
+
 (The prod agent's 9% was a different measure: both sides of a pair real, over the 1,543 changelogs already written. This is the new side only, so it is higher.)
 
 **Sort-key collisions.** `note_stage` and `version_sort_key` give `Comparison to Sub #N`, `Substitute #N` and `House Amendment N` the identical key `(1, '', N)`, and `Amended Excerpts <ts>` the same key as the `Amended <ts>` full text it sits beside. Their relative order in the lineage was whatever the database returned. Today **471 of Utah's 1,021 bills** have versions in the lineage that share a key (586 tied groups of `Comparison to Sub #N` with `Substitute #N`, and 368 of `Amended Excerpts` with `Amended <ts>`). With both families excluded, **0 of 1,021**. That is how the report's pairs came out in both directions (`Comparison → Substitute` 374, `Substitute → Comparison` 259).
 
 ## Cost of the entries (OPEN-224's AC5 count)
 
-2,239 `Comparison to …` documents and 368 `Amended Excerpts` documents carry a stored diff today, so 2,607 diffs become `None` on a recompute; the diffs of the real drafts that followed them change too. How many is OPEN-351's dry run to report; the code change alone changes nothing already stored.
+Counted, not inferred: all 2,239 `Comparison to …` documents and all 368 `Amended Excerpts` documents have a non-null `diff_from_previous_version` today (the `Stored diff` column above is a count of rows where it is not null), so 2,607 diffs become `None` on a recompute; the diffs of the real drafts that followed them change too. How many is OPEN-351's dry run to report; the code change alone changes nothing already stored.
 
 ## Found on the way (not decided here)
 
