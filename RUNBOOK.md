@@ -580,7 +580,9 @@ patched state.
 - Upstream sync (OPEN-336, plan §8): ddp-sync's daily `fork_upstream_check` job (01:30 UTC, Mac only, needs
   `FORK_UPSTREAM_CHECK_ENABLED=true`) tells #automation-errors when a fork lacks an upstream commit older than
   3 days, and writes `logs/fork-upstream-status.json` for the agent to read; run it by hand with
-  `POST /trigger/openstates-scrape/fork-check`.
+  `POST /trigger/openstates-scrape/fork-check`. Live since 2026-10-13; check it is registered with
+  `curl -s localhost:8001/ddp-sync/v1/schedule | grep fork_upstream_check` (it must not depend on
+  `OPENSTATES_SCRAPE_ENABLED`, which is false on the Mac). The trigger needs the service's API key.
   The dev-side agent prepares and tests a catch-up PR (branch `catchup-<fork>-<date>`, real merge commit, daytime,
   after the plan §5.B smoke test); Ramon reviews before it is merged; limit one week from the first report. If there
   are conflicts, branch from `main`, `git merge upstream/main`, resolve (`poetry.lock`: take upstream's, re-lock with

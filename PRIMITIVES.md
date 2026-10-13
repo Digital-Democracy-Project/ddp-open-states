@@ -244,7 +244,7 @@ should reuse rather than reimplement:
   `git pull --ff-only` from `origin`.
 - **Keeping all four forks current: one daily ddp-sync job, then a catch-up PR by hand**
   (decided 2026-10-12; replaces the GitHub-hosted standing-PR design, plan §8). `fork_upstream_check`
-  (ddp-sync PR #211; 01:30 UTC; Mac instance only; off unless `FORK_UPSTREAM_CHECK_ENABLED=true`)
+  (ddp-sync PR #211; 01:30 UTC; Mac instance only; off unless `FORK_UPSTREAM_CHECK_ENABLED=true`; independent of `OPENSTATES_SCRAPE_ENABLED` since ddp-sync PR #213; live on the Mac from 2026-10-13)
   fetches the public repositories with no credentials into its own cache folder and writes
   `logs/fork-upstream-status.json` (per fork: commits behind, age of the oldest, titles, whether
   `.github` or migrations changed). It posts to #automation-errors when a fork lacks an upstream
