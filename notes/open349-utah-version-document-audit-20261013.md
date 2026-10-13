@@ -59,7 +59,7 @@ From a random sample of 250 bills that have `Introduced`, `Substitute #1` and `C
 | Its own wording found in **neither** draft | 17% | 14% | 23% |
 | Length against `Substitute #1` | 0.68 | 0.56 | 1.21 |
 
-It holds struck-out and inserted wording together, plus part of the unchanged text, with no markup to say which is which. It is neither the old text, the new text nor a clean diff, so a changelog built on it cannot tell added from removed. The 17% in neither draft is probably extraction and layout noise; the shingle method also under-counts matches across differently typeset PDFs, so read these as lower bounds. HB8's redline at about half the length (the prod agent's example) is within the spread, not the typical case.
+It holds struck-out and inserted wording together, plus part of the unchanged text, with no markup to say which is which. It is neither the old text, the new text nor a clean diff, so a changelog built on it cannot tell added from removed. The 17% in neither draft is probably extraction and layout noise; the shingle method also under-counts matches across differently typeset PDFs, so read these as lower bounds. HB8's redline at about half the length of its real text (0.47, the prod agent's example) is at the low end of this spread (p10 is 0.56), not the typical case.
 
 ## What it does to the changelogs
 
