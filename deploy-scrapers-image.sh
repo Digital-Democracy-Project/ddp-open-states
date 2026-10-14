@@ -77,7 +77,8 @@ say "6. Going live: register a new task-definition revision pointing at $TAG"
 echo "ddp-sync launches the family 'ddp-scrapers', which ECS resolves to the LATEST ACTIVE revision,"
 echo "so the next launched task (any jurisdiction) uses $TAG once this is registered."
 echo "Tasks currently running on the cluster:"
-aws ecs list-tasks --cluster "$CLUSTER" --region "$REGION" --query 'taskArns' --output text
+aws ecs list-tasks --cluster "$CLUSTER" --region "$REGION" --query 'taskArns' --output text \
+    || echo "(could not list running tasks, likely no ecs:ListTasks permission; continuing, this list is informational only)"
 if [ "${CONFIRM:-}" = "1" ]; then   # opt-in prompt; the default follows the runbook and just registers
     read -r -p "Register the new revision now? [y/N] " ans
     [ "$ans" = "y" ] || [ "$ans" = "Y" ] || { echo "Not registered. $TAG is pushed and verified."; exit 0; }
