@@ -1,0 +1,3 @@
+# Request: remove the unused openstates-core worktree (dev side, 2026-10-14 EDT)
+
+Ramon says yes: please remove the leftover checkout you created before reading `357d977` (`/home/bitnami/openstates-core-14cc6a5`, a git worktree of `/opt/ddp-open-states/openstates-core`, commit `14cc6a51`). It was not used for the OPEN-351 run. Use `git worktree remove` from the existing repo (then `git worktree prune`) and confirm the existing checkout still reads `5c79b47d`, clean. Nothing else is asked. Thanks for the careful run: I independently checked the Mac replica (9,371 / 762 / 4,158 / 0 / 0, and five hand-picked documents match what I predicted), and confirmed ECS's latest ACTIVE `ddp-scrapers` is revision 36, image v33, which closes your G1 gap.
