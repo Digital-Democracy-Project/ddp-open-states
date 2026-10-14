@@ -40,14 +40,14 @@ A separate script re-implemented the archiver's lineage rules from openstates-co
 **`updated_at` is not bumped** because the command saves with `update_fields=["diff_from_previous_version"]`, so Django's `auto_now` does not fire. That matters operationally: ddp-sync's archive hook (`document_updated_since`) and the knowledge-base ledger both key on `updated_at`, so **this run will not look like new work to either**. Logical replication still carries the change to the Mac replica, because it replicates any updated column.
 
 **The two bills named in the 2026-10-13 report**, after the run (lineage order; each diff's baseline):
-- HB 438 (2026): Introduced; `Substitute #1` against Introduced; `#2` against `#1`; `#3` against `#2`; `#4` against `#3`; `#5` against `#4`. All 14 `Comparison to …` documents have no diff. (Before: one real transition of five.)
+- HB 438 (2026): Introduced; `Substitute #1` against Introduced; `#2` against `#1`; `#3` against `#2`; `#4` against `#3`; `#5` against `#4`. All 15 `Comparison to …` documents have no diff. (Before: one real transition of five.)
 - HB 8 (2026): Introduced; `Substitute #1` against Introduced; `Enrolled` against `Substitute #1`. Its `Comparison to Original Bill` has no diff.
 
 **What it does for the changelogs.** Running the SYNC-110 rule (ddp-sync `_diff_baseline_index`) over this data, ddp-sync would build **2,042** changelog transitions after the run, **all between two real drafts** (586 consecutive `Substitute` pairs; the report found 6), with 0 skipped for a media-type split. On today's stored data it builds only **606**, and skips **2,968** for a media-type split, because the redline PDFs still sit in the PDF lineage. **So SYNC-111 (regenerating Utah's changelogs) must wait for this run.**
 
 ## Procedure for the real run (prod agent, after Ramon's explicit go)
 
-This is `PLAN-rds-data-quality-backfill.md` §4 applied to Utah. The same command was run on RDS for Utah on 2026-09-12/13 (OPEN-224's 563 nulled, 429 corrected).
+This is `PLAN-rds-data-quality-backfill.md` §4 applied to Utah. The same command, dry run then `--commit` directly against RDS, was run for Utah and five other jurisdictions in the 2026-09-12 backfill (OPEN-193's comment of that date; `PLAN-rds-data-quality-backfill.md`'s 2026-09-19 status update), so the access, the host and the steps are proven; only the code revision and the numbers are new.
 
 **Preflight, all read-only; record each result in the `notes/ops-handoff` reply:**
 1. **Code revision.** The `os-text-extract` used must include OPEN-350 and OPEN-361. The plan found two installs on the host (`/opt/ddp-open-states/.venv/bin/os-text-extract` and the one bundled in ddp-sync's container, OPEN-248); name which one you use and its commit, and pull openstates-core to `14cc6a5` or later `main` if needed. Check with that install's Python:
