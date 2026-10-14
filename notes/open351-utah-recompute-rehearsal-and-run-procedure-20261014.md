@@ -1,6 +1,6 @@
 # OPEN-351: Utah diff recompute: full-scale rehearsal, and the procedure for the real run on RDS
 
-Date: 2026-10-14. The rehearsal ran against a throwaway copy of a Mac database; nothing live was written. **The real run on RDS has not been done and needs Ramon's explicit authorization** (the ticket says so, and `PLAN-rds-data-quality-backfill.md` §4 is the standing process this follows). Follows OPEN-349 (audit, `notes/open349-utah-version-document-audit-20261013.md`), OPEN-350 and OPEN-361 (openstates-core `14cc6a5`), SYNC-110 (ddp-sync `0f473b1`).
+Date: 2026-10-14. The rehearsal ran against a throwaway copy of a Mac database; nothing live was written. **Update, same day: the real run on RDS is done.** The prod agent ran it through ddp-sync's Fargate endpoint (image v33, ECS task definition revision 36, confirmed afterwards from ECS) with Ramon's go, one commit: the dry run and the commit both printed `unchanged=5137 corrected=1627 nulled=2607`, a second dry run printed `unchanged=9371 corrected=0 nulled=0`, and RDS's counts ended at 9,371 / 762 / 4,158 / 0 / 0 (reply `4d9405f` on `notes/ops-handoff`). The Mac replica shows the same counts. The procedure below was written before the run; the run used the Fargate endpoint instead of a host install, because neither host install had the new Utah rules (see `357d977`). Follows OPEN-349 (audit, `notes/open349-utah-version-document-audit-20261013.md`), OPEN-350 and OPEN-361 (openstates-core `14cc6a5`), SYNC-110 (ddp-sync `0f473b1`).
 
 ## Answer
 
