@@ -582,7 +582,7 @@ patched state.
   3 days, and writes `logs/fork-upstream-status.json` for the agent to read; run it by hand with
   `POST /trigger/openstates-scrape/fork-check`. Live since 2026-10-13; check it is registered with
   `curl -s localhost:8001/ddp-sync/v1/schedule | grep fork_upstream_check` (it must not depend on
-  `OPENSTATES_SCRAPE_ENABLED`, which is false on the Mac). The trigger needs the service's API key.
+  `OPENSTATES_SCRAPE_ENABLED`, which is false on the Mac). The trigger needs the service's API key. To test Slack delivery, send a labelled TEST message through `ddp_sync.slack_alerts.post_alert`, loading the token the way `scripts/start-ddp-sync.sh` does (from `ddp-agents/.env`; ddp-sync's own `.env` has none). Tested 2026-10-13: it arrived as CodeBot in #automation-errors.
   The dev-side agent prepares and tests a catch-up PR (branch `catchup-<fork>-<date>`, real merge commit, daytime,
   after the plan §5.B smoke test); Ramon reviews before it is merged; limit one week from the first report. If there
   are conflicts, branch from `main`, `git merge upstream/main`, resolve (`poetry.lock`: take upstream's, re-lock with

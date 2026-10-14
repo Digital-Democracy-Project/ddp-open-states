@@ -231,7 +231,7 @@ should reuse rather than reimplement:
   silently blow away someone's in-progress work on `openstates-core`.
 - **`people` is a formal DDP fork too** (`Digital-Democracy-Project/people`, since 2026-07-27;
   carried-fix model from OPEN-336, `PLAN-fork-management.md` §8). Fork `main` = upstream + our
-  fixes, like the other forks. **Remote convention, once the host switch is done:** `origin` = the
+  fixes, like the other forks. **Remote convention (switched on the Mac 2026-10-13 and on production 2026-10-14):** `origin` = the
   fork, `upstream` = the public project, identical to core/scrapers/api-v3. **A fix does not wait
   for upstream:** it enters fork `main` through a PR in the fork with a green `Lint YAML`, and its
   commit message carries `Upstream-PR: owner/repo#N` and `Source: <url>` trailers (blank line
@@ -241,7 +241,7 @@ should reuse rather than reimplement:
   as an instruction to close the upstream PR when ours merges. A fix upstream rejects but our
   source supports stays carried. When upstream merges the same change, the next catch-up shows no
   difference for it. `run-people-refresh.sh` and ddp-sync's `people-pull` just
-  `git pull --ff-only` from `origin`.
+  `git pull --ff-only` from `origin`. The `people-pull` job registers independently of `OPENSTATES_SCRAPE_ENABLED` since ddp-sync PR 217; before 2026-10-13 it never started on the Mac.
 - **Keeping all four forks current: one daily ddp-sync job, then a catch-up PR by hand**
   (decided 2026-10-12; replaces the GitHub-hosted standing-PR design, plan §8). `fork_upstream_check`
   (ddp-sync PR #211; 01:30 UTC; Mac instance only; off unless `FORK_UPSTREAM_CHECK_ENABLED=true`; independent of `OPENSTATES_SCRAPE_ENABLED` since ddp-sync PR #213; live on the Mac from 2026-10-13)
