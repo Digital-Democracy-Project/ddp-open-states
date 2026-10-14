@@ -196,9 +196,15 @@ IAM user key, so it just expires rather than needing manual cleanup afterward.
     {
       "Sid": "ECSRun",
       "Effect": "Allow",
-      "Action": ["ecs:RunTask", "ecs:DescribeTasks", "ecs:StopTask", "ecs:ListTasks"],
+      "Action": ["ecs:RunTask", "ecs:DescribeTasks", "ecs:StopTask"],
       "Resource": "arn:aws:ecs:<region>:<account-id>:task-definition/ddp-scrapers:*",
       "Condition": { "ArnEquals": { "ecs:cluster": "arn:aws:ecs:<region>:<account-id>:cluster/ddp-scrapers" } }
+    },
+    {
+      "Sid": "ECSListTasks",
+      "Effect": "Allow",
+      "Action": "ecs:ListTasks",
+      "Resource": "arn:aws:ecs:<region>:<account-id>:container-instance/ddp-scrapers/*"
     },
     {
       "Sid": "Logs",
