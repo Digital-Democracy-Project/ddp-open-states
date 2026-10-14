@@ -21,6 +21,16 @@ Date: 2026-10-14. The rehearsal ran against a throwaway copy of a Mac database; 
 
 The commit's counts equal the dry run's, and 5,137 + 1,627 + 2,607 = 9,371, every Utah document.
 
+**What the 2,607 nulled and 1,627 corrected documents are** (measured on the live replica with the same independent replay, by note family and file type):
+
+| Change | Documents | Why |
+|---|---|---|
+| Nulled | 2,239 `Comparison to …` (PDF), 368 `Amended Excerpts …` (PDF) | OPEN-350: they leave the lineage |
+| Corrected | 1,154 `Substitute #N` (PDF), 205 `Enrolled` (PDF), 133 `Amended <ts>` (PDF) | their PDF baseline used to be a redline page; it is now the previous real draft |
+| Corrected | 96 `Amended <ts>` (XML), 39 `Enrolled` (XML) | the stamped `Amended` versions were mis-ordered (OPEN-361), so their neighbours' baselines were wrong |
+
+No XML `Substitute #N` and no `Introduced` document changes: the XML chain never contained the redline PDFs. This is also why ddp-sync, which reads the XML document where one exists, is held back mostly by *which versions* count as changelog targets and by the skip rule, not by the XML diff text.
+
 ## What was verified afterwards (independently of the command under test)
 
 A separate script re-implemented the archiver's lineage rules from openstates-core's own `note_stage`, `version_sort_key` and `is_procedural_document`, and compared with what was stored.
