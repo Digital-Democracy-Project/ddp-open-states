@@ -530,9 +530,16 @@ Postgres happened to return for `diff_from_previous_version`'s lineage — `Bill
 jurisdiction and found that accident is inconsistent (forward for FL/MI/AZ mostly, backward for
 VA/UT/US, doesn't fit a binary model at all for WA/MI's substitute-heavy bills) — **don't assume
 DB row order is chronological for any bill-version work; use these instead**:
-- `note_stage(note)` / `version_sort_key(note, date)` — classify a `version_note` into a
-  content-based stage rank (never DB order), with `BillVersion.date` used as a same-stage
-  tiebreaker when it's actually populated (only reliable for US federal, ~99.4%). A note
+- `note_stage(note)` / `version_sort_key(note, date, urls=(), origin=None)` — classify a
+  `version_note` into a content-based stage rank (never DB order), with `BillVersion.date` used
+  as a same-stage tiebreaker when it's actually populated (only reliable for US federal, ~99.4%).
+  **Updated 2026-10-16 (OPEN-368/379/382, Arizona only):** pass the version's link URLs and the
+  bill's origin chamber (`origin_chamber(bill.identifier)`) -- Arizona's tied committee/floor-action
+  documents are ordered by the site's `GetDocumentPdf/<id>` number, and its House/Senate Engrossed
+  Versions are placed among them by origin chamber; every other note is unaffected. Arizona's
+  failed floor amendments (`... failed`) are excluded from the lineage via
+  `is_procedural_document()`. `recomputed_diffs_for_documents()` now takes `bill_identifier` as a
+  required keyword for the same reason it requires `jurisdiction_name`. A note
   matching no known stage returns `STAGE_UNKNOWN` — the caller excludes it from any diff
   lineage entirely rather than guessing a position. If you're adding a new jurisdiction or
   hitting an unrecognized note shape, extend the stage table here, don't reorder query results.
