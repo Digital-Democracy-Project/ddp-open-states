@@ -534,7 +534,7 @@ DB row order is chronological for any bill-version work; use these instead**:
   `version_note` into a content-based stage rank (never DB order), with `BillVersion.date` used
   as a same-stage tiebreaker when it's actually populated (only reliable for US federal, ~99.4%).
   **Updated 2026-10-16 (OPEN-368/379/382, Arizona only):** pass the version's link URLs and the
-  bill's origin chamber (`origin_chamber(bill.identifier)`) -- Arizona's tied committee/floor-action
+  bill's origin chamber (`origin=origin_chamber(bill.identifier)`, i.e. "house"/"senate", not the identifier) -- Arizona's tied committee/floor-action
   documents are ordered by the site's `GetDocumentPdf/<id>` number, and its House/Senate Engrossed
   Versions are placed among them by origin chamber; every other note is unaffected. Arizona's
   failed floor amendments (`... failed`) are excluded from the lineage via
