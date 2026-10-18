@@ -917,6 +917,16 @@ that they can reject a broken one, which is the easier half to get right by acci
   backup script), `logs/last-run/` (resumability markers), `logs/backfill/` (one-off backfill
   driver output), `logs/db-backups/` (pg_dump files). A new script's logs belong under `logs/`
   in one of these shapes, not a new top-level directory.
+- **A scraper's `VoteEvent.dedupe_key` must be unique across every session AND every bill (OPEN-252, OPEN-397)** —
+  `openstates-core`'s vote importer (`vote_events.py`, `get_object()`) matches a vote that has a `dedupe_key` on that key
+  alone (plus jurisdiction), ignoring session and bill. A key that repeats raises `DuplicateItemError` and fails the whole
+  load: MA (one roll call cited by two bills, fixed by adding the bill to the key) and NC (roll-call numbers restart every
+  session, so the `2025E1` extra session collided with `2025`, fixed by adding the session). Build the key from a URL or
+  vote ID that is unique across sessions, plus the bill if one roll call can cover several; or set none and let the
+  importer match on session + bill + identifier (FL, MI, UT, WA, US). **Do not reach for `--allow_duplicates`:** it logs
+  the duplicate and then updates the existing row with the new vote's fields, so the second vote silently overwrites the
+  first. And do not re-key votes already stored (their ids change): qualify only new sessions (see
+  `vote_dedupe_key()` in `scrapers/nc/bills.py`).
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
   assertions)` and exit 0 or the first failing assertion and exit 1. Seven of these now exist
