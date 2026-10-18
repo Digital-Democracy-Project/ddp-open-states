@@ -923,7 +923,7 @@ that they can reject a broken one, which is the easier half to get right by acci
   `DuplicateItemError` and fails the whole load: MA (one roll call cited by two bills; `VoteEvent.bill` is a single
   foreign key, so the intended model is one row per roll call per bill, and the fix adds the bill to the key) and NC
   (roll-call numbers restart every session, so the `2025E1` extra session collided with `2025`; the fix adds the
-  session). Build the key from a URL or vote ID unique across sessions, plus the bill if one roll call can cover
+  session). Build the key from a URL or a stable source-system vote ID, unique across sessions, plus the bill if one roll call can cover
   several. Or set no key (FL, MI, UT, WA, US): the importer then matches on session + bill + the vote's `identifier`,
   or, with no identifier, on motion text + start date + organization, so that is only safe where those are stable and
   unambiguous. **Do not reach for `--allow_duplicates`:** it logs the duplicate and then updates the existing row
