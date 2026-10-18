@@ -924,6 +924,19 @@ that they can reject a broken one, which is the easier half to get right by acci
   backup script), `logs/last-run/` (resumability markers), `logs/backfill/` (one-off backfill
   driver output), `logs/db-backups/` (pg_dump files). A new script's logs belong under `logs/`
   in one of these shapes, not a new top-level directory.
+- **A scraper's `VoteEvent.dedupe_key` must be unique across every session AND every bill within its jurisdiction (OPEN-252, OPEN-397)** —
+  as `openstates-core` stands today, the vote importer (`vote_events.py`, `get_object()`) matches a vote that has a
+  `dedupe_key` on that key alone (plus jurisdiction), ignoring session and bill. A key that repeats raises
+  `DuplicateItemError` and fails the whole load: MA (one roll call cited by two bills; `VoteEvent.bill` is a single
+  foreign key, so the intended model is one row per roll call per bill, and the fix adds the bill to the key) and NC
+  (roll-call numbers restart every session, so the `2025E1` extra session collided with `2025`; the fix adds the
+  session). Build the key from a URL or a stable source-system vote ID, unique across sessions, plus the bill if one roll call can cover
+  several. Or set no key (FL, MI, UT, WA, US): the importer then matches on session + bill + the vote's `identifier`,
+  or, with no identifier, on motion text + start date + organization, so that is only safe where those are stable and
+  unambiguous. **Do not reach for `--allow_duplicates`:** it logs the duplicate and then updates the existing row
+  with the new vote's fields, so the second vote silently overwrites the first. Keep the keys of votes already stored
+  unless you are doing a deliberate migration (their identities and anything pointing at them change): qualify only
+  new sessions, as `vote_dedupe_key()` in `scrapers/nc/bills.py` does.
 - **`test-*.sh` shell tests** — `bash test-<thing>.sh`, no framework, no network, no database, no
   production paths: a `mktemp -d` per run, fixtures written as text files, `ALL PASS (N
   assertions)` and exit 0 or the first failing assertion and exit 1. Seven of these now exist
