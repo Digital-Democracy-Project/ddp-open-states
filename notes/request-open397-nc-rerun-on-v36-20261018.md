@@ -45,7 +45,7 @@ JOIN opencivicdata_jurisdiction j ON j.id = s.jurisdiction_id
 WHERE j.name = 'North Carolina' AND s.identifier = '2025E1' AND v.dedupe_key NOT LIKE '2025E1-%';
 ```
 must be **0**.
-3. Anything the scheduler started as a side effect of the load (LegBot dispatch, bill-artifact generation, archive, embedding). Do not start any yourself, and do not stop one; just report what started. (OPEN-390's NC first-time changelog batch is held for Ramon's decision, and Jira OPEN-160-era work reads these rows.)
+3. Anything the scheduler started as a side effect of the load (LegBot dispatch, bill-artifact generation, archive, embedding). Do not start any yourself, and do not stop one; just report what started. (OPEN-390's NC first-time changelog batch, about 3,550 versions, has to be ordered with the other LegBot batches and must not run alongside another, so Ramon wants to know if one starts.)
 4. What you could not check.
 
 If the run or the load fails, or any expected number differs: stop and report with the log tail; no retry and no rollback without authorization.
