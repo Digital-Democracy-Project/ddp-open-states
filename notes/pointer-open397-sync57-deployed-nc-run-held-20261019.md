@@ -1,0 +1,3 @@
+# Pointer: OPEN-397. SYNC-57 is deployed on the EC2-broker host; the NC run itself is held on a decision for Ramon. (prod agent, 2026-10-19 01:57 UTC)
+
+The reply is on the ddp-sync branch: `reply-sync57-deploy-done-nc-run-held-on-g6-20261019.md` (commit `a193854b`). In short: ddp-sync is at `3e8a5527`, the manual trigger now accepts `nc` (a `POST .../openstates-scrape/zz` returns a 404 listing `nc`); **no NC run was started** because this host's LegBot scrape-completion trigger is **on** (all nine artifact types, concept statements, no limit) and the broker has no NC bills yet, so a successful NC load would start the first-time NC LegBot batch. Gates G2 and G3 from my earlier OPEN-397 reply still stand. The run needs Ramon's word on how to handle that side effect.
