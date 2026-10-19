@@ -1,0 +1,78 @@
+artifact_id,state,session,gov_id,new_version_note,archived_document_id,marker_is_a_changed_line,review_status,status
+211435,VA,2027,HB1112,"Counties, Cities and Towns Substitute",201079,True,approved,complete
+211437,VA,2027,HB1112,Subcommittee #3 Subcommittee Substitute,201081,True,approved,complete
+210479,VA,2027,HB1132,Finance Substitute,201489,True,approved,complete
+211850,VA,2027,HB127,Courts of Justice Substitute,200907,True,approved,complete
+211853,VA,2027,HB127,Criminal Subcommittee Substitute,200909,True,approved,complete
+212699,VA,2027,HB1330,Engrossed,200577,True,approved,complete
+212695,VA,2027,HB1330,Transportation Substitute,200575,True,approved,complete
+211677,VA,2027,HB1390,Labor and Commerce Substitute,200983,True,approved,complete
+210799,VA,2027,HB1398,Appropriations Substitute,201363,True,approved,complete
+210802,VA,2027,HB1398,Health & Human Resources Subcommittee Substitute,201365,True,approved,complete
+211378,VA,2027,HB1432,Courts of Justice Substitute,201111,True,approved,complete
+211381,VA,2027,HB1432,Criminal Subcommittee Substitute,201115,True,approved,complete
+211372,VA,2027,HB1432,Delegate Mehta                Substitute,201109,True,approved,complete
+209720,VA,2027,HB1451,Labor and Commerce Substitute,201813,True,approved,complete
+210935,VA,2027,HB1485,Courts of Justice Substitute,201309,True,approved,complete
+210938,VA,2027,HB1485,Engrossed,201311,True,approved,complete
+209874,VA,2027,HB189,Engrossed,201751,False,approved,complete
+212094,VA,2027,HB244,Courts of Justice Substitute,200831,True,approved,complete
+212096,VA,2027,HB244,Engrossed,200833,True,approved,complete
+212091,VA,2027,HB244,Finance and Appropriations Substitute,200829,True,approved,complete
+211114,VA,2027,HB271,ABC/Gaming Subcommittee Substitute,201243,True,approved,complete
+211109,VA,2027,HB271,General Laws Substitute,201241,True,approved,complete
+210274,VA,2027,HB28,Privileges and Elections Substitute,201589,True,approved,complete
+212926,VA,2027,HB339,Labor and Commerce Substitute,200485,True,approved,complete
+211560,VA,2027,HB35,Engrossed,201033,True,approved,complete
+211558,VA,2027,HB35,Rehabilitation and Social Services Substitute,201031,True,approved,complete
+210478,VA,2027,HB359,Education Substitute,201497,True,approved,complete
+212204,VA,2027,HB362,Education Substitute,200791,True,approved,complete
+212962,VA,2027,HB441,Courts of Justice Substitute,200461,True,approved,complete
+212964,VA,2027,HB441,Criminal Subcommittee Substitute,200463,True,approved,complete
+211500,VA,2027,HB447,Courts of Justice Substitute,201053,False,approved,complete
+209915,VA,2027,HB49,Appropriations Substitute,201737,True,approved,complete
+209921,VA,2027,HB49,Commerce Agriculture & Natural Resources Subcommittee Substitute,201739,True,approved,complete
+210877,VA,2027,HB493,Privileges and Elections Substitute,201333,True,approved,complete
+211082,VA,2027,HB548,Courts of Justice Substitute,201229,True,approved,complete
+211085,VA,2027,HB548,Criminal Subcommittee Substitute,201231,True,approved,complete
+212323,VA,2027,HB551,Professions/Occupations and Administrative Process Subcommittee Substitute,200737,True,approved,complete
+210030,VA,2027,HB635,"Communications, Technology and Innovation Substitute",201669,True,approved,complete
+211862,VA,2027,HB638,"Communications, Technology and Innovation Substitute",200899,True,approved,complete
+210870,VA,2027,HB742,General Laws Substitute,201329,True,approved,complete
+210989,VA,2027,HB79,General Laws Substitute,201289,True,approved,complete
+209929,VA,2027,HB841,Engrossed,201729,False,approved,complete
+210597,VA,2027,HB852,Appropriations Substitute,201437,True,approved,complete
+210600,VA,2027,HB852,General Government and Capital Outlay Subcommittee Substitute,201439,True,approved,complete
+213271,VA,2027,HB873,Education Substitute,200351,True,approved,complete
+212621,VA,2027,HB885,Courts of Justice Substitute,200601,True,approved,complete
+209681,VA,2027,HB92,Education Substitute,201833,True,approved,complete
+209675,VA,2027,HB92,Education and Health Substitute,201831,True,approved,complete
+210035,VA,2027,HB979,Finance Substitute,201673,True,approved,complete
+210038,VA,2027,HB979,Subcommittee #3 Subcommittee Substitute,201675,True,approved,complete
+210261,VA,2027,SB237,General Laws and Technology Substitute,201593,True,approved,complete
+212404,VA,2027,SB243,Rehabilitation and Social Services Substitute,200693,True,approved,complete
+210106,VA,2027,SB265,Courts of Justice Substitute,201651,True,approved,complete
+212461,VA,2027,SB266,"Agriculture, Conservation and Natural Resources Substitute",200665,True,approved,complete
+213103,VA,2027,SB296,Local Government Substitute,200417,True,approved,complete
+211634,VA,2027,SB349,General Laws and Technology Substitute,201005,True,approved,complete
+213007,VA,2027,SB350,Senator Roem Substitute,200443,True,approved,complete
+209865,VA,2027,SB412,Courts of Justice Substitute,201757,True,approved,complete
+210461,VA,2027,SB475,Courts of Justice Substitute,201505,True,approved,complete
+210768,VA,2027,SB519,Finance and Appropriations Substitute,201373,True,approved,complete
+212438,VA,2027,SB586,Commerce and Labor Substitute,200673,True,approved,complete
+212531,VA,2027,SB624,Courts of Justice Substitute,200639,True,approved,complete
+211286,VA,2027,SB642,Commerce and Labor Substitute,201147,True,approved,complete
+211277,VA,2027,SB642,Finance and Appropriations Substitute,201145,True,approved,complete
+212486,VA,2027,SB670,Finance and Appropriations Substitute,200659,False,approved,complete
+212483,VA,2027,SB670,Senator Salim Substitute,200657,True,approved,complete
+212481,VA,2027,SB670,Transportation Substitute,200653,True,approved,complete
+210190,VA,2027,SB678,Education and Health Substitute,201621,True,approved,complete
+212368,VA,2027,SB684,"Agriculture, Conservation and Natural Resources Substitute",200715,True,approved,complete
+210241,VA,2027,SB737,General Laws and Technology Substitute,201601,True,approved,complete
+212948,VA,2027,SB796,"Communications, Technology and Innovation Substitute",200467,True,approved,complete
+212955,VA,2027,SB796,Engrossed,200475,True,approved,complete
+212953,VA,2027,SB796,General Laws and Technology Substitute,200473,True,approved,complete
+212951,VA,2027,SB796,Senator Durant Substitute,200469,True,approved,complete
+212991,VA,2027,SB831,Privileges and Elections Substitute,200449,True,approved,complete
+211655,VA,2027,SB833,Courts of Justice Substitute,200991,True,approved,complete
+212346,VA,2027,SB90,Education and Health Substitute,200731,True,approved,complete
