@@ -14,23 +14,23 @@ Date: 2026-10-21. Read-only queries against production (`ddp-prod-rds-readonly`)
 | How the local OpenStates database keys NC | session identifier `2025`, 2,338 bills |
 | How the broker names NC sessions now | `2023`, `2025`, `2025E1` (`common_legislativesession.code`): same strings |
 | When the broker's NC session rows were created | all three at 2026-09-29 02:32 UTC, after ddp-broker-py #376 (BROKER-159: `ensure_bill` self-heals a missing session via the live OpenStates sync) merged 2026-09-28 00:53 UTC |
-| Why there were none before | session rows were only ever created for jurisdictions with a registered Voatz `Broker`; NC has none (BROKER-158/159) |
+| Why there were none before | `ddp-broker-py` `ddpbroker_tasks.data_update_chain` looped over `BrokerFactory.list_all_brokers()` (Voatz-registered jurisdictions only) and was the only place sessions were created; NC has no Broker. The `ensure_bill` comment in `views/bills_api.py` (BROKER-159) says the same. The 2026-09-17 error is `ensure_bill`'s own session lookup, `resolve_legislative_session()` returning `None`, which that fix now handles |
 | First NC bill rows in the broker | `2025E1` 2026-10-19, `2025` 2026-10-20 (created by the `ensure-bill-exists` step of the runs below) |
 
 ## Result
 
-ddp-sync ran the session pipeline (all artifact types including `bill_topics`) for NC `2025E1` on 2026-10-19 and for NC `2025` on 2026-10-20. Production state on 2026-10-21:
+ddp-sync ran the session pipeline (all artifact types including `bill_topics`) for NC `2025E1` on 2026-10-19 and for NC `2025` on 2026-10-20 (ddp-sync's own runs, started by the Mac's ddp-sync, not by this investigation). Production state on 2026-10-21:
 
 | Session | Bills | Bills with a BillTopic | Failed |
 |---|---|---|---|
 | NC 2025 | 2,338 | 2,337 | 1 |
 | NC 2025E1 | 5 | 5 | 0 |
 
-All the `bill_topics` artifacts are `complete` and `approved`. The one failure is HB886: its only text is an amendment (`A2: Amendment`), and generation stopped with `insufficient_information`. That is the expected outcome for a bill with no full text, not a pipeline fault.
+Every `bill_topics` artifact is `approved` (review status); all but one have status `complete`. The one miss is HB886. It has five versions, but the pipeline tried only `A2: Amendment`, which has **no text URL** in the broker, so generation stopped with `insufficient_information`. Its `Filed`, `Edition 1`, `A1: Amendment` and `Edition 2` versions have text but were never tried. So HB886 is a real, single-bill gap (a textless latest version was picked), not a sign of a wider problem. It is left as is: one bill, and a targeted `bill_candidates` run would cover it if wanted.
 
 NC 2025 now has coverage comparable to the other sessions in SYNC-123's table. For BROKER-255's coverage count: NC contributes 2,342 bills with topics.
 
 ## What was not done
 
 - No change to ddp-sync or ddp-broker-py. The code path that failed on 09-17 is the one BROKER-159 replaced.
-- NC is still not scheduled for scraping, so new NC bills are not picked up until it is enrolled (`jurisdictions.yaml`; RUNBOOK "Adding a jurisdiction, or enrolling one in a feature").
+- "Covered" here means the 2025 and 2025E1 backfill that exists today. NC is still not scheduled for scraping, so new NC bills are not picked up until it is enrolled (`jurisdictions.yaml`; RUNBOOK "Adding a jurisdiction, or enrolling one in a feature").
