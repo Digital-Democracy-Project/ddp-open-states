@@ -33,7 +33,7 @@ The ticket's 669 comes from ddp-sync's log (1,022 bills seen minus 341 with topi
 
 ## What happened since SYNC-123's table (2026-10-16)
 
-SYNC-123 counted 341 bills with topics, from ddp-sync's log (which counts what the pipeline reported, including bills not in the broker's count). The broker held 324 bills with topics before 2026-10-16 (323 generated 2026-10-13, 1 on 2026-08-30). A ddp-sync session-pipeline run for UT 2026 (all artifact types including `bill_topics`, run id `6f89040c`) started 2026-10-21 00:47; it has produced 357 artifacts for 356 new bills so far (the 357th is the second artifact of the one bill above). No extra run was started for this ticket: a second run would collide with it.
+SYNC-123 counted 341 bills with topics, from ddp-sync's log (why it differs from the broker's 324 was not investigated). The broker held 324 bills with topics before 2026-10-16 (323 generated 2026-10-13, 1 on 2026-08-30). A ddp-sync session-pipeline run for UT 2026 (all artifact types including `bill_topics`, run id `6f89040c`) started 2026-10-21 00:47; it has produced 357 artifacts for 356 new bills so far (the 357th is the second artifact of the one bill above). No extra run was started for this ticket: a second run would collide with it.
 
 ## Sample check
 
