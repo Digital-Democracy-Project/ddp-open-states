@@ -129,7 +129,9 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 # ddp-sync's config/sync_schedule.yaml openstates_archive.jurisdictions, so it does not run on
 # the recurring weekly schedule until that validation pass's evidence (extractor success,
 # "no function for" count, S3 mirror sample) is in hand.
-export ARCHIVE_ENABLED_STATES="fl,ut,az,wa,va,mi,ma,al,us,nc"
+# OPEN-327: the list itself is no longer typed here. It is derived from jurisdictions.yaml's
+# archive.enabled further down (after OS_VENV is set, so PyYAML is available); the history above
+# explains why each state was turned on.
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
 # Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
@@ -153,3 +155,19 @@ export OS_INITDB="$OS_VENV/bin/os-initdb"
 export OS_UPDATE="$OS_VENV/bin/os-update"
 export OS_PEOPLE="$OS_VENV/bin/os-people"
 export OS_TEXT_EXTRACT="$OS_VENV/bin/os-text-extract"
+
+# OPEN-327: which jurisdictions may archive = jurisdictions.yaml archive.enabled. Test -r first: under
+# `set -e` bash 3.2 exits the whole script when `source` hits a missing file even with a `||` fallback.
+# Fail closed and loud: an unreadable manifest leaves the list EMPTY (run-archive.sh then skips every
+# jurisdiction with its normal "not enabled" message), never a stale hand-copied list.
+ARCHIVE_ENABLED_STATES=""
+if [ -r "$SCRIPT_DIR/jurisdiction-field.sh" ]; then
+    . "$SCRIPT_DIR/jurisdiction-field.sh"
+    ARCHIVE_ENABLED_STATES="$(jurisdiction_codes archive.enabled)" || {
+        echo "activate.sh: WARNING: could not read archive.enabled from jurisdictions.yaml -- NO jurisdiction is enabled for archiving until that is fixed" >&2
+        ARCHIVE_ENABLED_STATES=""
+    }
+else
+    echo "activate.sh: WARNING: $SCRIPT_DIR/jurisdiction-field.sh is missing -- NO jurisdiction is enabled for archiving" >&2
+fi
+export ARCHIVE_ENABLED_STATES

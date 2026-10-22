@@ -4,19 +4,22 @@
 # `enrollment:` block, plus archive.enabled and tier), populated from the lists' real values that day, and
 # check-jurisdiction-drift.py (run in CI, see .github/workflows/validate-jurisdictions.yml) fails when any
 # hard-coded list -- this repo's, or ddp-sync's sync_schedule.yaml and timeout tables -- disagrees with it.
-# That is a COMPARISON, not consumption: nothing reads this file at run time yet, so the paragraph below
-# about what consumes it is still true. To add a state or enroll one in a feature, edit this file first
+# Since OPEN-327 (2026-10-21) this repo's own scripts READ it instead of keeping a list: activate.sh
+# (ARCHIVE_ENABLED_STATES = archive.enabled), run-people-refresh.sh (enrollment.people_refresh),
+# start-os-api.sh (enrollment.api_smoke_test), run-scrape.sh (scrape.allow_duplicates) and quality_check.py
+# (enrollment.qa_sweep, and its OCD id table), and the drift check fails if one grows a list again.
+# ddp-sync, the broker, votebot and ddp-agents are still comparison-only (OPEN-328, OPEN-329). To add a
+# state or enroll one in a feature, edit this file first
 # (RUNBOOK.md -> "Adding a jurisdiction, or enrolling one in a feature"). `python3
 # check-jurisdiction-drift.py --matrix` prints who is enrolled in what. `al` was added then: it is on the
 # archive, people-refresh and QA lists, so it belongs here (status paused: its bills are not scraped).
 #
 # OPEN-221 / PLAN-push-button-onboarding.md §4.1 ("Manifest v0"). This is deliberately a SMALL
 # first step: the file + validate_jurisdictions.py + jurisdiction-field.sh, consumed ONLY by
-# ddp-open-states scripts and the (separate, not-yet-built) onboarding probe. It is NOT yet wired
-# into activate.sh / run-scrape.sh / quality_check.py / start-os-api.sh, and it is NOT consumed by
-# ddp-sync, ddp-broker-py, ddp-next, or votebot — those repos keep their own existing lists as
-# documentation-of-record for now (see the plan's §4.1 "consumer expansion" table). Consumer
-# wiring is deliberately deferred/follow-up work, not part of this change.
+# ddp-open-states scripts and the onboarding probe (this repo's scripts were wired in by OPEN-327, see
+# above). It is NOT consumed by ddp-sync, ddp-broker-py, ddp-next, or votebot — those repos keep their
+# own existing lists as documentation-of-record for now (see the plan's §4.1 "consumer expansion"
+# table); wiring them is OPEN-328 and OPEN-329.
 #
 # The 8 entries below are the jurisdictions already tracked in production as of 2026-08-30 --
 # they onboarded before this manifest existed, so `status: live` and a null `onboarding` block

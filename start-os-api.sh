@@ -99,8 +99,25 @@ log "bulk_dataexport table present (created if missing)"
 # (500'd for every tracked jurisdiction, not just some) so a future schema drift alerts
 # instead of silently breaking ddp-broker-py's session picker again.
 APIKEY="00000000-0000-0000-0000-000000000001"
+#
+# OPEN-327: the jurisdictions come from jurisdictions.yaml (enrollment.api_smoke_test). This runs under
+# launchd's bare environment, so point at this checkout's own venv for PyYAML. If the manifest cannot be
+# read the guard is skipped WITH an alert rather than failing the boot: the stack is already up, and a
+# missing regression guard must not take the API down with it.
+OS_VENV="${OS_VENV:-$SCRIPT_DIR/.venv}"
+smoke_states=""
+if [ -r "$SCRIPT_DIR/jurisdiction-field.sh" ]; then
+    . "$SCRIPT_DIR/jurisdiction-field.sh"
+    smoke_states="$(jurisdiction_codes enrollment.api_smoke_test)" || smoke_states=""
+fi
+if [ -z "$smoke_states" ]; then
+    log "ERROR: could not read enrollment.api_smoke_test from jurisdictions.yaml -- skipping the include=legislative_sessions smoke test"
+    slack_fail ":warning: openstates api-v3 boot smoke test SKIPPED: could not read enrollment.api_smoke_test from jurisdictions.yaml — check logs/os-api.log"
+fi
 smoke_failed=""
-for j in us fl mi az va wa ut; do
+smoke_count=0
+for j in $(echo "$smoke_states" | tr ',' ' '); do
+    smoke_count=$((smoke_count + 1))
     code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
         "http://localhost:8002/jurisdictions/$j?include=legislative_sessions&apikey=$APIKEY" || echo "000")
     if [ "$code" != "200" ]; then
@@ -112,4 +129,7 @@ if [ -n "$smoke_failed" ]; then
     slack_fail ":red_circle: openstates api-v3 include=legislative_sessions smoke test failed at boot ($smoke_failed) — check logs/os-api.log"
     exit 1
 fi
-log "include=legislative_sessions smoke test passed for all 7 tracked jurisdictions"
+# if/fi, not `[ ] && log`: under `set -e` a false test as the script's last command would exit it non-zero.
+if [ "$smoke_count" -gt 0 ]; then
+    log "include=legislative_sessions smoke test passed for all $smoke_count enrolled jurisdictions ($smoke_states)"
+fi

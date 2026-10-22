@@ -231,7 +231,10 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
 `check-jurisdiction-drift.py` keeps every list that still exists in step with it. The lists used to drift
 (NC was on 8 of ~25 and missing from 6): forgetting one parameter half-enrolled a state silently.
 
-1. Edit `jurisdictions.yaml`: the new entry, or the flag (`archive.enabled`, `enrollment.*`).
+1. Edit `jurisdictions.yaml`: the new entry, or the flag (`archive.enabled`, `enrollment.*`). **This repo's own
+   scripts need nothing else** (OPEN-327): `activate.sh`'s archive gate, the people refresh, the API boot smoke
+   test, `--allow_duplicates` and `quality_check.py`'s sweep read the manifest. A new state only needs the
+   entries below in ddp-sync.
 2. `python3 check-jurisdiction-drift.py --ddp-sync-root ~/Developer/repos/ddp-sync` names every list that now
    disagrees, with both sides. (`--matrix` shows who is enrolled in what.)
 3. Bring each list into agreement. **ddp-sync's lists live in the ddp-sync repo: merge that change first**,
