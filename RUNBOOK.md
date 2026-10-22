@@ -75,6 +75,19 @@ on arm64), `deploy/docker-compose.stopgap.yml` (rollback). Pinned pydantic 1.10.
 > `activate.sh` points the scrapers at `openstates-scrapers/`), the context will bloat again.
 > Fix then = `brew install docker-buildx` (honors the `deploy/` ignore) or just delete the stray dirs.
 
+**The jurisdiction manifest inside api-v3 (OPEN-329).** Both compose files bind-mount `jurisdictions.yaml` read-only
+at `/app/jurisdictions.yaml`, which `GET /ddp/enrollment` serves (api-v3 PR #33) so the broker and other services can
+read the enrolled list. It takes effect when the `api` container is next **recreated** (the Mac: `refresh-api-v3.sh`
+or `docker-compose ... up -d api`; the EC2 host: `docker compose -f deploy/docker-compose.rds.yml up -d api`). A
+single-file bind mount can keep the file's old inode when `git pull` replaces it (native Linux Docker; on the Mac's
+Colima a replaced file was seen at once but an in-place edit showed old-length content until a restart, tested
+2026-10-21), so after any later pull that changes `jurisdictions.yaml`, **restart the container** (`docker restart
+ddp-openstates-api-1`) and **verify**: `GET /ddp/enrollment`'s `manifest_mtime` must equal the host file's mtime
+(`stat jurisdictions.yaml`). If it still shows the old time, recreate the `api` service instead. Restart-after-replace on
+the EC2 host has not been tested here. Until the mount exists the endpoint answers 503 by design. The
+Mac's recreate is gated by the compose file's own HARD PRECONDITION (do not recreate until ddp-broker has been
+switched to the EC2 api-v3); read that comment first.
+
 **`com.ddp.openstates-api` and `com.ddp.openstates-db-backup` are system LaunchDaemons**
 (`/Library/LaunchDaemons/`), migrated 2026-07-17 from GUI LaunchAgents as Phase 2 of
 `PLAN-cams-hardening-isolation.md` (`ddp-agents` repo, PR #20 + hotfix #21 + follow-up #22) —

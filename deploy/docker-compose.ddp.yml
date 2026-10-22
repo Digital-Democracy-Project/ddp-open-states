@@ -96,6 +96,16 @@ services:
     networks:
       - default
       - ddp-agents_default
+    # OPEN-329: GET /ddp/enrollment serves this checkout's jurisdictions.yaml, mounted read-only (compose paths are
+    # relative to THIS file's directory, so ../ is the ddp-open-states checkout on whichever host runs this file).
+    # CAVEAT: a single-file bind mount can keep the file's OLD inode after `git pull` replaces the file (native Linux
+    # Docker: expected; tested on this Mac's Colima 2026-10-21: a replaced file showed at once, but an in-place edit
+    # showed truncated old-length content until a restart). After any pull that changes the manifest, restart the
+    # container (`docker restart ddp-openstates-api-1`, no rebuild) and CHECK that GET /ddp/enrollment's manifest_mtime
+    # equals the host file's mtime; if it does not, recreate the api service. Do not mount the whole checkout instead:
+    # it holds .env files.
+    volumes:
+      - ../jurisdictions.yaml:/app/jurisdictions.yaml:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:80/healthz', timeout=3).status==200 else 1)\""]
       interval: 15s
