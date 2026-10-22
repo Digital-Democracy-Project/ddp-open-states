@@ -250,6 +250,14 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
    entries below in ddp-sync.
 2. `python3 check-jurisdiction-drift.py --ddp-sync-root ~/Developer/repos/ddp-sync` names every list that now
    disagrees, with both sides. (`--matrix` shows who is enrolled in what.)
+   **Two archive flags (OPEN-418), set at different stages:** `archive.enabled` means the state *may* be archived (the
+   Stage 4 manual, timed `run-archive.sh <state>` validation run, and `ARCHIVE_ENABLED_STATES`); set it when the
+   state's extractors are verified, while its `status` is still `validating` or earlier. `archive.scheduled` means
+   it is on ddp-sync's **recurring** archive schedule and its post-scrape archive hook; the validator **refuses** it
+   unless `status` is `live` (or `paused`) and `archive.enabled` is true, so the schedule cannot be switched on
+   before a human promotes the state (plan 4.6). Order for a new state: `enabled` at Stage 4, run the validation,
+   promote to `live`, then `scheduled` here and the state in ddp-sync's `openstates_archive` list (merge ddp-sync
+   first, per step 3).
 3. Bring each list into agreement. **ddp-sync's lists live in the ddp-sync repo: merge that change first**,
    because CI compares the manifest with ddp-sync's `main`; then the manifest change goes green.
 4. The two env lists live on each host, not in git: `DDP_OPENSTATES_JURISDICTIONS` (broker and ddp-sync,

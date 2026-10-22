@@ -15,7 +15,8 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       boot smoke test), quality_check.py JURISDICTIONS and run-scrape.sh ALLOW_DUPLICATES_STATES
                       now DERIVE their lists from this manifest, so the check here is that each still does (the
                       call is present and the old hand-typed list has not come back), not a set comparison
-  ddp-sync (optional) config/sync_schedule.yaml: openstates_archive (jurisdictions + schedule),
+  ddp-sync (optional) config/sync_schedule.yaml: openstates_archive (jurisdictions + schedule, against
+                      archive.scheduled since OPEN-418; archive.enabled is the shell gate only),
                       knowledge_base_embedding, bill_search_refresh, openstates_scrape (primary, secondary,
                       cloud_path); and the SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S tables in its Python source
 
@@ -163,6 +164,7 @@ def where(manifest, predicate):
 def project(manifest):
     return {
         "archive": where(manifest, lambda e: e["archive"]["enabled"]),
+        "archive_scheduled": where(manifest, lambda e: e["archive"]["scheduled"]),
         "people_refresh": where(manifest, lambda e: e["enrollment"]["people_refresh"]),
         "search_refresh": where(manifest, lambda e: e["enrollment"]["search_refresh"]),
         "embedding": where(manifest, lambda e: e["enrollment"]["embedding"]),
@@ -230,9 +232,9 @@ def sync_checks(sync_root, manifest, expect):
         return {_from_sync_code(k) for k, v in block.items() if v["enabled"]}
 
     sets = [
-        ("archive.enabled", "ddp-sync openstates_archive.jurisdictions", expect["archive"],
+        ("archive.scheduled", "ddp-sync openstates_archive.jurisdictions", expect["archive_scheduled"],
          lambda: archive("jurisdictions", d="openstates_archive.jurisdictions")),
-        ("archive.enabled", "ddp-sync openstates_archive.schedule (keys)", expect["archive"],
+        ("archive.scheduled", "ddp-sync openstates_archive.schedule (keys)", expect["archive_scheduled"],
          lambda: set(_sync_list(data, "openstates_archive", "schedule", path_desc="openstates_archive.schedule"))),
         ("enrollment.embedding", "ddp-sync ...knowledge_base_embedding.jurisdictions", expect["embedding"],
          lambda: archive("knowledge_base_embedding", "jurisdictions", d="knowledge_base_embedding.jurisdictions")),
@@ -367,7 +369,7 @@ def run(manifest, root, sync_root, require_sync, out, live=()):
     return 0
 
 
-MATRIX_COLUMNS = ["status", "tier", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
+MATRIX_COLUMNS = ["status", "tier", "archive", "scheduled", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
                   "qa_sweep", "replica_routing", "legbot_replica"]
 
 
@@ -377,6 +379,8 @@ def matrix(manifest, out):
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
+        if column == "scheduled":
+            return "yes" if entry["archive"]["scheduled"] else "-"
         return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}

@@ -46,7 +46,9 @@
 # Every value below was pulled from the real running config on 2026-08-30, not guessed:
 #   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
 #     (src/ddp_sync/pipelines/openstates_scrape.py, openstates_archive.py)
-#   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES
+#   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES (may be archived: the Stage 4 manual validation run)
+#   - archive.scheduled (OPEN-418): ddp-sync's recurring openstates_archive.jurisdictions and .schedule; the validator
+#     requires status live or paused for it, and archive.enabled to be true
 #   - scrape.allow_duplicates: run-scrape.sh's --allow_duplicates states (mi, fl, va)
 #   - scrape.votes_scraper: whether the jurisdiction's own openstates-scrapers `__init__.py`
 #     registers a live (non-commented) "votes" entry in its `scrapers = {...}` dict -- only `ma`
@@ -81,6 +83,7 @@ us:
     start_filter: true        # GovInfo sitemap lastmod -- clean server-side filter, no caveat
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
   enrollment:
     people_refresh: true
@@ -115,6 +118,7 @@ fl:
                                   # changes layout
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
   enrollment:
     people_refresh: true
@@ -148,6 +152,7 @@ wa:
                                    # GetLegislation calls, only downstream calls are skipped
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
   enrollment:
     people_refresh: true
@@ -181,6 +186,7 @@ va:
                                        # saves 3 of 4 per-bill calls
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
   enrollment:
     people_refresh: true
@@ -217,6 +223,7 @@ mi:
                                         # by intro date, not last-action date (RUNBOOK.md caveat)
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 86400                   # ARCHIVE_TIMEOUT_S["mi"], 24h (ddp-sync; this said the 4h default, which MI's
                                         # archive outgrew)
   enrollment:
@@ -251,6 +258,7 @@ ut:
                                          # time only, still one HTTP call per bill
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
   enrollment:
     people_refresh: true
@@ -283,6 +291,7 @@ az:
                                          # calls, only sub-calls skipped
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
   enrollment:
     people_refresh: true
@@ -324,6 +333,7 @@ ma:
                                           # every bill" and full-walks on every run
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
   enrollment:
     people_refresh: true
@@ -364,6 +374,7 @@ nc:
                                          # argument -- the scraper does not support one yet
   archive:
     enabled: true                       # OPEN-231 Stage 4: probe gate C passed, so nc clears
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
                                         # the gate to enable archiving. This file isn't wired
                                         # into activate.sh (see this file's own header note) --
                                         # ARCHIVE_ENABLED_STATES there was updated separately, in
@@ -411,6 +422,7 @@ al:
     start_filter: false                   # scrapers/al/bills.py's scrape(self, session) takes no start= (cf. OPEN-321)
   archive:
     enabled: true
+    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
   enrollment:
     people_refresh: true
