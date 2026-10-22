@@ -80,6 +80,61 @@ check "CLI: exit 0 on success" "0" "$?"
 "$SCRIPT_DIR/jurisdiction-field.sh" fl scrape.timeout_s "/nonexistent/manifest.yaml" >/dev/null 2>&1
 check "CLI: missing manifest: exit 2" "2" "$?"
 
+# -- OPEN-327: jurisdiction_codes (which jurisdictions have a boolean field set to true) --
+CODES_FIXTURE=$(mktemp /tmp/jurisdiction-codes-test.XXXXXX.yaml)
+cat > "$CODES_FIXTURE" <<'YAML'
+us:
+  archive: {enabled: true}
+  scrape: {allow_duplicates: false}
+fl:
+  archive: {enabled: true}
+  scrape: {allow_duplicates: true}
+nc:
+  archive: {enabled: false}
+  scrape: {allow_duplicates: false}
+YAML
+trap 'rm -f "$FIXTURE" "$CODES_FIXTURE"' EXIT
+
+out=$(jurisdiction_codes archive.enabled "$CODES_FIXTURE"); rc=$?
+check "codes: true on some, manifest order"   "us,fl" "$out"
+check "codes: exit 0"                          "0"     "$rc"
+
+out=$(jurisdiction_codes scrape.allow_duplicates "$CODES_FIXTURE")
+check "codes: a single match"                  "fl"    "$out"
+
+printf 'us:\n  archive: {enabled: false}\n' > "$CODES_FIXTURE"
+out=$(jurisdiction_codes archive.enabled "$CODES_FIXTURE"); rc=$?
+check "codes: none true prints an empty line"  ""      "$out"
+check "codes: none true is still exit 0"       "0"     "$rc"
+
+printf 'us:\n  archive: {enabled: true}\nfl:\n  archive: {}\n' > "$CODES_FIXTURE"
+jurisdiction_codes archive.enabled "$CODES_FIXTURE" >/dev/null 2>&1
+check "codes: field missing on one jurisdiction: exit 4 (never a silent skip)" "4" "$?"
+
+printf 'us:\n  archive: {enabled: "yes"}\n' > "$CODES_FIXTURE"
+jurisdiction_codes archive.enabled "$CODES_FIXTURE" >/dev/null 2>&1
+check "codes: non-boolean leaf: exit 4"        "4"     "$?"
+
+jurisdiction_codes archive.enabled "/nonexistent/manifest.yaml" >/dev/null 2>&1
+check "codes: missing manifest: exit 2"        "2"     "$?"
+
+printf 'not: [valid' > "$CODES_FIXTURE"
+jurisdiction_codes archive.enabled "$CODES_FIXTURE" >/dev/null 2>&1
+check "codes: invalid YAML: exit 2"            "2"     "$?"
+
+jurisdiction_codes >/dev/null 2>&1
+check "codes: usage error: exit 1"             "1"     "$?"
+
+printf 'us:\n  archive: {enabled: true}\n' > "$CODES_FIXTURE"
+out=$("$SCRIPT_DIR/jurisdiction-field.sh" --codes archive.enabled "$CODES_FIXTURE")
+check "CLI: --codes"                           "us"    "$out"
+
+# the real manifest: every list the shell scripts now derive must be readable from it
+for f in archive.enabled enrollment.people_refresh enrollment.api_smoke_test enrollment.qa_sweep scrape.allow_duplicates; do
+    "$SCRIPT_DIR/jurisdiction-field.sh" --codes "$f" >/dev/null 2>&1
+    check "real manifest: --codes $f"          "0"     "$?"
+done
+
 echo
 if [ "$FAIL" -eq 0 ]; then
     echo "ALL PASS ($PASS assertions)"

@@ -81,21 +81,33 @@ def _resolve_db_url() -> str:
 
 DB_URL = _resolve_db_url()
 
-# Jurisdictions with data in our local DB (va blocked, us handled separately)
-JURISDICTIONS = ["fl", "wa", "mi", "ut", "al", "ma", "az"]
+# OPEN-327: both tables below are derived from jurisdictions.yaml, not typed here. JURISDICTIONS is the QA
+# sweep list (enrollment.qa_sweep; us is handled separately via US_JURISDICTION and is not on it, and va is
+# off it by choice); OCD_TO_CODE covers every manifest jurisdiction. A manifest that is missing or fails
+# validation stops the tool with the validator's messages instead of sweeping a guessed list.
+from validate_jurisdictions import load_and_validate
+
+
+def _load_manifest():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
+    data, errors = load_and_validate(path)
+    if errors:
+        raise SystemExit("quality_check.py: jurisdictions.yaml is not usable:\n  " + "\n  ".join(errors))
+    return data
+
+
+def _ocd_id(code):
+    if code == "us":
+        return "ocd-jurisdiction/country:us/government"
+    return f"ocd-jurisdiction/country:us/state:{code}/government"
+
+
+_MANIFEST = _load_manifest()
+JURISDICTIONS = [c for c, e in _MANIFEST.items() if e["enrollment"]["qa_sweep"]]
 US_JURISDICTION = "us"
 
 # OCD jurisdiction → short code (inverse of what api-v3 stores)
-OCD_TO_CODE = {
-    "ocd-jurisdiction/country:us/state:fl/government": "fl",
-    "ocd-jurisdiction/country:us/state:wa/government": "wa",
-    "ocd-jurisdiction/country:us/state:mi/government": "mi",
-    "ocd-jurisdiction/country:us/state:ut/government": "ut",
-    "ocd-jurisdiction/country:us/state:al/government": "al",
-    "ocd-jurisdiction/country:us/state:ma/government": "ma",
-    "ocd-jurisdiction/country:us/state:az/government": "az",
-    "ocd-jurisdiction/country:us/government":          "us",
-}
+OCD_TO_CODE = {_ocd_id(c): c for c in _MANIFEST}
 
 # Jurisdictions where a bill has two permanent, separate upstream identifiers over
 # its life (a docket number assigned at filing, a bill number assigned once read

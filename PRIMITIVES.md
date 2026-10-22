@@ -857,21 +857,37 @@ scope line was deliberate, not an oversight.
   rather than each hand-rolling its own YAML parsing. Rejects a request for a block-shaped path
   (a whole sub-mapping, not a leaf value) with a real error instead of printing Python's `repr()`
   of the block. `test-jurisdiction-field.sh` runs the whole thing under real bash 3.2.57.
-- **Failure mode is fail-open, loudly:** an unreadable or invalid manifest makes consuming
-  scripts keep their pre-manifest behavior and print a loud warning, rather than silently
-  proceeding on bad data or hard-crashing a scheduled scrape.
+- **Failure mode, since OPEN-327: fail closed, loudly.** This section first said an unreadable
+  manifest should make consuming scripts "keep their pre-manifest behavior"; once the hand-typed
+  lists were deleted there is no such behavior to keep (and a stale copy is the drift this exists to
+  stop), so each consumer now does the safe thing for its own job and says so: `activate.sh` leaves
+  `ARCHIVE_ENABLED_STATES` **empty** with a stderr WARNING (archiving skips every jurisdiction with its
+  normal "not enabled" message); `run-people-refresh.sh` and `run-scrape.sh` exit 1 with an ERROR (the
+  scheduler's failure alert fires; a guessed list would refresh nobody, or fail a later import less
+  clearly); `start-os-api.sh` skips its boot smoke test **with a Slack alert** rather than failing the
+  boot (the stack is already up); `quality_check.py` stops with the validator's messages.
+- **`jurisdiction_codes <dotted.bool.field>` (OPEN-327)** in `jurisdiction-field.sh`: prints the codes
+  whose boolean field is true, comma-joined, in manifest order (`./jurisdiction-field.sh --codes
+  archive.enabled`). The field must be a boolean on EVERY jurisdiction; a missing or non-boolean value is
+  exit 4, never a silent skip. Use it instead of typing a list: `states=$(jurisdiction_codes
+  enrollment.people_refresh) || exit 1`. Source it only after `OS_VENV` is set (activate.sh does) so
+  PyYAML is available, and test `-r` before sourcing under `set -e` (bash 3.2).
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`
   and `tier`), seeded from the lists' real values, and **`check-jurisdiction-drift.py` compares every list
   it knows about to the manifest and fails on any disagreement**: `activate.sh`, `run-people-refresh.sh`,
-  `start-os-api.sh`, `quality_check.py`, `run-scrape.sh`, and (with `--ddp-sync-root`) ddp-sync's
+  `start-os-api.sh`, `quality_check.py`, `run-scrape.sh` (derivation checked, see below), and (with `--ddp-sync-root`) ddp-sync's
   `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. Run in CI against
   ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
   who is enrolled in what, which is where today's gaps show (NC is on 2 of the 6 feature lists, MA on 3, AL on 2: these are today's real enrollment, not checker omissions).
-  This is a **comparison, not consumption**: no script reads the manifest to decide anything yet, so the
-  "do not wire this file into another repo" rule above still stands for consumers; ddp-sync's own lists
-  stay where they are until the dual-read migration the plan's §4.1 requires. Written by hitting two real
+  For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,
+  `run-people-refresh.sh`, `start-os-api.sh`, `run-scrape.sh` and `quality_check.py` **derive** their lists
+  from the manifest, and the drift check's job for them is to fail (exit 2) if one stops deriving or grows a
+  hand-typed list again. `run-all-scrapes.sh` is deliberately not converted (retired runner; its lists are
+  stale and it is not compared). The "do not wire this file into another repo" rule above still stands for
+  other repos' consumers: ddp-sync's own lists stay where they are until the dual-read migration the plan's
+  §4.1 requires (OPEN-328). Written by hitting two real
   stale manifest values on its first run (`ma` allow_duplicates, MI's archive timeout), which the
   hand-written spot checks in `test_validate_jurisdictions.py` had pinned wrong. **Not yet covered** (each a
   follow-up under OPEN-318): ddp-sync's in-code fallbacks and manual-trigger allow-list (SYNC-57), the

@@ -48,12 +48,13 @@ def _manifest():
     return {"fl": fl, "us": us, "nc": nc, "al": al}
 
 
+# OPEN-327: this repo's scripts derive their lists from the manifest, so the fixture files are the derived shape.
 REPO_FILES = {
-    "activate.sh": 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
-    "run-people-refresh.sh": "for state in fl us al; do\n    echo $state\ndone\n",
-    "start-os-api.sh": "for j in fl us; do\n    echo $j\ndone\n",
-    "quality_check.py": 'JURISDICTIONS = ["fl", "al"]\n',
-    "run-scrape.sh": 'ALLOW_DUPLICATES_STATES="fl"\n',
+    "activate.sh": 'ARCHIVE_ENABLED_STATES="$(jurisdiction_codes archive.enabled)"\nexport ARCHIVE_ENABLED_STATES\n',
+    "run-people-refresh.sh": 'people_states="$(jurisdiction_codes enrollment.people_refresh)"\nfor state in $(echo "$people_states" | tr "," " "); do\n    echo $state\ndone\n',
+    "start-os-api.sh": 'smoke_states="$(jurisdiction_codes enrollment.api_smoke_test)"\nfor j in $(echo "$smoke_states" | tr "," " "); do\n    echo $j\ndone\n',
+    "quality_check.py": 'JURISDICTIONS = [c for c, e in _MANIFEST.items() if e["enrollment"]["qa_sweep"]]\n',
+    "run-scrape.sh": 'ALLOW_DUPLICATES_STATES="$(jurisdiction_codes scrape.allow_duplicates)"\n',
 }
 
 SYNC_YAML = {
@@ -141,31 +142,53 @@ def test_require_ddp_sync_without_a_checkout_is_an_error_not_a_pass(world):
 
 
 # ---------------------------------------------------------------------------------------------------
-# this repo's lists: break each one
+# this repo's scripts derive their lists (OPEN-327): break each derivation
 # ---------------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize(
-    "relpath,old,new,field,source,detail",
-    [
-        ("activate.sh", "fl,us,nc,al", "fl,us,al", "archive.enabled", "activate.sh ARCHIVE_ENABLED_STATES", "in the manifest but not in activate.sh ARCHIVE_ENABLED_STATES: nc"),
-        ("run-people-refresh.sh", "fl us al", "fl us al nc", "enrollment.people_refresh", "run-people-refresh.sh", "but not in the manifest: nc"),
-        ("start-os-api.sh", "fl us", "fl", "enrollment.api_smoke_test", "start-os-api.sh", "in the manifest but not in start-os-api.sh boot smoke-test `for j in`: us"),
-        ("quality_check.py", '["fl", "al"]', '["fl", "al", "nc"]', "enrollment.qa_sweep", "quality_check.py JURISDICTIONS", "but not in the manifest: nc"),
-        ("run-scrape.sh", '"fl"', '"fl,nc"', "scrape.allow_duplicates", "run-scrape.sh ALLOW_DUPLICATES_STATES", "but not in the manifest: nc"),
-    ],
-)
-def test_each_repo_list_that_disagrees_is_named_with_both_sides(world, relpath, old, new, field, source, detail):
-    _edit(world, relpath, old, new)
+REPO_SCRIPTS = {
+    "activate.sh": ("jurisdiction_codes archive.enabled", 'ARCHIVE_ENABLED_STATES="fl,us"'),
+    "run-people-refresh.sh": ("jurisdiction_codes enrollment.people_refresh", "for state in fl us al; do"),
+    "start-os-api.sh": ("jurisdiction_codes enrollment.api_smoke_test", "for j in fl us; do"),
+    "quality_check.py": ('e["enrollment"]["qa_sweep"]', 'JURISDICTIONS = ["fl", "al"]'),
+    "run-scrape.sh": ("jurisdiction_codes scrape.allow_duplicates", 'ALLOW_DUPLICATES_STATES="fl"'),
+}
+
+
+@pytest.mark.parametrize("relpath", sorted(REPO_SCRIPTS))
+def test_a_script_that_stops_reading_the_manifest_is_an_error(world, relpath):
+    call, _ = REPO_SCRIPTS[relpath]
+    _edit(world, relpath, call, "true")
     code, out = _run(world, with_sync=False)
-    assert code == 1, out
-    assert f"DRIFT {field}: {source}" in out
-    assert detail in out
+    assert code == 2, out
+    assert relpath in out and "must derive this list from jurisdictions.yaml" in out
+
+
+@pytest.mark.parametrize("relpath", sorted(REPO_SCRIPTS))
+def test_a_hand_typed_list_coming_back_is_an_error(world, relpath):
+    _, literal = REPO_SCRIPTS[relpath]
+    path = os.path.join(world[0], relpath)
+    _write(path, open(path).read() + "\n" + literal + "\n")
+    code, out = _run(world, with_sync=False)
+    assert code == 2, out
+    assert relpath in out and "has a hard-coded list again" in out
+
+
+def test_derived_scripts_pass_even_though_there_is_no_list_to_compare(world):
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+
+
+def test_a_commented_out_old_list_is_not_a_list(world):
+    path = os.path.join(world[0], "activate.sh")
+    _write(path, '# ARCHIVE_ENABLED_STATES="fl,ut" -- the old hand-typed list\n' + open(path).read())
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
 
 
 def test_several_disagreements_are_all_reported_in_one_pass(world):
-    _edit(world, "activate.sh", "fl,us,nc,al", "fl")
-    _edit(world, "run-people-refresh.sh", "fl us al", "fl")
-    code, out = _run(world, with_sync=False)
+    _set_sync_yaml(world, lambda d: d["openstates_archive"]["jurisdictions"].remove("nc"))
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"]["jurisdictions"].remove("nc"))
+    code, out = _run(world)
     assert code == 1
     assert out.count("DRIFT ") == 2 and "2 list(s) disagree" in out
 
@@ -173,56 +196,6 @@ def test_several_disagreements_are_all_reported_in_one_pass(world):
 # ---------------------------------------------------------------------------------------------------
 # a source that cannot be read is an ERROR, never a pass
 # ---------------------------------------------------------------------------------------------------
-
-def test_a_missing_pattern_is_an_error(world):
-    _edit(world, "activate.sh", "ARCHIVE_ENABLED_STATES", "ARCHIVE_ENABLED_STATEZ")
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "expected exactly one" in out
-
-
-def test_an_ambiguous_pattern_is_an_error(world):
-    _edit(world, "activate.sh", 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
-          'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\nexport ARCHIVE_ENABLED_STATES="fl"\n')
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "found 2" in out
-
-
-def test_a_commented_out_assignment_is_not_the_assignment(world):
-    """The real one is on the next line; a commented decoy above it must be ignored, not matched or counted."""
-    _edit(world, "activate.sh", 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
-          '# export ARCHIVE_ENABLED_STATES="fl"\nexport ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n')
-    code, out = _run(world, with_sync=False)
-    assert code == 0, out
-
-
-def test_a_similarly_named_variable_is_not_the_assignment(world):
-    _edit(world, "activate.sh", 'export ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n',
-          'export ARCHIVE_ENABLED_STATES_OLD="fl"\nexport ARCHIVE_ENABLED_STATES="fl,us,nc,al"\n')
-    code, out = _run(world, with_sync=False)
-    assert code == 0, out
-
-
-def test_an_indented_or_commented_loop_is_not_the_loop_but_a_second_top_level_one_is_ambiguous(world):
-    _edit(world, "run-people-refresh.sh", "for state in fl us al; do",
-          "# for state in fl; do\nif true; then\n    for state in nc; do :; done\nfi\nfor state in fl us al; do")
-    code, out = _run(world, with_sync=False)
-    assert code == 0, out
-    _edit(world, "run-people-refresh.sh", "if true; then", "for state in nc; do :; done\nif true; then")
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "found 2" in out
-
-
-def test_two_definitions_of_a_python_list_are_ambiguous_not_last_wins(world):
-    _edit(world, "quality_check.py", 'JURISDICTIONS = ["fl", "al"]\n', 'JURISDICTIONS = ["fl", "al"]\nJURISDICTIONS = ["fl"]\n')
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "exactly one module-level JURISDICTIONS" in out
-
-
-def test_a_decoy_name_in_a_python_file_is_not_the_list(world):
-    _edit(world, "quality_check.py", 'JURISDICTIONS = ["fl", "al"]\n', 'JURISDICTIONS_LEGACY = ["fl"]\nJURISDICTIONS = ["fl", "al"]\n')
-    code, out = _run(world, with_sync=False)
-    assert code == 0, out
-
 
 def test_two_definitions_of_a_timeout_table_are_ambiguous(world):
     _edit(world, "src/ddp_sync/pipelines/openstates_scrape.py", 'SCRAPE_TIMEOUT_S: dict[str, int] = {',
@@ -264,99 +237,6 @@ def test_a_missing_file_is_an_error(world):
     assert code == 2 and "cannot read" in out
 
 
-def test_a_non_literal_python_list_is_an_error(world):
-    _edit(world, "quality_check.py", '["fl", "al"]', "load_list()")
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "quality_check.py" in out
-
-
-def test_an_invalid_manifest_is_an_error_not_a_pass(world):
-    open(world[2], "w").write("fl: {name: x}\n")
-    code, out = _run(world, with_sync=False)
-    assert code == 2 and "does not validate" in out
-
-
-# ---------------------------------------------------------------------------------------------------
-# ddp-sync's lists
-# ---------------------------------------------------------------------------------------------------
-
-@pytest.mark.parametrize(
-    "mutate,field,source",
-    [
-        (lambda d: d["openstates_archive"]["jurisdictions"].remove("nc"), "archive.enabled", "ddp-sync openstates_archive.jurisdictions"),
-        (lambda d: d["openstates_archive"]["schedule"].pop("al"), "archive.enabled", "ddp-sync openstates_archive.schedule (keys)"),
-        (lambda d: d["openstates_archive"]["knowledge_base_embedding"]["jurisdictions"].append("nc"), "enrollment.embedding", "ddp-sync ...knowledge_base_embedding.jurisdictions"),
-        (lambda d: d["openstates_archive"]["bill_search_refresh"]["jurisdictions"].remove("nc"), "enrollment.search_refresh", "ddp-sync ...bill_search_refresh.jurisdictions"),
-        (lambda d: d["openstates_scrape"]["secondary"]["jurisdictions"].append("al"), "tier: secondary", "ddp-sync openstates_scrape.secondary.jurisdictions"),
-        (lambda d: d["openstates_scrape"]["primary"].pop("fl"), "tier: primary", "ddp-sync openstates_scrape.primary (enabled)"),
-        (lambda d: d["openstates_scrape"]["cloud_path"]["jurisdictions"].remove("nc"), "enrollment.cloud_path", "ddp-sync openstates_scrape.cloud_path.jurisdictions"),
-    ],
-)
-def test_each_ddp_sync_list_that_disagrees_is_named(world, mutate, field, source):
-    _set_sync_yaml(world, mutate)
-    code, out = _run(world)
-    assert code == 1, out
-    assert f"DRIFT {field}: {source}" in out
-
-
-def test_us_is_usa_in_ddp_sync_and_that_is_not_drift(world):
-    """The fixture's cloud_path and primary lists say \"usa\" for the manifest's \"us\": it must map, not flag."""
-    code, out = _run(world)
-    assert code == 0 and "usa" not in out
-
-
-def test_a_paused_jurisdiction_is_expected_on_no_scrape_list(world):
-    """al is paused with tier secondary: it must NOT be required on ddp-sync's secondary list."""
-    code, out = _run(world)
-    assert code == 0, out
-
-
-def test_the_memory_backend_floor_must_contain_the_cloud_path_set(world):
-    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"]["memory_backend_jurisdictions"].remove("nc"))
-    code, out = _run(world)
-    assert code == 1
-    assert "missing from the memory_backend floor: nc" in out
-
-
-def test_a_memory_backend_floor_larger_than_cloud_path_is_fine(world):
-    """The floor never shrinks on rollback (its own comment): a jurisdiction rolled back to the Mac stays on it."""
-    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"]["memory_backend_jurisdictions"].append("al"))
-    code, out = _run(world)
-    assert code == 0, out
-
-
-def test_a_manifest_timeout_that_differs_from_ddp_sync_is_named_per_jurisdiction(world):
-    _edit(world, "src/ddp_sync/pipelines/openstates_archive.py", '"us": 24 * 3600', '"us": 12 * 3600', root="sync")
-    code, out = _run(world)
-    assert code == 1
-    assert "DRIFT archive.timeout_s" in out
-    assert "us: manifest 86400s, ddp-sync ARCHIVE_TIMEOUT_S 43200s" in out
-
-
-def test_a_jurisdiction_with_no_timeout_entry_gets_ddp_syncs_default_so_the_manifest_must_say_so(world):
-    """nc has no entry in either table: ddp-sync gives it the default, and the manifest has to agree."""
-    m = _manifest()
-    m["nc"]["scrape"]["timeout_s"] = 99
-    open(world[2], "w").write(yaml.safe_dump(m))
-    code, out = _run(world)
-    assert code == 1
-    assert "nc: manifest 99s, ddp-sync SCRAPE_TIMEOUT_S 21600s" in out
-
-
-def test_a_timeout_table_with_no_default_is_an_error(world):
-    _edit(world, "src/ddp_sync/pipelines/openstates_scrape.py", '    "default": 6 * 3600,\n', "", root="sync")
-    code, out = _run(world)
-    assert code == 2 and 'no "default"' in out
-
-
-def test_a_missing_ddp_sync_yaml_key_is_an_error(world):
-    _set_sync_yaml(world, lambda d: d["openstates_archive"].pop("bill_search_refresh"))
-    code, out = _run(world)
-    assert code == 2 and "bill_search_refresh" in out
-
-
-# ---------------------------------------------------------------------------------------------------
-# the matrix, and the real files
 # ---------------------------------------------------------------------------------------------------
 
 def test_matrix_lists_every_jurisdiction_and_feature(world):

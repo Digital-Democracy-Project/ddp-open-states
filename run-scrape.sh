@@ -558,8 +558,8 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # and `ma` was silently missing until OPEN-55, which cost a completed 9,496-bill MA scrape its
 # entire import. A one-line list can be checked at a glance; a four-term chain can't.
 #
-# Same list-plus-comma-wrapped-`case` pattern as ARCHIVE_ENABLED_STATES — defined in activate.sh:55,
-# consumed at run-archive.sh:77 — so this repo has one matching style, not two.
+# Same list-plus-comma-wrapped-`case` pattern as ARCHIVE_ENABLED_STATES (derived in activate.sh,
+# consumed at run-archive.sh) — so this repo has one matching style, not two.
 #
 # `case` returns 0 when nothing matches, so unlike a naive `if` rewrite this cannot trip `set -e`
 # and the ERR trap, which would turn every non-listed jurisdiction's scrape into a spurious
@@ -568,7 +568,12 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # Substring matching means a $STATE that is itself a comma-joined list ("mi,fl") matches, where the
 # chained form did not. $STATE is $1, one jurisdiction abbreviation from ddp-sync, so that cannot
 # occur; run-archive.sh has the same property. Noted, not guarded.
-ALLOW_DUPLICATES_STATES="mi,fl,va,ma"
+# OPEN-327: derived from jurisdictions.yaml (scrape.allow_duplicates), no longer a list typed here -- the
+# list that was extended four times by hand. An unreadable manifest aborts the scrape (the ERR trap
+# alerts): guessing "no duplicates allowed" would fail the import of MI/FL/VA/MA far later and less clearly.
+. "$SCRIPT_DIR/jurisdiction-field.sh"
+ALLOW_DUPLICATES_STATES="$(jurisdiction_codes scrape.allow_duplicates)" \
+    || { echo "ERROR: cannot read scrape.allow_duplicates from jurisdictions.yaml -- not scraping $STATE" >&2; exit 1; }
 IMPORT_FLAGS=""
 case ",$ALLOW_DUPLICATES_STATES," in
     *",$STATE,"*) IMPORT_FLAGS="--allow_duplicates" ;;

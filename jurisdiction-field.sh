@@ -20,6 +20,14 @@
 #   ./jurisdiction-field.sh fl scrape.timeout_s
 #   ./jurisdiction-field.sh fl waf.profile
 #
+# OPEN-327: the same file answers "which jurisdictions are on this list?" so a script can derive
+# a comma list from the manifest instead of hard-coding one:
+#   . ./jurisdiction-field.sh
+#   states=$(jurisdiction_codes archive.enabled) || exit 1      # e.g. "fl,ut,az,wa,..."
+# Or directly:  ./jurisdiction-field.sh --codes enrollment.people_refresh
+# The field must be a boolean on every jurisdiction; the codes where it is true print in manifest
+# order, comma-joined (an empty line when none is true). Same exit codes as below.
+#
 # Exit codes (both as a function return and as a script exit):
 #   0  — found; value printed to stdout (empty line for YAML null)
 #   1  — usage error (missing args) or the python interpreter/PyYAML isn't available
@@ -30,29 +38,37 @@
 # A list value prints as a comma-separated line (e.g. api_keys -> "VA_API_KEY"); a bool prints
 # as the literal string "true"/"false"; other scalars print via YAML's own str().
 
+_jf_manifest_path() {  # print the manifest path: $JURISDICTIONS_YAML, else next to this file
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    echo "${JURISDICTIONS_YAML:-$script_dir/jurisdictions.yaml}"
+}
+
+_jf_python() {  # <caller-name>: print the python3 to use; return 1 (with a message) when there is none
+    # Prefer this checkout's own dedicated venv (OS_VENV, set by activate.sh/activate-dev.sh —
+    # see PRIMITIVES.md's OPEN-159 note on why inputs may fall back but outputs never do; a read
+    # of a checked-in config file is an input). Fall back to plain `python3` on PATH so this
+    # helper is still usable from a context that hasn't sourced activate.sh at all.
+    if [ -n "${OS_VENV:-}" ] && [ -x "$OS_VENV/bin/python3" ]; then
+        echo "$OS_VENV/bin/python3"
+    elif command -v python3 >/dev/null 2>&1; then
+        echo "python3"
+    else
+        echo "$1: no python3 interpreter found on PATH (need one with PyYAML)" >&2
+        return 1
+    fi
+}
+
 jurisdiction_field() {  # <jurisdiction-code> <dotted.field.path> [manifest-path]
     if [ "$#" -lt 2 ]; then
         echo "usage: jurisdiction_field <code> <dotted.field.path> [manifest-path]" >&2
         return 1
     fi
     local juris="$1" field="$2"
-    local script_dir manifest py
+    local manifest py
 
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    manifest="${3:-${JURISDICTIONS_YAML:-$script_dir/jurisdictions.yaml}}"
-
-    # Prefer this checkout's own dedicated venv (OS_VENV, set by activate.sh/activate-dev.sh —
-    # see PRIMITIVES.md's OPEN-159 note on why inputs may fall back but outputs never do; a read
-    # of a checked-in config file is an input). Fall back to plain `python3` on PATH so this
-    # helper is still usable from a context that hasn't sourced activate.sh at all.
-    if [ -n "${OS_VENV:-}" ] && [ -x "$OS_VENV/bin/python3" ]; then
-        py="$OS_VENV/bin/python3"
-    elif command -v python3 >/dev/null 2>&1; then
-        py="python3"
-    else
-        echo "jurisdiction_field: no python3 interpreter found on PATH (need one with PyYAML)" >&2
-        return 1
-    fi
+    manifest="${3:-$(_jf_manifest_path)}"
+    py="$(_jf_python jurisdiction_field)" || return 1
 
     "$py" - "$manifest" "$juris" "$field" <<'PYEOF'
 import sys
@@ -106,8 +122,70 @@ PYEOF
     return $?
 }
 
-# Allow direct CLI usage (./jurisdiction-field.sh fl scrape.timeout_s) as well as sourcing.
+
+jurisdiction_codes() {  # <dotted.bool.field> [manifest-path]  -> comma list of codes where it is true
+    if [ "$#" -lt 1 ]; then
+        echo "usage: jurisdiction_codes <dotted.bool.field> [manifest-path]" >&2
+        return 1
+    fi
+    local field="$1" manifest py
+    manifest="${2:-$(_jf_manifest_path)}"
+    py="$(_jf_python jurisdiction_codes)" || return 1
+
+    "$py" - "$manifest" "$field" <<'PYEOF'
+import sys
+
+try:
+    import yaml
+except ImportError:
+    sys.stderr.write("jurisdiction_codes: python3 has no PyYAML -- use the repo's venv (OS_VENV)\n")
+    sys.exit(1)
+
+manifest_path, field = sys.argv[1], sys.argv[2]
+
+try:
+    with open(manifest_path) as f:
+        data = yaml.safe_load(f)
+except OSError as exc:
+    sys.stderr.write(f"jurisdiction_codes: cannot read {manifest_path}: {exc}\n")
+    sys.exit(2)
+except yaml.YAMLError as exc:
+    sys.stderr.write(f"jurisdiction_codes: {manifest_path} is not valid YAML: {exc}\n")
+    sys.exit(2)
+
+if not isinstance(data, dict) or not data:
+    sys.stderr.write(f"jurisdiction_codes: {manifest_path} has no jurisdictions\n")
+    sys.exit(2)
+
+codes = []
+for code, entry in data.items():
+    node = entry
+    for part in field.split("."):
+        if not isinstance(node, dict) or part not in node:
+            sys.stderr.write(f"jurisdiction_codes: no field '{field}' on '{code}'\n")
+            sys.exit(4)
+        node = node[part]
+    # A list that silently skipped a jurisdiction is the failure this exists to prevent, so a
+    # non-boolean leaf is an error, not a "false".
+    if not isinstance(node, bool):
+        sys.stderr.write(f"jurisdiction_codes: '{field}' on '{code}' is not true/false\n")
+        sys.exit(4)
+    if node:
+        codes.append(str(code))
+
+print(",".join(codes))
+PYEOF
+    return $?
+}
+
+# Allow direct CLI usage (./jurisdiction-field.sh fl scrape.timeout_s, or
+# ./jurisdiction-field.sh --codes archive.enabled) as well as sourcing.
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
-    jurisdiction_field "$@"
+    if [ "${1:-}" = "--codes" ]; then
+        shift
+        jurisdiction_codes "$@"
+    else
+        jurisdiction_field "$@"
+    fi
     exit $?
 fi

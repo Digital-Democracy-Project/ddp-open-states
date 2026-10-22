@@ -6,13 +6,15 @@ check-jurisdiction-drift.py -- fail when a hard-coded jurisdiction list disagree
 Adding a state used to mean remembering ~25 independent lists, and they had already drifted apart (NC was
 on 8 of them and missing from 6; MA and AL on some and not others). jurisdictions.yaml is now the one place
 that says which jurisdictions are enrolled in what, and this script is the gate that keeps every list that
-still exists in step with it. It does not change any behaviour: nothing reads the manifest at run time yet
-(the lists are still the consumers); it only compares.
+still exists in step with it. It does not change any behaviour; it only compares (and, for this repo's own
+scripts since OPEN-327, checks they still read the manifest instead of keeping a list).
 
 What it compares, each as a SET of jurisdiction codes (or a per-code value) against the manifest:
 
-  this repo           activate.sh ARCHIVE_ENABLED_STATES, run-people-refresh.sh, start-os-api.sh (the boot smoke
-                      test), quality_check.py JURISDICTIONS, run-scrape.sh ALLOW_DUPLICATES_STATES
+  this repo           (OPEN-327) activate.sh ARCHIVE_ENABLED_STATES, run-people-refresh.sh, start-os-api.sh (the
+                      boot smoke test), quality_check.py JURISDICTIONS and run-scrape.sh ALLOW_DUPLICATES_STATES
+                      now DERIVE their lists from this manifest, so the check here is that each still does (the
+                      call is present and the old hand-typed list has not come back), not a set comparison
   ddp-sync (optional) config/sync_schedule.yaml: openstates_archive (jurisdictions + schedule),
                       knowledge_base_embedding, bill_search_refresh, openstates_scrape (primary, secondary,
                       cloud_path); and the SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S tables in its Python source
@@ -82,28 +84,17 @@ def _one_match(pattern, text, what, path):
     return found[0]
 
 
-def shell_comma_list(path, variable):
-    """export VAR="a,b,c" / VAR="a,b,c" at the start of a line."""
-    value = _one_match(rf'^(?:export\s+)?{variable}="([^"]*)"', _read(path), f"{variable}= assignment", path)
-    return {c.strip() for c in value.split(",") if c.strip()}
-
-
-def shell_for_loop(path, variable):
-    """for <variable> in a b c; do  at the start of a line."""
-    value = _one_match(rf"^for {variable} in ([a-z ]+); do", _read(path), f"`for {variable} in ...; do` loop", path)
-    return set(value.split())
-
-
-def python_list(path, name):
-    """NAME = ["a", "b"] at module level, evaluated as a literal."""
-    tree = ast.parse(_read(path), filename=path)
-    found = [n for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in n.targets)]
-    if len(found) != 1:
-        raise SourceError(f"{path}: expected exactly one module-level {name} assignment, found {len(found)}")
-    try:
-        return set(ast.literal_eval(found[0].value))
-    except ValueError as exc:
-        raise SourceError(f"{path}: {name} is not a literal list: {exc}")
+def derived_from_manifest(path, call_pattern, literal_pattern, what):
+    """OPEN-327: a script that derives its list from the manifest has no list to compare, so the check is that
+    it still derives it: the call is present and the old hand-typed literal has not come back. Either way a
+    failure is an ERROR (exit 2), never a pass: a file that quietly stopped reading the manifest, or grew its
+    own list again, is exactly the drift this whole ticket exists to stop."""
+    text = _read(path)
+    if not re.search(call_pattern, text, flags=re.MULTILINE):
+        raise SourceError(f"{path}: expected {what}, but the call is not there; it must derive this list from jurisdictions.yaml")
+    if re.search(literal_pattern, text, flags=re.MULTILINE):
+        raise SourceError(f"{path}: has a hard-coded list again ({what} replaced it); derive it from jurisdictions.yaml")
+    return None
 
 
 def _const_int(node, path):
@@ -185,18 +176,35 @@ def project(manifest):
 # ---------------------------------------------------------------------------------------------------
 
 def repo_checks(root, expect):
+    """This repo's own scripts derive their lists from the manifest (OPEN-327), so each check asserts the
+    derivation is still in place and returns the manifest's own set (nothing to disagree with)."""
     p = lambda name: os.path.join(root, name)
+
+    def derived(name, call, literal, key, what):
+        def run():
+            derived_from_manifest(p(name), call, literal, what)
+            return expect[key]
+        return run
+
+    def shell_call(field):
+        return rf"jurisdiction_codes\s+{re.escape(field)}\b"
+
     return [
         ("archive.enabled", "activate.sh ARCHIVE_ENABLED_STATES", expect["archive"],
-         lambda: shell_comma_list(p("activate.sh"), "ARCHIVE_ENABLED_STATES")),
+         derived("activate.sh", shell_call("archive.enabled"), r'^(?:export\s+)?ARCHIVE_ENABLED_STATES="[a-z]',
+                 "archive", "`jurisdiction_codes archive.enabled`")),
         ("enrollment.people_refresh", "run-people-refresh.sh `for state in`", expect["people_refresh"],
-         lambda: shell_for_loop(p("run-people-refresh.sh"), "state")),
+         derived("run-people-refresh.sh", shell_call("enrollment.people_refresh"), r"^for state in [a-z]",
+                 "people_refresh", "`jurisdiction_codes enrollment.people_refresh`")),
         ("enrollment.api_smoke_test", "start-os-api.sh boot smoke-test `for j in`", expect["api_smoke_test"],
-         lambda: shell_for_loop(p("start-os-api.sh"), "j")),
+         derived("start-os-api.sh", shell_call("enrollment.api_smoke_test"), r"^for j in [a-z]",
+                 "api_smoke_test", "`jurisdiction_codes enrollment.api_smoke_test`")),
         ("enrollment.qa_sweep", "quality_check.py JURISDICTIONS", expect["qa_sweep"],
-         lambda: python_list(p("quality_check.py"), "JURISDICTIONS")),
+         derived("quality_check.py", r'e\["enrollment"\]\["qa_sweep"\]', r"^JURISDICTIONS\s*=\s*\[\s*['\"]",
+                 "qa_sweep", "JURISDICTIONS built from enrollment.qa_sweep")),
         ("scrape.allow_duplicates", "run-scrape.sh ALLOW_DUPLICATES_STATES", expect["allow_duplicates"],
-         lambda: shell_comma_list(p("run-scrape.sh"), "ALLOW_DUPLICATES_STATES")),
+         derived("run-scrape.sh", shell_call("scrape.allow_duplicates"), r'^ALLOW_DUPLICATES_STATES="[a-z]',
+                 "allow_duplicates", "`jurisdiction_codes scrape.allow_duplicates`")),
     ]
 
 

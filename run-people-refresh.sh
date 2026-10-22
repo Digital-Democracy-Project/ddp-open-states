@@ -40,7 +40,15 @@ fi
 # so a real failure actually surfaces as "failed" in flow-status and reaches OPEN-286's alerting
 # instead of silently reporting success.
 any_failed=0
-for state in fl wa us va mi ma ut az al; do
+# OPEN-327: the states come from jurisdictions.yaml (enrollment.people_refresh), not a list typed here.
+# This is what NC was missing: it was never on the old hand-kept list, so its legislators never refreshed.
+# No manifest, or an empty list, is an error (exit 1 reaches the scheduler's failure alert); it must not
+# quietly refresh nobody.
+. "$SCRIPT_DIR/jurisdiction-field.sh"
+people_states="$(jurisdiction_codes enrollment.people_refresh)" \
+    || { log "ERROR: cannot read enrollment.people_refresh from jurisdictions.yaml"; exit 1; }
+[ -n "$people_states" ] || { log "ERROR: enrollment.people_refresh lists no jurisdiction in jurisdictions.yaml"; exit 1; }
+for state in $(echo "$people_states" | tr ',' ' '); do
     log "  os-people to-database $state"
     "$OS_PEOPLE" to-database "$state" >> "$LOG_DIR/scraper.log" 2>&1 \
         || { log "ERROR: os-people to-database $state failed (continuing)"; any_failed=1; }
