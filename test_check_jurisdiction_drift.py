@@ -43,8 +43,8 @@ def _manifest():
     us = _entry("primary", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=False)
     us["scrape"]["timeout_s"] = 4 * 3600
     us["archive"]["timeout_s"] = 24 * 3600
-    nc = _entry("secondary", people_refresh=False, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False)
-    al = _entry("secondary", status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True)
+    nc = _entry("secondary", people_refresh=False, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
+    al = _entry("secondary", status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
     return {"fl": fl, "us": us, "nc": nc, "al": al}
 
 
@@ -268,3 +268,52 @@ def test_the_real_manifest_enrolls_every_archived_jurisdiction_somewhere_visible
 
 def test_deepcopy_of_the_fixture_manifest_still_agrees(world):
     assert copy.deepcopy(_manifest()) == _manifest()
+
+
+# ---------------------------------------------------------------------------------------------------
+# live values read from a host's environment (OPEN-330)
+# ---------------------------------------------------------------------------------------------------
+
+def test_a_live_value_that_agrees_passes_and_is_case_insensitive(world):
+    code, out = _run(world, with_sync=False, extra=["--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS=FL, US ,nc"])
+    assert code == 0, out
+
+
+def test_a_live_value_missing_a_jurisdiction_is_drift_naming_where_it_was_read(world):
+    code, out = _run(world, with_sync=False, extra=["--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS=FL,US"])
+    assert code == 1, out
+    assert "DRIFT enrollment.replica_routing: DDP_OPENSTATES_JURISDICTIONS on broker-prod" in out
+    assert "in the manifest but not in DDP_OPENSTATES_JURISDICTIONS on broker-prod: nc" in out
+
+
+def test_a_live_value_with_an_extra_jurisdiction_is_drift(world):
+    code, out = _run(world, with_sync=False, extra=["--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS=FL,US,NC,AL"])
+    assert code == 1
+    assert "in DDP_OPENSTATES_JURISDICTIONS on broker-prod but not in the manifest: al" in out
+
+
+def test_the_legbot_allowlist_is_checked_against_its_own_field(world):
+    # al is paused and not on the legbot list; the fixture's other three are
+    code, out = _run(world, with_sync=False, extra=["--live", "mac:LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST=fl,us,nc"])
+    assert code == 0, out
+    code, out = _run(world, with_sync=False, extra=["--live", "mac:LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST=fl,us"])
+    assert code == 1 and "enrollment.legbot_replica" in out
+
+
+def test_several_live_values_are_all_reported(world):
+    code, out = _run(world, with_sync=False, extra=[
+        "--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS=FL",
+        "--live", "sync-ec2:DDP_OPENSTATES_JURISDICTIONS=US",
+    ])
+    assert code == 1 and out.count("DRIFT ") == 2
+
+
+@pytest.mark.parametrize("bad", ["no-colon", "x:UNKNOWN_VAR=a", "x:DDP_OPENSTATES_JURISDICTIONS", ":DDP_OPENSTATES_JURISDICTIONS=a"])
+def test_a_malformed_live_argument_is_an_error_not_a_pass(world, bad):
+    code, out = _run(world, with_sync=False, extra=["--live", bad])
+    assert code == 2 and "--live" in out
+
+
+def test_an_empty_live_value_is_a_real_empty_list_and_drifts(world):
+    code, out = _run(world, with_sync=False, extra=["--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS="])
+    assert code == 1 and "in the manifest but not in DDP_OPENSTATES_JURISDICTIONS on broker-prod: fl, nc, us" in out

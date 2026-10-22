@@ -889,7 +889,11 @@ scope line was deliberate, not an oversight.
   other repos' consumers: ddp-sync's own lists stay where they are until the dual-read migration the plan's
   §4.1 requires (OPEN-328). Written by hitting two real
   stale manifest values on its first run (`ma` allow_duplicates, MI's archive timeout), which the
-  hand-written spot checks in `test_validate_jurisdictions.py` had pinned wrong. **Not yet covered** (each a
+  hand-written spot checks in `test_validate_jurisdictions.py` had pinned wrong. **OPEN-330** added the two
+  env-var lists (`enrollment.replica_routing` = `DDP_OPENSTATES_JURISDICTIONS`, `enrollment.legbot_replica` =
+  `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST`) and `--live LABEL:NAME=a,b,c`, which compares a value read from a
+  host's real environment with the manifest (the caller reads it; nothing here can see another host's `.env`).
+  `replica_routing` is a rollout state, not a `status` question: MA is `live` but not routed (BROKER-16). **Not yet covered** (each a
   follow-up under OPEN-318): ddp-sync's in-code fallbacks and manual-trigger allow-list (SYNC-57), the
   `DDP_OPENSTATES_JURISDICTIONS` / `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` env values, ddp-broker-py,
   votebot, ddp-agents, and the per-feature opt-in lists (`sweep_import`, `scrape_retry`, `full_walk`).

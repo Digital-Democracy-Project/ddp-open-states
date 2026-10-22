@@ -89,6 +89,8 @@ us:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -121,6 +123,8 @@ fl:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: true
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
   quality:
@@ -152,6 +156,8 @@ wa:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: true
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -183,6 +189,8 @@ va:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -218,6 +226,8 @@ mi:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: true
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
                                          # WAF (OPEN-19/21/22/23), 10 req/min hard cap
@@ -249,6 +259,8 @@ ut:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: true
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -279,6 +291,8 @@ az:
     cloud_path: true
     api_smoke_test: true
     qa_sweep: true
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -318,6 +332,8 @@ ma:
     cloud_path: true
     api_smoke_test: false    # start-os-api.sh's boot smoke test predates MA
     qa_sweep: true
+    replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; BROKER-16 has not flipped MA (the dev broker's list has no MA)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
   quality:
@@ -366,6 +382,8 @@ nc:
     cloud_path: true
     api_smoke_test: false    # start-os-api.sh's boot smoke test predates NC
     qa_sweep: false    # quality_check.py's JURISDICTIONS has no nc
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
   quality:
@@ -400,6 +418,8 @@ al:
     cloud_path: false    # AL bills are not scraped
     api_smoke_test: false    # start-os-api.sh's boot smoke test predates AL
     qa_sweep: true
+    replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; paused
+    legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; paused
   waf:
     profile: none
   quality:

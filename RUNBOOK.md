@@ -239,9 +239,12 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
    disagrees, with both sides. (`--matrix` shows who is enrolled in what.)
 3. Bring each list into agreement. **ddp-sync's lists live in the ddp-sync repo: merge that change first**,
    because CI compares the manifest with ddp-sync's `main`; then the manifest change goes green.
-4. Not checked yet (change these by hand and check them): ddp-sync's in-code fallbacks and the manual trigger
-   allow-list (SYNC-57), the `DDP_OPENSTATES_JURISDICTIONS` and `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST`
-   env values on each host, ddp-broker-py, votebot and ddp-agents.
+4. The two env lists live on each host, not in git: `DDP_OPENSTATES_JURISDICTIONS` (broker and ddp-sync,
+   `enrollment.replica_routing`) and `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` (ddp-sync,
+   `enrollment.legbot_replica`). Change them on each host's env and restart, then check the real value:
+   `python3 check-jurisdiction-drift.py --live broker-prod:DDP_OPENSTATES_JURISDICTIONS=<the value>`. ddp-sync's
+   daily check (OPEN-330) does this for its own env. Not checked yet: ddp-broker-py's own code, votebot and
+   ddp-agents (OPEN-329).
 
 Enrolling a state in the **embedding** list still needs its knowledge-base backfill run by hand first
 (SYNC-95); the manifest records enrollment, it does not make that safe.

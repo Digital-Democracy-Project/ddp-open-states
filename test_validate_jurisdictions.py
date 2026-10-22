@@ -37,6 +37,8 @@ def _valid_entry():
             "cloud_path": True,
             "api_smoke_test": True,
             "qa_sweep": True,
+            "replica_routing": True,
+            "legbot_replica": True,
         },
         "waf": {
             "profile": "none",
@@ -386,3 +388,13 @@ def test_cli_exits_nonzero_and_reports_problems_on_invalid_input(tmp_path):
     assert result.returncode == 1
     assert "problem(s)" in result.stderr
     assert "missing required field" in result.stderr
+
+
+def test_the_two_env_list_fields_are_required_booleans():
+    for field in ("replica_routing", "legbot_replica"):
+        entry = _valid_entry()
+        del entry["enrollment"][field]
+        assert any(field in e for e in validate({"ts": entry})), field
+        entry = _valid_entry()
+        entry["enrollment"][field] = "yes"
+        assert any(f"ts.enrollment.{field}: expected bool" in e for e in validate({"ts": entry})), field
