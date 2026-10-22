@@ -345,11 +345,12 @@ ma:
 
 nc:
   name: North Carolina
-  status: probing                     # OPEN-230: probed 2026-08-31, chosen as the pilot #1
-                                       # candidate. Now in ddp-sync's secondary schedule and
-                                       # through Stage 3 QA (OPEN-231) -- status field itself
-                                       # stays at probing here since promoting it further is a
-                                       # human call (§4.6), not made in this file yet
+  status: live                        # OPEN-417: promoted 2026-10-22 by Ramon (a human call, plan §4.6), AHEAD of the
+                                       # plan's Stage 6 soak. The soak criteria (two consecutive clean weekly cycles
+                                       # plus a Tier 2 re-run) were NOT met: no clean scheduled cycle was on record
+                                       # (the first that could count was 2026-10-25). So `live` here means "decided",
+                                       # not "soaked". Probed 2026-08-31 (OPEN-230), pilot #1 (OPEN-231). Routing to
+                                       # the replica is a separate step (BROKER-302); see replica_routing below.
   tier: secondary                      # per PLAN-push-button-onboarding.md §5 Stage 2, a new
                                        # pilot state is added to secondary.jurisdictions
   scrape:
