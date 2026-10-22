@@ -880,7 +880,7 @@ scope line was deliberate, not an oversight.
   `start-os-api.sh`, `quality_check.py`, `run-scrape.sh` (derivation checked, see below), and (with `--ddp-sync-root`) ddp-sync's
   `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. Run in CI against
   ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
-  who is enrolled in what, which is where today's gaps show (NC is on 2 of the 6 feature lists, MA on 3, AL on 2: these are today's real enrollment, not checker omissions).
+  who is enrolled in what. **OPEN-331 (2026-10-21) resolved the gaps it first showed:** NC now refreshes its people, is in the boot smoke test and the QA sweep (it had been missing from all three because the hand-kept lists predated it); MA joined the smoke test. What is still off is **deliberate and written beside the flag in `jurisdictions.yaml`**: NC `embedding` (waits for its knowledge-base backfill), MA `search_refresh` and `embedding` (MA is not routed to the replica yet, BROKER-16), and AL's search, embedding, cloud path and smoke test (paused).
   For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,
   `run-people-refresh.sh`, `start-os-api.sh`, `run-scrape.sh` and `quality_check.py` **derive** their lists
   from the manifest, and the drift check's job for them is to fail (exit 2) if one stops deriving or grows a
