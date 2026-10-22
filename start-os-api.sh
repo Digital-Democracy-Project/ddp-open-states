@@ -129,4 +129,7 @@ if [ -n "$smoke_failed" ]; then
     slack_fail ":red_circle: openstates api-v3 include=legislative_sessions smoke test failed at boot ($smoke_failed) — check logs/os-api.log"
     exit 1
 fi
-[ "$smoke_count" -gt 0 ] && log "include=legislative_sessions smoke test passed for all $smoke_count enrolled jurisdictions ($smoke_states)"
+# if/fi, not `[ ] && log`: under `set -e` a false test as the script's last command would exit it non-zero.
+if [ "$smoke_count" -gt 0 ]; then
+    log "include=legislative_sessions smoke test passed for all $smoke_count enrolled jurisdictions ($smoke_states)"
+fi
