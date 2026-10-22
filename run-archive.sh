@@ -78,6 +78,17 @@ READER_MARKER="$SCRAPE_MARKER_DIR/$$"
 touch "$READER_MARKER"
 trap 'rm -f "$READER_MARKER"' EXIT
 
+# OPEN-327: an EMPTY list means activate.sh could not read jurisdictions.yaml (it warns and leaves the list
+# empty; the manifest always has archive-enabled jurisdictions). That is a failure to alert on, not "archiving
+# is simply not enabled for $STATE", which would exit 0 and look like a healthy job.
+if [ -z "${ARCHIVE_ENABLED_STATES:-}" ]; then
+    FAILURE_ERROR_TYPE="ManifestUnreadable"
+    FAILURE_MESSAGE="ARCHIVE_ENABLED_STATES is empty: activate.sh could not read archive.enabled from jurisdictions.yaml"
+    trap - ERR  # alert once, can't double-fire
+    on_failure
+    exit 1
+fi
+
 case ",${ARCHIVE_ENABLED_STATES:-}," in
     *",$STATE,"*)
         log "Archiving bill documents: $STATE..."
