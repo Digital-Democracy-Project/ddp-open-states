@@ -19,17 +19,22 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       knowledge_base_embedding, bill_search_refresh, openstates_scrape (primary, secondary,
                       cloud_path); and the SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S tables in its Python source
 
+  live values (OPEN-330)  `--live LABEL:NAME=a,b,c`, repeatable: a DDP_OPENSTATES_JURISDICTIONS or
+                      LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST value read from a real host's environment
+                      (not in git), compared with enrollment.replica_routing / enrollment.legbot_replica.
+                      Reading the value is the caller's job (ddp-sync's daily check does it for its own env)
+
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
-manual-trigger allow-list (SYNC-57), the DDP_OPENSTATES_JURISDICTIONS and LEGBOT_RDS_REPLICA_JURISDICTION_
-ALLOWLIST environment values (live values are not in git), ddp-broker-py, votebot, ddp-agents, the per-feature
-opt-in lists (sweep_import, scrape_retry, full_walk), and run-all-scrapes.sh (the retired nightly runner).
-Each is a follow-up under OPEN-318.
+manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
+votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk), and
+run-all-scrapes.sh (the retired nightly runner). Each is a follow-up under OPEN-318.
 
 Usage:
     python3 check-jurisdiction-drift.py                                  # this repo's lists
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync      # ... and ddp-sync's (or DDP_SYNC_ROOT)
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync --require-ddp-sync   # CI: a missing
                                                                           # ddp-sync checkout is an error
+    python3 check-jurisdiction-drift.py --live broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL,...   # a host's env
     python3 check-jurisdiction-drift.py --matrix                         # who is enrolled in what
 
 Exit 0: every list compared agrees. Exit 1: drift (each disagreement is printed with both sides). Exit 2:
@@ -164,6 +169,8 @@ def project(manifest):
         "cloud_path": where(manifest, lambda e: e["enrollment"]["cloud_path"]),
         "api_smoke_test": where(manifest, lambda e: e["enrollment"]["api_smoke_test"]),
         "qa_sweep": where(manifest, lambda e: e["enrollment"]["qa_sweep"]),
+        "replica_routing": where(manifest, lambda e: e["enrollment"]["replica_routing"]),
+        "legbot_replica": where(manifest, lambda e: e["enrollment"]["legbot_replica"]),
         "allow_duplicates": where(manifest, lambda e: e["scrape"]["allow_duplicates"]),
         # A paused jurisdiction is on no scrape schedule whatever its (required) tier field says.
         "primary": where(manifest, lambda e: e["tier"] == "primary" and e["status"] != "paused"),
@@ -267,7 +274,27 @@ def _fmt(codes):
     return ", ".join(sorted(codes)) if codes else "-"
 
 
-def run(manifest, root, sync_root, require_sync, out):
+# OPEN-330: the lists that are an environment variable on a host (not in git), and the manifest set each must equal.
+LIVE_ENV = {
+    "DDP_OPENSTATES_JURISDICTIONS": ("enrollment.replica_routing", "replica_routing"),
+    "LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST": ("enrollment.legbot_replica", "legbot_replica"),
+}
+
+
+def parse_live(items):
+    """`--live LABEL:NAME=a,b,c` -> [(label, name, {codes})]. LABEL is free text saying where the value was read
+    (e.g. broker-prod); NAME must be one of LIVE_ENV. Codes are compared case-insensitively ("US" == "us")."""
+    parsed = []
+    for item in items:
+        label, sep, rest = item.partition(":")
+        name, eq, value = rest.partition("=")
+        if not (sep and eq) or not label.strip() or name.strip() not in LIVE_ENV:
+            raise SourceError(f"--live {item!r}: expected LABEL:NAME=a,b,c with NAME one of {sorted(LIVE_ENV)}")
+        parsed.append((label.strip(), name.strip(), {c.strip().lower() for c in value.split(",") if c.strip()}))
+    return parsed
+
+
+def run(manifest, root, sync_root, require_sync, out, live=()):
     """Returns (exit_code). Prints every disagreement, not just the first."""
     expect = project(manifest)
     drift, errors = [], []
@@ -316,6 +343,15 @@ def run(manifest, root, sync_root, require_sync, out):
     else:
         out.write("NOTE: ddp-sync was not checked (no --ddp-sync-root / DDP_SYNC_ROOT); only this repo's lists were.\n")
 
+    try:
+        live_values = parse_live(live)
+    except SourceError as exc:
+        errors.append(str(exc))
+        live_values = []
+    for label, name, have in live_values:
+        field, key = LIVE_ENV[name]
+        compare_sets(field, f"{name} on {label}", expect[key], lambda have=have: have)
+
     for field, source, detail in drift:
         out.write(f"DRIFT {field}: {source}\n    {detail}\n")
     for message in errors:
@@ -331,7 +367,8 @@ def run(manifest, root, sync_root, require_sync, out):
     return 0
 
 
-MATRIX_COLUMNS = ["status", "tier", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test", "qa_sweep"]
+MATRIX_COLUMNS = ["status", "tier", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
+                  "qa_sweep", "replica_routing", "legbot_replica"]
 
 
 def matrix(manifest, out):
@@ -354,6 +391,9 @@ def main(argv, out=sys.stdout):
     parser.add_argument("--repo-root", default=HERE, help="where activate.sh, run-scrape.sh ... live (default: this checkout)")
     parser.add_argument("--ddp-sync-root", default=os.environ.get("DDP_SYNC_ROOT"))
     parser.add_argument("--require-ddp-sync", action="store_true")
+    parser.add_argument("--live", action="append", default=[], metavar="LABEL:NAME=a,b,c",
+                        help="a value read from a host's environment (OPEN-330), e.g. "
+                             "broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL; repeatable; compared with the manifest")
     parser.add_argument("--matrix", action="store_true", help="print who is enrolled in what and exit")
     args = parser.parse_args(argv[1:])
 
@@ -366,7 +406,7 @@ def main(argv, out=sys.stdout):
     if args.matrix:
         matrix(manifest, out)
         return 0
-    return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out)
+    return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out, args.live)
 
 
 if __name__ == "__main__":

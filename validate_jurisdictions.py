@@ -96,6 +96,10 @@ ENROLLMENT_FIELDS = {
     "cloud_path": bool,       # ddp-sync openstates_scrape.cloud_path (+ memory_backend)
     "api_smoke_test": bool,   # start-os-api.sh's boot smoke test
     "qa_sweep": bool,         # quality_check.py JURISDICTIONS
+    # OPEN-330: the two lists that live in an env var on each host, not in git. Compared with the live values
+    # by `check-jurisdiction-drift.py --live NAME=VALUE` (and by ddp-sync's daily check for its own env).
+    "replica_routing": bool,  # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads from the replica
+    "legbot_replica": bool,   # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot reads text from the replica
 }
 
 WAF_FIELDS = {
