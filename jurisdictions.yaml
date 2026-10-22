@@ -327,10 +327,10 @@ ma:
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
   enrollment:
     people_refresh: true
-    search_refresh: false    # not on ddp-sync's bill_search_refresh list
-    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    search_refresh: false    # INTENTIONAL (OPEN-331): ddp-sync's search-refresh list is the states routed to the replica (replica_routing) and MA is not routed yet (BROKER-16, OPEN-68); enroll it together with replica_routing
+    embedding: false    # INTENTIONAL (OPEN-331): same as search_refresh, and its knowledge-base backfill has not been run (SYNC-95)
     cloud_path: true
-    api_smoke_test: false    # start-os-api.sh's boot smoke test predates MA
+    api_smoke_test: true    # OPEN-331: GET /jurisdictions/ma?include=legislative_sessions answers 200 on the local api-v3 (checked 2026-10-21)
     qa_sweep: true
     replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; BROKER-16 has not flipped MA (the dev broker's list has no MA)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
@@ -376,12 +376,12 @@ nc:
                                         # convention Stage 2 already followed.
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h -- no NC-specific entry
   enrollment:
-    people_refresh: false    # run-people-refresh.sh has no nc (NC legislators never refresh)
+    people_refresh: true    # OPEN-331: was false only because run-people-refresh.sh's hand-kept list predated NC, so NC's legislators never refreshed
     search_refresh: true
-    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    embedding: false    # INTENTIONAL (OPEN-331): enroll only after NC's knowledge-base backfill has run (SYNC-95); enrolling first would embed just the bills each later archive touches
     cloud_path: true
-    api_smoke_test: false    # start-os-api.sh's boot smoke test predates NC
-    qa_sweep: false    # quality_check.py's JURISDICTIONS has no nc
+    api_smoke_test: true    # OPEN-331: GET /jurisdictions/nc?include=legislative_sessions answers 200 on the local api-v3 (checked 2026-10-21)
+    qa_sweep: true    # OPEN-331: the pilot's QA was run by hand with quality_check.py; the default sweep now includes NC
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
@@ -413,10 +413,10 @@ al:
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
   enrollment:
     people_refresh: true
-    search_refresh: false    # not on ddp-sync's bill_search_refresh list
-    embedding: false    # not on ddp-sync's knowledge_base_embedding list
+    search_refresh: false    # INTENTIONAL (OPEN-331): paused, its bills are not scraped
+    embedding: false    # INTENTIONAL (OPEN-331): paused, its bills are not scraped
     cloud_path: false    # AL bills are not scraped
-    api_smoke_test: false    # start-os-api.sh's boot smoke test predates AL
+    api_smoke_test: false    # INTENTIONAL (OPEN-331): paused (its endpoint does answer 200; enroll if it is ever un-paused)
     qa_sweep: true
     replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; paused
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; paused
