@@ -369,6 +369,14 @@ rather than starting from psycopg2**:
   surnames that were ambiguous), `fix-open174-mi-myers-phillips-*` (a journal name the roster
   spells differently). Completion record:
   `OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`.
+- **Stale rows the scraper no longer writes** (a different family: this one deletes whole vote events, not
+  `personvote` fields): `fix-open433-az-stale-empty-vote-events.py` removes the empty Arizona events that the
+  pre-2026-07-11 scraper stored for procedural motions (0 counts, no voters, azleg floor-action source). The
+  same conventions apply, plus three guards the others did not need because they only filled a column:
+  `--session` (named, so nothing outside the validated session is touched), `--expect-events` (the dry run's
+  count, so a changed table aborts before any write) and `--save-dir` (the deleted rows and each bill's old
+  `updated_at` as CSV, the revert). It bumps the touched bills' `updated_at` because the broker's incremental sync
+  selects by it and a deleted event can no longer match `vote_updated_since`.
 
 The conventions every one of them follows, and a new one must:
 
