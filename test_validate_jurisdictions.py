@@ -28,6 +28,7 @@ def _valid_entry():
         },
         "archive": {
             "enabled": True,
+            "scheduled": True,
             "timeout_s": 14400,
         },
         "enrollment": {
@@ -398,3 +399,64 @@ def test_the_two_env_list_fields_are_required_booleans():
         entry = _valid_entry()
         entry["enrollment"][field] = "yes"
         assert any(f"ts.enrollment.{field}: expected bool" in e for e in validate({"ts": entry})), field
+
+
+# ---------------------------------------------------------------------------------------------------
+# OPEN-418: archive.enabled (may be archived: Stage 4 manual validation run) vs archive.scheduled (on the
+# recurring schedule: requires a human-promoted status)
+# ---------------------------------------------------------------------------------------------------
+
+import pytest
+
+
+def _with(status="live", enabled=True, scheduled=True):
+    entry = _valid_entry()
+    entry["status"] = status
+    entry["archive"]["enabled"] = enabled
+    entry["archive"]["scheduled"] = scheduled
+    return {"ts": entry}
+
+
+@pytest.mark.parametrize("status", ["probing", "scraping", "validating", "archived"])
+def test_a_state_before_live_cannot_be_on_the_recurring_archive_schedule(status):
+    errors = validate(_with(status=status))
+    assert len(errors) == 1
+    assert "ts.archive.scheduled" in errors[0] and repr(status) in errors[0] and "['live', 'paused']" in errors[0]
+
+
+@pytest.mark.parametrize("status", ["live", "paused"])
+def test_live_and_paused_states_may_be_scheduled(status):
+    assert validate(_with(status=status)) == []
+
+
+@pytest.mark.parametrize("status", ["probing", "scraping", "validating", "archived"])
+def test_the_stage_4_case_is_enabled_but_not_scheduled_and_is_valid_before_live(status):
+    """The manual, timed validation run needs archive.enabled; the recurring schedule waits for `live`."""
+    assert validate(_with(status=status, enabled=True, scheduled=False)) == []
+
+
+def test_scheduled_requires_enabled():
+    errors = validate(_with(enabled=False, scheduled=True))
+    assert errors == ["ts.archive.scheduled: true requires archive.enabled: true"]
+
+
+def test_not_enabled_and_not_scheduled_is_valid_for_any_status():
+    assert validate(_with(status="probing", enabled=False, scheduled=False)) == []
+
+
+def test_scheduled_is_a_required_boolean():
+    entry = _valid_entry()
+    del entry["archive"]["scheduled"]
+    assert any("ts.archive.scheduled" in e and "missing" in e.lower() for e in validate({"ts": entry}))
+    entry = _valid_entry()
+    entry["archive"]["scheduled"] = "yes"
+    assert any("ts.archive.scheduled: expected bool" in e for e in validate({"ts": entry}))
+
+
+def test_in_the_real_manifest_every_scheduled_state_is_live_or_paused_and_enabled():
+    data, errors = load_and_validate(DEFAULT_MANIFEST_PATH)
+    assert errors == []
+    scheduled = {code for code, e in data.items() if e["archive"]["scheduled"]}
+    assert scheduled == {"us", "fl", "wa", "va", "mi", "ut", "az", "ma", "nc", "al"}  # ddp-sync's openstates_archive list today
+    for code in scheduled:
+        assert data[code]["status"] in ("live", "paused") and data[code]["archive"]["enabled"] is True

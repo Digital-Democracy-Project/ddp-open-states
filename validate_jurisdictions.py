@@ -82,9 +82,14 @@ SCRAPE_FIELDS = {
 }
 
 ARCHIVE_FIELDS = {
-    "enabled": bool,
+    "enabled": bool,    # the state MAY be archived: a manual, timed validation run (Stage 4) and activate.sh's ARCHIVE_ENABLED_STATES
+    "scheduled": bool,  # OPEN-418: the state is on ddp-sync's RECURRING archive schedule and its post-scrape archive hook
     "timeout_s": int,
 }
+
+# OPEN-418: a state may be on the recurring archive schedule only once a human has promoted it (plan 4.6, Stage 6),
+# or while it is paused. `enabled` without `scheduled` is how Stage 4's manual validation run works before `live`.
+SCHEDULABLE_STATUSES = {"live", "paused"}
 
 # OPEN-318: which per-feature jurisdiction lists this jurisdiction belongs to. Each is the manifest's
 # statement of a list that is otherwise hard-coded somewhere (see check-jurisdiction-drift.py for where),
@@ -206,6 +211,16 @@ def validate(data):
             timeout = entry["archive"].get("timeout_s")
             if isinstance(timeout, int) and not isinstance(timeout, bool) and timeout <= 0:
                 errors.append(f"{code}.archive.timeout_s: must be positive, got {timeout}")
+            if entry["archive"].get("scheduled") is True:
+                if entry["archive"].get("enabled") is False:
+                    errors.append(f"{code}.archive.scheduled: true requires archive.enabled: true")
+                status = entry.get("status")
+                if isinstance(status, str) and status in STATUS_VALUES and status not in SCHEDULABLE_STATUSES:
+                    errors.append(
+                        f"{code}.archive.scheduled: true, but status is {status!r}; a state may be on the recurring "
+                        f"archive schedule only when status is one of {sorted(SCHEDULABLE_STATUSES)} "
+                        f"(use archive.enabled alone for the Stage 4 validation run)"
+                    )
 
         if isinstance(entry.get("enrollment"), dict):
             _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors)

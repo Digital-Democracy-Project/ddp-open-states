@@ -880,6 +880,14 @@ scope line was deliberate, not an oversight.
   exit 4, never a silent skip. Use it instead of typing a list: `states=$(jurisdiction_codes
   enrollment.people_refresh) || exit 1`. Source it only after `OS_VENV` is set (activate.sh does) so
   PyYAML is available, and test `-r` before sourcing under `set -e` (bash 3.2).
+- **`archive.enabled` vs `archive.scheduled` (OPEN-418, 2026-10-22).** Until then one flag, `archive.enabled`, was both
+  the Stage 4 gate for a manual validation run and (once the drift check made it equal to ddp-sync's list) the
+  recurring schedule, so a state could not be validated without being scheduled. Now `enabled` = may be archived
+  (feeds `ARCHIVE_ENABLED_STATES`; the manual run), `scheduled` = on ddp-sync's recurring `openstates_archive` list
+  and schedule (compared by the drift check). `validate_jurisdictions.py` enforces, in one place: `scheduled: true`
+  requires `enabled: true` and a `status` of `live` or `paused`. A state mid-pilot is therefore `enabled: true,
+  scheduled: false` until a human sets `live`. ddp-sync's dual-read and daily host check read `archive.scheduled`
+  for the same list. (The api-v3 `/ddp/enrollment` route still serves `archive` = `archive.enabled`; nothing reads it.)
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`

@@ -27,10 +27,11 @@ _spec.loader.exec_module(drift)
 # the fixture world: fl (primary), us (primary, "usa" in ddp-sync), nc (secondary), al (paused)
 # ---------------------------------------------------------------------------------------------------
 
-def _entry(tier="secondary", status="live", archive=True, **enrollment):
+def _entry(tier="secondary", status="live", archive=True, scheduled=None, **enrollment):
     e = _valid_entry()
     e["tier"], e["status"] = tier, status
     e["archive"]["enabled"] = archive
+    e["archive"]["scheduled"] = archive if scheduled is None else scheduled
     e["enrollment"].update({k: v for k, v in enrollment.items()})
     return e
 
@@ -317,3 +318,51 @@ def test_a_malformed_live_argument_is_an_error_not_a_pass(world, bad):
 def test_an_empty_live_value_is_a_real_empty_list_and_drifts(world):
     code, out = _run(world, with_sync=False, extra=["--live", "broker-prod:DDP_OPENSTATES_JURISDICTIONS="])
     assert code == 1 and "in the manifest but not in DDP_OPENSTATES_JURISDICTIONS on broker-prod: fl, nc, us" in out
+
+
+# ---------------------------------------------------------------------------------------------------
+# OPEN-418: ddp-sync's recurring archive list is compared with archive.scheduled, not archive.enabled
+# ---------------------------------------------------------------------------------------------------
+
+def _make_nc_stage_4(world):
+    """nc is mid-pilot: enabled for the manual validation run, validating, NOT on the recurring schedule."""
+    manifest_path = world[2]
+    data = yaml.safe_load(open(manifest_path))
+    data["nc"]["status"] = "validating"
+    data["nc"]["archive"]["scheduled"] = False
+    _write(manifest_path, yaml.safe_dump(data))
+
+
+def test_a_stage_4_state_enabled_but_not_scheduled_passes_when_it_is_off_the_ddp_sync_list(world):
+    _make_nc_stage_4(world)
+    _set_sync_yaml(world, lambda d: (d["openstates_archive"]["jurisdictions"].remove("nc"),
+                                     d["openstates_archive"]["schedule"].pop("nc")))
+    code, out = _run(world)
+    assert code == 0, out
+
+
+def test_a_stage_4_state_that_is_on_the_ddp_sync_archive_list_is_drift(world):
+    """The whole point of OPEN-418: being on the recurring schedule before `live` is now reported."""
+    _make_nc_stage_4(world)
+    code, out = _run(world)
+    assert code == 1, out
+    assert "DRIFT archive.scheduled: ddp-sync openstates_archive.jurisdictions" in out
+    assert "in ddp-sync openstates_archive.jurisdictions but not in the manifest: nc" in out
+    assert "DRIFT archive.scheduled: ddp-sync openstates_archive.schedule (keys)" in out
+
+
+def test_the_shell_gate_still_follows_archive_enabled_not_scheduled(world):
+    """activate.sh's list derives from archive.enabled, so the Stage 4 state is still in it."""
+    _make_nc_stage_4(world)
+    _set_sync_yaml(world, lambda d: (d["openstates_archive"]["jurisdictions"].remove("nc"),
+                                     d["openstates_archive"]["schedule"].pop("nc")))
+    manifest = yaml.safe_load(open(world[2]))
+    assert manifest["nc"]["archive"]["enabled"] is True
+    assert drift.project(manifest)["archive"] >= {"nc"} and "nc" not in drift.project(manifest)["archive_scheduled"]
+
+
+def test_the_matrix_shows_the_scheduled_column(world):
+    code, out = _run(world, with_sync=False, extra=["--matrix"])
+    assert code == 0
+    header = out.strip().splitlines()[0].split()
+    assert "archive" in header and "scheduled" in header
