@@ -25,14 +25,16 @@ Stored 2025-2026 Michigan roll calls whose voters disagree with the tally printe
 
 **Order and revisions:** (1) the catch-up (OPEN-401, openstates-scrapers PR #73) is merged to fork `main`; (2) openstates-scrapers PR #77 (OPEN-424) is merged on top; (3) the run happens where that merged `main` is live: the Mac after its 01:00 UTC pull, or Fargate after the image deploy that carries both (the deploy is on hold, OPEN-437). Write the fork `main` commit hash on the ticket before running.
 
-One run, not 95: `bill_no=` still walks the search listing and only skips the per-bill fetch for other bills, so one comma list pays the listing cost once. **Stop at the first failed run, a WAF block warning, or clearly more requests than below; do not retry it by hand.**
+Four runs of at most 25 bills, not one run of 95: `run-scrape.sh` names its marker files after the whole argument string, and a 95-bill list is a 700-byte name (the limit is 255; the same fault is OPEN-432's, tried there: `File name too long`). `notes/open424-mi-rescrape-runs.txt` holds the four lines (25 bills is at most 212 bytes with its suffix). The cost: `bill_no=` still walks the search listing and only skips the per-bill fetch for other bills, so the listing is paid four times; **measure the first run's requests and stop if the listing alone is large**, and use fewer, longer runs only if the data owner accepts that.
+
+**Stop at the first failed run, a WAF block warning, or clearly more requests than below; do not retry by hand.**
 
 ```
 source activate.sh
-./run-scrape.sh mi session=2025-2026 bill_no=HB4023,HB4042,HB4062,HB4063,HB4064,HB4072,HB4100,HB4101,HB4103,HB4104,HB4180,HB4181,HB4182,HB4183,HB4187,HB4189,HB4207,HB4208,HB4309,HB4350,HB4392,HB4396,HB4415,HB4471,HB4517,HB4518,HB4644,HB4706,HB4724,HB4746,HB4750,HB4779,HB4805,HB4808,HB4824,HB4951,HB4961,HB4968,HB5232,HB5233,HB5249,HB5570,HB5571,HB5630,HB5646,HB5697,HB5806,HB5807,HB5995,HB6043,HB6074,SB105,SB1052,SB106,SB133,SB160,SB166,SB18,SB205,SB22,SB273,SB293,SB294,SB349,SB373,SB415,SB418,SB421,SB433,SB456,SB478,SB501,SB52,SB527,SB569,SB577,SB578,SB579,SB585,SB586,SB604,SB616,SB71,SB716,SB721,SB722,SB723,SB792,SB793,SB81,SB878,SB903,SB913,SB966,SB989
+while read -r list; do ./run-scrape.sh mi "session=2025-2026 bill_no=$list" || break; done < notes/open424-mi-rescrape-runs.txt
 ```
 
-(`bill_no=` accepts `SB415`, `SB 415` and `sb 0415`; RUNBOOK explains the two formats.)
+`run-scrape.sh` has no marker for such an argument, so each run is full-mode with no `start=` cutoff (the same reason as OPEN-432). (`bill_no=` accepts `SB415`, `SB 415` and `sb 0415`; RUNBOOK explains the two formats.)
 
 **Expected live cost to write on the ticket:** the search listing windows, plus 95 bill pages. The 241 votes cite 72 distinct journal pages; the Mac's `_cache` serves 234 of the 241 votes (on Fargate, which has no cache, all 72 pages are fetched).
 
