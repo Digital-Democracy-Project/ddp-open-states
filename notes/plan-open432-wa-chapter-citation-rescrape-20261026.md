@@ -27,7 +27,7 @@ export OPENSTATES_DB_NAME=<database being written>
 ./check-wa-chapter-citations.py --bill-list /tmp/wa-missing.txt                    # freeze the target list: 25 lines, 494 bills today
 tr ',' '\n' < /tmp/wa-missing.txt | sort | uniq -d | wc -l                          # expect 0 (no bill listed twice)
 awk '{ if (length($0) > 150) print "long line", NR }' /tmp/wa-missing.txt          # expect nothing (marker file name stays < 255 bytes)
-grep -c '_status_changes' scrapers/wa/bills.py                                     # expect 1 or more: the fixed chapter lookup is the code that will run
+grep -c '_status_changes' openstates-scrapers/scrapers/wa/bills.py                  # expect 1 or more: the fixed chapter lookup is the code that will run
 ./check-wa-chapter-citations.py --targets /tmp/wa-missing.txt --snapshot /tmp/wa-before.csv   # child-row counts of all 494, before
 ```
 * **Pin the revision:** the lookup fix exists only in the OPEN-401 catch-up until #73 merges, so the `grep` above must pass in the checkout that runs; write fork `main`'s commit hash on the ticket.
