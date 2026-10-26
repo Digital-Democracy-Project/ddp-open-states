@@ -45,3 +45,12 @@ def test_summarize_counts_per_session_and_lists_the_bills_missing_a_citation():
 
 def test_summarize_of_nothing_is_empty():
     assert chk.summarize([]) == {}
+
+
+def test_chunks_splits_into_runs_that_keep_the_argument_short():
+    assert chk.chunks(["a", "b", "c", "d", "e"], 2) == [["a", "b"], ["c", "d"], ["e"]]
+    assert chk.chunks([], 20) == []
+    # the marker file name run-scrape.sh derives from the argument stays under 255 bytes
+    ids = [chk.bill_no(f"HJM {4000 + i}") for i in range(20)]
+    name = "wa_session_2025-2026_bill_no_" + ",".join(ids) + ".imported"
+    assert len(name) < 255

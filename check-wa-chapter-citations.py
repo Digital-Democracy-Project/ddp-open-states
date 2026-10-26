@@ -16,7 +16,7 @@ column holds an entry with citation_type = 'chapter' (what scrape_chapter() adds
 Usage:
   ./check-wa-chapter-citations.py                       # per-session counts
   ./check-wa-chapter-citations.py --list                # plus one line per bill missing its citation
-  ./check-wa-chapter-citations.py --bill-list FILE      # write the missing bills as bill_no= arguments (HB1052,...)
+  ./check-wa-chapter-citations.py --bill-list FILE      # write the missing bills as bill_no= arguments, 20 per line
   ./check-wa-chapter-citations.py --verify              # exit 1 if any Chapter-action bill still has no citation
 Environment: OPENSTATES_DB_HOST/PORT/NAME/USER/PASSWORD, as the other scripts here.
 """
@@ -59,6 +59,12 @@ def bill_no(identifier):
     return re.sub(r"\s+", "", identifier)
 
 
+def chunks(items, size):
+    """Lists of at most `size` items. run-scrape.sh names its marker files after the whole
+    argument string, so one 494-bill bill_no= list would exceed the 255-byte file name limit."""
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
 def summarize(rows):
     """rows: (session, identifier, chapter_action, chapter_citation) ->
     {session: {"bills": n, "chapter_action": n, "missing": [identifier, ...], "citation_without_action": n}}"""
@@ -78,7 +84,8 @@ def summarize(rows):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--list", action="store_true", help="print each bill missing its citation")
-    ap.add_argument("--bill-list", help="write the missing bills, comma separated as bill_no= takes them, to FILE")
+    ap.add_argument("--bill-list", help="write the missing bills to FILE, one line per run, comma separated as bill_no= takes them")
+    ap.add_argument("--chunk-size", type=int, default=20, help="bills per line of --bill-list (default 20)")
     ap.add_argument("--verify", action="store_true", help="exit 1 if any Chapter-action bill has no citation")
     args = ap.parse_args()
 
@@ -108,9 +115,10 @@ def main():
     ok = report.summary()
 
     if args.bill_list:
+        lines = [",".join(bill_no(i) for i in c) for c in chunks(all_missing, args.chunk_size)]
         with open(args.bill_list, "w") as f:
-            f.write(",".join(bill_no(i) for i in all_missing) + "\n")
-        print(f"wrote {len(all_missing)} bills to {args.bill_list}")
+            f.write("".join(line + "\n" for line in lines))
+        print(f"wrote {len(all_missing)} bills to {args.bill_list} ({len(lines)} lines)")
     if args.verify and not ok:
         sys.exit(1)
 

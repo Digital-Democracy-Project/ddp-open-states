@@ -22,11 +22,15 @@ Washington files the chapter under the version that passed (ESSB 5167), the old 
 
 ## The run
 ```
-OPENSTATES_DB_NAME=<database api-v3 serves> ./check-wa-chapter-citations.py --bill-list /tmp/wa-missing.txt   # writes HB1014,HB1023,... (494 today)
+OPENSTATES_DB_NAME=<database api-v3 serves> ./check-wa-chapter-citations.py --bill-list /tmp/wa-missing.txt   # 25 lines of 20 bills today (494)
 source activate.sh
-./run-scrape.sh wa "session=2025-2026 bill_no=$(cat /tmp/wa-missing.txt)"
+while read -r list; do ./run-scrape.sh wa "session=2025-2026 bill_no=$list" || break; done < /tmp/wa-missing.txt
 ```
-(`session=` and `bill_no=` go in one quoted string, PRIMITIVES "session= argument shape"; the list is regenerated rather than committed so it cannot go stale.) One run for all 494. **Rate:** `SCRAPELIB_RPM=60` (`activate.sh`): about 35 minutes and 1,700 requests, from the live test above; Washington's service is public and has no bot protection. Run it where the catch-up scraper is live (the Mac after its 01:00 UTC pull of fork `main` once #73 has merged; Fargate only after the image deploy, which is on hold, OPEN-437). Write the fork `main` commit hash on the ticket first.
+* **Why 25 short runs, not one:** `run-scrape.sh` names its marker files after the whole argument string, and one 494-bill list makes a 3,489-byte name (the limit is 255; tried: `File name too long`). Twenty bills is 177 bytes. `--chunk-size` changes it.
+* **Why no `start=`:** `run-scrape.sh` takes its incremental cutoff from a marker keyed by that argument string; this one-off argument has no marker, so each run is a full-mode targeted run with no cutoff. Do not add `start=` by hand: Washington's `start=` filter (OPEN-409) skips a bill whose latest status is older than the cutoff, which is every one of these enacted bills. The live test below ran without it.
+* **`|| break`:** stop at the first failed run; do not retry by hand. The list is regenerated rather than committed so it cannot go stale.
+* **Rate:** `SCRAPELIB_RPM=60` (`activate.sh`). From the live test (3.4 requests a bill plus the bulk lists each run): roughly 45 minutes and 2,300 requests for all 25 runs. Washington's service is public and the 80-bill test saw no blocking.
+* Run it where the catch-up scraper is live (the Mac after its 01:00 UTC pull of fork `main` once #73 has merged; Fargate only after the image deploy, which is on hold, OPEN-437). Write the fork `main` commit hash on the ticket first.
 
 ## After
 ```
