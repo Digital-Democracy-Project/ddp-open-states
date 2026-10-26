@@ -207,8 +207,8 @@ echo "--- glue: runs under launchd's bare environment (no HOME, minimal PATH) --
 # first $HOME reference used to abort the whole script silently, so the monitor never ran at all.
 rm -f "$G/last-run/"replica-health.*
 set_status DISCONNECTED "daemon-env check"
-run_glue_bare() {  # <now_offset_s>
-    env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+run_glue_bare() {  # <now_offset_s>   (from /, not the repo: the helper must be found from the script's own location)
+    cd / && env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
         REPLICA_LAST_RUN_DIR="$G/last-run" REPLICA_LOG_FILE="$G/test.log" REPLICA_DRY_RUN=1 \
         REPLICA_NOW_EPOCH=$(( NOW + $1 )) REPLICA_DB=fixture_db REPLICA_SLACK_TOKEN=x \
         REPLICA_STATUS_CMD="$G/status.sh" GLUE_STATUS_FILE="$G/status.out" \
@@ -219,6 +219,7 @@ assert_not_contains "no HOME: does not abort on an unbound variable" "$out" "unb
 assert_file "no HOME: the check actually ran (recorded its first bad run)" "$G/last-run/replica-health.replica.state" exists
 out=$(run_glue_bare 300)
 assert_contains "no HOME: second bad run alerts as normal" "$out" "DRY_RUN slack"
+assert_contains "no HOME, run from /: the Slack helper was found (sender printed)" "$out" "DRY_RUN sender: CodeBot :robot_face:"
 set_status HEALTHY "ok"; run_glue_bare 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
 
 echo "--- glue: discovery failures alert (docker stub)"
