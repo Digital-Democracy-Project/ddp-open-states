@@ -17,8 +17,21 @@ Washington files the chapter under the version that passed (ESSB 5167), the old 
 ## Tested live before this plan (scrape only, nothing imported)
 80 random bills from the 494, scraped with the catch-up Washington scraper (`os-update wa bills --scrape session=2025-2026 bill_no=...`, no database, scratch data directory, 60 requests a minute), then compared with what api-v3 stores:
 * **80 of 80** now carry a `chapter` citation (with 0 "no session law data" answers).
-* Actions, sponsors and vote events (223) are **identical** to the stored ones on all 80; the citation is the only difference.
+* Actions, sponsors and vote events (223) are **identical** to the stored ones on all 80, and so are title, classification, subjects, versions, documents, sources, abstracts, other titles, other identifiers and related bills (checked field by field against api-v3); the citation is the only difference.
 * Cost: 5 min 44 s and about 270 requests for 80 bills (3.4 per bill plus the bulk lists).
+
+## Before you run (freeze the list, preflight, snapshot)
+```
+source activate.sh
+export OPENSTATES_DB_NAME=<database being written>
+./check-wa-chapter-citations.py --bill-list /tmp/wa-missing.txt                    # freeze the target list: 25 lines, 494 bills today
+tr ',' '\n' < /tmp/wa-missing.txt | sort | uniq -d | wc -l                          # expect 0 (no bill listed twice)
+awk '{ if (length($0) > 150) print "long line", NR }' /tmp/wa-missing.txt          # expect nothing (marker file name stays < 255 bytes)
+grep -c '_status_changes' scrapers/wa/bills.py                                     # expect 1 or more: the fixed chapter lookup is the code that will run
+./check-wa-chapter-citations.py --targets /tmp/wa-missing.txt --snapshot /tmp/wa-before.csv   # child-row counts of all 494, before
+```
+* **Pin the revision:** the lookup fix exists only in the OPEN-401 catch-up until #73 merges, so the `grep` above must pass in the checkout that runs; write fork `main`'s commit hash on the ticket.
+* **Backup:** confirm the newest backup of the database being written is under a day old (the Mac's replica: `logs/db-backups/`, nightly, keep 7, restore command in RUNBOOK; production RDS: its automated snapshot). A restore would also undo everything written since, so the first remedy for a bad run is a corrected rescrape of the same list, not a restore.
 
 ## The run
 ```
@@ -32,8 +45,12 @@ while read -r list; do ./run-scrape.sh wa "session=2025-2026 bill_no=$list" || b
 * **Rate:** `SCRAPELIB_RPM=60` (`activate.sh`). From the live test (3.4 requests a bill plus the bulk lists each run): roughly 45 minutes and 2,300 requests for all 25 runs. Washington's service is public and the 80-bill test saw no blocking.
 * Run it where the catch-up scraper is live (the Mac after its 01:00 UTC pull of fork `main` once #73 has merged; Fargate only after the image deploy, which is on hold, OPEN-437). Write the fork `main` commit hash on the ticket first.
 
+## If a run fails partway
+Each run replaces only its own 20 bills and is safe to run again (the importer matches bills on their natural key and updates them). The loop stops at the first failure and the last "Starting scrape" line in `logs/scraper.log` names its list; resume from that line with `sed -n '<n>,$p' /tmp/wa-missing.txt | while read -r list; do ...; done` (the same command). Do not add `start=`.
+
 ## After
 ```
-./check-wa-chapter-citations.py --verify      # exit 0 = every Chapter-action bill has its citation
+./check-wa-chapter-citations.py --targets /tmp/wa-missing.txt --baseline /tmp/wa-before.csv --verify
+./check-wa-chapter-citations.py --verify      # whole database: 0 missing
 ```
-Pass: exit 0 (0 missing). Also compare bill, action and vote counts for 2025-2026 with the "before" numbers (nothing should drop; the live test found no other difference). If it fails, the bills still listed are what to look at first (`--list`); fix by a corrected rescrape of the same `bill_no=` list, not a delete.
+**Pass:** both exit 0. The first checks every one of the 494 frozen targets directly, so a bill that lost its row or its Chapter action cannot pass by dropping out of the "missing" set: each must still exist, still carry a "Chapter N, YYYY Laws" action, carry a `chapter` citation whose number and year match that action (`Chapter N`, `WA YYYY Laws`), and have no fewer actions, sponsors, versions, documents, sources or vote events than in the snapshot. Expected: 494 targets, 494 fine, 0 problems; whole-database missing 0. Anything else: stop, read the listed bills, fix by a corrected rescrape of the same lines.
