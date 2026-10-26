@@ -54,3 +54,17 @@ def test_summary_counts_votes_and_members_per_kind():
 
 def test_the_read_path_only_selects():
     assert "UPDATE" not in chk.STORED_SQL.upper() and "DELETE" not in chk.STORED_SQL.upper()
+
+
+def test_one_vote_can_carry_several_kinds_and_each_member_lands_in_one():
+    stored = {"A": "yes", "B": "no", "C": "yes"}
+    live = [("A", "N"), ("B", "N"), ("D", "Y"), ("E", None)]  # A option, C dropped, D added, E no-response
+    out = chk.compare_vote(stored, live)
+    assert out == {"dropped": ["C"], "no-response": ["E"], "added": ["D"], "option": ["A"]}
+    assert sum(len(v) for v in out.values()) == 4  # no member counted twice
+
+
+def test_an_audit_with_uncompared_votes_is_incomplete():
+    assert chk.incomplete_reason(10, 10, [], {"HB1": 1}) is None
+    assert "could not be compared" in chk.incomplete_reason(10, 9, [("HB 1", "1")], {"HB1": 1})
+    assert "no legislation list" in chk.incomplete_reason(10, 0, [], {})

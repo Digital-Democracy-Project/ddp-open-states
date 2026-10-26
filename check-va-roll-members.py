@@ -13,7 +13,13 @@ returns now, and sorts every difference into one of four kinds:
   added        LIS lists a member with a response that is not stored
   option       same member in both, but a different option
 
-Nothing is written anywhere. Stored votes come from the Postgres replica; LIS is read with the
+Classification is per member and per vote: a member lands in exactly one kind for a given vote
+(matched by stripped display name), and one vote can appear under several kinds. The run fails
+closed: if any stored vote cannot be compared (LIS list empty, bill or VoteID not returned, a failed
+request) it prints INCOMPLETE with the counts and exits 2 instead of presenting a subset as the answer;
+an HTTP 403/429 stops the run with exit 1 before any totals are printed.
+
+Nothing is written to the database or LIS. Stored votes come from the Postgres replica; LIS is read with the
 scraper's own key, paced, and the run stops at the first HTTP 403 or 429.
 
 Usage:
@@ -25,6 +31,7 @@ Environment:
     VA_API_KEY            LIS key (required; read in-process, never printed)
     OPENSTATES_DB_*       same defaults as the fix-open*.py family (host, port 5433, name, user, password)
 
+Cached responses are never refreshed: delete the cache directory to fetch current ones.
 About 0.4 s per bill with stored votes; the 2026 House (1,843 bills) takes about 13 minutes.
 """
 import argparse
@@ -94,6 +101,15 @@ def compare_vote(stored, lis_members):
         if code is None or stored[name] not in OPTIONS.get(code, set()):
             out["option"].append(name)
     return out
+
+
+def incomplete_reason(stored_count, compared_count, not_found, ids_found):
+    """Why the audit cannot be trusted as complete, or None if every stored vote was compared."""
+    if not ids_found:
+        return "LIS returned no legislation list"
+    if not_found or compared_count != stored_count:
+        return "%d of %d stored votes could not be compared with LIS" % (stored_count - compared_count, stored_count)
+    return None
 
 
 def summarize(results):
@@ -220,9 +236,12 @@ def main():
                 continue
             results.append((vote_id, bill, date, compare_vote(mem, live[vote_id])))
 
+    reason = incomplete_reason(len(stored), len(results), not_found, ids)
+    if reason:
+        print("INCOMPLETE: %s; not a full audit. First missing: %s" % (reason, not_found[:5]))
+        sys.exit(2)
     totals, by_kind, dates = summarize(results)
     print("\n".join("%-28s %d" % (k, v) for k, v in sorted(totals.items())))
-    print("stored votes LIS no longer returns:", len(not_found))
     for kind in ("dropped", "added", "option", "no-response"):
         if by_kind[kind]:
             print("\n%s (votes affected per member):" % kind)
