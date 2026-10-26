@@ -11,8 +11,10 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"
 
 log "=== Starting nightly scrape run (day=$DAY) ==="
 
-# Florida — regular + special sessions scraped explicitly (auto-detect only returns active)
-for fl_session in "session=2026" "session=2026D" "session=2026E" "session=2026F"; do
+# Florida — regular + special sessions scraped explicitly (auto-detect only returns active).
+# Keep in step with ddp-sync's openstates_scrape.primary.fl.sessions. 2027 (SYNC-130) needs the
+# scrapers with 2027's House session_number (126, OPEN-401); without it that step fails.
+for fl_session in "session=2026" "session=2026D" "session=2026E" "session=2026F" "session=2027"; do
     log "--- fl $fl_session ---"
     bash "$SCRIPT_DIR/run-scrape.sh" fl "$fl_session" || log "ERROR: fl $fl_session failed (continuing)"
 done

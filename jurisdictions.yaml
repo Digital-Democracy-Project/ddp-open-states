@@ -110,7 +110,7 @@ fl:
   scrape:
     allow_duplicates: true    # pagination overlap produces duplicate bill JSON (upstream #5697)
     timeout_s: 57600           # SCRAPE_TIMEOUT_S["fl"], 16h -- FL is the longest-running job
-    session_arg: null           # multiple explicit sessions (2026/2026D/2026E/2026F) are
+    session_arg: null           # multiple explicit sessions (2026/2026D/2026E/2026F/2027) are
                                  # scheduler-owned, see header note; also weekly-not-daily
                                  # (sync_day: sunday) while FL is out of session
     votes_scraper: false
