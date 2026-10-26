@@ -619,6 +619,12 @@ functions, layered on top of the ordering work above rather than changing it.
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
   doesn't cover yet, before hand-writing new regexes.
 
+- **`check-wa-chapter-citations.py`** (repo root, OPEN-432) — read-only: per Washington session, how many
+  bills have a "Chapter N, YYYY Laws" action but no stored `chapter` citation; `--bill-list FILE` writes them
+  as a `bill_no=` list for a targeted rescrape, `--verify` is the after-check (exit 1 while any remain). Not a
+  repair: the citation comes from the legislature's service, so the repair is a rescrape
+  (`notes/plan-open432-wa-chapter-citation-rescrape-20261026.md`). Uses `quality_check.Report` for its output.
+
 ## Per-jurisdiction configuration: which mechanism to use (OPEN-120/OPEN-121, 2026-08-22)
 
 Before adding a new "this jurisdiction needs different behavior" special case anywhere in
