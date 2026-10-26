@@ -181,6 +181,19 @@ assert_contains "no Slack token: reported as not delivered" "$out" "no Slack tok
 assert_eq "no Slack token: alert not recorded as sent" "$(awk '{print $2}' "$G/last-run/replica-health.replica.state")" "0"
 rm -f "$G/last-run/"replica-health.*; set_status HEALTHY "ok"
 
+echo "--- glue: the alert posts as CodeBot, through lib/slack-alert.sh (OPEN-435)"
+echo '{"ok":true}' > "$G/curl.reply"; : > "$G/curl.log"; rm -f "$G/last-run/"replica-health.*
+set_status DISCONNECTED "publisher gone"
+run_glue_live 0 >/dev/null; run_glue_live 300 >/dev/null
+assert_contains "the live payload carries the CodeBot name" "$(cat "$G/curl.log")" '"username":"CodeBot"'
+assert_contains "the live payload carries the CodeBot icon" "$(cat "$G/curl.log")" '"icon_emoji":":robot_face:"'
+assert_contains "the live payload still goes to #automation-errors" "$(cat "$G/curl.log")" '"channel":"#automation-errors"'
+set_status HEALTHY "ok"; run_glue_live 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
+set_status DISCONNECTED "publisher gone"
+run_glue 0 env SLACK_ALERT_ENV_FILE=/dev/null >/dev/null; out=$(run_glue 300 env SLACK_ALERT_ENV_FILE=/dev/null)
+assert_contains "a dry-run alert shows the CodeBot sender" "$out" "DRY_RUN sender: CodeBot :robot_face:"
+set_status HEALTHY "ok"; run_glue 600 >/dev/null; rm -f "$G/last-run/"replica-health.*
+
 echo "--- glue: tabs and other control characters are stripped too (pm-review)"
 set_status BROKEN "$(printf 'tab\there bell\a end')"
 run_glue 0 >/dev/null; out=$(run_glue 300)

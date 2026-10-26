@@ -99,8 +99,8 @@ should reuse rather than reimplement:
   stop `run-scrape-retrying.sh`, which decides on the flag file, so without it the wrapper would
   have spun through every attempt against a jurisdiction that was already being scraped.
 - **Slack alert-on-failure** — `post_slack_alert TEXT [CHANNEL]` from **`lib/slack-alert.sh`** (OPEN-325, which
-  is the extraction OPEN-43 asked for), sourced by `run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh` and
-  `start-os-api.sh`. The first two call it from `on_failure()` (fired via `trap 'on_failure' ERR`), the others from
+  is the extraction OPEN-43 asked for), sourced by `run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`,
+  `start-os-api.sh` and `check-replica-health.sh`. The first two call it from `on_failure()` (fired via `trap 'on_failure' ERR`), the others from
   `slack_fail()`. It posts to `#automation-errors` as **CodeBot** (not the Slack app's own name, Agent Smith), reads
   `SLACK_BOT_TOKEN` and `CODEBOT_SLACK_USERNAME` / `CODEBOT_SLACK_ICON_EMOJI` from the environment first and then
   from `ddp-agents/.env`, JSON-escapes the text, and **always returns 0**: it never blocks or fails the script that
@@ -319,8 +319,10 @@ without it Slack ignores the name and icon and the post still succeeds under the
   `set -euo pipefail`.
 - **Tests:** `test-slack-alert.sh` (fake `curl` on `PATH`, `SLACK_ALERT_ENV_FILE` pointing at a throwaway env
   file; no network). Its last block **fails if any other shell script contains `chat.postMessage`**, so a new alert
-  cannot copy the old two-key payload and post as Agent Smith. The one exemption, `check-replica-health.sh`, is on
-  an `EXEMPT` list in that test; remove it from the list when that script adopts the helper.
+  cannot copy the old two-key payload and post as Agent Smith. There are no exemptions (OPEN-435 removed the last).
+- **Delivery flag:** after each call `OPERATOR_ALERT_DELIVERED` is `1` only when Slack answered `"ok":true`, else `0`,
+  and `OPERATOR_ALERT_REASON` is `ok` / `no-token` / `refused` (the names ddp-agents' `operator-alert.sh` uses). The
+  call still returns 0; a caller that keeps state about alerts it sent (`check-replica-health.sh`) reads the flag.
 - **Mirrors:** `ddp-sync` has the same idea in Python (`ddp_sync/slack_alerts.py::post_alert`) and `ddp-agents` owns
   the persona registry (`cams/slack_identity.py`); all three read the same `CODEBOT_SLACK_*` variables.
 - Mac only (none of these scripts are in the Docker image). No test here has run against live Slack.
@@ -336,11 +338,12 @@ time; the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL`
 `RDS_HOST`+`RDS_REPLICATION_PASSWORD` are in the environment. Same invocation model as
 the retired `check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
 Sets `DOCKER_HOST` to Colima itself when run as a root daemon (copied from `start-os-api.sh`).
-**It still carries its own copy of the Slack block** (Slack only, no CAMS: CodeBot triage cannot act on a
-network outage). OPEN-325 moved the other four scripts onto `lib/slack-alert.sh` and left this one alone because
-OPEN-312/313 were changing it, so **until it adopts `post_slack_alert` its alerts post as Agent Smith**, not CodeBot.
-It is the single entry on `test-slack-alert.sh`'s `EXEMPT` list. (A monitor may reasonably stay self-contained, as
-OPEN-43 noted for the retired staleness watchdog: it should not break because the thing it watches did.) Test seams: `REPLICA_*` env vars, see
+**It posts through `post_slack_alert`** (OPEN-435), as CodeBot, direct to Slack and never via CAMS (CodeBot triage
+cannot act on a network outage, and the monitor must work when CAMS is the problem). It keeps its own
+state machine and "advance state only when Slack answered `ok:true`" rule, now reading `OPERATOR_ALERT_DELIVERED`.
+It runs with `HOME` unset and a minimal `PATH`; the helper needs neither. (A monitor may reasonably stay
+self-contained, as OPEN-43 noted for the retired staleness watchdog: it should not break because the thing it
+watches did. The helper depends on nothing but `curl` and `/usr/bin`.) Test seams: `REPLICA_*` env vars, see
 `test-replica-monitoring.sh`. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)

@@ -31,11 +31,10 @@
 # ALERTING. One Slack message to #automation-errors when a check has been bad for CONSECUTIVE runs in
 # a row (default 2: one blip never pages), a reminder every REMIND_S (default 6 h) while it stays bad,
 # and a recovery message. State is one small file per check under logs/last-run/, and it advances only
-# when Slack answers "ok":true (a rejected message or missing token is retried, not recorded as sent). This is the Slack
-# block PRIMITIVES.md tells new scripts to copy (token read from ddp-agents/.env, fail open). It
+# when Slack answers "ok":true (a rejected message or missing token is retried, not recorded as sent;
+# lib/slack-alert.sh reports that as OPERATOR_ALERT_DELIVERED). It
 # deliberately does not post to CAMS /api/v1/failures: that feeds CodeBot code triage, which can do
-# nothing about a network outage or a forgotten REFRESH PUBLICATION. Extracting the shared Slack
-# helper is OPEN-43; this is one more reason to do it, not a reason to do it here.
+# nothing about a network outage or a forgotten REFRESH PUBLICATION.
 #
 # Test seams (production sets none): REPLICA_LAST_RUN_DIR, REPLICA_LOG_FILE, REPLICA_DRY_RUN=1 (print
 # "DRY_RUN slack: ..." instead of posting), REPLICA_NOW_EPOCH, REPLICA_STATUS_CMD, REPLICA_COMPARE_CMD,
@@ -76,11 +75,16 @@ if [ -z "${DOCKER_HOST:-}" ]; then
     done
 fi
 
+# Slack goes through lib/slack-alert.sh (OPEN-435), so the alert posts as CodeBot like every other script's.
+# Direct to Slack, never CAMS: this monitor must keep working when CAMS or the replica is the problem.
+# Test -r first: under `set -e` bash 3.2 exits when `source` hits a missing file even with a `||` fallback.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
+    || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2
+                            OPERATOR_ALERT_DELIVERED=0; OPERATOR_ALERT_REASON=refused; return 0; }
 if [ "${REPLICA_SLACK_TOKEN+set}" = set ]; then
-    SLACK_TOKEN="$REPLICA_SLACK_TOKEN"   # test seam (may be empty, to exercise the no-token path)
-else
-    SLACK_TOKEN=$(grep -E '^SLACK_BOT_TOKEN=' /Users/agentsmith/Developer/repos/ddp-agents/.env \
-        2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'"'" | awk '{print $1}')
+    # test seam (may be empty, to exercise the no-token path): the token the helper will use, and no .env fallback
+    export SLACK_BOT_TOKEN="$REPLICA_SLACK_TOKEN" SLACK_ALERT_ENV_FILE=/dev/null
 fi
 
 post_slack() {
@@ -90,20 +94,16 @@ post_slack() {
     # run retries, otherwise a failed page is recorded as sent and then silenced for REMIND_S.
     if [ "$DRY_RUN" = "1" ]; then
         echo "DRY_RUN slack: $1"
+        echo "DRY_RUN sender: $(_slack_alert_sender 2>/dev/null | tr '\n' ' ')"
         return 0
     fi
-    if [ -z "$SLACK_TOKEN" ]; then
+    post_slack_alert "$1"
+    [ "${OPERATOR_ALERT_DELIVERED:-0}" = 1 ] && return 0
+    if [ "${OPERATOR_ALERT_REASON:-}" = no-token ]; then
         log "no Slack token available: message NOT delivered, will retry next run"
-        return 1
+    else
+        log "Slack did not accept the message (see slack-alert line above): will retry next run"
     fi
-    local resp
-    resp="$(curl -s --max-time 10 -X POST https://slack.com/api/chat.postMessage \
-        -H "Authorization: Bearer $SLACK_TOKEN" -H "Content-Type: application/json" \
-        -d "{\"channel\": \"#automation-errors\", \"text\": \"$1\"}")" || resp=""
-    case "$resp" in
-        *'"ok":true'*) return 0 ;;
-    esac
-    log "Slack did not accept the message (${resp:0:120}): will retry next run"
     return 1
 }
 

@@ -109,6 +109,18 @@ check "the text round-trips" "$(json_get text | head -1)" 'say "hi" \ back\slash
 run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "⚠️ *OpenStates scrape failed: ut* — check the log"'
 check "unicode and emoji survive" "$(json_get text)" "⚠️ *OpenStates scrape failed: ut* — check the log"
 
+echo "reports whether Slack took the message (OPEN-435)"
+run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' >"$T/out"
+check "ok:true is delivered" "$(cat "$T/out")" "1 ok"
+run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' 'FAKE_CURL_RESPONSE={"ok":false,"error":"invalid_auth"}' >"$T/out"
+check "ok:false is not delivered" "$(cat "$T/out")" "0 refused"
+run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' FAKE_CURL_EXIT=22 FAKE_CURL_RESPONSE= >"$T/out"
+check "a curl failure is not delivered" "$(cat "$T/out")" "0 refused"
+run_alert '' 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' >"$T/out"
+check "no token is not delivered" "$(cat "$T/out")" "0 no-token"
+run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "a"; OPERATOR_ALERT_DELIVERED=1; FAKE=1; post_slack_alert "b"; echo "$OPERATOR_ALERT_DELIVERED"' 'FAKE_CURL_RESPONSE={"ok":false}' >"$T/out"
+check "a later failed post resets the flag" "$(cat "$T/out")" "0"
+
 echo "never fails the calling script"
 run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'set -euo pipefail; post_slack_alert "x"; echo survived' FAKE_CURL_EXIT=22 >"$T/out"
 check "a failing curl does not trip set -euo pipefail" "$(cat "$T/out")" "survived"
@@ -137,18 +149,14 @@ post_slack_alert 'hello'; echo survived" 2>&1)"
 done
 
 echo "nothing else posts to Slack"
-# One way to post: this repo's shell scripts must not carry their own chat.postMessage call. The one
-# exception is check-replica-health.sh, left alone on purpose because it is under active change
-# (OPEN-312 / OPEN-313); delete it from this list when it adopts post_slack_alert.
-EXEMPT=" check-replica-health.sh "
+# One way to post: this repo's shell scripts must not carry their own chat.postMessage call.
 offenders=""
 for f in "$HERE"/*.sh "$HERE"/lib/*.sh; do
     name="$(basename "$f")"
     case "$name" in slack-alert.sh|test-*.sh) continue ;; esac
-    case "$EXEMPT" in *" $name "*) continue ;; esac
     if grep -q 'slack.com/api/chat.postMessage' "$f"; then offenders="$offenders $name"; fi
 done
-check "no script but the helper (and the exempt one) calls chat.postMessage" "${offenders:- none}" " none"
+check "no script but the helper calls chat.postMessage" "${offenders:- none}" " none"
 check "the helper carries the CodeBot identity" "$(grep -c 'icon_emoji' "$LIB" | tr -d ' ' | awk '{print ($1>0)}')" "1"
 
 echo

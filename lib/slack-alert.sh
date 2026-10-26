@@ -15,7 +15,10 @@
 # post_slack_alert TEXT [CHANNEL]
 #   CHANNEL defaults to #automation-errors. ALWAYS returns 0: an alert is best-effort and must never
 #   change a calling script's exit status or trip its `set -e`. A post that cannot be sent (no token,
-#   Slack refused it) is reported on stderr, not swallowed.
+#   Slack refused it) is reported on stderr, not swallowed. A caller that must know whether Slack took the
+#   message (check-replica-health.sh advances its alert state only when it did) reads, after the call:
+#   OPERATOR_ALERT_DELIVERED   1 only when Slack answered "ok":true, else 0
+#   OPERATOR_ALERT_REASON      ok | no-token | refused   (same names as ddp-agents' operator-alert.sh)
 #
 # Settings, each read from the environment first, then from ddp-agents' .env (the same file these
 # scripts already read SLACK_BOT_TOKEN from):
@@ -63,19 +66,32 @@ _slack_alert_json_escape() {
     printf '%s' "$s"
 }
 
-post_slack_alert() {
-    local text="${1:-}" channel="${2:-#automation-errors}"
-    local token username icon payload resp
-
-    token="$(_slack_alert_setting SLACK_BOT_TOKEN)"
-    if [ -z "$token" ]; then
-        echo "slack-alert: SLACK_BOT_TOKEN is not set; alert not sent: ${text:0:200}" >&2
-        return 0
-    fi
+# The sender identity as "NAME ICON" (defaults CodeBot :robot_face:). Also what check-replica-health.sh's
+# REPLICA_DRY_RUN prints, so a dry run shows who the live post would come from.
+_slack_alert_sender() {
+    local username icon
     username="$(_slack_alert_setting CODEBOT_SLACK_USERNAME)"
     [ -n "$username" ] || username="CodeBot"
     icon="$(_slack_alert_setting CODEBOT_SLACK_ICON_EMOJI)"
     [ -n "$icon" ] || icon=":robot_face:"
+    printf '%s\n%s' "$username" "$icon"
+}
+
+post_slack_alert() {
+    local text="${1:-}" channel="${2:-#automation-errors}"
+    local token sender username icon payload resp
+    OPERATOR_ALERT_DELIVERED=0
+    OPERATOR_ALERT_REASON=refused
+
+    token="$(_slack_alert_setting SLACK_BOT_TOKEN)"
+    if [ -z "$token" ]; then
+        echo "slack-alert: SLACK_BOT_TOKEN is not set; alert not sent: ${text:0:200}" >&2
+        OPERATOR_ALERT_REASON=no-token
+        return 0
+    fi
+    sender="$(_slack_alert_sender)"
+    username="${sender%%$'\n'*}"
+    icon="${sender#*$'\n'}"
 
     payload="{\"channel\":\"$(_slack_alert_json_escape "$channel")\""
     payload="$payload,\"text\":\"$(_slack_alert_json_escape "$text")\""
@@ -87,7 +103,7 @@ post_slack_alert() {
         -H "Content-Type: application/json; charset=utf-8" \
         -d "$payload" 2>/dev/null || true)"
     case "$resp" in
-        *'"ok":true'*) ;;
+        *'"ok":true'*) OPERATOR_ALERT_DELIVERED=1; OPERATOR_ALERT_REASON=ok ;;
         *) echo "slack-alert: Slack did not accept the post: ${resp:0:200}" >&2 ;;
     esac
     return 0
