@@ -102,6 +102,8 @@ def main():
     ap.add_argument("--expect-clean", action="store_true", help="exit 1 if any checked vote disagrees")
     args = ap.parse_args()
     bills = read_bills(args.bills) if args.bills else None
+    if bills is not None and not bills:
+        sys.exit("--bills file lists no bills; refusing to report an empty audit as clean")
 
     conn = psycopg2.connect(**DB_CONFIG)
     conn.set_session(readonly=True)

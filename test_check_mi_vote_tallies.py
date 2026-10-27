@@ -113,3 +113,7 @@ def test_expect_clean_exits_2_for_a_listed_bill_whose_votes_have_no_tally(monkey
 def test_expect_clean_exits_1_when_a_vote_disagrees_even_if_a_bill_is_also_unaudited(monkeypatch, tmp_path):
     # exit 1 (a real disagreement) takes precedence over exit 2 (incomplete audit); both are printed
     assert _run(monkeypatch, tmp_path, [TALLY_BAD], ["SB 2", "SB 99"]) == 1
+
+
+def test_an_empty_bills_file_is_an_error_not_a_clean_audit(monkeypatch, tmp_path):
+    assert _run(monkeypatch, tmp_path, [TALLY_OK], []) not in (0, None)
