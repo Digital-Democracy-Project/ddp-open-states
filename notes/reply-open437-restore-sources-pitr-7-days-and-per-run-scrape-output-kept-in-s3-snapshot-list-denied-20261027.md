@@ -1,0 +1,27 @@
+# REPLY (OPEN-437): what can restore the production openstates database? **Point-in-time recovery for 7 days, plus every scrape run's output kept in S3 (versioned, locked for a year, never expired).** I could not list snapshots: this role is denied (read-only, 2026-10-27 15:04 to 15:20 UTC)
+
+The operator said "Option A, run both now". **Nothing was changed: no snapshot, no setting, no restart, no object read.** What I ran: `aws rds describe-db-instances`, `describe-db-instance-automated-backups`, `describe-db-snapshots`, `aws s3api get-bucket-versioning`, `get-bucket-lifecycle-configuration`, `get-object-lock-configuration`, and `aws s3 ls` (key **names, sizes and dates** only; no object was downloaded), plus `grep` in `/opt/ddp-open-states`.
+
+## 1. RDS `ddp-openstates` (describe-db-instances)
+`db.t4g.large`, Postgres **16.15**, **50 GB gp3**, storage **encrypted**, **single-AZ**, **deletion protection on**, created 2026-08-29. **Automated backup retention: 7 days.** **Point-in-time recovery is on** (retention above 0 and a latest restorable time): **LatestRestorableTime `2026-10-27T15:01:48Z`** (read 15:04 UTC), backup window **04:57 to 05:27 UTC** (it overlaps the 05:00 UTC archive jobs). **I could not read the earliest restorable time or the snapshot list:** `rds:DescribeDBInstanceAutomatedBackups` and **`rds:DescribeDBSnapshots` are denied** to this host's role (`EC2ServiceAccessReadOnlyRole`), so **I cannot list manual snapshots (name, time) or automated ones.** Someone with access (the console, or a role with `rds:DescribeDBSnapshots` on this instance) has to read that; with a 7-day retention the earliest restorable time is about 7 days before now, which I could not confirm. (A point-in-time restore creates a **new** instance; it is not in place.)
+
+## 2. The S3 archives (settings read; no content read)
+Two different things are called archive:
+* **`ddp-bill-archive` = the permanent bill-DOCUMENT archive** (`bills/raw/{jurisdiction}/{session}/{bill_id}/...`, written by the archive job; `PLAN-bill-document-provenance.md` Phase 1). It holds the **documents** (bill text files per version), **not the bill's database record** (title, actions, sponsors, votes). **Versioning: Enabled. Lifecycle rules: none. Object Lock: on, default retention GOVERNANCE, 100 years.** So if a document is ever re-written the previous version is kept, with no expiry. It cannot restore a bill's record by itself.
+* **`ddp-openstates-scraper-memory` = per-run scraper working data, and this is the part that matters for a rollback.** Each scheduled or manual run writes its whole output under **`working-tier/<state>/<run_id>/`**: a `_manifest.json` plus one JSON per object (for example NC run `nc-c1e6ba36f200`, the 10-25 scheduled run: **3,129 objects, about 19 MB**, manifest 264 KiB; the oldest NC run kept is `nc-ecc4a5443cb2` of 2026-09-13). **Versioning: Enabled. Lifecycle rules: none (nothing expires). Object Lock: on, default retention GOVERNANCE, 1 year.** **Run prefixes kept per state today:** az 10, fl 39, ma 9, mi 9, nc 4, usa 115, ut 15, va 10, wa 54. So **a bill record as the old image scraped it IS kept, per run, for at least a year, and nothing in S3 overwrites it** (each run has its own run id; the new image's runs get new prefixes). `cloud_loader.py <source> <run_id>` loads one run's objects into RDS and checks that the manifest's `run_id` and source match the one asked for.
+
+## 3. Snapshots: who and how long
+**This role cannot take one** (it is read-only; I did not try, as you asked for no snapshot), and I cannot see who can: a person with RDS write access (console or admin role) has to. **Duration: not measured.** The instance is 50 GB gp3; RDS snapshots are incremental on top of the daily automated backup, so my **expectation** is minutes rather than hours, but that is an expectation, not a measurement.
+
+## 4. Everything I know of that restores the database or one state's bills
+1. **Point-in-time recovery**, the broadest: any moment in the last 7 days into a **new** instance, then copy the rows you need (for one state, by SQL). Needs a person with RDS access; time not measured.
+2. **Reload an old run for one state** (`cloud_loader.py <state> <run_id>` from the host): it re-applies that run's **scraped bill records**. Limits, from the code and the layout, not tested: it restores only what that run contained (an incremental run holds only the bills it found changed; MA's 10-25 "incremental" run found 12,260 objects, almost the whole session, but NC's holds 3,129), it **overwrites** newer data for those bills, and it does **not** undo derived tables built afterwards (text extraction and `ddp_bill_version_document`, diffs, broker-side data). Your NC note listed "re-running the loader on an old run" as not authorized for that ticket; I am describing it as an available tool, not proposing it.
+3. **`ddp-bill-archive`** restores the **documents** only (versioned, 100-year lock).
+4. **The Mac's nightly dump is a replica that lags**, as you say; I did not look at it.
+5. The broker's own database (`data-broker-postgres-3`, a different RDS instance) is not part of this.
+The **targeted `bill_no=` rescrape on the old image** you describe remains the finest tool; the above are the stronger fallbacks.
+
+## Not checked
+The snapshot list and earliest restorable time (denied); any restore duration; whether any later run overwrote a **per-run** object (versioning says the old version stays); and the contents of any object.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
