@@ -21,7 +21,8 @@ Usage:
   ./check-mi-vote-tallies.py                      # all of 2025-2026, summary
   ./check-mi-vote-tallies.py --list               # plus one line per disagreeing vote
   ./check-mi-vote-tallies.py --bills FILE --list  # only these bills ("SB 415" per line, or a JSON list)
-  ./check-mi-vote-tallies.py --bills FILE --expect-clean   # exit 1 if any listed bill still disagrees
+  ./check-mi-vote-tallies.py --bills FILE --expect-clean   # exit 1 if any listed bill still disagrees,
+                                                           # exit 2 if a listed bill had no vote it could audit
 
 Votes whose motion text has no YEAS/NAYS tally are counted and skipped, not guessed at.
 """
@@ -79,6 +80,12 @@ def verdict(stored_yes, stored_no, declared):
     return "other"
 
 
+def unaudited_bills(wanted, audited):
+    """Listed bills with no audited vote: absent from the database, or every vote skipped for
+    lack of a tally. --expect-clean must not call these clean."""
+    return sorted(set(wanted) - set(audited))
+
+
 def read_bills(path):
     text = open(path).read().strip()
     if text.startswith("["):
@@ -103,6 +110,7 @@ def main():
 
     counts = collections.Counter()
     bad = []
+    audited = set()
     for vid, chamber, date, motion, bill, yes, no in cur.fetchall():
         if bills is not None and bill not in bills:
             continue
@@ -110,6 +118,7 @@ def main():
         if tally is None:
             counts[(chamber, "no tally in motion text")] += 1
             continue
+        audited.add(bill)
         v = verdict(yes, no, tally)
         counts[(chamber, v)] += 1
         if v != "ok":
@@ -123,8 +132,13 @@ def main():
     if args.list:
         for row in bad:
             print("  " + "  ".join(row))
+    missing = unaudited_bills(bills, audited) if bills is not None else []
+    if missing:
+        print(f"listed bills with no audited vote (not found, or no tally in any motion text): {missing}")
     if args.expect_clean and bad:
         sys.exit(1)
+    if args.expect_clean and missing:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

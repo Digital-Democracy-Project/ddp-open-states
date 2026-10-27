@@ -45,3 +45,9 @@ def test_read_bills_accepts_lines_and_json(tmp_path):
     js = tmp_path / "b.json"
     js.write_text('["SB 415", "HB 4961"]')
     assert chk.read_bills(str(lines)) == chk.read_bills(str(js)) == {"SB 415", "HB 4961"}
+
+
+def test_unaudited_bills_lists_bills_with_nothing_checked():
+    # a listed bill that is missing, or whose every vote lacked a tally, must not read as clean
+    assert chk.unaudited_bills({"SB 415", "HB 4961", "SB 1"}, {"SB 415"}) == ["HB 4961", "SB 1"]
+    assert chk.unaudited_bills({"SB 415"}, {"SB 415", "HB 9"}) == []
