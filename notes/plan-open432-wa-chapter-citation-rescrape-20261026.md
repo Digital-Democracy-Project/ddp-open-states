@@ -39,7 +39,16 @@ OPENSTATES_DB_NAME=<database api-v3 serves> ./check-wa-chapter-citations.py --bi
 source activate.sh
 while read -r list; do ./run-scrape.sh wa "session=2025-2026 bill_no=$list" || break; done < /tmp/wa-missing.txt
 ```
-* **Canary first (pm-review round 2):** run only the first line, then check just those 20 before the other 24 lines: `head -1 /tmp/wa-missing.txt > /tmp/wa-canary.txt; ./run-scrape.sh wa "session=2025-2026 bill_no=$(cat /tmp/wa-canary.txt)"`, then `./check-wa-chapter-citations.py --targets /tmp/wa-canary.txt --baseline /tmp/wa-before.csv --verify` (the baseline holds all 494 rows; only the listed ones are checked). Continue only if it exits 0. Any later problem is handled the same way: stop, read the listed bills, rescrape the same lines.
+* **Canary first (pm-review rounds 2-3):** run only the first line (20 bills, 177 bytes), then verify just those 20 before the other 24 lines. One chained command, so a failed check stops the flow:
+  ```
+  head -1 /tmp/wa-missing.txt > /tmp/wa-canary.txt \
+   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | sort -u | wc -l)" = 20 ] \
+   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | grep -cxFf - <(tr ',' '\n' < /tmp/wa-missing.txt))" = 20 ] \
+   && ./run-scrape.sh wa "session=2025-2026 bill_no=$(cat /tmp/wa-canary.txt)" \
+   && ./check-wa-chapter-citations.py --targets /tmp/wa-canary.txt --baseline /tmp/wa-before.csv --verify \
+   && echo "canary passed: run the remaining lines"
+  ```
+  The two `[ ... ]` tests assert 20 unique bills, all in the frozen list. The baseline holds all 494 rows; only the listed bills are checked. Any later problem is handled the same way: stop, read the listed bills, rescrape the same lines.
 * **Live-test evidence added 2026-10-26** (a second 80-bill random sample, seed 9007, scrape only): 80 of 80 get exactly one `chapter` citation (0 with two), the pre-existing non-chapter citations, documents and vote events (214) are identical to what the old scraper produces, and no other field differs.
 * **Why 25 short runs, not one:** `run-scrape.sh` names its marker files after the whole argument string, and one 494-bill list makes a 3,489-byte name (the limit is 255; tried: `File name too long`). Twenty bills is 177 bytes. `--chunk-size` changes it.
 * **Why no `start=`:** `run-scrape.sh` takes its incremental cutoff from a marker keyed by that argument string; this one-off argument has no marker, so each run is a full-mode targeted run with no cutoff. Do not add `start=` by hand: Washington's `start=` filter (OPEN-409) skips a bill whose latest status is older than the cutoff, which is every one of these enacted bills. The live test below ran without it.
