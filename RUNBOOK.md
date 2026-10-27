@@ -425,6 +425,9 @@ The script does, in order, and stops at the first failure (nothing is live until
 
 `CONFIRM=1 bash ...` asks before step 6. Re-running after a failed run is safe: it rebuilds, and if the
 push never happened it reuses the same tag.
+`CONFIRM=1` needs a real terminal for its prompt: run in the background (no input), `read` fails at EOF and
+the script exits 1 after the push, *before* registering. The image is then pushed and verified but not live
+(found 2026-10-27, OPEN-437). Run it in the foreground; a re-run builds the next tag (ECR is immutable).
 
 **Registering the revision IS the cutover for new launches.** The EC2 `ddp-sync` launches
 `task_definition: "ddp-scrapers"` (`ddp-sync/config/sync_schedule.yaml`, `cloud_path.fargate`) with no
@@ -436,6 +439,28 @@ the family then resolves to the previous revision again.
 When it finishes, tell the prod agent (via `notes/ops-handoff`) the **new tag and revision** and, if
 you want a confirmation run, which jurisdiction to trigger. Never "please build this" -- building is
 the Mac's job.
+
+### Canary first, with a way back (OPEN-437, first used 2026-10-27)
+
+One task-definition family serves every state, so registering a revision moves them all at once. Do it
+inside a quiet window (no scheduled launch, nothing running), and then prove one state before the rest run:
+
+1. **Before:** the prod agent saves a read-only baseline (live revision and tag, per-state bills / vote events /
+   person votes, newest working-tier run id per state, duplicate and `H VOTE:`-style checks) via `notes/ops-handoff`.
+2. **Register** (the script's step 6). The agent cannot read ECS on its own; read the revision and image
+   from the Mac (`aws ecs describe-task-definition --task-definition ddp-scrapers`).
+3. **Canary:** launch *one* state by hand, `POST /ddp-sync/v1/trigger/openstates-scrape/<target>` (never Michigan:
+   its site is bot-protected), then compare it with the baseline. Confirm the task ran on the new revision
+   (`aws ecs describe-tasks`). Stop at once on a failed task, a traceback or block, or a drop of more than 2% in
+   bills or 5% in vote events.
+4. **Watch for side effects:** a manual run can count toward the 00:30 UTC cadence review's escalation
+   (`escalate_window: 2`), and the next scheduled launches (daily WA 02:30, USA 03:00 UTC) run on the new image.
+5. **Rollback, fastest first:** deregister the new revision (the previous one is latest again; running tasks keep
+   their image); then, if launches must stop, pause ddp-sync (config edit + `sudo systemctl restart ddp-sync`, about
+   2 minutes; manual triggers ignore the flags). Data a bad run already wrote is repaired by a targeted `bill_no=`
+   rescrape on the old image; the per-run S3 outputs (`ddp-openstates-scraper-memory`, `working-tier/<state>/<run_id>/`,
+   reloadable with `cloud_loader.py <state> <run_id>`) and 7-day RDS point-in-time recovery are the wider fallbacks.
+   The prod agent reports and waits; it never rolls back on its own.
 
 ### The same steps by hand (reference only: this is what the script runs)
 
