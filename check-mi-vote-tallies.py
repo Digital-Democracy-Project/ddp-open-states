@@ -22,7 +22,8 @@ Usage:
   ./check-mi-vote-tallies.py --list               # plus one line per disagreeing vote
   ./check-mi-vote-tallies.py --bills FILE --list  # only these bills ("SB 415" per line, or a JSON list)
   ./check-mi-vote-tallies.py --bills FILE --expect-clean   # exit 1 if any listed bill still disagrees,
-                                                           # exit 2 if a listed bill had no vote it could audit
+                                                           # exit 2 if a listed bill had no vote it could audit (needs --bills;
+                                                           # a disagreement exits 1 even if a bill is also unaudited)
 
 Votes whose motion text has no YEAS/NAYS tally are counted and skipped, not guessed at.
 """
