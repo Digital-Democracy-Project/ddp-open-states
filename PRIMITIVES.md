@@ -622,6 +622,12 @@ functions, layered on top of the ordering work above rather than changing it.
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
   doesn't cover yet, before hand-writing new regexes.
 
+- **`check-mi-vote-tallies.py`** (repo root, OPEN-424) — read-only: compares each stored Michigan
+  roll call's yes/no voter rows with the YEAS/NAYS printed in its own motion text and reports
+  `ok` / `no-yea` / `nays-high` / `other`. Needs no outside data, so it is the before/after check
+  for any Michigan journal-parser fix and rescrape (`--bills FILE`, `--expect-clean`). Not a
+  repair: the repair is a rescrape (`notes/plan-open424-mi-journal-rescrape-20261026.md`).
+
 ## Per-jurisdiction configuration: which mechanism to use (OPEN-120/OPEN-121, 2026-08-22)
 
 Before adding a new "this jurisdiction needs different behavior" special case anywhere in
