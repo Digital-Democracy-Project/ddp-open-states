@@ -42,8 +42,8 @@ while read -r list; do ./run-scrape.sh wa "session=2025-2026 bill_no=$list" || b
 * **Canary first (pm-review rounds 2-3):** run only the first line (20 bills, 177 bytes), then verify just those 20 before the other 24 lines. One chained command, so a failed check stops the flow:
   ```
   head -1 /tmp/wa-missing.txt > /tmp/wa-canary.txt \
-   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | sort -u | wc -l)" = 20 ] \
-   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | grep -cxFf - <(tr ',' '\n' < /tmp/wa-missing.txt))" = 20 ] \
+   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | sort -u | wc -l)" -eq 20 ] \
+   && [ "$(tr ',' '\n' < /tmp/wa-canary.txt | grep -cxFf - <(tr ',' '\n' < /tmp/wa-missing.txt))" -eq 20 ] \
    && ./run-scrape.sh wa "session=2025-2026 bill_no=$(cat /tmp/wa-canary.txt)" \
    && ./check-wa-chapter-citations.py --targets /tmp/wa-canary.txt --baseline /tmp/wa-before.csv --verify \
    && echo "canary passed: run the remaining lines"
