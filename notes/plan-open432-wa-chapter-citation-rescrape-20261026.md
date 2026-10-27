@@ -48,6 +48,7 @@ while read -r list; do ./run-scrape.sh wa "session=2025-2026 bill_no=$list" || b
    && ./check-wa-chapter-citations.py --targets /tmp/wa-canary.txt --baseline /tmp/wa-before.csv --verify \
    && echo "canary passed: run the remaining lines"
   ```
+  Run it in bash (it uses `<(...)`); `/tmp/wa-before.csv` is the snapshot taken in "Before you run", from the same frozen list, immediately before the first write. After the other 24 lines finish, the whole frozen list is checked once more in "After" below (`--targets /tmp/wa-missing.txt --baseline /tmp/wa-before.csv --verify`, then `--verify` over the database); the run is not complete until both exit 0.
   The two `[ ... ]` tests assert 20 unique bills, all in the frozen list. The baseline holds all 494 rows; only the listed bills are checked. Any later problem is handled the same way: stop, read the listed bills, rescrape the same lines.
 * **Live-test evidence added 2026-10-26** (a second 80-bill random sample, seed 9007, scrape only): 80 of 80 get exactly one `chapter` citation (0 with two), the pre-existing non-chapter citations, documents and vote events (214) are identical to what the old scraper produces, and no other field differs.
 * **Why 25 short runs, not one:** `run-scrape.sh` names its marker files after the whole argument string, and one 494-bill list makes a 3,489-byte name (the limit is 255; tried: `File name too long`). Twenty bills is 177 bytes. `--chunk-size` changes it.
