@@ -533,6 +533,17 @@ had to do by hand — **don't write a new one-off diffing/corpus-scan script for
   Pass a shared `blast_radius_cache={}` dict across a whole run so a repeating signature (266
   bills in OPEN-26's case) only queries once.
 
+## `check-va-roll-members.py` — do stored Virginia roll calls list the same members as LIS? (repo root, OPEN-429)
+
+Read-only audit: for every stored Virginia vote it fetches LIS's current roll by VoteID and sorts each
+difference into `dropped` (stored, LIS no longer lists them), `no-response` (LIS lists them without a
+response; the scraper skips these on purpose, so a rescrape changes nothing), `added` and `option`.
+Use it before a Virginia rescrape to see what the rescrape would change in member rows, instead of
+sampling by hand. `VA_API_KEY` from the environment, paced, stops at the first 403/429, `--cache-dir`
+makes reruns free, `--bill` limits it. First result (2026-10-26): of 5,527 stored 2026 House votes,
+283 lack Del. Barry Knight (died 2026-02-19; LIS dropped him from the 02-17 and 02-19 rolls), 513 differ
+only by a no-response member, nothing else. Not a repair script: the repair is a rescrape.
+
 ## Bill-version ordering & diff backfills (`openstates-core/openstates/cli/text_extract.py`)
 
 `archive_bill_versions()` used to walk `bill.versions.all()` directly and trust whatever order
