@@ -40,7 +40,7 @@ CAMS_URL="${CAMS_URL:-http://localhost:8000}"
 
 on_failure() {
     log "ERROR: archive failed for $STATE"
-    post_slack_alert "⚠️ *OpenStates archive failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log"
+    post_slack_alert ":warning: *OpenStates archive failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log" --source ddp-open-states/run-archive
     report_failure_to_cams
 }
 

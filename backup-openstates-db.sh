@@ -21,7 +21,7 @@ DUMP="$OUT/openstates_${STAMP}.dump"
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [db-backup] $*" | tee -a "$LOG"; }
 
 slack_fail() {
-    post_slack_alert ":red_circle: openstates DB backup FAILED — check logs/os-api.log"
+    post_slack_alert ":red_circle: openstates DB backup FAILED — check logs/os-api.log" --source ddp-open-states/backup-openstates-db
 }
 
 if ! docker exec ddp-openstates-postgres-1 pg_dump -U openstates -Fc openstates > "$DUMP" 2>>"$LOG"; then

@@ -97,7 +97,7 @@ post_slack() {
         echo "DRY_RUN sender: $(_slack_alert_sender 2>/dev/null | tr '\n' ' ')"
         return 0
     fi
-    post_slack_alert "$1"
+    post_slack_alert "$1" --direct
     [ "${OPERATOR_ALERT_DELIVERED:-0}" = 1 ] && return 0
     if [ "${OPERATOR_ALERT_REASON:-}" = no-token ]; then
         log "no Slack token available: message NOT delivered, will retry next run"

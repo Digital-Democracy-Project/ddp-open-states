@@ -98,7 +98,7 @@ should reuse rather than reimplement:
   ages out after 24h. Losing the lock also sets `DO_NOT_RETRY_FLAG` — exit 90 alone does **not**
   stop `run-scrape-retrying.sh`, which decides on the flag file, so without it the wrapper would
   have spun through every attempt against a jurisdiction that was already being scraped.
-- **Slack alert-on-failure** — `post_slack_alert TEXT [CHANNEL]` from **`lib/slack-alert.sh`** (OPEN-325, which
+- **Slack alert-on-failure** — `post_slack_alert TEXT [CHANNEL] [--source S] [--dedupe-key K] [--direct]` from **`lib/slack-alert.sh`** (OPEN-325, which
   is the extraction OPEN-43 asked for), sourced by `run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`,
   `start-os-api.sh` and `check-replica-health.sh`. The first two call it from `on_failure()` (fired via `trap 'on_failure' ERR`), the others from
   `slack_fail()`. It posts to `#automation-errors` as **CodeBot** (not the Slack app's own name, Agent Smith), reads
@@ -107,6 +107,9 @@ should reuse rather than reimplement:
   called it, and a post it cannot send (no token, Slack refused) goes to stderr instead of vanishing. Before
   OPEN-325 each script carried its own `curl` (four copies, none setting an identity, none escaping the text). See
   the `lib/slack-alert.sh` section below. **Not yet live-verified against Slack** (PR #264, 2026-10-05).
+  Since OPEN-436 a class-A call (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`) first tries CAMS's operator-alert
+  route and falls back to the direct post on anything but a 2xx; class B (`start-os-api.sh`, `check-replica-health.sh`: alerts
+  about CAMS or the replica themselves) pass `--direct`. Dormant until `OPERATOR_ALERT_URL` is set in `ddp-agents/.env`.
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
@@ -306,11 +309,18 @@ scheduler in ddp-sync, not on this Mac. Full account: `RUNBOOK.md` → "Scraper 
 RETIRED", and `LESSONS.md` §6.
 
 ## `lib/slack-alert.sh` — shared Slack alert helper (OPEN-325, extraction requested by OPEN-43)
-Source it, don't run it: `source "$SCRIPT_DIR/lib/slack-alert.sh"`, then `post_slack_alert "text" ["#channel"]`
-(channel defaults to `#automation-errors`). It owns the token lookup, the 10s timeout, the CodeBot sender identity
+Source it, don't run it: `source "$SCRIPT_DIR/lib/slack-alert.sh"`, then `post_slack_alert "text" ["#channel"] [--source S] [--dedupe-key K] [--direct]`
+(channel defaults to `#automation-errors` for the direct post; the route picks its own from CAMS's channel map unless one is given). It owns the token lookup, the 10s timeout, the CodeBot sender identity
 (defaults `CodeBot` / `:robot_face:`; an empty setting means the default; a multi-word name is kept whole), JSON
 escaping, and the stderr line when Slack answers anything but `"ok":true`. Needs the `chat:write.customize` scope;
 without it Slack ignores the name and icon and the post still succeeds under the default name.
+- **Route first, direct second (OPEN-436, plan `PLAN-cams-operator-alerts` §4.9).** With `OPERATOR_ALERT_URL` and `CAMS_API_TOKEN` set
+  (environment, then `ddp-agents/.env`) and `OPERATOR_ALERT_VIA_CAMS` not `false`, the alert is POSTed to CAMS (5 s, Bearer token, body
+  `{v:1, source, text[, channel][, dedupe_key]}`). **Any answer but 2xx, a timeout or a connection error falls back to the direct
+  CodeBot post**, and a 4xx is reported on stderr as a sender bug. A 2xx counts as delivered, including the route's `duplicate` and
+  `dropped_rate_limited` answers. `--direct` is for alerts about CAMS, Docker or the replica, which must work when CAMS is down.
+  `--source` is `<service>/<job>` (callers pass `ddp-open-states/run-scrape` etc.). **Mirror of** `ddp-agents/deployment/scripts/lib/operator-alert.sh`:
+  same variable names and the same attempt and fallback; change both. `report_failure_to_cams` (`/api/v1/failures`, code triage) stays separate.
 - **Always returns 0.** An alert is best-effort and must never change a caller's exit status or trip its `set -e`.
 - **Source it only if readable:** every caller uses `[ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source ... || post_slack_alert() { ...stderr...; return 0; }`.
   Under `set -e`, macOS's bash 3.2 exits the whole script when `source` hits a missing file *even with a `||`
@@ -320,7 +330,7 @@ without it Slack ignores the name and icon and the post still succeeds under the
 - **Tests:** `test-slack-alert.sh` (fake `curl` on `PATH`, `SLACK_ALERT_ENV_FILE` pointing at a throwaway env
   file; no network). Its last block **fails if any other shell script contains `chat.postMessage`**, so a new alert
   cannot copy the old two-key payload and post as Agent Smith. There are no exemptions (OPEN-435 removed the last).
-- **Delivery flag:** after each call `OPERATOR_ALERT_DELIVERED` is `1` only when Slack answered `"ok":true`, else `0`,
+- **Delivery flag:** after each call `OPERATOR_ALERT_DELIVERED` is `1` only when CAMS answered 2xx or Slack answered `"ok":true`, else `0`,
   and `OPERATOR_ALERT_REASON` is `ok` / `no-token` / `refused` (the names ddp-agents' `operator-alert.sh` uses). The
   call still returns 0; a caller that keeps state about alerts it sent (`check-replica-health.sh`) reads the flag.
 - **Mirrors:** `ddp-sync` has the same idea in Python (`ddp_sync/slack_alerts.py::post_alert`) and `ddp-agents` owns

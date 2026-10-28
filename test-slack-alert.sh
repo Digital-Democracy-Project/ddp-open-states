@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-slack-alert.sh — tests for lib/slack-alert.sh's post_slack_alert (OPEN-325)
+# test-slack-alert.sh — tests for lib/slack-alert.sh's post_slack_alert (OPEN-325, route-first OPEN-436)
 #
 # No network and no real Slack: a fake `curl` on PATH records what would have been sent. Every case
 # runs in a clean `env -i` so the real SLACK_BOT_TOKEN / CODEBOT_* of whoever runs this never leak in.
@@ -23,19 +23,31 @@ ok()   { PASS=$((PASS + 1)); echo "  ok   $1"; }
 fail() { FAIL=$((FAIL + 1)); echo "  FAIL $1"; }
 check() { if [ "$2" = "$3" ]; then ok "$1"; else fail "$1 — expected [$3], got [$2]"; fi; }
 
-# A fake curl: records the -d payload, the Authorization header and one line per call, and answers with
-# FAKE_CURL_RESPONSE (default {"ok":true}), exiting FAKE_CURL_EXIT (default 0).
+# A fake curl that tells the two destinations apart by URL. A call to the CAMS route (a URL containing
+# operator-alerts) records its -d body as payload.route and answers FAKE_ROUTE_CODE (default 202, printed
+# because the helper asks for -w '%{http_code}'), exiting FAKE_ROUTE_EXIT (default 0; a real curl that cannot
+# connect prints 000 and exits 7). Any other call is Slack: it records the -d body as payload and answers
+# FAKE_CURL_RESPONSE (default {"ok":true}), exiting FAKE_CURL_EXIT (default 0). Every call adds a line to
+# `calls` and its URL to `urls`; every -H goes to `headers`.
 mkdir -p "$T/bin"
 cat > "$T/bin/curl" <<'EOF'
 #!/bin/bash
+url=""
+for arg in "$@"; do case "$arg" in http*) url="$arg" ;; esac; done
+case "$url" in *operator-alerts*) route=1; pf=payload.route ;; *) route=0; pf=payload ;; esac
 i=1
 while [ $i -le $# ]; do
     arg="${!i}"; next=$((i + 1))
-    if [ "$arg" = "-d" ]; then printf '%s' "${!next}" > "$FAKE_CURL_DIR/payload"; fi
+    if [ "$arg" = "-d" ]; then printf '%s' "${!next}" > "$FAKE_CURL_DIR/$pf"; fi
     if [ "$arg" = "-H" ]; then printf '%s\n' "${!next}" >> "$FAKE_CURL_DIR/headers"; fi
     i=$((i + 1))
 done
 echo called >> "$FAKE_CURL_DIR/calls"
+echo "$url" >> "$FAKE_CURL_DIR/urls"
+if [ "$route" = 1 ]; then
+    printf '%s' "${FAKE_ROUTE_CODE-202}"
+    exit "${FAKE_ROUTE_EXIT:-0}"
+fi
 printf '%s' "${FAKE_CURL_RESPONSE-{\"ok\":true\}}"
 exit "${FAKE_CURL_EXIT:-0}"
 EOF
@@ -55,14 +67,23 @@ run_alert() {
 payload() { cat "$T/run/payload" 2>/dev/null; }
 calls()   { [ -f "$T/run/calls" ] && wc -l < "$T/run/calls" | tr -d ' ' || echo 0; }
 
-json_get() {   # json_get <key>  (reads the recorded payload)
-    if command -v jq >/dev/null 2>&1; then jq -r ".$1" "$T/run/payload"
-    else python3 -c "import json,sys; print(json.load(open('$T/run/payload'))['$1'])"; fi
+json_get() {   # json_get <key> [file]  (reads the recorded Slack payload, or the named file such as payload.route)
+    local f="$T/run/${2:-payload}"
+    if command -v jq >/dev/null 2>&1; then jq -r ".$1" "$f"
+    else python3 -c "import json,sys; print(json.load(open('$f'))['$1'])"; fi
 }
-json_valid() {
-    if command -v jq >/dev/null 2>&1; then jq -e . "$T/run/payload" >/dev/null 2>&1
-    else python3 -c "import json; json.load(open('$T/run/payload'))" 2>/dev/null; fi
+json_valid() {   # json_valid [file]
+    local f="$T/run/${1:-payload}"
+    if command -v jq >/dev/null 2>&1; then jq -e . "$f" >/dev/null 2>&1
+    else python3 -c "import json; json.load(open('$f'))" 2>/dev/null; fi
 }
+json_has() {   # json_has <key> <file>: 1 if the key is present
+    local f="$T/run/$2"
+    if command -v jq >/dev/null 2>&1; then jq -e "has(\"$1\")" "$f" >/dev/null 2>&1 && echo 1 || echo 0
+    else python3 -c "import json,sys; sys.exit(0 if '$1' in json.load(open('$f')) else 1)" && echo 1 || echo 0; fi
+}
+urls() { cat "$T/run/urls" 2>/dev/null | tr '\n' ' '; }
+ROUTE="http://localhost:8000/api/v1/operator-alerts"
 command -v jq >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1 || { echo "need jq or python3 to read the payloads"; exit 2; }
 
 echo "defaults"
@@ -121,6 +142,63 @@ check "no token is not delivered" "$(cat "$T/out")" "0 no-token"
 run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "a"; OPERATOR_ALERT_DELIVERED=1; FAKE=1; post_slack_alert "b"; echo "$OPERATOR_ALERT_DELIVERED"' 'FAKE_CURL_RESPONSE={"ok":false}' >"$T/out"
 check "a later failed post resets the flag" "$(cat "$T/out")" "0"
 
+echo "route first (OPEN-436)"
+RT='SLACK_BOT_TOKEN=xoxb-t
+CAMS_API_TOKEN=cams-secret-value'
+run_alert "$RT" 'post_slack_alert "scrape failed: ut" --source ddp-open-states/run-scrape; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' OPERATOR_ALERT_URL="$ROUTE" >"$T/out"
+check "a 202 is delivered" "$(cat "$T/out")" "1 ok"
+check "a 202 makes exactly one call, to the route, and none to Slack" "$(urls)" "$ROUTE "
+check "the route body is v1 with the source and the text" "$(json_get v payload.route) $(json_get source payload.route) $(json_get text payload.route)" "1 ddp-open-states/run-scrape scrape failed: ut"
+check "no channel is sent unless the caller gave one (the route's map decides)" "$(json_has channel payload.route)" "0"
+check "no dedupe_key is sent unless the caller gave one" "$(json_has dedupe_key payload.route)" "0"
+check "the CAMS token is the bearer, read from the .env file" "$(grep -c 'Bearer cams-secret-value' "$T/run/headers")" "1"
+check "the Slack token is not sent to CAMS" "$(grep -c 'xoxb-t' "$T/run/headers")" "0"
+run_alert 'CAMS_API_TOKEN=cams-secret-value' 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED"' OPERATOR_ALERT_URL="$ROUTE" >"$T/out"
+check "a route post needs no Slack token: delivered with SLACK_BOT_TOKEN unset" "$(cat "$T/out")" "1"
+run_alert "$RT" 'post_slack_alert "x" "#other" --source ddp-open-states/run-archive --dedupe-key scrape:ut' OPERATOR_ALERT_URL="$ROUTE"
+check "an explicit channel goes to the route" "$(json_get channel payload.route)" "#other"
+check "--dedupe-key goes to the route" "$(json_get dedupe_key payload.route)" "scrape:ut"
+check "--source defaults to ddp-open-states/unknown" "$(run_alert "$RT" 'post_slack_alert "x"' OPERATOR_ALERT_URL="$ROUTE"; json_get source payload.route)" "ddp-open-states/unknown"
+run_alert "$RT" 'post_slack_alert "$(printf '"'"'say "hi" \ back\\slash\nline two\ttab\r'"'"')"' OPERATOR_ALERT_URL="$ROUTE"
+if json_valid payload.route; then ok "hostile text is valid JSON in the route body too"; else fail "invalid route JSON: $(cat "$T/run/payload.route")"; fi
+
+echo "route first: every failure falls through to the direct post"
+for case_ in "000 7" "401 0" "400 0" "503 0" "500 0" "302 0"; do
+    code="${case_% *}"; rc="${case_#* }"
+    run_alert "$RT" 'post_slack_alert "scrape failed: ut" --source ddp-open-states/run-scrape; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' \
+        OPERATOR_ALERT_URL="$ROUTE" FAKE_ROUTE_CODE="$code" FAKE_ROUTE_EXIT="$rc" >"$T/out"
+    check "route $code: the alert is still delivered, directly" "$(cat "$T/out")" "1 ok"
+    check "route $code: one call to the route, then one to Slack" "$(urls)" "$ROUTE https://slack.com/api/chat.postMessage "
+    check "route $code: the direct post carries the CodeBot name" "$(json_get username)" "CodeBot"
+    check "route $code: the direct post carries the icon" "$(json_get icon_emoji)" ":robot_face:"
+    check "route $code: the direct post carries the text" "$(json_get text)" "scrape failed: ut"
+    check "route $code: the fallback is reported on stderr, without the token" "$(grep -c 'CAMS answered' "$T/run/stderr") $(grep -c 'cams-secret-value' "$T/run/stderr")" "1 0"
+done
+run_alert "$RT" 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED $OPERATOR_ALERT_REASON"' OPERATOR_ALERT_URL="$ROUTE" FAKE_ROUTE_CODE=503 'FAKE_CURL_RESPONSE={"ok":false,"error":"not_in_channel"}' >"$T/out"
+check "route refused and Slack refused: not delivered" "$(cat "$T/out")" "0 refused"
+run_alert "$RT" 'set -euo pipefail; post_slack_alert "x"; echo survived' OPERATOR_ALERT_URL="$ROUTE" FAKE_ROUTE_CODE=000 FAKE_ROUTE_EXIT=7 >"$T/out"
+check "a failing route call does not trip set -euo pipefail" "$(cat "$T/out")" "survived"
+run_alert "$RT" 'post_slack_alert "x"; echo "$OPERATOR_ALERT_DELIVERED"' OPERATOR_ALERT_URL="$ROUTE" FAKE_ROUTE_CODE=202 >"$T/out"
+check "any 2xx counts as delivered (the route's duplicate and rate-limited answers are 202)" "$(cat "$T/out")" "1"
+
+echo "route first: when the route is not used"
+run_alert "$RT" 'post_slack_alert "x" --direct' OPERATOR_ALERT_URL="$ROUTE"
+check "--direct never calls the route" "$(urls)" "https://slack.com/api/chat.postMessage "
+run_alert "$RT" 'post_slack_alert "x" --source ddp-open-states/run-scrape --direct' OPERATOR_ALERT_URL="$ROUTE"
+check "--direct after other options still never calls the route" "$(urls)" "https://slack.com/api/chat.postMessage "
+run_alert "$RT" 'post_slack_alert "x"' OPERATOR_ALERT_URL="$ROUTE" OPERATOR_ALERT_VIA_CAMS=false
+check "OPERATOR_ALERT_VIA_CAMS=false posts directly (the rollback)" "$(urls)" "https://slack.com/api/chat.postMessage "
+run_alert "$RT" 'post_slack_alert "x"'
+check "OPERATOR_ALERT_URL unset (the default): posts directly, as before OPEN-436" "$(urls)" "https://slack.com/api/chat.postMessage "
+check "...and says nothing about CAMS" "$(grep -c 'CAMS' "$T/run/stderr")" "0"
+run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'post_slack_alert "x"' OPERATOR_ALERT_URL="$ROUTE"
+check "no CAMS token: posts directly" "$(urls)" "https://slack.com/api/chat.postMessage "
+run_alert "$RT" 'post_slack_alert "x"' OPERATOR_ALERT_URL=http://localhost:8000/api/v1/operator-alerts OPERATOR_ALERT_VIA_CAMS=
+check "an empty OPERATOR_ALERT_VIA_CAMS means the default (route first)" "$(urls)" "$ROUTE "
+run_alert "$RT
+OPERATOR_ALERT_URL=$ROUTE" 'post_slack_alert "x"'
+check "OPERATOR_ALERT_URL can come from the .env file" "$(urls)" "$ROUTE "
+
 echo "never fails the calling script"
 run_alert 'SLACK_BOT_TOKEN=xoxb-t' 'set -euo pipefail; post_slack_alert "x"; echo survived' FAKE_CURL_EXIT=22 >"$T/out"
 check "a failing curl does not trip set -euo pipefail" "$(cat "$T/out")" "survived"
@@ -146,6 +224,16 @@ for s in run-scrape.sh run-archive.sh backup-openstates-db.sh start-os-api.sh; d
 $guard
 post_slack_alert 'hello'; echo survived" 2>&1)"
     check "$s: a missing lib/slack-alert.sh skips the alert but not the script" "$(printf '%s' "$out" | tail -1)" "survived"
+done
+
+# Class A scripts name their own source for the route; class B scripts (alerts about CAMS, Docker or the replica)
+# must go direct. A new caller should have to choose one on purpose.
+for s in run-scrape.sh run-archive.sh backup-openstates-db.sh; do
+    check "$s passes --source ddp-open-states/..." "$(grep -c 'post_slack_alert .*--source ddp-open-states/' "$HERE/$s" | tr -d ' ' | awk '{print ($1>0)}')" "1"
+    check "$s does not pass --direct (class A)" "$(grep -c 'post_slack_alert .*--direct' "$HERE/$s" | tr -d ' ')" "0"
+done
+for s in start-os-api.sh check-replica-health.sh; do
+    check "$s passes --direct (class B)" "$(grep -c 'post_slack_alert .*--direct' "$HERE/$s" | tr -d ' ' | awk '{print ($1>0)}')" "1"
 done
 
 echo "nothing else posts to Slack"

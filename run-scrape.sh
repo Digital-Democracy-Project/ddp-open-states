@@ -346,7 +346,7 @@ on_failure() {
         log "SUPPRESS_FAILURE_ALERT=1 — skipping Slack/CAMS alert (retry wrapper will alert if attempts are exhausted)"
         return 0
     fi
-    post_slack_alert "⚠️ *OpenStates scrape failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log"
+    post_slack_alert ":warning: *OpenStates scrape failed: $STATE* — check ~/Developer/repos/ddp-open-states/logs/scraper.log" --source ddp-open-states/run-scrape
     report_failure_to_cams
 }
 

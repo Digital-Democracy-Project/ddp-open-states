@@ -177,7 +177,8 @@ tail -f logs/os-api.log
 **Who these appear as:** CodeBot. ddp-sync's alerts get that from `ddp_sync/slack_alerts.py::post_alert`, and this
 repo's scripts (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`, `start-os-api.sh`,
 `check-replica-health.sh`) from `lib/slack-alert.sh`. An alert that shows up as **Agent Smith** is a sender that posts
-without the identity; `test-slack-alert.sh` fails if a script grows its own `chat.postMessage`. See `PRIMITIVES.md`. (OPEN-325 / SYNC-99, merged 2026-10-06; not yet verified against live Slack.)
+without the identity; `test-slack-alert.sh` fails if a script grows its own `chat.postMessage`. See `PRIMITIVES.md`.
+From OPEN-436 the helper tries CAMS's operator-alert route first when `OPERATOR_ALERT_URL` and `CAMS_API_TOKEN` are set in `ddp-agents/.env`, and falls back to the direct post; `OPERATOR_ALERT_VIA_CAMS=false` there turns it off, and `start-os-api.sh` and `check-replica-health.sh` always post directly. (OPEN-325 / SYNC-99, merged 2026-10-06; not yet verified against live Slack.)
 
 **Known gap, accepted:** no alert that we know of fires when a cloud-owned scrape never *starts*
 (e.g. the EC2 scheduler is down) -- checked against ddp-sync's OpenStates alerting
