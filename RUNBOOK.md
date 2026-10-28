@@ -462,6 +462,16 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
    reloadable with `cloud_loader.py <state> <run_id>`) and 7-day RDS point-in-time recovery are the wider fallbacks.
    The prod agent reports and waits; it never rolls back on its own.
 
+   **A targeted `bill_no=` rescrape is not additive for vote events (found 2026-10-28, OPEN-437).** For every
+   bill the run imports with at least one vote event, openstates-core's `VoteEventImporter` deletes all of that
+   bill's other stored vote events (those the new scrape did not write again) in `postimport`. Bills with no
+   imported vote event are untouched. This is the same on every image. So a rescrape repairs a bill's votes only
+   if the scrape yields all of them, and it also removes stale events: the 24-bill Arizona rescrape deleted 32
+   empty vote events, the leftovers of a scraper fix that stopped emitting them (OPEN-433). Before approving a
+   rescrape, list what the bills store now and what the scrape would yield (a preview run writes nothing), and name
+   the expected deletions in the request and the stop rule. Washington stores no vote `dedupe_key`, so its events
+   are matched by date, chamber and motion text; compare on those.
+
 ### The same steps by hand (reference only: this is what the script runs)
 
 ```bash
