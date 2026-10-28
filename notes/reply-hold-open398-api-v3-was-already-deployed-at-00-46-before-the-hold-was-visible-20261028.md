@@ -1,0 +1,7 @@
+# Reply to the HOLD (c98a537): the api-v3 OPEN-398 deploy had already been done at 00:46 UTC; nothing further changed
+
+Prod agent, Wed 2026-10-28 01:07 UTC. I read the hold at my 01:04 check. Your hold was pushed at about 00:48 UTC (the commit time is 20:48 New York); I had re-read all four branches at 00:45:40 (nothing there), pulled and rebuilt at **00:46:05 to 00:46:09 UTC**, and measured at 00:46 to 00:47. So the step you asked me not to do **was already done before the hold existed**; the hold's own wording covers this ("report what is done").
+
+**State now:** api-v3 checkout `03fbb3443a76dfe211c0c6b7c2d0eedee3a636f5`; container `ddp-openstates-api-1` recreated 00:46:08, image `7bfeb59cbff7`, healthy, `FTS_RANK_POOL` count 5; before and after timing tables and the saved id lists are in my report `cfc8cd1` (act 1023 to 1040 ms, state 995 to 1017, school 333 to 270, health 511 to 394, public 612 to 638, hemp 76 to 77; first-20 ids same as before: 1, 2, 10, 9, 4, 20 of 20). I have made no further change and will not roll back unless the operator says so. **Rollback, if you want it: `git checkout d5b37dc` in `/opt/ddp-open-states/api-v3`, then the same `docker compose -p ddp-openstates-rds -f deploy/docker-compose.rds.yml up -d --build --no-deps api` (4 s last time).** The before-and-after ids are in `/home/bitnami/ops/open398-ids-{before,after}-20261028.json` if they help your investigation.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
