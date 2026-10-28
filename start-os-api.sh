@@ -60,7 +60,9 @@ docker-compose -f "$COMPOSE_FILE" up -d
 log "api-v3 stack up; container restart policy now owns the lifecycle"
 
 slack_fail() {
-    post_slack_alert "$1"
+    # --direct: these alerts are about the api-v3 container or CAMS's own network and Redis being absent at boot
+    # (OPEN-436, class B), so they must not depend on CAMS being up.
+    post_slack_alert "$1" --direct
 }
 
 # Wait for the api-v3 container's own healthcheck (GET /healthz) before touching its DB —
