@@ -441,3 +441,66 @@ def test_main_reports_red_instead_of_crashing_when_module_import_fails(tmp_path,
     # Round-1 review fold: assert the Gate A failure row explicitly, not just the surrounding
     # prose -- protects the intended one-gate report contract (exactly Gate A, marked FAIL).
     assert "| A | yes | FAIL |" in report
+
+
+# ── gate H: people before the first import (OPEN-446, onboarding order rule 1) ─
+
+
+class _FakeCursor:
+    def __init__(self, people):
+        self._people = people
+        self._row = None
+        self.executed = []
+
+    def execute(self, sql, params=None):
+        self.executed.append((sql, params))
+        if "opencivicdata_membership" in sql:
+            self._row = (self._people,)
+        elif "count(*)" in sql:
+            self._row = (3,)
+        else:
+            self._row = (datetime.datetime.now(datetime.timezone.utc),)
+
+    def fetchone(self):
+        return self._row
+
+
+class _FakeConn:
+    def __init__(self, people):
+        self._people = people
+        self.cursors = []
+
+    def cursor(self):
+        cur = _FakeCursor(self._people)
+        self.cursors.append(cur)
+        return cur
+
+
+def test_count_people_loaded_reads_the_jurisdictions_membership_count():
+    conn = _FakeConn(508)
+    assert vj.count_people_loaded(conn, "nc") == 508
+    sql, params = conn.cursors[0].executed[0]
+    assert params == ("ocd-jurisdiction/country:us/state:nc/government",)
+    assert "opencivicdata_membership" in sql and "o.jurisdiction_id = %s" in sql
+
+
+def test_gate_h_import_refused_when_no_people_loaded_and_nothing_is_run():
+    with patch.object(vj.subprocess, "run", side_effect=AssertionError("os-update must not run")):
+        result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], True, "/venv", "nc", "/data")
+    assert result.status == "fail"
+    assert result.blocking is True
+    assert "os-people to-database nc" in result.summary
+
+
+def test_gate_h_import_runs_when_people_are_loaded():
+    done = type("Done", (), {"returncode": 0, "stderr": ""})()
+    with patch.object(vj.subprocess, "run", return_value=done) as run:
+        result = vj.run_gate_h(_FakeConn(508), "nc", "2025", [], True, "/venv", "nc", "/data")
+    assert run.called
+    assert result.status == "pass"
+
+
+def test_gate_h_without_import_does_not_ask_for_people():
+    """The people rule is about the first import; a probe run without --import only reads."""
+    result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], False, "/venv", "nc", "/data")
+    assert result.status == "pass"
