@@ -109,7 +109,7 @@ should reuse rather than reimplement:
   the `lib/slack-alert.sh` section below. **Not yet live-verified against Slack** (PR #264, 2026-10-05).
   Since OPEN-436 a class-A call (`run-scrape.sh`, `run-archive.sh`, `backup-openstates-db.sh`) first tries CAMS's operator-alert
   route and falls back to the direct post on anything but a 2xx; class B (`start-os-api.sh`, `check-replica-health.sh`: alerts
-  about CAMS or the replica themselves) pass `--direct`. Dormant until `OPERATOR_ALERT_URL` is set in `ddp-agents/.env`.
+  about CAMS or the replica themselves) pass `--direct`. Live on the Mac since 2026-10-28: `OPERATOR_ALERT_URL` is set in `ddp-agents/.env` (where this helper reads it) and the route and the closed-port fallback were both checked there; delete that line to go back to direct posts. No script here runs on EC2.
 - **Worktree lock (reader side)** — drops a PID marker at `/tmp/ddp-openstates-scrapes/$$` for
   the duration of the scrape, removed via `trap ... EXIT`. `apply-local-patches.sh` checks this
   directory (writer side, see below) before touching `openstates-core`, so a patch pull can't
