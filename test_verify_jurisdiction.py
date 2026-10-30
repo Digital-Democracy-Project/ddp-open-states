@@ -681,6 +681,80 @@ def test_classify_gate_i_failure_is_yellow_and_inconclusive_is_not_green():
     assert vj.classify_probe(base + [vj.GateResult("I", True, "pass", "x")]) == "green"
 
 
+# ── OPEN-261: gate J, unresolved voter attribution ─────────────────────────────
+
+
+class _FakeVoterCursor:
+    def __init__(self, total, unresolved, top_names=None):
+        self.total = total
+        self.unresolved = unresolved
+        self.top_names = top_names or []
+        self.executed = []
+
+    def execute(self, sql, params=None):
+        self.executed.append((sql, params))
+
+    def fetchone(self):
+        return (self.total, self.unresolved)
+
+    def fetchall(self):
+        return self.top_names
+
+
+class _FakeVoterConn:
+    def __init__(self, total, unresolved, top_names=None):
+        self._cursor = _FakeVoterCursor(total, unresolved, top_names)
+
+    def cursor(self):
+        return self._cursor
+
+
+def test_gate_j_is_advisory_and_not_blocking():
+    conn = _FakeVoterConn(100, 0)
+    result = vj.run_gate_j(conn, "fl", "2026", ["2026"])
+    assert result.gate == "J" and result.blocking is False
+
+
+def test_gate_j_passes_when_nothing_is_unresolved():
+    conn = _FakeVoterConn(100, 0)
+    result = vj.run_gate_j(conn, "fl", "2026", ["2026"])
+    assert result.status == "pass"
+    assert "0/100" in result.summary
+
+
+def test_gate_j_warns_and_lists_top_offending_names_when_unresolved_rows_exist():
+    conn = _FakeVoterConn(100, 10, [("Smith", 7), ("Jones", 3)])
+    result = vj.run_gate_j(conn, "fl", "2026", ["2026"])
+    assert result.status == "warn"
+    assert "10/100" in result.summary and "10.0%" in result.summary
+    assert any("Smith" in d and "7" in d for d in result.details)
+    assert any("Jones" in d and "3" in d for d in result.details)
+
+
+def test_gate_j_is_inconclusive_when_the_sample_has_no_personvote_rows():
+    conn = _FakeVoterConn(0, 0)
+    result = vj.run_gate_j(conn, "fl", "2026", ["2026"])
+    assert result.status == "warn"
+    assert "nothing to resolve" in result.summary
+
+
+def test_gate_j_samples_at_most_the_capped_number_of_other_sessions():
+    conn = _FakeVoterConn(0, 0)
+    vj.run_gate_j(conn, "nc", "2025", ["2025", "a", "b", "c", "d"])
+    _sql, params = conn._cursor.executed[0]
+    assert params[1] == ["2025", "a", "b"]
+
+
+def test_gate_j_sorts_after_gate_i_in_gate_order():
+    assert vj.GATE_ORDER["J"] > vj.GATE_ORDER["I"]
+
+
+def test_classify_gate_j_warn_is_yellow_via_advisory_warn_path():
+    base = [vj.GateResult("A", True, "pass", "x")]
+    assert vj.classify_probe(base + [vj.GateResult("J", False, "warn", "x")]) == "yellow"
+    assert vj.classify_probe(base + [vj.GateResult("J", False, "pass", "x")]) == "green"
+
+
 # ── OPEN-458: the probe on Fargate, and finishing its output on the Mac ───────
 
 
@@ -848,6 +922,7 @@ def test_main_fargate_never_connects_to_a_database_and_skips_the_database_gates(
     result = json.loads(s3.objects[("bucket", "dev-probe-co-20261030/probe/co/run1/result.json")])
     by_gate = {g["gate"]: g for g in result["gates"]}
     assert by_gate["H"]["status"] == "skip" and by_gate["G"]["status"] == "skip"
+    assert by_gate["J"]["status"] == "skip"
     assert result["session"] == "2026A" and result["active_sessions"] == ["2026A"]
     assert list(result["sample_files"]) == [os.path.join("_probe", "co", "bill_1.json")]
     assert ("bucket", "dev-probe-co-20261030/probe/co/run1/sample.tar.gz") in s3.objects
@@ -1034,6 +1109,7 @@ def test_main_from_dir_reads_gates_a_b_d_from_the_fargate_run_and_runs_the_rest_
     report = next(notes.glob("nc-onboarding-probe-*.md")).read_text()
     assert "| A | yes | PASS | fargate A |" in report and "| D | yes | PASS | fargate D |" in report
     assert "| I | yes | FAIL |" in report and "roll-call-7" in report
+    assert "| J | no | SKIP |" in report  # no DATABASE_URL in this test
     assert "come from the Fargate run run1" in report
     assert code == vj.exit_code_for_classification("yellow")
 

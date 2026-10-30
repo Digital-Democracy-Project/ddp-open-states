@@ -3,7 +3,7 @@
 verify-jurisdiction — the Onboarding Probe (OPEN-222, PLAN-push-button-onboarding.md §4.4).
 
 Answers "what will this state cost?" in ~30 minutes, before anyone commits to onboarding it,
-by running gates A-I against the real scraper toolchain and the local OpenStates DB. Read-only
+by running gates A-J against the real scraper toolchain and the local OpenStates DB. Read-only
 by design (see "Safety" below) -- it never writes to a production database, never edits scraper
 code, never files tickets, and never touches ddp-sync/ddp-broker-py/ddp-next/votebot.
 
@@ -26,6 +26,12 @@ Gates (PLAN-push-button-onboarding.md §4.4's table, ticket OPEN-222's restateme
     H (blocking)  BillVersionLink rows exist and aren't a stale snapshot; with --import, the
                   state's session rows are created the way a real import creates them and listed
     I (blocking)  no vote dedupe_key repeats across the sessions sampled (OPEN-397's collision)
+    J (advisory)  OPEN-261: what fraction of personvote rows across the sessions sampled carry a
+                  voter_name but no resolved voter_id, and the top offending names -- a vote event
+                  with the right tally and an unresolvable voter matches gates A-I on count/shape
+                  while still being wrong in the one way that reaches a scorecard (the FL/OPEN-178,
+                  MI/OPEN-174 finding). Needs a database, like gate H; Stage 3 (quality_check.py)
+                  is where this is actually enforced, not here -- see its own required check.
 
 Output: a scored, classified (green/yellow/red) markdown report written to
 notes/<st>-onboarding-probe-<date>.md (PLAN §5 Stage 0's exact naming convention).
@@ -53,8 +59,8 @@ Usage:
     verify-jurisdiction <st> --from-dir DIR [--import]          (OPEN-458: finish a Fargate run here)
 
 --fargate runs gates A-D, E, F and I on a cloud IP and uploads report.md, result.json and the bounded
-sample under $MEMORY_PREFIX/probe/<st>/<run id>/ in $MEMORY_BUCKET; G and H are skipped (no database
-there), so a YELLOW is provisional and a RED is final. It refuses --import, Michigan, and a "prod"
+sample under $MEMORY_PREFIX/probe/<st>/<run id>/ in $MEMORY_BUCKET; G, H and J are skipped (no
+database there), so a YELLOW is provisional and a RED is final. It refuses --import, Michigan, and a "prod"
 MEMORY_PREFIX. --from-dir takes gates A, B and D from that run's result.json and runs the rest here
 against the downloaded sample. RUNBOOK.md "Running the onboarding probe on Fargate" has the commands.
 
@@ -126,7 +132,11 @@ EXIT_UPLOAD_FAILED = 4
 # it risks the Barracuda block; the real runner reads the published cookie, a probe does not.
 FARGATE_REFUSED_STATES = {"mi"}
 
-GATE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8}
+GATE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8, "J": 9}
+
+# OPEN-261: gate J samples at most this many sessions besides the probed one, same cap and
+# rationale as gate I (MAX_EXTRA_SESSIONS above) -- bounded query cost, not a full-corpus scan.
+TOP_UNRESOLVED_VOTERS_LIMIT = 10
 
 
 # ── Pure helpers (unit-testable, no scraper/DB/network needed) ─────────────────
@@ -1014,6 +1024,78 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
     )
 
 
+def run_gate_j(conn, st, session, active_sessions):
+    """OPEN-261: what fraction of opencivicdata_personvote rows across the sampled sessions carry
+    a voter_name but no resolved voter_id -- the layer above gate I's count/uniqueness checks,
+    since a vote event with the right tally and an unresolvable voter passes every other gate
+    (OPEN-178: FL, 3,369 rows across 43 names; OPEN-174: MI, 1,427 rows across 154 names). Samples
+    the probed session plus up to MAX_EXTRA_SESSIONS other active sessions, same policy as gate I,
+    against whatever is already imported in the configured DATABASE_URL -- this never scrapes.
+
+    Advisory, not blocking: a brand-new candidate state has no vote history yet at probe time, so
+    this is early signal on a state that already has data to query (AC #4's verification path),
+    not a gate that can realistically block a fresh onboarding. Stage 3's quality_check.py is
+    where this is actually enforced (required FAIL-on-any-unresolved line, not a shrug)."""
+    sessions = [session] + [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT count(*),
+               count(*) FILTER (WHERE pv.voter_name IS NOT NULL AND pv.voter_id IS NULL)
+        FROM opencivicdata_personvote pv
+        JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
+        JOIN opencivicdata_bill b ON ve.bill_id = b.id
+        JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+        JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+        WHERE j.id = %s AND ls.identifier = ANY(%s)
+        """,
+        (ocd_jurisdiction_id(st), sessions),
+    )
+    total, unresolved = cur.fetchone()
+    details = [f"sampled sessions: {', '.join(sessions)}", f"personvote rows: {total}", f"unresolved (voter_name set, voter_id NULL): {unresolved}"]
+
+    if total == 0:
+        return GateResult(
+            "J", False, "warn",
+            "no personvote rows in the sampled session(s) -- nothing to resolve yet",
+            details=details,
+        )
+
+    if unresolved == 0:
+        return GateResult(
+            "J", False, "pass",
+            f"0/{total} personvote rows unresolved across {len(sessions)} session(s)",
+            details=details,
+        )
+
+    cur.execute(
+        """
+        SELECT pv.voter_name, count(*)
+        FROM opencivicdata_personvote pv
+        JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
+        JOIN opencivicdata_bill b ON ve.bill_id = b.id
+        JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
+        JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
+        WHERE j.id = %s AND ls.identifier = ANY(%s)
+          AND pv.voter_name IS NOT NULL AND pv.voter_id IS NULL
+        GROUP BY pv.voter_name
+        ORDER BY count(*) DESC
+        LIMIT %s
+        """,
+        (ocd_jurisdiction_id(st), sessions, TOP_UNRESOLVED_VOTERS_LIMIT),
+    )
+    for name, n in cur.fetchall():
+        details.append(f"{name!r}: {n} unresolved vote(s)")
+
+    fraction = unresolved / total
+    return GateResult(
+        "J", False, "warn",
+        f"{unresolved}/{total} personvote rows unresolved ({fraction:.1%}) across "
+        f"{len(sessions)} session(s)",
+        details=details,
+    )
+
+
 # ── Report rendering ───────────────────────────────────────────────────────────
 
 
@@ -1412,10 +1494,16 @@ def main(argv=None):
         else:
             datadir = os.path.join(scraped_data_dir, "_probe", st)
             results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir, juris))
+        results.append(run_gate_j(conn, st, session, active_sessions))
         results.append(run_gate_e(conn, st, scrapers_src_dir))
     else:
         results.append(GateResult(
             "H", True, "skip",
+            "no database on Fargate -- finish with --from-dir on the Mac" if args.fargate
+            else "no DATABASE_URL configured -- skipped",
+        ))
+        results.append(GateResult(
+            "J", False, "skip",
             "no database on Fargate -- finish with --from-dir on the Mac" if args.fargate
             else "no DATABASE_URL configured -- skipped",
         ))

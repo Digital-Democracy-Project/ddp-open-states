@@ -552,7 +552,8 @@ the limits (the collector has no cap, so do not run a state through it to "probe
 
 * **It refuses to start** (exit 3, one line in the log) for Michigan, for `--import`, without `MEMORY_BUCKET`, and
   with `MEMORY_PREFIX` unset or `prod`. Use a throwaway prefix such as `dev-probe-<state>-<date>`.
-* **No database, no import.** Gates G (people) and H (database rows, session rows) are reported as skipped. A
+* **No database, no import.** Gates G (people), H (database rows, session rows) and J (voter-attribution
+  resolution, OPEN-261) are reported as skipped.
   **RED is final; a YELLOW is provisional** until the Mac half has run. The task exits 0 once its output is
   uploaded, whatever the colour (a yellow probe is not a failed task); exit 4 means the upload failed.
 * **Output:** `s3://ddp-openstates-scraper-memory/<MEMORY_PREFIX>/probe/<state>/<RUN_ID>/` holds `report.md`,
@@ -571,8 +572,9 @@ source ~/Developer/repos/ddp-open-states-dev/activate-dev.sh
 verify-jurisdiction co --from-dir . [--import]
 ```
 
-  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H and I here against the downloaded
-  sample (the vote-key check compares the files, it scrapes nothing). It refuses a folder whose bill and vote files
+  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H, I and J here against the
+  downloaded sample (I compares the vote-key files, J queries the database for the same sessions -- OPEN-261's
+  voter-attribution resolution check; neither scrapes). It refuses a folder whose bill and vote files
   are not exactly the ones `result.json` lists (a leftover from another run, an edited or missing file). `--import`
   works as on any Mac run: the people guard, session rows, dev database only.
 * **Deploying it:** the probe is one more file in the image (`Dockerfile`'s `COPY` line), so it needs the image
@@ -1747,6 +1749,18 @@ OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage mi 2025-2026 --tier
   N in sorted order — without it, `--tier2-limit` always returns the same lowest-numbered,
   earliest-filed bills, which isn't a representative sample of a session's health.
 - Output also written to `logs/quality-check/<jurisdiction>_<session>.log`.
+- **Required voter-attribution resolution line (OPEN-261):** every Tier-2-bearing path --
+  `--coverage` (govbot-backed or live-API fallback) and standalone `--tier2` alike -- also runs
+  `check_voter_resolution()`: what fraction of `opencivicdata_personvote` rows for the session
+  carry a `voter_name` but no resolved `voter_id`, plus the top 10 offending names. This is the
+  check `verify-jurisdiction`'s own gate J only advises on; here it's a required `Report` line
+  that **FAILs on any unresolved row**, not just below some threshold -- a vote event with the
+  right tally and an unresolvable voter passes Tier 1/Tier 2's count-based checks outright (the
+  FL/OPEN-178, MI/OPEN-174 finding). A FAIL here does not by itself mean Stage 3 is blocked: per
+  the plan's existing MA HD/SD-duplication convention, a state clears the sign-off bar either with
+  a clean result or with the remainder **itemized and explained with a named, verified cause**
+  (see `notes/nc-tier2-250-bill-baseline-sweep-20260831.md` for the exact write-up shape) -- an
+  unexplained FAIL is what actually blocks Stage 3, not a FAIL on its own.
 - **Known caveat (2026-08-03):** running a Tier 2 sample concurrently with a separate Tier 1
   sweep can produce a burst of live-API `429 Too Many Requests` errors — each process
   self-rate-limits to the licensed tier's 2 req/sec but they don't coordinate with each other.
