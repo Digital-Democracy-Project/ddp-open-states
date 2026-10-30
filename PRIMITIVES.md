@@ -973,6 +973,18 @@ schema. Runs nine gates, six of them (A/B/C/D/H/I) **blocking** and three (E/F/G
 - **E** `motion_classification.yaml` coverage, **F** version-walk direction, **G** people
   data/broker fixture shape — all advisory.
 
+**Two places to run it (OPEN-458).** `verify-jurisdiction <st> --fargate` runs as a task in the same
+`ddp-scrapers` definition the scrapes use (`RUNNER_SCRIPT=verify-jurisdiction`; the file is in the Dockerfile's
+`COPY` line), so a state's website sees a cloud IP, not the Mac's. There it has no database: G and H are skipped
+(a RED is final, a YELLOW provisional), `--import`, Michigan and a `prod` `MEMORY_PREFIX` are refused
+(`fargate_refusal()`; it also removes `DATABASE_URL` from the environment), and `report.md`, the bounded sample and, last,
+`result.json` (with a hash of every sample file, `sample_manifest()`) are uploaded under
+`<MEMORY_PREFIX>/probe/<state>/<run id>/` (`upload_probe_output()`). `verify-jurisdiction <st> --from-dir <folder>`
+finishes that run on the Mac: gates A, B and D are read from `result.json` (refused unless the folder's sample
+matches the hashes in it), the others run against the downloaded sample (`run_gate_i_from_dir()` and the live gate share `compare_vote_keys()`). The cap lives in the probe
+(`--sample-bills`): **do not add a `limit` parameter to `cloud_collector.py` for probes**, and do not write a second
+uploader or a second vote-key verdict. See RUNBOOK.md "Running the onboarding probe on Fargate".
+
 Output is a scored green/yellow/red report, checked into `notes/` (e.g.
 `notes/fl-onboarding-probe-20260831.md`). **A real bug caught in review, worth knowing if you
 touch this script:** the scoring originally could report GREEN when a blocking gate had only

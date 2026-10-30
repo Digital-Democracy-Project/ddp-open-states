@@ -679,3 +679,377 @@ def test_classify_gate_i_failure_is_yellow_and_inconclusive_is_not_green():
     assert vj.classify_probe(base + [vj.GateResult("I", True, "fail", "x")]) == "yellow"
     assert vj.classify_probe(base + [vj.GateResult("I", True, "warn", "x")]) == "yellow"
     assert vj.classify_probe(base + [vj.GateResult("I", True, "pass", "x")]) == "green"
+
+
+# ── OPEN-458: the probe on Fargate, and finishing its output on the Mac ───────
+
+
+class _Args:
+    def __init__(self, do_import=False, force_import=False):
+        self.do_import = do_import
+        self.force_import = force_import
+
+
+_FARGATE_ENV = {"MEMORY_BUCKET": "bucket", "MEMORY_PREFIX": "dev-probe-co-20261030"}
+
+
+def test_gate_result_round_trips_through_a_dict():
+    g = vj.GateResult("D", True, "fail", "blocked", details=["x"], block_signature=True)
+    back = vj.GateResult.from_dict(g.to_dict())
+    assert (back.gate, back.blocking, back.status, back.summary, back.details, back.block_signature) == (
+        "D", True, "fail", "blocked", ["x"], True,
+    )
+
+
+def test_fargate_refusal_allows_a_plain_probe_run():
+    assert vj.fargate_refusal("co", _Args(), _FARGATE_ENV) is None
+
+
+def test_fargate_refusal_refuses_michigan():
+    assert "mi" in vj.fargate_refusal("mi", _Args(), _FARGATE_ENV)
+
+
+def test_fargate_refusal_refuses_import_and_force_import():
+    assert "--import" in vj.fargate_refusal("co", _Args(do_import=True), _FARGATE_ENV)
+    assert "--import" in vj.fargate_refusal("co", _Args(force_import=True), _FARGATE_ENV)
+
+
+def test_fargate_refusal_needs_a_bucket_and_a_non_prod_prefix():
+    assert "MEMORY_BUCKET" in vj.fargate_refusal("co", _Args(), {"MEMORY_PREFIX": "dev-x"})
+    assert "MEMORY_PREFIX" in vj.fargate_refusal("co", _Args(), {"MEMORY_BUCKET": "b"})
+    for prod in ("prod", "PROD", "/prod/", " prod ", "prod/probe", "Prod/dev-x"):
+        assert "'prod'" in vj.fargate_refusal("co", _Args(), {"MEMORY_BUCKET": "b", "MEMORY_PREFIX": prod})
+
+
+def test_main_refuses_a_bad_fargate_run_before_touching_the_scraper(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "prod")
+    with patch("openstates.cli.update.get_jurisdiction", side_effect=AssertionError("must not load a scraper")):
+        assert vj.main(["co", "--fargate"]) == vj.EXIT_REFUSED
+        assert vj.main(["mi", "--fargate"]) == vj.EXIT_REFUSED
+
+
+class _FakeS3:
+    def __init__(self, fail=False):
+        self.objects = {}
+        self.fail = fail
+
+    def put_object(self, Bucket, Key, Body):
+        if self.fail:
+            raise RuntimeError("AccessDenied")
+        self.objects[(Bucket, Key)] = Body
+
+
+def test_upload_probe_output_writes_the_report_result_and_sample_under_the_probe_prefix(tmp_path):
+    import io
+    import tarfile
+
+    sample = tmp_path / "_probe" / "co"
+    sample.mkdir(parents=True)
+    (sample / "bill_1.json").write_text("{}")
+    s3 = _FakeS3()
+    keys = vj.upload_probe_output(s3, "bucket", "/dev-probe-co/", "co", "run1", "# report", {"a": 1}, str(tmp_path))
+    assert keys == [
+        "dev-probe-co/probe/co/run1/sample.tar.gz",
+        "dev-probe-co/probe/co/run1/report.md",
+        "dev-probe-co/probe/co/run1/result.json",
+    ]
+    assert s3.objects[("bucket", keys[1])] == b"# report"
+    with tarfile.open(fileobj=io.BytesIO(s3.objects[("bucket", keys[0])]), mode="r:gz") as tar:
+        assert "_probe/co/bill_1.json" in tar.getnames()
+
+
+class _FailsOnSecondPut(_FakeS3):
+    def put_object(self, Bucket, Key, Body):
+        if len(self.objects) >= 1:
+            raise RuntimeError("AccessDenied")
+        super().put_object(Bucket, Key, Body)
+
+
+def test_a_failed_upload_never_leaves_a_result_json_behind(tmp_path):
+    """result.json is the sign that a run's upload finished; --from-dir will not start without it."""
+    (tmp_path / "_probe" / "co").mkdir(parents=True)
+    s3 = _FailsOnSecondPut()
+    try:
+        vj.upload_probe_output(s3, "bucket", "dev", "co", "run1", "r", {}, str(tmp_path))
+    except RuntimeError:
+        pass
+    assert not any(key.endswith("result.json") for _bucket, key in s3.objects)
+
+
+def test_upload_probe_output_skips_the_sample_when_nothing_was_scraped(tmp_path):
+    s3 = _FakeS3()
+    keys = vj.upload_probe_output(s3, "bucket", "dev", "co", "run1", "r", {}, str(tmp_path))
+    assert [k.rsplit("/", 1)[1] for k in keys] == ["report.md", "result.json"]
+
+
+def _fargate_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-probe-co-20261030")
+    monkeypatch.setenv("RUN_ID", "run1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+
+def test_main_fargate_uploads_a_red_report_and_exits_zero_when_the_module_cannot_load(tmp_path, monkeypatch):
+    """A failed scraper import is still a finding worth reading, and a task that exits non-zero
+    would show up in ECS as a failure for what is a perfectly good probe result."""
+    import json
+
+    _fargate_env(monkeypatch, tmp_path)
+    s3 = _FakeS3()
+    with patch("openstates.cli.update.get_jurisdiction", side_effect=ModuleNotFoundError("No module named 'suds'")), \
+            patch.object(vj, "_s3_client", return_value=s3):
+        assert vj.main(["ga", "--fargate"]) == 0
+    result = json.loads(s3.objects[("bucket", "dev-probe-co-20261030/probe/ga/run1/result.json")])
+    assert result["classification"] == "red" and result["gates"][0]["gate"] == "A"
+    assert "suds" in s3.objects[("bucket", "dev-probe-co-20261030/probe/ga/run1/report.md")].decode()
+
+
+def test_main_fargate_exits_with_the_upload_code_when_the_upload_fails(tmp_path, monkeypatch):
+    _fargate_env(monkeypatch, tmp_path)
+    with patch("openstates.cli.update.get_jurisdiction", side_effect=ModuleNotFoundError("x")), \
+            patch.object(vj, "_s3_client", return_value=_FakeS3(fail=True)):
+        assert vj.main(["ga", "--fargate"]) == vj.EXIT_UPLOAD_FAILED
+
+
+def _passing(gate, blocking=True):
+    return vj.GateResult(gate, blocking, "pass", f"{gate} ok")
+
+
+def test_main_fargate_never_connects_to_a_database_and_skips_the_database_gates(tmp_path, monkeypatch):
+    import json
+
+    _fargate_env(monkeypatch, tmp_path)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@localhost/openstates_dev")
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    s3 = _FakeS3()
+    juris = type("J", (), {"name": "Colorado"})()
+    gate_a = vj.GateResult("A", True, "pass", "ok", details=["active: 2026A"])
+    def load_scraper(module_name):
+        assert "DATABASE_URL" not in os.environ, "scraper code must not be able to read the database URL on Fargate"
+        return juris, None
+
+    def scrape_one_bill(juris, st, session, sample, scraped_data_dir, datadir=None):
+        import pathlib
+
+        d = pathlib.Path(scraped_data_dir) / "_probe" / st
+        d.mkdir(parents=True)
+        (d / "bill_1.json").write_text("{}")
+        return _passing("D"), [], None
+
+    with patch("openstates.cli.update.get_jurisdiction", side_effect=load_scraper), \
+            patch.object(vj, "run_gate_a", return_value=gate_a), \
+            patch.object(vj, "run_gate_b", return_value=_passing("B")), \
+            patch.object(vj, "run_gate_d", side_effect=scrape_one_bill), \
+            patch.object(vj, "run_gate_i", return_value=_passing("I")), \
+            patch("psycopg2.connect", side_effect=AssertionError("Fargate must not connect to a database")), \
+            patch.object(vj, "_s3_client", return_value=s3):
+        assert vj.main(["co", "--fargate"]) == 0
+    result = json.loads(s3.objects[("bucket", "dev-probe-co-20261030/probe/co/run1/result.json")])
+    by_gate = {g["gate"]: g for g in result["gates"]}
+    assert by_gate["H"]["status"] == "skip" and by_gate["G"]["status"] == "skip"
+    assert result["session"] == "2026A" and result["active_sessions"] == ["2026A"]
+    assert list(result["sample_files"]) == [os.path.join("_probe", "co", "bill_1.json")]
+    assert ("bucket", "dev-probe-co-20261030/probe/co/run1/sample.tar.gz") in s3.objects
+    report = s3.objects[("bucket", "dev-probe-co-20261030/probe/co/run1/report.md")].decode()
+    assert "Ran on Fargate" in report and "--from-dir" in report
+
+
+# ── --from-dir: the Mac-side half ────────────────────────────────────────────
+
+
+def _downloaded_folder(tmp_path, st="nc", gates=None, session="2025", active=("2025", "2025E1")):
+    import json
+    import pathlib
+
+    root = pathlib.Path(tmp_path)
+    (root / "_probe" / st).mkdir(parents=True)
+    gates = gates if gates is not None else [
+        vj.GateResult("A", True, "pass", "fargate A", details=["active: 2025, 2025E1"]),
+        vj.GateResult("B", True, "pass", "fargate B"),
+        vj.GateResult("D", True, "pass", "fargate D"),
+    ]
+    (root / "result.json").write_text(json.dumps({
+        "state": st, "run_id": "run1", "run_at": "2026-10-30T16:00:00+00:00", "session": session,
+        "active_sessions": list(active), "sample_files": vj.sample_manifest(str(root)),
+        "gates": [g.to_dict() for g in gates],
+    }))
+    return root
+
+
+def _seal(root):
+    """Record the sample as it now stands, as a finished Fargate run would have."""
+    import json
+
+    payload = json.loads((root / "result.json").read_text())
+    payload["sample_files"] = vj.sample_manifest(str(root))
+    (root / "result.json").write_text(json.dumps(payload))
+
+
+def test_load_fargate_payload_reads_the_gates_back(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    payload = vj.load_fargate_payload(str(root), "nc")
+    assert [g.gate for g in payload["gates"]] == ["A", "B", "D"]
+    assert payload["session"] == "2025"
+
+
+def test_load_fargate_payload_explains_each_missing_piece(tmp_path):
+    import pytest
+
+    with pytest.raises(ValueError, match="result.json"):
+        vj.load_fargate_payload(str(tmp_path), "nc")
+    root = _downloaded_folder(tmp_path / "x")
+    with pytest.raises(ValueError, match="not 'co'"):
+        vj.load_fargate_payload(str(root), "co")
+    import shutil
+
+    shutil.rmtree(root / "_probe")
+    with pytest.raises(ValueError, match="un-tar"):
+        vj.load_fargate_payload(str(root), "nc")
+
+
+def _sample_session(root, name, votes, with_bill=True):
+    d = root / "_probe" / name
+    d.mkdir(parents=True, exist_ok=True)
+    if with_bill:
+        (d / "bill_1.json").write_text("{}")
+    for i, (key, session, bill) in enumerate(votes):
+        _write_vote(d / f"vote_event_{i}.json", key, session, bill)
+
+
+def test_load_fargate_payload_refuses_a_sample_that_is_not_the_one_the_run_produced(tmp_path):
+    """Two probes of the same state un-tarred into one folder would leave the first run's files
+    beside the second's: the gates would then judge a mix under the second run's A, B and D."""
+    import pytest
+
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("k", "2025", "HB 1")])
+    _seal(root)
+    vj.load_fargate_payload(str(root), "nc")  # untouched: accepted
+
+    (root / "_probe" / "nc" / "bill_old_run.json").write_text("{}")
+    with pytest.raises(ValueError, match="1 unexpected"):
+        vj.load_fargate_payload(str(root), "nc")
+    (root / "_probe" / "nc" / "bill_old_run.json").unlink()
+
+    (root / "_probe" / "nc" / "vote_event_0.json").write_text('{"dedupe_key": "changed"}')
+    with pytest.raises(ValueError, match="1 changed"):
+        vj.load_fargate_payload(str(root), "nc")
+    _write_vote(root / "_probe" / "nc" / "vote_event_0.json", "k", "2025", "HB 1")
+
+    (root / "_probe" / "nc" / "bill_1.json").unlink()
+    with pytest.raises(ValueError, match="1 file\\(s\\) missing"):
+        vj.load_fargate_payload(str(root), "nc")
+
+
+def test_load_fargate_payload_ignores_the_files_a_mac_import_writes_into_the_folder(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("k", "2025", "HB 1")])
+    _seal(root)
+    (root / "_probe" / "nc" / "jurisdiction_x.json").write_text("{}")
+    (root / "_probe" / "_import" / "nc").mkdir(parents=True)
+    (root / "_probe" / "_import" / "nc" / "bill_1.json").write_text("{}")
+    vj.load_fargate_payload(str(root), "nc")  # a second --from-dir --import run on the same folder
+
+
+def test_load_fargate_payload_refuses_a_result_with_no_sample_list_or_bad_gates(tmp_path):
+    import json
+    import pytest
+
+    root = _downloaded_folder(tmp_path)
+    good = json.loads((root / "result.json").read_text())
+
+    def write(**changes):
+        (root / "result.json").write_text(json.dumps({**good, **changes}))
+
+    write(sample_files=None)
+    with pytest.raises(ValueError, match="lists no sample files"):
+        vj.load_fargate_payload(str(root), "nc")
+    write(gates=good["gates"][:2])
+    with pytest.raises(ValueError, match="exactly one gate D"):
+        vj.load_fargate_payload(str(root), "nc")
+    write(gates=good["gates"] + [good["gates"][0]])
+    with pytest.raises(ValueError, match="exactly one gate A"):
+        vj.load_fargate_payload(str(root), "nc")
+    write(gates=[{**good["gates"][0], "status": "great"}] + good["gates"][1:])
+    with pytest.raises(ValueError, match="malformed gate result"):
+        vj.load_fargate_payload(str(root), "nc")
+    write(gates=[{"gate": "A"}] + good["gates"][1:])
+    with pytest.raises(ValueError, match="malformed gate result"):
+        vj.load_fargate_payload(str(root), "nc")
+
+
+def test_gate_i_from_dir_fails_when_a_key_repeats_across_downloaded_sessions(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("roll-call-7", "2025", "HB 1")])
+    _sample_session(root, "nc-session-2025E1", [("roll-call-7", "2025E1", "HB 9")])
+    result = vj.run_gate_i_from_dir("nc", "2025", ["2025", "2025E1"], str(root))
+    assert result.status == "fail" and any("roll-call-7" in d for d in result.details)
+
+
+def test_gate_i_from_dir_passes_when_keys_differ_and_does_not_scrape(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("2025-k", "2025", "HB 1")])
+    _sample_session(root, "nc-session-2025E1", [("2025E1-k", "2025E1", "HB 9")])
+    with patch.object(vj, "run_gate_d", side_effect=AssertionError("must not scrape")):
+        assert vj.run_gate_i_from_dir("nc", "2025", ["2025", "2025E1"], str(root)).status == "pass"
+
+
+def test_gate_i_from_dir_is_inconclusive_when_another_session_was_not_sampled(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("k", "2025", "HB 1")])
+    assert vj.run_gate_i_from_dir("nc", "2025", ["2025", "2025E1"], str(root)).status == "warn"
+    _sample_session(root, "nc-session-2025E1", [], with_bill=False)  # a folder with no bills is not a sample
+    assert vj.run_gate_i_from_dir("nc", "2025", ["2025", "2025E1"], str(root)).status == "warn"
+
+
+def test_gate_i_from_dir_passes_with_a_single_active_session(tmp_path):
+    root = _downloaded_folder(tmp_path, active=("2025",))
+    assert vj.run_gate_i_from_dir("nc", "2025", ["2025"], str(root)).status == "pass"
+
+
+def test_gate_i_from_dir_compares_at_most_the_capped_number_of_other_sessions(tmp_path):
+    root = _downloaded_folder(tmp_path)
+    _sample_session(root, "nc", [("k", "2025", "HB 1")])
+    _sample_session(root, "nc-session-a", [("a", "a", "HB 1")])
+    _sample_session(root, "nc-session-b", [("b", "b", "HB 1")])
+    _sample_session(root, "nc-session-c", [("k", "c", "HB 1")])  # would collide, but is past the cap
+    result = vj.run_gate_i_from_dir("nc", "2025", ["2025", "a", "b", "c"], str(root))
+    assert result.status == "pass"
+
+
+def test_main_from_dir_reads_gates_a_b_d_from_the_fargate_run_and_runs_the_rest_here(tmp_path, monkeypatch):
+    root = _downloaded_folder(tmp_path / "dl")
+    _sample_session(root, "nc", [("roll-call-7", "2025", "HB 1")])
+    _sample_session(root, "nc-session-2025E1", [("roll-call-7", "2025E1", "HB 9")])
+    _seal(root)
+    notes = tmp_path / "notes"
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    never = AssertionError("a --from-dir run must not scrape or re-run a Fargate gate")
+    with patch("openstates.cli.update.get_jurisdiction", return_value=(type("J", (), {"name": "NC"})(), None)), \
+            patch.object(vj, "run_gate_a", side_effect=never), patch.object(vj, "run_gate_b", side_effect=never), \
+            patch.object(vj, "run_gate_d", side_effect=never), patch.object(vj, "run_gate_i", side_effect=never):
+        code = vj.main(["nc", "--from-dir", str(root), "--notes-dir", str(notes), "--people-dir", str(tmp_path)])
+    report = next(notes.glob("nc-onboarding-probe-*.md")).read_text()
+    assert "| A | yes | PASS | fargate A |" in report and "| D | yes | PASS | fargate D |" in report
+    assert "| I | yes | FAIL |" in report and "roll-call-7" in report
+    assert "come from the Fargate run run1" in report
+    assert code == vj.exit_code_for_classification("yellow")
+
+
+def test_main_from_dir_refuses_a_folder_that_is_not_a_probe_download(tmp_path):
+    assert vj.main(["nc", "--from-dir", str(tmp_path)]) == vj.EXIT_REFUSED
+
+
+def test_gate_h_import_fails_plainly_when_the_scraper_module_could_not_be_loaded_here():
+    result = vj.run_gate_h(_FakeConn(people=3), "nc", "2025", [], True, "/venv", "nc", "/tmp/x", None)
+    assert result.status == "fail" and "could not be loaded on this machine" in result.summary
+
+
+def test_dockerfile_copies_the_probe_into_the_scrapers_image():
+    """The probe runs on Fargate only if the image carries it; a file missing from this COPY
+    line is a runtime 'No such file' on the task, found only after a deploy."""
+    text = open(os.path.join(_HERE, "Dockerfile")).read()
+    copy_line = next(line for line in text.splitlines() if line.startswith("COPY cloud_collector.py"))
+    assert "verify-jurisdiction" in copy_line.split()
