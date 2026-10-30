@@ -536,7 +536,8 @@ it"** — never "please build this." Building is this checkout's/this Mac's job.
 (Colorado answered `406` to the Mac's dry scrape on 2026-10-30, and served 233 bills and 1,468 votes to a Fargate
 run the same day), run the probe itself as a task instead. It uses the **same task definition the scrapes use**
 (`ddp-scrapers`): `RUNNER_SCRIPT` picks the probe, `--fargate` makes it safe to run there, and the probe's own
-`--sample-bills` is the cap (the collector has no cap, so do not run a state through it to "probe" it).
+`--sample-bills N` (stop after N bills, with their votes) and `--max-objects M` (a cap on everything returned) are
+the limits (the collector has no cap, so do not run a state through it to "probe" it).
 
 ```bash
 # AWS keys are loaded from the dev .env in a subshell; the subnets and security group are ddp-sync's cloud_path values.
@@ -544,7 +545,7 @@ run the same day), run the probe itself as a task instead. It uses the **same ta
   aws ecs run-task --region us-east-1 --cluster ddp-scrapers \
   --task-definition ddp-scrapers --launch-type FARGATE \
   --network-configuration 'awsvpcConfiguration={subnets=[subnet-0fdc71c33a5cb60bc,subnet-0dbb01bb8fd1cd1e8,subnet-087136704d428e5f2],securityGroups=[sg-09346518873d48a08],assignPublicIp=ENABLED}' \
-  --overrides '{"containerOverrides":[{"name":"scraper","command":["co","--fargate","--sample-bills","5"],"environment":[{"name":"RUNNER_SCRIPT","value":"verify-jurisdiction"},{"name":"RUN_ID","value":"probe-co-20261101"},{"name":"MEMORY_PREFIX","value":"dev-probe-co-20261101"}]}]}' )
+  --overrides '{"containerOverrides":[{"name":"scraper","command":["co","--fargate","--sample-bills","10","--max-objects","200"],"environment":[{"name":"RUNNER_SCRIPT","value":"verify-jurisdiction"},{"name":"RUN_ID","value":"probe-co-20261101"},{"name":"MEMORY_PREFIX","value":"dev-probe-co-20261101"}]}]}' )
 ```
 
 * **It refuses to start** (exit 3, one line in the log) for Michigan, for `--import`, without `MEMORY_BUCKET`, and

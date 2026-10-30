@@ -992,6 +992,18 @@ matches the hashes in it), the others run against the downloaded sample (`run_ga
 (`--sample-bills`): **do not add a `limit` parameter to `cloud_collector.py` for probes**, and do not write a second
 uploader or a second vote-key verdict. See RUNBOOK.md "Running the onboarding probe on Fargate".
 
+**The sample limit counts bills (OPEN-459).** `--sample-bills N` stops the dry scrape after N *bills*, each with its
+vote events; `--max-objects M` (default 300) is a separate cap on everything the scraper returns. The cap bounds what
+is **pulled** from the scraper, not only what is kept, because every vote event is a request to the state's website:
+the scraper is never asked for more than M objects plus one. Scrapers yield a bill's votes first and the bill last
+(`yield from self.scrape_votes(bill); yield bill`), so `cap_scrape_output()` holds objects until their bill arrives
+and passes them on together: a bill's votes are never kept without the bill. When the cap is reached the group being
+held is dropped; a bill whose votes alone pass the cap is not sampled, and gate D then **warns** (yellow, not red)
+and says to raise `--max-objects`. A scraper that yields votes after their bill or apart from it loses them (Florida's
+come after all its bills, so its sample has none). Gate D's details say how many bills and votes the sample held and
+what stopped it. **Do not put `itertools.islice` on a scraper's output again:** it counts objects, and Colorado's
+"20" was 1 bill and 19 votes (2026-10-30).
+
 Output is a scored green/yellow/red report, checked into `notes/` (e.g.
 `notes/fl-onboarding-probe-20260831.md`). **A real bug caught in review, worth knowing if you
 touch this script:** the scoring originally could report GREEN when a blocking gate had only

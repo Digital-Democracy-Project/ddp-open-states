@@ -596,7 +596,7 @@ def test_votes_without_a_key_are_ignored_and_unreadable_files_are_reported(tmp_p
 
 def _fake_gate_d(votes_by_session, status="pass"):
     """A run_gate_d stand-in that writes each session's votes into the datadir it is given."""
-    def fake(juris, st, session, sample, scraped_data_dir, datadir=None):
+    def fake(juris, st, session, sample, scraped_data_dir, datadir=None, max_objects=None):
         import os
 
         os.makedirs(datadir, exist_ok=True)
@@ -665,7 +665,7 @@ def test_gate_i_samples_at_most_the_capped_number_of_other_sessions(tmp_path):
     _probe_votes(tmp_path, [("k", "2025", "HB 1")])
     seen = []
 
-    def fake(juris, st, session, sample, scraped_data_dir, datadir=None):
+    def fake(juris, st, session, sample, scraped_data_dir, datadir=None, max_objects=None):
         seen.append(session)
         return vj.GateResult("D", True, "pass", "x"), [], None
 
@@ -829,7 +829,7 @@ def test_main_fargate_never_connects_to_a_database_and_skips_the_database_gates(
         assert "DATABASE_URL" not in os.environ, "scraper code must not be able to read the database URL on Fargate"
         return juris, None
 
-    def scrape_one_bill(juris, st, session, sample, scraped_data_dir, datadir=None):
+    def scrape_one_bill(juris, st, session, sample, scraped_data_dir, datadir=None, max_objects=None):
         import pathlib
 
         d = pathlib.Path(scraped_data_dir) / "_probe" / st
@@ -1053,3 +1053,182 @@ def test_dockerfile_copies_the_probe_into_the_scrapers_image():
     text = open(os.path.join(_HERE, "Dockerfile")).read()
     copy_line = next(line for line in text.splitlines() if line.startswith("COPY cloud_collector.py"))
     assert "verify-jurisdiction" in copy_line.split()
+
+
+# ── OPEN-459: the sample limit counts bills, with a cap on everything ────────
+
+
+class _Obj:
+    def __init__(self, kind, name):
+        self._type = kind
+        self.name = name
+
+
+def _scrape_of(*groups):
+    """A scraper's output the way the real ones yield it: each bill's votes first, then the bill."""
+    for votes, bill in groups:
+        for i in range(votes):
+            yield _Obj("vote_event", f"{bill}-v{i}")
+        yield _Obj("bill", bill)
+
+
+def _capped(groups, max_bills, max_objects):
+    tally = {}
+    kept = list(vj.cap_scrape_output(_scrape_of(*groups), max_bills, max_objects, tally))
+    return kept, tally
+
+
+def test_the_limit_counts_bills_not_objects():
+    """Colorado's 20 objects were 1 bill and 19 votes; the limit must be 20 bills."""
+    kept, tally = _capped([(5, f"HB{i}") for i in range(30)], max_bills=3, max_objects=1000)
+    assert [o.name for o in kept if o._type == "bill"] == ["HB0", "HB1", "HB2"]
+    assert (tally["bills"], tally["votes"], tally["objects"]) == (3, 15, 18)
+    assert tally["stopped_by"] == "bill limit"
+
+
+def test_each_kept_bill_keeps_all_its_votes_and_no_later_bill_leaks_votes():
+    kept, _tally = _capped([(2, "HB1"), (3, "HB2"), (4, "HB3")], max_bills=2, max_objects=1000)
+    assert [o.name for o in kept] == ["HB1-v0", "HB1-v1", "HB1", "HB2-v0", "HB2-v1", "HB2-v2", "HB2"]
+
+
+def test_a_bill_group_that_would_pass_the_object_cap_is_dropped_whole():
+    kept, tally = _capped([(2, "HB1"), (50, "HB2"), (1, "HB3")], max_bills=10, max_objects=10)
+    assert [o.name for o in kept] == ["HB1-v0", "HB1-v1", "HB1"]
+    assert tally["stopped_by"] == "object cap" and tally["bills"] == 1
+    assert not any(o.name.startswith("HB2") for o in kept)  # no orphaned votes of a bill that is not there
+
+
+
+
+def test_a_scraper_that_finishes_early_is_reported_as_finished():
+    kept, tally = _capped([(1, "HB1"), (1, "HB2")], max_bills=20, max_objects=1000)
+    assert len(kept) == 4 and tally["stopped_by"] == "scraper finished" and tally["bills"] == 2
+
+
+
+
+class _FakeBillScraper:
+    """Stands in for a bills scraper: writes what it is handed, the way do_scrape does."""
+
+    output = []
+
+    def __init__(self, juris, datadir, strict_validation=False):
+        self.datadir = datadir
+        self.scrape = lambda session=None: iter(_FakeBillScraper.output)
+
+    def do_scrape(self, **kwargs):
+        import json
+        import os
+
+        for i, obj in enumerate(self.scrape(**kwargs)):
+            with open(os.path.join(self.datadir, f"{obj._type}_{i}.json"), "w") as f:
+                json.dump({"name": obj.name}, f)
+        return {}
+
+
+def _gate_d(tmp_path, output, sample_bills, max_objects):
+    _FakeBillScraper.output = output
+    juris = type("J", (), {"scrapers": {"bills": _FakeBillScraper}})()
+    return vj.run_gate_d(juris, "zz", "2026", sample_bills, str(tmp_path), max_objects=max_objects)
+
+
+def test_gate_d_stops_after_the_bill_limit_and_reports_bills_and_votes(tmp_path):
+    result, files, _report = _gate_d(tmp_path, list(_scrape_of(*[(3, f"HB{i}") for i in range(10)])), 4, 1000)
+    assert result.status == "pass" and len(files) == 4
+    assert "dry scrape OK: 4 bill(s)" in result.summary  # the headline counts bills, as the limit does
+    sample_line = next(d for d in result.details if d.startswith("sample:"))
+    assert "4 bill(s) and 12 vote event(s)" in sample_line and "stopped by: bill limit" in sample_line
+
+
+def test_gate_d_stops_at_the_object_cap_and_says_so(tmp_path):
+    result, files, _report = _gate_d(tmp_path, list(_scrape_of(*[(20, f"HB{i}") for i in range(10)])), 10, 50)
+    assert len(files) == 2
+    assert any("stopped by: object cap" in d for d in result.details)
+
+
+
+
+def test_gate_i_hands_the_object_cap_to_each_session_it_samples(tmp_path):
+    _probe_votes(tmp_path, [("k", "2025", "HB 1")])
+    seen = []
+
+    def fake(juris, st, session, sample, scraped_data_dir, datadir=None, max_objects=None):
+        seen.append((session, sample, max_objects))
+        return vj.GateResult("D", True, "pass", "x"), [], None
+
+    with patch.object(vj, "run_gate_d", side_effect=fake):
+        vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 7, str(tmp_path), max_objects=123)
+    assert seen == [("2025E1", 7, 123)]
+
+
+def test_main_hands_the_sample_limits_to_gate_d_and_records_them(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-probe-x")
+    monkeypatch.setenv("RUN_ID", "run1")
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    s3 = _FakeS3()
+    seen = {}
+
+    def fake_d(juris, st, session, sample, scraped_data_dir, datadir=None, max_objects=None):
+        seen.update(sample=sample, max_objects=max_objects)
+        return _passing("D"), [], None
+
+    gate_a = vj.GateResult("A", True, "pass", "ok", details=["active: 2026A"])
+    with patch("openstates.cli.update.get_jurisdiction", return_value=(type("J", (), {"name": "X"})(), None)), \
+            patch.object(vj, "run_gate_a", return_value=gate_a), patch.object(vj, "run_gate_b", return_value=_passing("B")), \
+            patch.object(vj, "run_gate_d", side_effect=fake_d), patch.object(vj, "run_gate_i", return_value=_passing("I")), \
+            patch.object(vj, "_s3_client", return_value=s3):
+        assert vj.main(["co", "--fargate", "--sample-bills", "7", "--max-objects", "150"]) == 0
+    assert seen == {"sample": 7, "max_objects": 150}
+    result = json.loads(s3.objects[("bucket", "dev-probe-x/probe/co/run1/result.json")])
+    assert result["sample_bills"] == 7 and result["max_objects"] == 150
+
+
+class _Pulled:
+    """An iterator that counts how many objects were asked of it: the cap must bound this, not only the output."""
+
+    def __init__(self, objects):
+        self._it = iter(objects)
+        self.pulled = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.pulled += 1
+        return next(self._it)
+
+
+def _endless_votes():
+    i = 0
+    while True:
+        yield _Obj("vote_event", f"v{i}")
+        i += 1
+
+
+def test_a_stream_of_votes_with_no_bill_stops_at_the_cap_instead_of_running_on():
+    source, tally = _Pulled(_endless_votes()), {}
+    assert list(vj.cap_scrape_output(source, 5, 50, tally)) == []
+    assert source.pulled <= 51 and tally["stopped_by"] == "object cap"
+
+
+def test_a_bill_whose_votes_alone_pass_the_cap_is_not_pulled_in_full():
+    source, tally = _Pulled(_scrape_of((500, "HB1"))), {}
+    assert list(vj.cap_scrape_output(source, 5, 20, tally)) == []
+    assert source.pulled <= 21 and tally["bills"] == 0
+
+
+def test_a_later_group_over_the_cap_is_cut_off_after_the_cap_and_earlier_bills_are_kept():
+    source, tally = _Pulled(_scrape_of((2, "HB1"), (500, "HB2"))), {}
+    kept = list(vj.cap_scrape_output(source, 5, 10, tally))
+    assert [o.name for o in kept] == ["HB1-v0", "HB1-v1", "HB1"]
+    assert source.pulled <= 11 and tally["stopped_by"] == "object cap"
+
+
+def test_gate_d_warns_plainly_when_the_cap_is_reached_before_the_first_bill(tmp_path):
+    result, files, _report = _gate_d(tmp_path, list(_scrape_of((100, "HB1"))), 5, 10)
+    assert files == [] and result.status == "warn"
+    assert "raise --max-objects" in result.summary and "before the first bill" in result.summary
+    assert vj.classify_probe([result]) == "yellow"  # inconclusive, not the red of a state that cannot be scraped
