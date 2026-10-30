@@ -36,6 +36,13 @@ jobs:
         with:
           repository: Digital-Democracy-Project/ddp-sync
           path: ddp-sync
+      # OPEN-462: quality.diff_cleaner's source of truth is openstates-core's text_extract.py
+      # apply_prediff_cleaning() dispatch. Public fork, so no token; its main is what the drift check
+      # compares the manifest with, same convention as the ddp-sync checkout above.
+      - uses: actions/checkout@v4
+        with:
+          repository: Digital-Democracy-Project/openstates-core
+          path: openstates-core
       - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
@@ -52,4 +59,6 @@ jobs:
       - name: Check every hard-coded jurisdiction list against the manifest (OPEN-318)
         run: |
           echo "comparing against ddp-sync main at $(git -C ddp-sync rev-parse HEAD)"   # main moves: say which commit
-          python3 check-jurisdiction-drift.py --ddp-sync-root ddp-sync --require-ddp-sync
+          echo "comparing quality.diff_cleaner against openstates-core main at $(git -C openstates-core rev-parse HEAD)"
+          python3 check-jurisdiction-drift.py --ddp-sync-root ddp-sync --require-ddp-sync \
+            --openstates-core-root openstates-core --require-openstates-core

@@ -60,10 +60,14 @@
 #     every run, so it is `false` here despite the stale RUNBOOK table still listing a caveat)
 #   - waf.profile: openstates-core/openstates/utils/resilience_profiles.py's RESILIENCE_PROFILES
 #     dict (currently `mi` and `fl` only)
-#   - quality.diff_cleaner: openstates-core/openstates/cli/text_extract.py's per-jurisdiction
-#     dispatch (_clean_wa_text, _clean_virginia_text, _clean_michigan_text, _reflow_paragraphs
-#     for az; fl's only per-jurisdiction check there is an unrelated TLS-cipher workaround, not a
-#     cleaner)
+#   - quality.diff_cleaner: openstates-core/openstates/cli/text_extract.py's apply_prediff_cleaning()
+#     per-jurisdiction dispatch (_clean_wa_text, _clean_virginia_text, _clean_michigan_text,
+#     _reflow_paragraphs for az, _clean_al_text, _clean_nc_text, _clean_massachusetts_text; fl's
+#     only per-jurisdiction check there is an unrelated TLS-cipher workaround, not a cleaner).
+#     NOT documentation only: check-jurisdiction-drift.py (--openstates-core-root) parses that
+#     dispatch directly (an AST walk, not a second hand-kept table) and fails CI when a value here
+#     disagrees with it, same as every other field in this header. OPEN-462 (2026-10-30) found this
+#     manifest said `none` for ma/nc/al while the code already cleaned all three and corrected it.
 #   - api_keys: PRIMITIVES.md's "per-jurisdiction credentials" table (va requires VA_API_KEY; usa
 #     optionally reads CONGRESS_GOV_API_KEY)
 #   - tier: ddp-sync's sync_schedule.yaml `openstates_scrape.primary` (fl, wa, usa) vs
@@ -348,7 +352,9 @@ ma:
   waf:
     profile: none
   quality:
-    diff_cleaner: none
+    diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
+                                               # OPEN-400); OPEN-462 found this said none while the
+                                               # code already cleaned MA
   api_keys: []
   onboarding:
     epic: null
@@ -395,7 +401,10 @@ nc:
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
   quality:
-    diff_cleaner: none                  # no NC-specific extractor gap found (gate C passed)
+    diff_cleaner: clean_nc_text         # header/footer/signature-block stripping (_clean_nc_text,
+                                         # OPEN-371); OPEN-462 found this said none while the code
+                                         # already cleaned NC (gate C passed is about the extractor,
+                                         # not about this cleaner)
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -432,7 +441,8 @@ al:
   waf:
     profile: none
   quality:
-    diff_cleaner: none
+    diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
+                                    # OPEN-462 found this said none while the code already cleaned AL
   api_keys: []
   onboarding:
     epic: null
