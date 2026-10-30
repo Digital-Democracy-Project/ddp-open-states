@@ -48,8 +48,8 @@ Safety (judgment calls made explicit, since the plan text doesn't spell out DB-w
     This is the one place this script could write to a database at all, and it defaults to off.
 
 Usage:
-    verify-jurisdiction <st> [--session ID] [--sample-bills N] [--import] [--notes-dir DIR]
-    verify-jurisdiction <st> --fargate [--sample-bills N]       (OPEN-458: as a Fargate task, no database)
+    verify-jurisdiction <st> [--session ID] [--sample-bills N] [--max-objects M] [--import] [--notes-dir DIR]
+    verify-jurisdiction <st> --fargate [--sample-bills N] [--max-objects M]   (OPEN-458: as a Fargate task, no database)
     verify-jurisdiction <st> --from-dir DIR [--import]          (OPEN-458: finish a Fargate run here)
 
 --fargate runs gates A-D, E, F and I on a cloud IP and uploads report.md, result.json and the bounded
@@ -68,7 +68,6 @@ import glob
 import hashlib
 import inspect
 import io
-import itertools
 import json
 import logging
 import os
@@ -110,6 +109,10 @@ BROKER_SESSION_CODE_RE = re.compile(r"^(\d{3}|\d{4}|\d{4}[a-zA-Z]+)$")
 SCRAPE_LOCK_DIR = "/tmp/ddp-openstates-scrape-locks"
 
 DEFAULT_SAMPLE_BILLS = 20  # matches §4.4's "20-bill dry scrape" gate C example
+# OPEN-459: the safety cap on everything the scrape hands back (bills, vote events, anything else),
+# so a state whose bills each carry hundreds of votes cannot turn a sample of bills into an hours-long
+# scrape (Colorado took about 2 s per vote on the 2026-10-30 Fargate run).
+DEFAULT_MAX_OBJECTS = 300
 MAX_EXTRA_SESSIONS = 2  # gate I dry-scrapes at most this many sessions besides the probed one
 
 # OPEN-458: the probe can run as a Fargate task (RUNNER_SCRIPT=verify-jurisdiction in the same
@@ -512,7 +515,41 @@ def run_gate_c(media_types_present, conversion_functions_for_state, st):
     )
 
 
-def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None):
+def cap_scrape_output(objects, max_bills, max_objects, tally):
+    """Pass on a scraper's output until `max_bills` bills have gone by, or `max_objects` objects in all
+    (OPEN-459). The object cap bounds what is *pulled* from the scraper, not only what is kept: every vote
+    event is a request to the state's website, so the scraper is never asked for more than `max_objects`
+    objects plus one. Scrapers yield a bill's vote events first and the bill itself last
+    (`yield from self.scrape_votes(bill); yield bill`), so objects are held until their bill arrives and
+    released together: the sample is whole bills with their votes, never a bill's votes without the bill.
+    When the cap is reached the group being held is dropped, so a bill whose votes alone pass the cap is
+    not sampled (the gate then says to raise --max-objects). Scrapers that yield a bill's votes after it,
+    or apart from their bills, lose those votes (Florida's come after all its bills). `tally` is filled in:
+    bills, votes, objects and stopped_by ("bill limit", "object cap", "scraper finished")."""
+    tally.update(bills=0, votes=0, objects=0, stopped_by=None)
+    pending = []
+    for obj in objects:
+        pending.append(obj)
+        if tally["objects"] + len(pending) > max_objects:
+            tally["stopped_by"] = "object cap"
+            return
+        if getattr(obj, "_type", None) != "bill":
+            continue
+        group, pending = pending, []
+        yield from group
+        tally["objects"] += len(group)
+        tally["votes"] += sum(1 for o in group if getattr(o, "_type", None) == "vote_event")
+        tally["bills"] += 1
+        if tally["bills"] >= max_bills:
+            tally["stopped_by"] = "bill limit"
+            return
+    yield from pending
+    tally["objects"] += len(pending)
+    tally["votes"] += sum(1 for o in pending if getattr(o, "_type", None) == "vote_event")
+    tally["stopped_by"] = "scraper finished"
+
+
+def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None, max_objects=DEFAULT_MAX_OBJECTS):
     lock_path = os.path.join(SCRAPE_LOCK_DIR, st)
     if os.path.isdir(lock_path):
         return GateResult(
@@ -538,8 +575,10 @@ def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None)
     scraper = bills_cls(juris, datadir, strict_validation=False)
     real_scrape = scraper.scrape
 
+    tally = {}
+
     def capped_scrape(*a, **kw):
-        return itertools.islice(real_scrape(*a, **kw), sample_bills)
+        return cap_scrape_output(real_scrape(*a, **kw), sample_bills, max_objects, tally)
 
     scraper.scrape = capped_scrape
 
@@ -562,6 +601,11 @@ def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None)
     per_bill_latency = (elapsed / n_objects) if n_objects else None
 
     details = [f"wall clock: {elapsed:.1f}s", f"objects written: {n_objects}"]
+    if tally.get("stopped_by"):
+        details.append(
+            f"sample: {tally['bills']} bill(s) and {tally['votes']} vote event(s) ({tally['objects']} objects); "
+            f"stopped by: {tally['stopped_by']} (limits: {sample_bills} bills, {max_objects} objects)"
+        )
     if per_bill_latency is not None:
         details.append(f"avg per-bill latency: {per_bill_latency:.2f}s")
     if captured_log.strip():
@@ -572,12 +616,18 @@ def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None)
         summary = f"dry scrape raised: {error_text}"
         if blocked:
             summary += " (looks like a block-page/WAF signature)"
+    elif n_objects == 0 and tally.get("stopped_by") == "object cap":
+        status = "warn"
+        summary = (
+            f"the {max_objects}-object cap was reached before the first bill arrived, so nothing was sampled "
+            "(a bill's votes come before it); raise --max-objects to sample this state"
+        )
     elif n_objects == 0:
         status = "fail"
         summary = "dry scrape completed but wrote zero objects"
     else:
         status = "pass"
-        summary = f"dry scrape OK: {n_objects} object(s) in {elapsed:.1f}s"
+        summary = f"dry scrape OK: {n_objects} bill(s) in {elapsed:.1f}s"
 
     return (
         GateResult("D", True, status, summary, details=details, block_signature=blocked),
@@ -630,7 +680,7 @@ def find_vote_key_collisions(vote_event_files):
     return {key: sorted(where) for key, where in seen.items() if len(where) > 1}, unreadable
 
 
-def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_dir):
+def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_dir, max_objects=DEFAULT_MAX_OBJECTS):
     """Vote keys must not repeat across sessions (OPEN-397: NC's 2025E1 vote keys collided with
     2025's, and no count gate saw it because one session loaded alone is clean). Dry-scrapes up to
     MAX_EXTRA_SESSIONS other active sessions with the same bounded sample as gate D and compares
@@ -645,7 +695,9 @@ def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_d
     unscraped = []
     for other in others:
         other_dir = os.path.join(scraped_data_dir, "_probe", f"{st}-session-{other}")
-        result, _files, _report = run_gate_d(juris, st, other, sample_bills, scraped_data_dir, datadir=other_dir)
+        result, _files, _report = run_gate_d(
+            juris, st, other, sample_bills, scraped_data_dir, datadir=other_dir, max_objects=max_objects,
+        )
         found = sorted(glob.glob(os.path.join(other_dir, "vote_event_*.json")))
         details.append(f"session {other}: dry scrape {result.status}, {len(found)} vote event file(s)")
         if result.status != "pass":
@@ -1137,6 +1189,7 @@ def emit_report(args, st, name, results, t0, run_at, ctx):
         "state": st, "name": name, "run_id": ctx["run_id"], "run_at": run_at.isoformat(),
         "classification": classification, "session": ctx.get("session"),
         "active_sessions": ctx.get("active_sessions", []), "sample_bills": args.sample_bills,
+        "max_objects": args.max_objects,
         "sample_files": sample_manifest(os.environ["SCRAPED_DATA_DIR"]),
         "gates": [g.to_dict() for g in results],
     }
@@ -1160,7 +1213,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("state", help="jurisdiction short code, e.g. fl, ut, nc")
     parser.add_argument("--session", default=None, help="override the session to dry-scrape (default: an active session from gate A)")
-    parser.add_argument("--sample-bills", type=int, default=DEFAULT_SAMPLE_BILLS, help=f"bounded dry-scrape sample size (default {DEFAULT_SAMPLE_BILLS})")
+    parser.add_argument("--sample-bills", type=int, default=DEFAULT_SAMPLE_BILLS, help=f"bounded dry-scrape sample: stop after this many bills, each with its vote events (default {DEFAULT_SAMPLE_BILLS})")
+    parser.add_argument("--max-objects", type=int, default=DEFAULT_MAX_OBJECTS, help=f"safety cap on everything the scrape returns (bills, vote events, ...), so vote-heavy states cannot run for hours (default {DEFAULT_MAX_OBJECTS})")
     parser.add_argument("--notes-dir", default="notes", help="where to write the probe report (default: notes/)")
     parser.add_argument("--import", dest="do_import", action="store_true", help="also import the dry-scrape sample (real DB write; refused against a DB that looks like production)")
     parser.add_argument("--force-import", action="store_true", help="override the production-DB guard for --import (dangerous; use only when you are certain)")
@@ -1317,10 +1371,11 @@ def main(argv=None):
 
     if payload is None:
         gate_d_result, bill_files, _scrape_report = run_gate_d(
-            juris, st, session, args.sample_bills, scraped_data_dir
+            juris, st, session, args.sample_bills, scraped_data_dir, max_objects=args.max_objects,
         )
         results.append(gate_d_result)
-        results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir)
+        results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir,
+                                  max_objects=args.max_objects)
                        if gate_d_result.status == "pass"
                        else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
     else:
