@@ -980,6 +980,13 @@ schema. Runs nine gates, six of them (A/B/C/D/H/I) **blocking** and three (E/F/G
 - **E** `motion_classification.yaml` coverage, **F** version-walk direction, **G** people
   data/broker fixture shape — all advisory.
 
+**Probing many states at once (OPEN-460).** `probe-on-fargate <state> ...` (or `--all`: every jurisdiction with a bills
+scraper, not Michigan) launches one `verify-jurisdiction --fargate` task per state in waves, records the task ids in
+`launched.json`, and `--status` reads the exit codes back. Reuse it; do not assemble `aws ecs run-task` by hand for a
+batch. It only launches and describes tasks (the scraper login cannot read the probe logs or the bucket); the prod
+agent reads the reports. It refuses Michigan and a `prod` memory prefix, and passes the OPEN-459 limits, so it needs
+an image built after OPEN-459 (an older one stops with exit 2, "unknown option").
+
 **Two places to run it (OPEN-458).** `verify-jurisdiction <st> --fargate` runs as a task in the same
 `ddp-scrapers` definition the scrapes use (`RUNNER_SCRIPT=verify-jurisdiction`; the file is in the Dockerfile's
 `COPY` line), so a state's website sees a cloud IP, not the Mac's. There it has no database: G and H are skipped
