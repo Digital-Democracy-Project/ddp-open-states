@@ -1,5 +1,8 @@
 # OPEN-261 — unresolved-voter-attribution gate: what shipped and what's unverified against real data
 
+> **Superseded in part (2026-10-30, Ramon's decision):** the `quality_check.py` strict line (`check_voter_resolution`, FAIL on any unresolved row) described below was removed before merge. The enforced check is Stage 3's attribution gate in OPEN-445 (a ceiling from measured rates, votes and sponsorships); only the advisory probe gate J remains from this ticket. The real-data numbers below still stand.
+
+
 Builds the gate the plan's 2026-08-27 addendum named: for the sampled sessions, what fraction of
 `opencivicdata_personvote` rows carry a `voter_name` but no resolved `voter_id`, and the top
 offending names -- wired into `verify-jurisdiction` and `quality_check.py`.

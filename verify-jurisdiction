@@ -1034,8 +1034,9 @@ def run_gate_j(conn, st, session, active_sessions):
 
     Advisory, not blocking: a brand-new candidate state has no vote history yet at probe time, so
     this is early signal on a state that already has data to query (AC #4's verification path),
-    not a gate that can realistically block a fresh onboarding. Stage 3's quality_check.py is
-    where this is actually enforced (required FAIL-on-any-unresolved line, not a shrug)."""
+    not a gate that can realistically block a fresh onboarding. It lists the top unresolved names.
+    The enforced line is Stage 3's attribution gate in quality_check.py (OPEN-445): a ceiling set
+    from the live states' measured rates, for votes and sponsorships -- not this gate."""
     sessions = [session] + [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
     cur = conn.cursor()
     cur.execute(

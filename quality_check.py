@@ -782,8 +782,6 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
         if i % 250 == 0:
             print(f"    ...{i}/{len(tier2_ids)}")
 
-    voter_result = check_voter_resolution(report, conn, jurisdiction, session)
-
     return {
         "govbot": len(public_ids), "local": len(local_ids),
         "missing": sorted(missing), "extra": sorted(extra),
@@ -791,7 +789,6 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
         "missing_docket_duplicate": sorted(docket_duplicate),
         "missing_by_prefix": breakdown_by_prefix(missing),
         "tier2_checked": len(tier2_ids),
-        **voter_result,
     }
 
 
@@ -1192,95 +1189,6 @@ def compare_people(report, local, live, label):
         report.record(WARN, f"{label}: district differs",
                       f"local={lr.get('district')} live={rr.get('district')}")
 
-TOP_UNRESOLVED_VOTERS_LIMIT = 10
-
-
-def check_voter_resolution(report, conn, jurisdiction, session):
-    """OPEN-261: what fraction of opencivicdata_personvote rows for this jurisdiction/session
-    carry a voter_name but no resolved voter_id -- the layer above Tier 1/Tier 2's count-based
-    checks, since a vote event with the right tally and an unresolvable voter matches both of
-    those outright (the FL/OPEN-178, MI/OPEN-174 finding: 3,369 rows/43 names and 1,427 rows/154
-    names respectively, found by OPEN-38's cross-jurisdiction sweep, invisible to every other
-    check this file runs). Required, not advisory: FAILs on ANY unresolved row rather than some
-    threshold -- the 95%-or-itemized-and-explained bar is a human sign-off convention applied
-    when reading this line (see notes/nc-tier2-250-bill-baseline-sweep-20260831.md for the shape
-    of that write-up), the same way Tier 1 coverage's FAIL-on-any-real-gap already works. Reuses
-    the us-exact-match-vs-state-LIKE split fetch_all_local_identifiers() already uses for the same
-    jurisdiction_code shape."""
-    cur = conn.cursor()
-    if jurisdiction == "us":
-        cur.execute("""
-            SELECT count(*),
-                   count(*) FILTER (WHERE pv.voter_name IS NOT NULL AND pv.voter_id IS NULL)
-            FROM opencivicdata_personvote pv
-            JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
-            JOIN opencivicdata_bill b ON ve.bill_id = b.id
-            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
-            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
-            WHERE j.id = 'ocd-jurisdiction/country:us/government' AND ls.identifier = %s
-        """, (session,))
-    else:
-        cur.execute("""
-            SELECT count(*),
-                   count(*) FILTER (WHERE pv.voter_name IS NOT NULL AND pv.voter_id IS NULL)
-            FROM opencivicdata_personvote pv
-            JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
-            JOIN opencivicdata_bill b ON ve.bill_id = b.id
-            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
-            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
-            WHERE j.id LIKE %s AND ls.identifier = %s
-        """, (f"%/state:{jurisdiction}/%", session))
-
-    total, unresolved = cur.fetchone()
-    label = f"{jurisdiction.upper()} {session}: voter-attribution resolution (OPEN-261)"
-
-    if total == 0:
-        report.record(PASS, f"{label} — no personvote rows for this session, nothing to resolve")
-        return {"voter_total": 0, "voter_unresolved": 0}
-
-    if unresolved == 0:
-        report.record(PASS, f"{label} — 0/{total} personvote rows unresolved (100% resolved)")
-        return {"voter_total": total, "voter_unresolved": 0}
-
-    if jurisdiction == "us":
-        cur.execute("""
-            SELECT pv.voter_name, count(*)
-            FROM opencivicdata_personvote pv
-            JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
-            JOIN opencivicdata_bill b ON ve.bill_id = b.id
-            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
-            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
-            WHERE j.id = 'ocd-jurisdiction/country:us/government' AND ls.identifier = %s
-              AND pv.voter_name IS NOT NULL AND pv.voter_id IS NULL
-            GROUP BY pv.voter_name
-            ORDER BY count(*) DESC
-            LIMIT %s
-        """, (session, TOP_UNRESOLVED_VOTERS_LIMIT))
-    else:
-        cur.execute("""
-            SELECT pv.voter_name, count(*)
-            FROM opencivicdata_personvote pv
-            JOIN opencivicdata_voteevent ve ON pv.vote_event_id = ve.id
-            JOIN opencivicdata_bill b ON ve.bill_id = b.id
-            JOIN opencivicdata_legislativesession ls ON b.legislative_session_id = ls.id
-            JOIN opencivicdata_jurisdiction j ON ls.jurisdiction_id = j.id
-            WHERE j.id LIKE %s AND ls.identifier = %s
-              AND pv.voter_name IS NOT NULL AND pv.voter_id IS NULL
-            GROUP BY pv.voter_name
-            ORDER BY count(*) DESC
-            LIMIT %s
-        """, (f"%/state:{jurisdiction}/%", session, TOP_UNRESOLVED_VOTERS_LIMIT))
-
-    top_names = cur.fetchall()
-    fraction = unresolved / total
-    names_detail = "; ".join(f"{name!r}: {n}" for name, n in top_names)
-    report.record(FAIL, f"{label} — {unresolved}/{total} personvote rows unresolved "
-                         f"({fraction:.1%}); top offending names: {names_detail}")
-    return {"voter_total": total, "voter_unresolved": unresolved,
-            "voter_unresolved_fraction": fraction,
-            "voter_top_unresolved_names": top_names}
-
-
 # ── Coverage & completeness (PLAN-coverage-completeness-check.md) ─────────────
 
 def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit=None,
@@ -1357,8 +1265,6 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
             print(f"    ...{i}/{len(tier2_ids)}")
         time.sleep(0.5)  # stay under the live API's 2 req/sec limit
 
-    voter_result = check_voter_resolution(report, conn, jurisdiction, session)
-
     return {
         "live": len(public_ids), "local": len(local_ids),
         "missing": sorted(missing), "extra": sorted(extra),
@@ -1366,7 +1272,6 @@ def run_coverage_check(report, conn, jurisdiction, session, api_key, tier2_limit
         "missing_docket_duplicate": sorted(docket_duplicate),
         "missing_by_prefix": breakdown_by_prefix(missing),
         "tier2_checked": len(tier2_ids),
-        **voter_result,
     }
 
 
@@ -1400,9 +1305,7 @@ def run_tier2_only_check(report, conn, jurisdiction, session, api_key, tier2_lim
             print(f"    ...{i}/{len(tier2_ids)}")
         time.sleep(0.5)  # stay under the live API's 2 req/sec limit
 
-    voter_result = check_voter_resolution(report, conn, jurisdiction, session)
-
-    return {"tier2_checked": len(tier2_ids), **voter_result}
+    return {"tier2_checked": len(tier2_ids)}
 
 
 def run_bill_ids_check(report, conn, jurisdiction, session, identifiers, api_key,

@@ -610,13 +610,6 @@ from quality_check import (
     GOVBOT_DATA_DIR,
 )
 
-from quality_check import (
-    check_voter_resolution,
-    run_coverage_check,
-    run_govbot_coverage_check,
-    run_tier2_only_check,
-)
-
 
 def test_govbot_slug_maps_us_to_usa():
     """The one real naming exception, confirmed directly against the actual govbot-
@@ -932,9 +925,7 @@ def test_coverage_with_fallback_uses_govbot_when_repo_and_session_available(tmp_
     conn.cursor.return_value.fetchall.return_value = []
 
     with patch("quality_check._ensure_govbot_repo",
-               return_value=(True, str(tmp_path), "synced main @ abc1234")), \
-         patch("quality_check.check_voter_resolution",
-               return_value={"voter_total": 0, "voter_unresolved": 0}):
+               return_value=(True, str(tmp_path), "synced main @ abc1234")):
         result = run_coverage_check_with_fallback(report, conn, "fl", "2026", api_key="unused")
 
     assert result["source"] == "govbot"
@@ -998,135 +989,6 @@ def test_coverage_with_fallback_falls_back_when_bills_dir_exists_but_is_empty(tm
     mock_live.assert_called_once()
     assert result["source"] == "live_api_fallback"
     report.record.assert_not_called()  # never got as far as claiming a Tier 1 PASS
-
-
-# ── OPEN-261: check_voter_resolution ────────────────────────────────────────────
-
-
-class _VoterFakeCursor:
-    def __init__(self, total, unresolved, top_names=None):
-        self.total = total
-        self.unresolved = unresolved
-        self.top_names = top_names or []
-        self.executed = []
-
-    def execute(self, sql, params=None):
-        self.executed.append((sql, params))
-
-    def fetchone(self):
-        return (self.total, self.unresolved)
-
-    def fetchall(self):
-        return self.top_names
-
-
-class _VoterFakeConn:
-    def __init__(self, total, unresolved, top_names=None):
-        self._cursor = _VoterFakeCursor(total, unresolved, top_names)
-
-    def cursor(self):
-        return self._cursor
-
-
-def test_check_voter_resolution_passes_when_nothing_is_unresolved():
-    report = Report()
-    result = check_voter_resolution(report, _VoterFakeConn(100, 0), "fl", "2026")
-    assert result == {"voter_total": 100, "voter_unresolved": 0}
-    symbol, label, _detail = report.checks[-1]
-    assert symbol == PASS and "0/100" in label
-
-
-def test_check_voter_resolution_passes_when_no_personvote_rows_at_all():
-    report = Report()
-    result = check_voter_resolution(report, _VoterFakeConn(0, 0), "fl", "2026")
-    assert result == {"voter_total": 0, "voter_unresolved": 0}
-    symbol, label, _detail = report.checks[-1]
-    assert symbol == PASS and "nothing to resolve" in label
-
-
-def test_check_voter_resolution_fails_and_lists_top_offending_names():
-    report = Report()
-    conn = _VoterFakeConn(100, 10, [("Smith", 7), ("Jones", 3)])
-    result = check_voter_resolution(report, conn, "fl", "2026")
-    symbol, label, _detail = report.checks[-1]
-    assert symbol == FAIL
-    assert "10/100" in label and "10.0%" in label
-    assert "Smith" in label and "Jones" in label
-    assert result["voter_total"] == 100 and result["voter_unresolved"] == 10
-    assert abs(result["voter_unresolved_fraction"] - 0.1) < 1e-9
-    assert result["voter_top_unresolved_names"] == [("Smith", 7), ("Jones", 3)]
-
-
-def test_check_voter_resolution_flags_the_known_fl_and_mi_concentrations():
-    """Synthetic stand-in for AC #4's real-data run (this environment has no reachable
-    OpenStates replica -- see the PR description) using the exact, already-quantified
-    OPEN-178 (FL) and OPEN-174 (MI) numbers, so the FAIL/percentage/top-names math is
-    pinned against the real-world shape this gate exists to catch, not an arbitrary one."""
-    fl_top = [("Rep. A", 800), ("Rep. B", 700), ("Rep. C", 600), ("Rep. D", 500), ("Rep. E", 467)]
-    report = Report()
-    result = check_voter_resolution(report, _VoterFakeConn(69445, 3369, fl_top), "fl", "2026")
-    symbol, label, _detail = report.checks[-1]
-    assert symbol == FAIL
-    assert "3369/69445" in label and "4.9%" in label
-    assert all(name in label for name, _ in fl_top)
-    assert result["voter_unresolved"] == 3369
-
-    mi_top = [(f"Rep. {i}", 10) for i in range(10)]  # 154 names total, top 10 shown
-    report = Report()
-    result = check_voter_resolution(report, _VoterFakeConn(100000, 1427, mi_top), "mi", "2025-2026")
-    symbol, label, _detail = report.checks[-1]
-    assert symbol == FAIL and "1427/100000" in label
-
-
-def test_check_voter_resolution_scopes_us_with_an_exact_match_not_like():
-    conn = _VoterFakeConn(5, 0)
-    check_voter_resolution(Report(), conn, "us", "119")
-    sql, params = conn._cursor.executed[0]
-    assert "ocd-jurisdiction/country:us/government" in sql
-    assert "LIKE" not in sql
-    assert params == ("119",)
-
-
-def test_check_voter_resolution_scopes_a_state_with_like():
-    conn = _VoterFakeConn(5, 0)
-    check_voter_resolution(Report(), conn, "fl", "2026")
-    sql, params = conn._cursor.executed[0]
-    assert "LIKE" in sql
-    assert params == ("%/state:fl/%", "2026")
-
-
-def test_check_voter_resolution_called_from_run_tier2_only_check():
-    report = Report()
-    conn = MagicMock()
-    with patch("quality_check.sample_local_bills_for_session", return_value=[]), \
-         patch("quality_check.check_voter_resolution",
-               return_value={"voter_total": 10, "voter_unresolved": 0}) as mock_voter:
-        result = run_tier2_only_check(report, conn, "fl", "2026", api_key="key123")
-    mock_voter.assert_called_once_with(report, conn, "fl", "2026")
-    assert result["voter_total"] == 10
-
-
-def test_check_voter_resolution_called_from_run_coverage_check():
-    report = Report()
-    conn = MagicMock()
-    with patch("quality_check.fetch_all_public_identifiers", return_value=set()), \
-         patch("quality_check.fetch_all_local_identifiers", return_value=set()), \
-         patch("quality_check.check_voter_resolution",
-               return_value={"voter_total": 0, "voter_unresolved": 0}) as mock_voter:
-        result = run_coverage_check(report, conn, "fl", "2026", api_key="key123")
-    mock_voter.assert_called_once_with(report, conn, "fl", "2026")
-    assert result["voter_total"] == 0
-
-
-def test_check_voter_resolution_called_from_run_govbot_coverage_check():
-    report = Report()
-    conn = MagicMock()
-    with patch("quality_check.fetch_all_local_identifiers", return_value=set()), \
-         patch("quality_check.check_voter_resolution",
-               return_value={"voter_total": 0, "voter_unresolved": 0}) as mock_voter:
-        result = run_govbot_coverage_check(report, conn, "fl", "2026", govbot_index={})
-    mock_voter.assert_called_once_with(report, conn, "fl", "2026")
-    assert result["voter_total"] == 0
 
 
 def test_govbot_bill_end_to_end_through_compare_bills(tmp_path):
