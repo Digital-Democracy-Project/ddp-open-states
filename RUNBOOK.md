@@ -561,7 +561,8 @@ the limits (the collector has no cap, so do not run a state through it to "probe
 
 * **It refuses to start** (exit 3, one line in the log) for Michigan, for `--import`, without `MEMORY_BUCKET`, and
   with `MEMORY_PREFIX` unset or `prod`. Use a throwaway prefix such as `dev-probe-<state>-<date>`.
-* **No database, no import.** Gates G (people) and H (database rows, session rows) are reported as skipped. A
+* **No database, no import.** Gates G (people), H (database rows, session rows) and J (voter-attribution
+  resolution, OPEN-261) are reported as skipped.
   **RED is final; a YELLOW is provisional** until the Mac half has run. The task exits 0 once its output is
   uploaded, whatever the colour (a yellow probe is not a failed task); exit 4 means the upload failed.
 * **Output:** `s3://ddp-openstates-scraper-memory/<MEMORY_PREFIX>/probe/<state>/<RUN_ID>/` holds `report.md`,
@@ -580,8 +581,9 @@ source ~/Developer/repos/ddp-open-states-dev/activate-dev.sh
 verify-jurisdiction co --from-dir . [--import]
 ```
 
-  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H and I here against the downloaded
-  sample (the vote-key check compares the files, it scrapes nothing). It refuses a folder whose bill and vote files
+  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H, I and J here against the
+  downloaded sample (I compares the vote-key files, J queries the database for the same sessions -- OPEN-261's
+  voter-attribution resolution check; neither scrapes). It refuses a folder whose bill and vote files
   are not exactly the ones `result.json` lists (a leftover from another run, an edited or missing file). `--import`
   works as on any Mac run: the people guard, session rows, dev database only.
 * **Deploying it:** the probe is one more file in the image (`Dockerfile`'s `COPY` line), so it needs the image
