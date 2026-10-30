@@ -43,6 +43,7 @@ def _valid_entry():
         },
         "waf": {
             "profile": "none",
+            "fargate_safe": True,
         },
         "quality": {
             "diff_cleaner": "none",
@@ -137,6 +138,20 @@ def test_bad_waf_profile_enum_reported():
     entry["waf"]["profile"] = "moat"
     errors = validate({"ts": entry})
     assert any(e.startswith("ts.waf.profile:") for e in errors)
+
+
+def test_missing_waf_fargate_safe_reported():
+    entry = _valid_entry()
+    del entry["waf"]["fargate_safe"]
+    errors = validate({"ts": entry})
+    assert "ts.waf.fargate_safe: missing required field" in errors
+
+
+def test_waf_fargate_safe_must_be_a_bool():
+    entry = _valid_entry()
+    entry["waf"]["fargate_safe"] = "false"
+    errors = validate({"ts": entry})
+    assert any("ts.waf.fargate_safe" in e and "expected bool" in e for e in errors)
 
 
 def test_wrong_type_reported():
@@ -294,6 +309,12 @@ def test_real_manifest_matches_known_live_config_values():
     assert data["fl"]["waf"]["profile"] == "cookie_provider"
     for code in ("wa", "va", "ut", "az", "ma", "us"):
         assert data[code]["waf"]["profile"] == "none"
+
+    # OPEN-464: mi and fl share waf.profile: cookie_provider but disagree on fargate_safe -- mi's
+    # cookie can only be minted by the Mac, fl's warm-up runs wherever the scraper does
+    assert data["mi"]["waf"]["fargate_safe"] is False
+    for code in ("us", "fl", "wa", "va", "ut", "az", "ma", "nc", "al"):
+        assert data[code]["waf"]["fargate_safe"] is True
 
     # PRIMITIVES.md per-jurisdiction credentials table
     assert data["va"]["api_keys"] == ["VA_API_KEY"]

@@ -702,11 +702,55 @@ def test_gate_result_round_trips_through_a_dict():
 
 
 def test_fargate_refusal_allows_a_plain_probe_run():
+    """"co" is not a tracked jurisdiction -- a brand-new onboarding candidate has no manifest
+    entry yet, and that is exactly the case this probe exists to run against."""
     assert vj.fargate_refusal("co", _Args(), _FARGATE_ENV) is None
 
 
 def test_fargate_refusal_refuses_michigan():
+    """Against the real, checked-in jurisdictions.yaml: mi.waf.fargate_safe is false."""
     assert "mi" in vj.fargate_refusal("mi", _Args(), _FARGATE_ENV)
+
+
+def test_fargate_refusal_does_not_refuse_florida_despite_sharing_the_cookie_provider_profile():
+    """AC: the probe's refusal and the manifest agree for every state -- specifically, mi and fl
+    share waf.profile: cookie_provider but must disagree on the Fargate refusal, because only mi's
+    cookie requires the Mac's mint."""
+    assert vj.fargate_refusal("fl", _Args(), _FARGATE_ENV) is None
+
+
+def test_fargate_refusal_agrees_with_waf_fargate_safe_for_every_state_in_the_real_manifest():
+    from validate_jurisdictions import load_and_validate
+
+    manifest, problems = load_and_validate(vj.MANIFEST_PATH)
+    assert not problems, problems
+    for code, entry in manifest.items():
+        refused = vj.fargate_refusal(code, _Args(), _FARGATE_ENV) is not None
+        assert refused == (not entry["waf"]["fargate_safe"]), code
+
+
+def test_fargate_refusal_fails_closed_when_the_manifest_is_missing(tmp_path, monkeypatch):
+    """No manifest means fargate_safe cannot be checked for ANYONE, so every state is refused --
+    not silently allowed. A quiet pass here is the exact "measured zero" failure class OPEN-188/
+    OPEN-152/OPEN-153 already found once."""
+    monkeypatch.setattr(vj, "MANIFEST_PATH", str(tmp_path / "does-not-exist.yaml"))
+    refusal = vj.fargate_refusal("co", _Args(), _FARGATE_ENV)
+    assert refusal is not None and "does not validate" in refusal
+
+
+def test_fargate_refusal_fails_closed_when_the_manifest_does_not_validate(tmp_path, monkeypatch):
+    import yaml
+
+    from test_validate_jurisdictions import _valid_entry
+
+    bad = _valid_entry()
+    del bad["waf"]["fargate_safe"]  # schema-invalid: fargate_safe is required
+    manifest_path = tmp_path / "jurisdictions.yaml"
+    manifest_path.write_text(yaml.safe_dump({"mi": bad}))
+    monkeypatch.setattr(vj, "MANIFEST_PATH", str(manifest_path))
+
+    refusal = vj.fargate_refusal("mi", _Args(), _FARGATE_ENV)
+    assert refusal is not None and "does not validate" in refusal
 
 
 def test_fargate_refusal_refuses_import_and_force_import():

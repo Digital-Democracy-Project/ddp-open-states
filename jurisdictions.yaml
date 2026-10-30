@@ -59,7 +59,18 @@
 #     (MA's incremental filter was deleted 2026-08-25 -- MA now ignores start= and full-walks
 #     every run, so it is `false` here despite the stale RUNBOOK table still listing a caveat)
 #   - waf.profile: openstates-core/openstates/utils/resilience_profiles.py's RESILIENCE_PROFILES
-#     dict (currently `mi` and `fl` only)
+#     dict (currently `mi` and `fl` only). check-jurisdiction-drift.py compares this field (every
+#     code with profile != "none") against that dict's keys when given --openstates-core-root.
+#   - waf.fargate_safe (OPEN-464): a SEPARATE question from waf.profile -- whether this
+#     jurisdiction's WAF cookie can be produced from an arbitrary cloud IP (Fargate), not which WAF
+#     implementation it uses. mi and fl share waf.profile: cookie_provider but answer this
+#     differently: fl's cookie_provider does a Playwright warm-up in-process, wherever the scraper
+#     runs; mi's can only be reliably minted by the Mac (ScrapeBot/CAMS publishes it on a
+#     schedule -- see cloud_collector.py/cloud_archiver.py's own `if state == "mi"` gates, which
+#     stay hard-coded by design, not read from this field -- OPEN-318's scoping note already
+#     excludes "genuinely code" per-state behaviour like that). verify-jurisdiction's
+#     fargate_refusal() and probe-on-fargate both refuse a state on Fargate when this is false,
+#     instead of each keeping their own hard-coded set.
 #   - quality.diff_cleaner: openstates-core/openstates/cli/text_extract.py's apply_prediff_cleaning()
 #     per-jurisdiction dispatch (_clean_wa_text, _clean_virginia_text, _clean_michigan_text,
 #     _reflow_paragraphs for az, _clean_al_text, _clean_nc_text, _clean_massachusetts_text; fl's
@@ -100,6 +111,7 @@ us:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: none
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
@@ -136,6 +148,8 @@ fl:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
+    fargate_safe: true           # the warm-up runs in-process wherever the scraper runs -- no
+                                  # Mac-only mint step, unlike mi (OPEN-464)
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
@@ -170,6 +184,7 @@ wa:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
   api_keys: []
@@ -204,6 +219,7 @@ va:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
@@ -243,6 +259,8 @@ mi:
   waf:
     profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
                                          # WAF (OPEN-19/21/22/23), 10 req/min hard cap
+    fargate_safe: false                 # the cookie can only be reliably minted by the Mac; a
+                                         # cold Fargate scrape risks the block (OPEN-458/OPEN-464)
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
   api_keys: []
@@ -276,6 +294,7 @@ ut:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: none
   api_keys: []
@@ -309,6 +328,7 @@ az:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
@@ -351,6 +371,7 @@ ma:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
@@ -400,6 +421,7 @@ nc:
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
+    fargate_safe: true
   quality:
     diff_cleaner: clean_nc_text         # header/footer/signature-block stripping (_clean_nc_text,
                                          # OPEN-371); OPEN-462 found this said none while the code
@@ -440,6 +462,7 @@ al:
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; paused
   waf:
     profile: none
+    fargate_safe: true
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL

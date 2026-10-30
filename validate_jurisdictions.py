@@ -109,6 +109,12 @@ ENROLLMENT_FIELDS = {
 
 WAF_FIELDS = {
     "profile": str,
+    # OPEN-464: a separate question from profile -- whether this jurisdiction's WAF cookie can be
+    # produced from an arbitrary cloud IP (Fargate), not which WAF implementation it uses. mi and
+    # fl both have profile: cookie_provider but answer this differently (see jurisdictions.yaml's
+    # own header comment). Read by verify-jurisdiction's fargate_refusal() and probe-on-fargate
+    # instead of either one keeping its own hard-coded refused-states set.
+    "fargate_safe": bool,
 }
 
 QUALITY_FIELDS = {

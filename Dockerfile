@@ -138,8 +138,11 @@ WORKDIR /app
 # it directly. open304-add-lis-identifiers.py (OPEN-304) is the same shape -- a one-off,
 # idempotent, safe-to-re-run data patch, same DATABASE_URL convention.
 # verify-jurisdiction (OPEN-458) is the onboarding probe; RUNNER_SCRIPT=verify-jurisdiction with `<state> --fargate`
-# runs it here so a state's website sees a cloud IP, with no database. It only reads the installed scrapers.
-COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction import-summary.sh docker-entrypoint.sh ./
+# runs it here so a state's website sees a cloud IP, with no database. It only reads the installed scrapers --
+# and, since OPEN-464, jurisdictions.yaml/validate_jurisdictions.py (fargate_refusal() loads the manifest to
+# read waf.fargate_safe instead of a hard-coded refused-states set; without these two files copied in, every
+# Fargate probe would find no manifest and fail closed for every state, not just the ones that should refuse).
+COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates

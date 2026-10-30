@@ -36,18 +36,34 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       (not in git), compared with enrollment.replica_routing / enrollment.legbot_replica.
                       Reading the value is the caller's job (ddp-sync's daily check does it for its own env)
 
+  openstates-core (optional, OPEN-464)  a sibling openstates-core checkout's
+                      openstates/utils/resilience_profiles.py: every manifest jurisdiction whose waf.profile
+                      is not "none" is compared (both directions) with RESILIENCE_PROFILES' keys, read by a
+                      static ast parse (python_dict_keys(), the same discipline as python_int_table() --
+                      never imported, so this checker stays free of openstates-core's own dependency chain).
+                      openstates-core is gitignored here like ddp-sync, but unlike ddp-sync it is a PRIVATE
+                      repo (see Dockerfile's token-based clone) -- CI does not check it out today, so this
+                      comparison only runs when a human or a future CI step passes --openstates-core-root.
+
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
 votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk),
 run-all-scrapes.sh (the retired nightly runner), and the version_ordering.py procedural-document table
 (survey row B6, OPEN-462's own PR). Each is a follow-up under OPEN-318 (or, for B6, a question for Ramon).
+Also deliberately not compared, by design (OPEN-419/OPEN-464 -- see PRIMITIVES.md's WAF-decision
+catalog): cloud_collector.py's and cloud_archiver.py's own `if state == "mi"` published-cookie gates
+(genuinely code, not manifest-derived behaviour, per this ticket's own scoping note below), and
+ddp-agents' config/scrapebot_jurisdictions.yaml / ddp-sync's mi_cookie_publish.py (different
+repos/images; waf.profile cannot predict either one, since fl shares the same profile and is not on
+those lists).
 
 Usage:
     python3 check-jurisdiction-drift.py                                  # this repo's lists
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync      # ... and ddp-sync's (or DDP_SYNC_ROOT)
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync --require-ddp-sync   # CI: a missing
                                                                           # ddp-sync checkout is an error
-    python3 check-jurisdiction-drift.py --openstates-core-root ../openstates-core        # ... and quality.diff_cleaner
+    python3 check-jurisdiction-drift.py --openstates-core-root ../openstates-core        # ... and quality.diff_cleaner,
+                                                                          # and waf.profile vs. RESILIENCE_PROFILES
                                                                           # (or OPENSTATES_CORE_ROOT; --require-openstates-core
                                                                           # makes a missing checkout an error, same as ddp-sync)
     python3 check-jurisdiction-drift.py --live broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL,...   # a host's env
@@ -128,8 +144,11 @@ def _const_int(node, path):
     raise SourceError(f"{path}: timeout table has a value that is not an int expression")
 
 
-def python_int_table(path, name):
-    """NAME: dict[str, int] = {"fl": 16 * 3600, ..., "default": ...} -> {key: seconds}."""
+def _module_dict_literal(path, name):
+    """Find the one module-level NAME = {...} (or NAME: Ann = {...}) dict literal in a Python
+    source file and return its ast.Dict node. Shared shape-validation for python_int_table() and
+    python_dict_keys() -- neither imports the module, so a source that does not have this exact
+    shape (zero, more than one, or not a dict literal at all) is a SourceError, not a guess."""
     tree = ast.parse(_read(path), filename=path)
     found = []
     for node in tree.body:
@@ -138,10 +157,32 @@ def python_int_table(path, name):
             found.append(node)
     if len(found) != 1 or not isinstance(found[0].value, ast.Dict):
         raise SourceError(f"{path}: expected exactly one module-level {name} dict, found {len(found)}")
-    keys = [k.value for k in found[0].value.keys]
+    return found[0].value
+
+
+def python_int_table(path, name):
+    """NAME: dict[str, int] = {"fl": 16 * 3600, ..., "default": ...} -> {key: seconds}."""
+    node = _module_dict_literal(path, name)
+    keys = [k.value for k in node.keys]
     if len(keys) != len(set(keys)):
         raise SourceError(f"{path}: {name} has a duplicate key")
-    return {k.value: _const_int(v, path) for k, v in zip(found[0].value.keys, found[0].value.values)}
+    return {k.value: _const_int(v, path) for k, v in zip(node.keys, node.values)}
+
+
+def python_dict_keys(path, name):
+    """NAME: dict[str, X] = {"fl": WafResilienceProfile(...), ...} -> the key set. Unlike
+    python_int_table(), the values are never inspected -- RESILIENCE_PROFILES' values are
+    dataclass constructor calls, not plain literals, and this check only needs to know which
+    jurisdictions have an entry, not what is in it."""
+    node = _module_dict_literal(path, name)
+    keys = []
+    for k in node.keys:
+        if not (isinstance(k, ast.Constant) and isinstance(k.value, str)):
+            raise SourceError(f"{path}: {name} has a key that is not a string literal")
+        keys.append(k.value)
+    if len(keys) != len(set(keys)):
+        raise SourceError(f"{path}: {name} has a duplicate key")
+    return set(keys)
 
 
 def diff_cleaner_table(path):
@@ -238,6 +279,7 @@ def project(manifest):
         "replica_routing": where(manifest, lambda e: e["enrollment"]["replica_routing"]),
         "legbot_replica": where(manifest, lambda e: e["enrollment"]["legbot_replica"]),
         "allow_duplicates": where(manifest, lambda e: e["scrape"]["allow_duplicates"]),
+        "cookie_provider": where(manifest, lambda e: e["waf"]["profile"] != "none"),
         # A paused jurisdiction is on no scrape schedule whatever its (required) tier field says.
         "primary": where(manifest, lambda e: e["tier"] == "primary" and e["status"] != "paused"),
         "secondary": where(manifest, lambda e: e["tier"] == "secondary" and e["status"] != "paused"),
@@ -360,7 +402,8 @@ def parse_live(items):
     return parsed
 
 
-def run(manifest, root, sync_root, require_sync, out, live=(), core_root=None, require_core=False):
+def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_root=None,
+        require_openstates_core=False, require_openstates_core_root=False):
     """Returns (exit_code). Prints every disagreement, not just the first."""
     expect = project(manifest)
     drift, errors = [], []
@@ -409,9 +452,9 @@ def run(manifest, root, sync_root, require_sync, out, live=(), core_root=None, r
     else:
         out.write("NOTE: ddp-sync was not checked (no --ddp-sync-root / DDP_SYNC_ROOT); only this repo's lists were.\n")
 
-    if core_root:
+    if openstates_core_root:
         try:
-            table = diff_cleaner_table(os.path.join(core_root, "openstates", "cli", "text_extract.py"))
+            table = diff_cleaner_table(os.path.join(openstates_core_root, "openstates", "cli", "text_extract.py"))
         except SourceError as exc:
             errors.append(str(exc))
         else:
@@ -422,11 +465,17 @@ def run(manifest, root, sync_root, require_sync, out, live=(), core_root=None, r
             if bad:
                 drift.append(("quality.diff_cleaner", source, "\n".join(
                     f"    {c}: code dispatches to {w!r}, manifest says {h!r}" for c, (w, h) in sorted(bad.items()))))
-    elif require_core:
-        errors.append("--require-openstates-core is set but no openstates-core checkout was given (--openstates-core-root / OPENSTATES_CORE_ROOT)")
+        resilience_py = os.path.join(openstates_core_root, "openstates", "utils", "resilience_profiles.py")
+        compare_sets("waf.profile", "openstates-core RESILIENCE_PROFILES", expect["cookie_provider"],
+                     lambda: python_dict_keys(resilience_py, "RESILIENCE_PROFILES"))
     else:
-        out.write("NOTE: openstates-core was not checked (no --openstates-core-root / OPENSTATES_CORE_ROOT); "
-                  "quality.diff_cleaner was not compared against the code.\n")
+        if require_openstates_core:
+            errors.append("--require-openstates-core is set but no openstates-core checkout was given (--openstates-core-root / OPENSTATES_CORE_ROOT)")
+        if require_openstates_core_root:
+            errors.append("--require-openstates-core-root is set but no openstates-core checkout was given (--openstates-core-root)")
+        if not (require_openstates_core or require_openstates_core_root):
+            out.write("NOTE: openstates-core was not checked (no --openstates-core-root / OPENSTATES_CORE_ROOT); "
+                      "quality.diff_cleaner and waf.profile were not compared against the code.\n")
 
     try:
         live_values = parse_live(live)
@@ -479,9 +528,15 @@ def main(argv, out=sys.stdout):
     parser.add_argument("--ddp-sync-root", default=os.environ.get("DDP_SYNC_ROOT"))
     parser.add_argument("--require-ddp-sync", action="store_true")
     parser.add_argument("--openstates-core-root", default=os.environ.get("OPENSTATES_CORE_ROOT"),
-                        help="openstates-core checkout, for comparing quality.diff_cleaner against "
-                             "text_extract.py's apply_prediff_cleaning() (OPEN-462; or OPENSTATES_CORE_ROOT)")
-    parser.add_argument("--require-openstates-core", action="store_true")
+                        help="a sibling openstates-core checkout (private repo, not fetched by CI today -- see "
+                             "this repo's PRIMITIVES.md); when given, compares quality.diff_cleaner against "
+                             "text_extract.py's apply_prediff_cleaning() (OPEN-462) and waf.profile against "
+                             "openstates/utils/resilience_profiles.py's RESILIENCE_PROFILES (OPEN-464); "
+                             "or OPENSTATES_CORE_ROOT")
+    parser.add_argument("--require-openstates-core", action="store_true",
+                        help="a missing openstates-core checkout is an error for the quality.diff_cleaner comparison")
+    parser.add_argument("--require-openstates-core-root", action="store_true",
+                        help="a missing openstates-core checkout is an error for the waf.profile comparison")
     parser.add_argument("--live", action="append", default=[], metavar="LABEL:NAME=a,b,c",
                         help="a value read from a host's environment (OPEN-330), e.g. "
                              "broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL; repeatable; compared with the manifest")
@@ -498,7 +553,9 @@ def main(argv, out=sys.stdout):
         matrix(manifest, out)
         return 0
     return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out, args.live,
-               core_root=args.openstates_core_root, require_core=args.require_openstates_core)
+               openstates_core_root=args.openstates_core_root,
+               require_openstates_core=args.require_openstates_core,
+               require_openstates_core_root=args.require_openstates_core_root)
 
 
 if __name__ == "__main__":
