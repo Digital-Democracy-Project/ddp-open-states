@@ -1055,8 +1055,10 @@ def run_gate_j(conn, st, session, active_sessions):
     details = [f"sampled sessions: {', '.join(sessions)}", f"personvote rows: {total}", f"unresolved (voter_name set, voter_id NULL): {unresolved}"]
 
     if total == 0:
+        # "skip", not "warn": classify_probe turns any advisory warn yellow, and a brand-new state has
+        # no imported votes at probe time, so a warn here would keep every fresh probe from going green.
         return GateResult(
-            "J", False, "warn",
+            "J", False, "skip",
             "no personvote rows in the sampled session(s) -- nothing to resolve yet",
             details=details,
         )

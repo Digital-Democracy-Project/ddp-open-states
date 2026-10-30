@@ -731,10 +731,10 @@ def test_gate_j_warns_and_lists_top_offending_names_when_unresolved_rows_exist()
     assert any("Jones" in d and "3" in d for d in result.details)
 
 
-def test_gate_j_is_inconclusive_when_the_sample_has_no_personvote_rows():
+def test_gate_j_skips_when_the_sample_has_no_personvote_rows():
     conn = _FakeVoterConn(0, 0)
     result = vj.run_gate_j(conn, "fl", "2026", ["2026"])
-    assert result.status == "warn"
+    assert result.status == "skip"
     assert "nothing to resolve" in result.summary
 
 
@@ -753,6 +753,68 @@ def test_classify_gate_j_warn_is_yellow_via_advisory_warn_path():
     base = [vj.GateResult("A", True, "pass", "x")]
     assert vj.classify_probe(base + [vj.GateResult("J", False, "warn", "x")]) == "yellow"
     assert vj.classify_probe(base + [vj.GateResult("J", False, "pass", "x")]) == "green"
+
+
+def test_a_clean_probe_with_no_vote_rows_stays_green():
+    # A brand-new state has no imported votes at probe time; that must not turn the probe yellow.
+    empty = vj.run_gate_j(_FakeVoterConn(0, 0), "co", "2026A", ["2026A"])
+    assert vj.classify_probe([vj.GateResult("A", True, "pass", "x"), empty]) == "green"
+
+
+def _scratch_postgres():
+    """A throwaway database on the dev Postgres server (own database, dropped afterwards), or None."""
+    import uuid
+    import psycopg2
+    try:
+        admin = psycopg2.connect("postgresql://openstates:openstates_dev@localhost:5433/postgres", connect_timeout=2)
+    except psycopg2.OperationalError:
+        return None
+    admin.autocommit = True
+    name = "gate_j_test_" + uuid.uuid4().hex[:8]
+    admin.cursor().execute(f"CREATE DATABASE {name}")
+    return admin, name
+
+
+def test_gate_j_query_against_a_real_postgres_counts_only_named_unresolved_rows():
+    # The fake-cursor tests above never run the SQL; this one does, so a changed WHERE/FILTER fails.
+    psycopg2 = __import__("pytest").importorskip("psycopg2")
+    made = _scratch_postgres()
+    if made is None:
+        __import__("pytest").skip("dev Postgres on :5433 is not reachable")
+    admin, name = made
+    try:
+        conn = psycopg2.connect(f"postgresql://openstates:openstates_dev@localhost:5433/{name}")
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE opencivicdata_jurisdiction (id text PRIMARY KEY);
+            CREATE TABLE opencivicdata_legislativesession (id int PRIMARY KEY, jurisdiction_id text, identifier text);
+            CREATE TABLE opencivicdata_bill (id text PRIMARY KEY, legislative_session_id int);
+            CREATE TABLE opencivicdata_voteevent (id text PRIMARY KEY, bill_id text);
+            CREATE TABLE opencivicdata_personvote (id serial PRIMARY KEY, vote_event_id text, voter_name text, voter_id text);
+        """)
+        jid = vj.ocd_jurisdiction_id("co")
+        cur.execute("INSERT INTO opencivicdata_jurisdiction VALUES (%s)", (jid,))
+        cur.execute("INSERT INTO opencivicdata_legislativesession VALUES (1, %s, '2026A'), (2, %s, '2025A')", (jid, jid))
+        cur.execute("INSERT INTO opencivicdata_bill VALUES ('b1', 1), ('b2', 2)")
+        cur.execute("INSERT INTO opencivicdata_voteevent VALUES ('v1', 'b1'), ('v2', 'b2')")
+        cur.execute("""INSERT INTO opencivicdata_personvote (vote_event_id, voter_name, voter_id) VALUES
+            ('v1', 'Resolved Rep', 'p1'),
+            ('v1', 'Garcia', NULL), ('v1', 'Garcia', NULL), ('v1', 'Smith', NULL),
+            ('v1', NULL, NULL),
+            ('v2', 'Other Session', NULL)""")
+        result = vj.run_gate_j(conn, "co", "2026A", ["2026A"])
+        # 5 rows in 2026A; 3 have a name and no voter_id (the nameless row and the resolved row do not count);
+        # the 2025A row is outside the sample.
+        assert result.status == "warn"
+        assert "3/5" in result.summary
+        assert any("Garcia" in d and "2" in d for d in result.details)
+        assert not any("Other Session" in d for d in result.details)
+        # A session with no rows is the empty case.
+        assert vj.run_gate_j(conn, "co", "2027A", ["2027A"]).status == "skip"
+        conn.close()
+    finally:
+        admin.cursor().execute(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)")
+        admin.close()
 
 
 # ── OPEN-458: the probe on Fargate, and finishing its output on the Mac ───────
