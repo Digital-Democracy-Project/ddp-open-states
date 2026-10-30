@@ -1285,7 +1285,7 @@ When the key arrives, add to `activate.sh`:
 ```bash
 export VA_API_KEY=<your-key>
 ```
-Then restore `va` to `run-all-scrapes.sh`. No code changes needed — the scraper is fully implemented.
+No code changes needed — the scraper is fully implemented; `va` is already in production rotation (`ddp-sync`'s own schedule, not a per-repo list).
 
 **LIS API structure** (from swagger.json):
 - Auth: `WebAPIKey: <key>` header on all requests

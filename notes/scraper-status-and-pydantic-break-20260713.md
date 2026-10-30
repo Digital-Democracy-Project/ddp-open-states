@@ -24,7 +24,7 @@ silently failing.
 
 ## 1. Scraper status — mostly healthy
 
-Schedule (`run-all-scrapes.sh`) is **UTC-based**: primary states run nightly, secondary
+Schedule (the nightly runner, since retired -- OPEN-465) is **UTC-based**: primary states run nightly, secondary
 states run on **Sunday (UTC)**. The machine is UTC-7, so "Sunday UTC" fires Saturday night
 local. That's why the secondary batch last ran Jul 11 night local (= Sun UTC) and the
 Jul 12-local run (= Mon UTC) was primary-only. Nothing is behind schedule.
@@ -48,7 +48,7 @@ Minor / gaps:
   (incremental no-op, WA out of session), but it masks "no changes" vs "scraper actually broke."
 - **MA** last completed Jun 29 (full). Secondary; not one of the broker's tracked-7.
 - No dedicated `openstates-scrape` launchd plist was found; scrapes are demonstrably running
-  nightly, so something schedules `run-all-scrapes.sh` (mechanism not pinned down — not urgent).
+  nightly, so something schedules the nightly runner (mechanism not pinned down — not urgent).
 
 ---
 

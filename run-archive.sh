@@ -20,7 +20,7 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_DIR/scraper.log"
 
 # OPEN-159: this checkout's own activate.sh, not the production one by absolute path. Same bug and
 # same fix as run-scrape.sh -- these two were the only scripts here still sourcing it absolutely;
-# run-all-scrapes.sh, run-people-refresh.sh and the OPEN-37 backfill already did it this way.
+# the old nightly runner (retired, OPEN-465), run-people-refresh.sh and the OPEN-37 backfill already did it this way.
 # SCRIPT_DIR did not exist in this script at all, hence the definition rather than just a swap.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=activate.sh
