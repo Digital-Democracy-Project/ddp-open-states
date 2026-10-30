@@ -24,6 +24,9 @@ on:
       # OPEN-327: the read helper those scripts derive their lists through, and its test
       - "jurisdiction-field.sh"
       - "test-jurisdiction-field.sh"
+      # OPEN-461: generates a state's manifest entry from a probe result instead of a hand edit
+      - "new-jurisdiction"
+      - "test_new_jurisdiction.py"
 
 jobs:
   validate:
@@ -56,6 +59,8 @@ jobs:
         run: bash test-jurisdiction-field.sh
       - name: Run the drift check's own test suite
         run: python3 -m pytest test_check_jurisdiction_drift.py -v
+      - name: Run new-jurisdiction's own test suite (OPEN-461)
+        run: python3 -m pytest test_new_jurisdiction.py -v
       - name: Check every hard-coded jurisdiction list against the manifest (OPEN-318)
         run: |
           echo "comparing against ddp-sync main at $(git -C ddp-sync rev-parse HEAD)"   # main moves: say which commit

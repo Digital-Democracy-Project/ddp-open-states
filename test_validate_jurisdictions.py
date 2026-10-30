@@ -469,6 +469,9 @@ def test_in_the_real_manifest_every_scheduled_state_is_live_or_paused_and_enable
     data, errors = load_and_validate(DEFAULT_MANIFEST_PATH)
     assert errors == []
     scheduled = {code for code, e in data.items() if e["archive"]["scheduled"]}
-    assert scheduled == {"us", "fl", "wa", "va", "mi", "ut", "az", "ma", "nc", "al"}  # ddp-sync's openstates_archive list today
+    # Not pinned to today's exact code set (OPEN-465) -- adding a state to the manifest must not
+    # break this -- but the original eight (OPEN-318) must still be on ddp-sync's recurring
+    # archive schedule.
+    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= scheduled
     for code in scheduled:
         assert data[code]["status"] in ("live", "paused") and data[code]["archive"]["enabled"] is True

@@ -247,7 +247,16 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
 `check-jurisdiction-drift.py` keeps every list that still exists in step with it. The lists used to drift
 (NC was on 8 of ~25 and missing from 6): forgetting one parameter half-enrolled a state silently.
 
-1. Edit `jurisdictions.yaml`: the new entry, or the flag (`archive.enabled`, `enrollment.*`). **This repo's own
+0. **A brand-new state (Stage 0):** run `new-jurisdiction <st> --from-probe <probe result.json or folder>
+   --dry-run` to generate the initial `status: probing` entry from the probe's own result (OPEN-461) instead
+   of hand-typing it. Review the printed block and the fields it lists as needing a human
+   (`quality.diff_cleaner`, `waf.profile`, `tier`), then run it again without `--dry-run`. It refuses to write
+   anything `validate_jurisdictions.py` rejects and never touches another state's block; rerun it any time
+   against a newer probe result to see exactly what changed. Finish with step 2 below (the validator and drift
+   check) before committing. See PRIMITIVES.md for exactly what it writes and what it deliberately never
+   guesses.
+1. For everything past the initial entry: edit `jurisdictions.yaml` directly — the flag (`archive.enabled`,
+   `enrollment.*`), or filling in a field step 0 left as a human-review placeholder. **This repo's own
    scripts need nothing else** (OPEN-327): `activate.sh`'s archive gate, the people refresh, the API boot smoke
    test, `--allow_duplicates` and `quality_check.py`'s sweep read the manifest. A new state only needs the
    entries below in ddp-sync.
@@ -620,7 +629,9 @@ cd ~/Developer/repos/ddp-open-states-dev && source activate-dev.sh      # the sc
   Sunday 02:00 UTC batch). The probe makes only a few requests, but one state's site should not see both at once.
 * **Reading the results:** the prod agent reads every task's log and commits each state's `report.md`,
   `result.json` and `sample.tar.gz` (a read-only request on `notes/ops-handoff`); then finish the states that matter
-  on the Mac with `--from-dir`, as above.
+  on the Mac with `--from-dir`, as above. Once a state's `result.json` is committed, `new-jurisdiction <st>
+  --from-probe <that folder>` turns it into the Stage 0 manifest entry (OPEN-461) instead of a hand edit — see
+  "Adding a jurisdiction, or enrolling one in a feature" below and PRIMITIVES.md.
 
 ## Development / testing environment (`ddp-open-states-dev`)
 
@@ -1274,7 +1285,7 @@ When the key arrives, add to `activate.sh`:
 ```bash
 export VA_API_KEY=<your-key>
 ```
-Then restore `va` to `run-all-scrapes.sh`. No code changes needed — the scraper is fully implemented.
+No code changes needed — the scraper is fully implemented; `va` is already in production rotation (`ddp-sync`'s own schedule, not a per-repo list).
 
 **LIS API structure** (from swagger.json):
 - Auth: `WebAPIKey: <key>` header on all requests

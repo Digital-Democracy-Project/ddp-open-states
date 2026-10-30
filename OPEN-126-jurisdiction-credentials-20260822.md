@@ -28,7 +28,8 @@ Worth recording because each one changed the shape of the answer.
 
 1. **"DC would be the first jurisdiction DDP onboards that needs its own API key."** It wouldn't.
    `va` is in the live rotation, needs `VA_API_KEY`, and that key is in `.env` today —
-   `run-all-scrapes.sh:32` documents it inline (`# va requires VA_API_KEY in .env`). The
+   the old nightly runner (since retired, OPEN-465) documented it inline with a comment noting
+   `va` requires `VA_API_KEY` in `.env`. The
    convention did not need inventing; it needed writing down. Four jurisdictions in current
    upstream code want a credential (`va`, `usa`, `in`, `ny`) before you get to `dc`.
 
