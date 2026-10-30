@@ -20,6 +20,17 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       knowledge_base_embedding, bill_search_refresh, openstates_scrape (primary, secondary,
                       cloud_path); and the SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S tables in its Python source
 
+  openstates-core (optional, OPEN-462) openstates/cli/text_extract.py's apply_prediff_cleaning(): its
+                      `if jurisdiction_name == "<name>":` dispatch is parsed directly (an AST walk, not a
+                      second hand-kept table here) into {jurisdiction name: cleaner name}, then compared
+                      against every manifest entry's quality.diff_cleaner (its own `name` field maps a code
+                      to the dispatch's display name; no second code->name table). A name absent from the
+                      dispatch expects "none". Found MA/NC/AL stale (manifest said none, the code already
+                      cleaned all three) -- this is the fix. NOT yet extended to the procedural-document
+                      stage table in utils/version_ordering.py (also keyed on display name, with a second
+                      copy in api-v3) -- survey row B6, a related but separate gap, left for a follow-up
+                      decision rather than folded in here.
+
   live values (OPEN-330)  `--live LABEL:NAME=a,b,c`, repeatable: a DDP_OPENSTATES_JURISDICTIONS or
                       LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST value read from a real host's environment
                       (not in git), compared with enrollment.replica_routing / enrollment.legbot_replica.
@@ -27,14 +38,18 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
 
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
-votebot, ddp-agents, and the per-feature opt-in lists (sweep_import, scrape_retry, full_walk).
-Each is a follow-up under OPEN-318.
+votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk),
+and the version_ordering.py procedural-document table (survey row B6, OPEN-462's own PR). Each is a
+follow-up under OPEN-318 (or, for B6, a question for Ramon).
 
 Usage:
     python3 check-jurisdiction-drift.py                                  # this repo's lists
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync      # ... and ddp-sync's (or DDP_SYNC_ROOT)
     python3 check-jurisdiction-drift.py --ddp-sync-root ../ddp-sync --require-ddp-sync   # CI: a missing
                                                                           # ddp-sync checkout is an error
+    python3 check-jurisdiction-drift.py --openstates-core-root ../openstates-core        # ... and quality.diff_cleaner
+                                                                          # (or OPENSTATES_CORE_ROOT; --require-openstates-core
+                                                                          # makes a missing checkout an error, same as ddp-sync)
     python3 check-jurisdiction-drift.py --live broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL,...   # a host's env
     python3 check-jurisdiction-drift.py --matrix                         # who is enrolled in what
 
@@ -127,6 +142,55 @@ def python_int_table(path, name):
     if len(keys) != len(set(keys)):
         raise SourceError(f"{path}: {name} has a duplicate key")
     return {k.value: _const_int(v, path) for k, v in zip(found[0].value.keys, found[0].value.values)}
+
+
+def diff_cleaner_table(path):
+    """{jurisdiction display name: cleaner name} from openstates-core's
+    apply_prediff_cleaning() dispatch (OPEN-462) -- read directly from the AST rather than kept as a
+    second, hand-maintained copy here, so a renamed, removed, or newly-added branch changes this table
+    automatically instead of leaving a stale copy for quality.diff_cleaner to quietly disagree with
+    (exactly how this field went stale for MA/NC/AL in the first place). The manifest convention is the
+    called function's name with its leading underscore removed (e.g. `_clean_nc_text` -> `clean_nc_text`);
+    a jurisdiction with no branch is not in the returned table at all -- the caller treats that as the
+    expected value "none"."""
+    tree = ast.parse(_read(path), filename=path)
+    apply_fn = next(
+        (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "apply_prediff_cleaning"),
+        None,
+    )
+    if apply_fn is None:
+        raise SourceError(f"{path}: no apply_prediff_cleaning() function found; update this checker if it moved or was renamed")
+
+    table = {}
+    for stmt in apply_fn.body:
+        if not isinstance(stmt, ast.If):
+            continue
+        test = stmt.test
+        shape_ok = (
+            isinstance(test, ast.Compare)
+            and isinstance(test.left, ast.Name) and test.left.id == "jurisdiction_name"
+            and len(test.ops) == 1 and isinstance(test.ops[0], ast.Eq)
+            and len(test.comparators) == 1
+            and isinstance(test.comparators[0], ast.Constant) and isinstance(test.comparators[0].value, str)
+        )
+        if not shape_ok:
+            raise SourceError(
+                f"{path}: apply_prediff_cleaning() has an `if` this checker cannot parse (expected "
+                f'`if jurisdiction_name == "X":`); update this checker if the dispatch shape changed on purpose'
+            )
+        name = test.comparators[0].value
+        called = {
+            inner.func.id
+            for inner in ast.walk(stmt)
+            if isinstance(inner, ast.Call) and isinstance(inner.func, ast.Name) and inner.func.id.startswith("_")
+        }
+        if len(called) != 1:
+            raise SourceError(
+                f"{path}: apply_prediff_cleaning()'s {name!r} branch calls {len(called)} distinct cleaner "
+                f"function(s) ({sorted(called)}); expected exactly one"
+            )
+        table[name] = called.pop()[1:]
+    return table
 
 
 def sync_yaml(root):
@@ -296,7 +360,7 @@ def parse_live(items):
     return parsed
 
 
-def run(manifest, root, sync_root, require_sync, out, live=()):
+def run(manifest, root, sync_root, require_sync, out, live=(), core_root=None, require_core=False):
     """Returns (exit_code). Prints every disagreement, not just the first."""
     expect = project(manifest)
     drift, errors = [], []
@@ -344,6 +408,25 @@ def run(manifest, root, sync_root, require_sync, out, live=()):
         errors.append("--require-ddp-sync is set but no ddp-sync checkout was given (--ddp-sync-root / DDP_SYNC_ROOT)")
     else:
         out.write("NOTE: ddp-sync was not checked (no --ddp-sync-root / DDP_SYNC_ROOT); only this repo's lists were.\n")
+
+    if core_root:
+        try:
+            table = diff_cleaner_table(os.path.join(core_root, "openstates", "cli", "text_extract.py"))
+        except SourceError as exc:
+            errors.append(str(exc))
+        else:
+            source = "openstates-core text_extract.py apply_prediff_cleaning()"
+            want = {code: table.get(entry["name"], "none") for code, entry in manifest.items()}
+            have = {code: entry["quality"]["diff_cleaner"] for code, entry in manifest.items()}
+            bad = {c: (want[c], have[c]) for c in want if want[c] != have[c]}
+            if bad:
+                drift.append(("quality.diff_cleaner", source, "\n".join(
+                    f"    {c}: code dispatches to {w!r}, manifest says {h!r}" for c, (w, h) in sorted(bad.items()))))
+    elif require_core:
+        errors.append("--require-openstates-core is set but no openstates-core checkout was given (--openstates-core-root / OPENSTATES_CORE_ROOT)")
+    else:
+        out.write("NOTE: openstates-core was not checked (no --openstates-core-root / OPENSTATES_CORE_ROOT); "
+                  "quality.diff_cleaner was not compared against the code.\n")
 
     try:
         live_values = parse_live(live)
@@ -395,6 +478,10 @@ def main(argv, out=sys.stdout):
     parser.add_argument("--repo-root", default=HERE, help="where activate.sh, run-scrape.sh ... live (default: this checkout)")
     parser.add_argument("--ddp-sync-root", default=os.environ.get("DDP_SYNC_ROOT"))
     parser.add_argument("--require-ddp-sync", action="store_true")
+    parser.add_argument("--openstates-core-root", default=os.environ.get("OPENSTATES_CORE_ROOT"),
+                        help="openstates-core checkout, for comparing quality.diff_cleaner against "
+                             "text_extract.py's apply_prediff_cleaning() (OPEN-462; or OPENSTATES_CORE_ROOT)")
+    parser.add_argument("--require-openstates-core", action="store_true")
     parser.add_argument("--live", action="append", default=[], metavar="LABEL:NAME=a,b,c",
                         help="a value read from a host's environment (OPEN-330), e.g. "
                              "broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL; repeatable; compared with the manifest")
@@ -410,7 +497,8 @@ def main(argv, out=sys.stdout):
     if args.matrix:
         matrix(manifest, out)
         return 0
-    return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out, args.live)
+    return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out, args.live,
+               core_root=args.openstates_core_root, require_core=args.require_openstates_core)
 
 
 if __name__ == "__main__":

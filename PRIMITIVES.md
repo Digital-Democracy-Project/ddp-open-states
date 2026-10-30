@@ -756,6 +756,14 @@ registry migration itself (its own scope was *where* this runs, not *how* it's e
 is still open, now against one call site instead of two — a smaller, not harder, version of the
 same opportunistic migration.
 
+**Still open after OPEN-462 (2026-10-30, see `jurisdictions.yaml`'s `quality.diff_cleaner` bullet
+above)** — `check-jurisdiction-drift.py` now parses this exact if-chain shape (an AST walk of
+`apply_prediff_cleaning()`) to enforce the manifest against it, which makes this chain a second
+reason to update that checker in the same change if OPEN-121 ever lands: the extractor is
+deliberately written to fail loudly (`SourceError`) on a dispatch shape it doesn't recognize
+rather than silently produce an empty table, so a registry migration will surface there immediately
+rather than being discovered later as an unenforced manifest.
+
 **What's explicitly not a "per-jurisdiction config" problem, even though it looks like one:**
 `version_ordering.py`'s stage-classification table (see above) knows MI writes `"(S-1)"`, WA
 writes `"Second Substitute"`, etc., but it isn't jurisdiction-*keyed* — it's one shared cascade of
@@ -958,6 +966,25 @@ scope line was deliberate, not an oversight.
   follow-up under OPEN-318): ddp-sync's in-code fallbacks and manual-trigger allow-list (SYNC-57), the
   `DDP_OPENSTATES_JURISDICTIONS` / `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` env values, ddp-broker-py,
   votebot, ddp-agents, and the per-feature opt-in lists (`sweep_import`, `scrape_retry`, `full_walk`).
+- **`quality.diff_cleaner` (OPEN-462, 2026-10-30).** Names the jurisdiction-specific function
+  `openstates-core/openstates/cli/text_extract.py`'s `apply_prediff_cleaning()` selects for that
+  jurisdiction before diffing a bill version against its predecessor (never the stored `raw_text`) —
+  the function's own name with its leading underscore removed (`_clean_nc_text` -> `clean_nc_text`).
+  `none` means no `if jurisdiction_name == "..."` branch exists for it in that dispatch, not merely
+  "untried" — FL's own `none` is a verified side effect of its extractor, not a gap (see FL's own
+  comment in `jurisdictions.yaml`). Found stale for MA, NC and AL (manifest said `none`, the code
+  already cleaned all three) and corrected as part of OPEN-462, which also taught
+  `check-jurisdiction-drift.py --openstates-core-root <path>` (`OPENSTATES_CORE_ROOT`,
+  `--require-openstates-core` — same optional-then-required pattern as `--ddp-sync-root`) to parse
+  that dispatch directly, an AST walk of `apply_prediff_cleaning()` rather than a second hand-kept
+  table, and fail when a manifest value disagrees with it in either direction. CI's `validate` job
+  now checks out `openstates-core` and passes `--require-openstates-core`, same as it already does
+  for `ddp-sync`. **Coupled to the current if-chain shape on purpose** (see "Per-jurisdiction
+  configuration" -> OPEN-121 below): if that dispatch is ever migrated to a registry, this
+  extractor needs updating in the same change, not quietly left to pass by checking nothing. **Not
+  yet extended** to the procedural-document stage table in `utils/version_ordering.py` (also keyed
+  on the jurisdiction's display name, with a second copy in api-v3) — survey row B6, a related but
+  separate gap, left for a follow-up decision rather than folded in here.
 
 ## `verify-jurisdiction <state>` — the onboarding probe (repo root, OPEN-222, 2026-08-31)
 

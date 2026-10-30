@@ -45,7 +45,14 @@ def _manifest():
     us["scrape"]["timeout_s"] = 4 * 3600
     us["archive"]["timeout_s"] = 24 * 3600
     nc = _entry("secondary", people_refresh=False, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
+    # OPEN-462: fl/us keep the default "Test State" name (no branch in CORE_TEXT_EXTRACT_PY below, so
+    # their expected diff_cleaner is "none"); nc/al get real display names so the fixture dispatch
+    # below (keyed on those exact strings, like the real one) has something to match against.
+    nc["name"] = "North Carolina"
+    nc["quality"]["diff_cleaner"] = "clean_nc_text"
     al = _entry("secondary", status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
+    al["name"] = "Alabama"
+    al["quality"]["diff_cleaner"] = "clean_al_text"
     return {"fl": fl, "us": us, "nc": nc, "al": al}
 
 
@@ -75,6 +82,21 @@ SYNC_YAML = {
 SYNC_SCRAPE_PY = "SCRAPE_TIMEOUT_S: dict[str, int] = {\n    \"fl\": 16 * 3600,\n    \"usa\": 4 * 3600,\n    \"default\": 6 * 3600,\n}\n"
 SYNC_ARCHIVE_PY = "ARCHIVE_TIMEOUT_S: dict[str, int] = {\n    \"fl\": 16 * 3600,\n    \"us\": 24 * 3600,\n    \"default\": 4 * 3600,\n}\n"
 
+# OPEN-462: a minimal stand-in for openstates-core's text_extract.py, real dispatch shape (separate
+# `if`s, not `elif`) but only the two branches the fixture manifest's nc/al need.
+CORE_TEXT_EXTRACT_PY = '''
+def apply_prediff_cleaning(prior_text, raw_text, *, jurisdiction_name, is_bill, prior_media_type, cur_media_type):
+    if jurisdiction_name == "North Carolina":
+        prior_text = _clean_nc_text(prior_text)
+        raw_text = _clean_nc_text(raw_text)
+    if jurisdiction_name == "Alabama":
+        prior_text = _clean_al_text(prior_text)
+        raw_text = _clean_al_text(raw_text)
+    return prior_text, raw_text
+'''
+
+CORE_TEXT_EXTRACT_RELPATH = os.path.join("openstates", "cli", "text_extract.py")
+
 
 def _write(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -96,11 +118,21 @@ def world(tmp_path):
     return str(repo), str(sync), str(manifest)
 
 
-def _run(world, with_sync=True, extra=()):
+@pytest.fixture
+def core_root(tmp_path):
+    """openstates-core stand-in: agrees with the fixture manifest's nc/al out of the box."""
+    core = tmp_path / "openstates-core"
+    _write(str(core / CORE_TEXT_EXTRACT_RELPATH), CORE_TEXT_EXTRACT_PY)
+    return str(core)
+
+
+def _run(world, with_sync=True, extra=(), core=None):
     repo, sync, manifest = world
     argv = ["check", "--manifest", manifest, "--repo-root", repo, *extra]
     if with_sync:
         argv += ["--ddp-sync-root", sync]
+    if core:
+        argv += ["--openstates-core-root", core]
     out = io.StringIO()
     return drift.main(argv, out), out.getvalue()
 
@@ -236,6 +268,122 @@ def test_a_missing_file_is_an_error(world):
     os.remove(os.path.join(world[0], "run-people-refresh.sh"))
     code, out = _run(world, with_sync=False)
     assert code == 2 and "cannot read" in out
+
+
+# ---------------------------------------------------------------------------------------------------
+# OPEN-462: quality.diff_cleaner compared against openstates-core's apply_prediff_cleaning() dispatch
+# ---------------------------------------------------------------------------------------------------
+
+def test_diff_cleaner_matching_the_dispatch_passes(world, core_root):
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 0, out
+
+
+def test_diff_cleaner_is_not_checked_without_a_core_root(world):
+    code, out = _run(world, with_sync=False)
+    assert code == 0
+    assert "openstates-core was not checked" in out
+
+
+def test_require_openstates_core_without_a_checkout_is_an_error(world):
+    code, out = _run(world, with_sync=False, extra=["--require-openstates-core"])
+    assert code == 2
+    assert "--require-openstates-core" in out
+
+
+def test_manifest_says_none_but_code_has_a_cleaner_is_drift(world, core_root):
+    """nc's real branch cleans it; a manifest edit back to "none" must be caught."""
+    data = yaml.safe_load(open(world[2]))
+    data["nc"]["quality"]["diff_cleaner"] = "none"
+    _write(world[2], yaml.safe_dump(data))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 1, out
+    assert "DRIFT quality.diff_cleaner" in out
+    assert "nc: code dispatches to 'clean_nc_text', manifest says 'none'" in out
+
+
+def test_manifest_names_a_cleaner_the_code_does_not_have_is_drift(world, core_root):
+    data = yaml.safe_load(open(world[2]))
+    data["al"]["quality"]["diff_cleaner"] = "clean_al_text_v2"
+    _write(world[2], yaml.safe_dump(data))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 1, out
+    assert "DRIFT quality.diff_cleaner" in out
+    assert "al: code dispatches to 'clean_al_text', manifest says 'clean_al_text_v2'" in out
+
+
+def test_a_renamed_cleaner_in_the_dispatch_is_caught_as_drift(world, core_root):
+    """Mutation check (OPEN-462 AC): the manifest's old value now disagrees with the parsed table once
+    the code's dispatch calls a differently-named function for the same jurisdiction."""
+    path = os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH)
+    _write(path, open(path).read().replace("_clean_al_text", "_clean_alabama_text_v2"))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 1, out
+    assert "al: code dispatches to 'clean_alabama_text_v2', manifest says 'clean_al_text'" in out
+
+
+def test_a_removed_dispatch_branch_is_caught_as_drift(world, core_root):
+    """If the code stops cleaning a jurisdiction, the manifest's non-"none" value is now stale."""
+    path = os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH)
+    text = open(path).read().replace(
+        '    if jurisdiction_name == "North Carolina":\n'
+        "        prior_text = _clean_nc_text(prior_text)\n"
+        "        raw_text = _clean_nc_text(raw_text)\n",
+        "",
+    )
+    assert "North Carolina" not in text
+    _write(path, text)
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 1, out
+    assert "nc: code dispatches to 'none', manifest says 'clean_nc_text'" in out
+
+
+def test_an_unparseable_if_shape_is_an_error_not_a_pass(world, core_root):
+    path = os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH)
+    _write(path, open(path).read().replace(
+        'if jurisdiction_name == "Alabama":', 'if jurisdiction_name in ("Alabama",):'
+    ))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 2, out
+    assert "text_extract.py" in out and "this checker cannot parse" in out
+
+
+def test_a_branch_calling_two_distinct_cleaners_is_an_error(world, core_root):
+    path = os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH)
+    _write(path, open(path).read().replace(
+        "raw_text = _clean_al_text(raw_text)", "raw_text = _clean_other_text(raw_text)"
+    ))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 2, out
+    assert "2 distinct cleaner" in out
+
+
+def test_a_missing_apply_prediff_cleaning_function_is_an_error(world, core_root):
+    path = os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH)
+    _write(path, "def some_other_function():\n    pass\n")
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 2, out
+    assert "no apply_prediff_cleaning() function found" in out
+
+
+def test_a_missing_openstates_core_file_is_an_error(world, core_root):
+    os.remove(os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH))
+    code, out = _run(world, with_sync=False, core=core_root)
+    assert code == 2 and "cannot read" in out
+
+
+def test_the_real_text_extract_dispatch_agrees_with_the_real_manifest():
+    """The real openstates-core checkout this workspace keeps locally (gitignored, same checkout
+    text_extract.py's own cleaners live in) agrees with the real jurisdictions.yaml -- the exact
+    comparison OPEN-462 found failing for ma/nc/al before this change. Skipped where that checkout
+    isn't present (e.g. a CI pytest step, which doesn't check it out -- only the final drift-check
+    shell step in validate-jurisdictions.yml does, with --require-openstates-core)."""
+    core_path = os.path.join(HERE, "openstates-core")
+    if not os.path.isdir(core_path):
+        pytest.skip("no local openstates-core checkout (expected: this repo's own CI pytest step doesn't check it out)")
+    out = io.StringIO()
+    code = drift.main(["check", "--openstates-core-root", core_path], out)
+    assert code == 0, out.getvalue()
 
 
 # ---------------------------------------------------------------------------------------------------

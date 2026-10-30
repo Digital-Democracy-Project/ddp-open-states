@@ -307,6 +307,18 @@ def test_real_manifest_matches_known_live_config_values():
     # OPEN-128: MA's start= filter was deleted 2026-08-25
     assert data["ma"]["scrape"]["start_filter"] is False
 
+    # OPEN-462: openstates-core text_extract.py's apply_prediff_cleaning() dispatch
+    # (check-jurisdiction-drift.py --openstates-core-root enforces this against the real code)
+    assert data["wa"]["quality"]["diff_cleaner"] == "clean_wa_text"
+    assert data["va"]["quality"]["diff_cleaner"] == "clean_virginia_text"
+    assert data["mi"]["quality"]["diff_cleaner"] == "clean_michigan_text"
+    assert data["az"]["quality"]["diff_cleaner"] == "reflow_paragraphs"
+    assert data["al"]["quality"]["diff_cleaner"] == "clean_al_text"  # was "none"; the code already cleaned AL
+    assert data["nc"]["quality"]["diff_cleaner"] == "clean_nc_text"  # was "none"; the code already cleaned NC
+    assert data["ma"]["quality"]["diff_cleaner"] == "clean_massachusetts_text"  # was "none"; the code already cleaned MA
+    for code in ("us", "fl", "ut"):
+        assert data[code]["quality"]["diff_cleaner"] == "none"
+
 
 def test_deepcopy_of_valid_entry_is_still_valid():
     # sanity check on the fixture itself
