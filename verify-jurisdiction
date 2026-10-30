@@ -658,12 +658,40 @@ def run_gate_g(st, active_sessions, people_dir_root, broker_fixture_path):
     return GateResult("G", False, status, summary, details=details)
 
 
+def count_people_loaded(conn, st):
+    """Distinct people with a membership in one of this jurisdiction's organizations. Zero means no
+    qualifying people are present (usually `os-people to-database <st>` has not run); a positive
+    count says some are present, not that the roster is complete (the parity gate checks that)."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT count(DISTINCT m.person_id)
+        FROM opencivicdata_membership m
+        JOIN opencivicdata_organization o ON o.id = m.organization_id
+        WHERE o.jurisdiction_id = %s AND m.person_id IS NOT NULL
+        """,
+        (ocd_jurisdiction_id(st),),
+    )
+    return cur.fetchone()[0]
+
+
 def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_name, datadir):
     # Note: main() already refuses to call this with do_import=True against a DB that looks
     # like production (see the is_probably_production_db() check around the call site) -- this
     # function trusts that gate and does not re-derive DATABASE_URL from the live connection.
     details = []
     if do_import:
+        # Onboarding order rule 1 (PLAN-push-button-onboarding.md section 5, OPEN-446): people before
+        # the first import. NC imported first and every vote and sponsorship stayed unresolved
+        # until the legislators were loaded and the bills re-imported.
+        people = count_people_loaded(conn, st)
+        if people == 0:
+            return GateResult(
+                "H", True, "fail",
+                f"no people for {st} are loaded in this database; run `os-people to-database {st}` first, "
+                "then re-run --import (votes and sponsorships would import unresolved)",
+                details=[f"people with a membership in {ocd_jurisdiction_id(st)}: 0"],
+            )
         import_cmd = [
             os.path.join(os_venv, "bin", "os-update"), module_name,
             "--import", "--datadir", datadir,
