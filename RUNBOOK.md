@@ -530,6 +530,52 @@ it"** — never "please build this." Building is this checkout's/this Mac's job.
 
 ---
 
+## Running the onboarding probe on Fargate (OPEN-458)
+
+`verify-jurisdiction <state>` normally runs on the Mac. If the state's website refuses the Mac's IP address
+(Colorado answered `406` to the Mac's dry scrape on 2026-10-30, and served 233 bills and 1,468 votes to a Fargate
+run the same day), run the probe itself as a task instead. It uses the **same task definition the scrapes use**
+(`ddp-scrapers`): `RUNNER_SCRIPT` picks the probe, `--fargate` makes it safe to run there, and the probe's own
+`--sample-bills` is the cap (the collector has no cap, so do not run a state through it to "probe" it).
+
+```bash
+# AWS keys are loaded from the dev .env in a subshell; the subnets and security group are ddp-sync's cloud_path values.
+( set -a; source ~/Developer/repos/ddp-open-states-dev/.env; set +a; \
+  aws ecs run-task --region us-east-1 --cluster ddp-scrapers \
+  --task-definition ddp-scrapers --launch-type FARGATE \
+  --network-configuration 'awsvpcConfiguration={subnets=[subnet-0fdc71c33a5cb60bc,subnet-0dbb01bb8fd1cd1e8,subnet-087136704d428e5f2],securityGroups=[sg-09346518873d48a08],assignPublicIp=ENABLED}' \
+  --overrides '{"containerOverrides":[{"name":"scraper","command":["co","--fargate","--sample-bills","5"],"environment":[{"name":"RUNNER_SCRIPT","value":"verify-jurisdiction"},{"name":"RUN_ID","value":"probe-co-20261101"},{"name":"MEMORY_PREFIX","value":"dev-probe-co-20261101"}]}]}' )
+```
+
+* **It refuses to start** (exit 3, one line in the log) for Michigan, for `--import`, without `MEMORY_BUCKET`, and
+  with `MEMORY_PREFIX` unset or `prod`. Use a throwaway prefix such as `dev-probe-<state>-<date>`.
+* **No database, no import.** Gates G (people) and H (database rows, session rows) are reported as skipped. A
+  **RED is final; a YELLOW is provisional** until the Mac half has run. The task exits 0 once its output is
+  uploaded, whatever the colour (a yellow probe is not a failed task); exit 4 means the upload failed.
+* **Output:** `s3://ddp-openstates-scraper-memory/<MEMORY_PREFIX>/probe/<state>/<RUN_ID>/` holds `report.md`,
+  `result.json` (every gate, the session, the run id, and a hash of each sample file) and `sample.tar.gz` (the
+  bounded `_probe/` sample). Not the collector's `working-tier/`, so nothing else can pick it up. `result.json` is
+  uploaded **last**: a folder without it is an upload that did not finish, so do not use it.
+* **Logs:** CloudWatch group `/aws/ecs/ddp-scrapers` (not `/ecs/ddp-scrapers`), stream
+  `scraper/scraper/<task id>`. The `ddp-scraper` IAM user cannot read it (OPEN-215), so unless that has been granted
+  the prod agent reads the log and fetches the three files (a read-only request on `notes/ops-handoff`).
+* **Finish on the Mac** (people loaded first, onboarding order rule 1):
+
+```bash
+mkdir probe-co && cd probe-co      # a fresh, empty folder per run; put report.md, result.json and sample.tar.gz here
+tar -xzf sample.tar.gz             # creates _probe/
+source ~/Developer/repos/ddp-open-states-dev/activate-dev.sh
+verify-jurisdiction co --from-dir . [--import]
+```
+
+  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H and I here against the downloaded
+  sample (the vote-key check compares the files, it scrapes nothing). It refuses a folder whose bill and vote files
+  are not exactly the ones `result.json` lists (a leftover from another run, an edited or missing file). `--import`
+  works as on any Mac run: the people guard, session rows, dev database only.
+* **Deploying it:** the probe is one more file in the image (`Dockerfile`'s `COPY` line), so it needs the image
+  rebuild and new task-definition revision described above. One family serves every state, so that revision moves
+  all of them at once; follow that section's checks.
+
 ## Development / testing environment (`ddp-open-states-dev`)
 
 **Never edit code or switch branches directly in this checkout while a scrape is running anywhere**

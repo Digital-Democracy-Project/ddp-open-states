@@ -49,6 +49,14 @@ Safety (judgment calls made explicit, since the plan text doesn't spell out DB-w
 
 Usage:
     verify-jurisdiction <st> [--session ID] [--sample-bills N] [--import] [--notes-dir DIR]
+    verify-jurisdiction <st> --fargate [--sample-bills N]       (OPEN-458: as a Fargate task, no database)
+    verify-jurisdiction <st> --from-dir DIR [--import]          (OPEN-458: finish a Fargate run here)
+
+--fargate runs gates A-D, E, F and I on a cloud IP and uploads report.md, result.json and the bounded
+sample under $MEMORY_PREFIX/probe/<st>/<run id>/ in $MEMORY_BUCKET; G and H are skipped (no database
+there), so a YELLOW is provisional and a RED is final. It refuses --import, Michigan, and a "prod"
+MEMORY_PREFIX. --from-dir takes gates A, B and D from that run's result.json and runs the rest here
+against the downloaded sample. RUNBOOK.md "Running the onboarding probe on Fargate" has the commands.
 
 Must be run with this repo's environment active (source activate.sh or activate-dev.sh first) --
 same requirement as every other script in this repo (see PRIMITIVES.md).
@@ -57,6 +65,7 @@ same requirement as every other script in this repo (see PRIMITIVES.md).
 import argparse
 import datetime
 import glob
+import hashlib
 import inspect
 import io
 import itertools
@@ -67,6 +76,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 import time
 from urllib.parse import urlparse
 
@@ -100,6 +111,19 @@ SCRAPE_LOCK_DIR = "/tmp/ddp-openstates-scrape-locks"
 
 DEFAULT_SAMPLE_BILLS = 20  # matches §4.4's "20-bill dry scrape" gate C example
 MAX_EXTRA_SESSIONS = 2  # gate I dry-scrapes at most this many sessions besides the probed one
+
+# OPEN-458: the probe can run as a Fargate task (RUNNER_SCRIPT=verify-jurisdiction in the same
+# ddp-scrapers task definition the scrapes use), so a state's website sees a cloud IP rather than
+# the Mac's. Exit codes 3 and 4 belong to the run itself; 0/1/2 stay the classification. A Fargate
+# run exits 0 once its report is uploaded whatever the colour, so ECS does not show a yellow
+# state as a failed task -- the colour is in report.md and result.json.
+EXIT_REFUSED = 3
+EXIT_UPLOAD_FAILED = 4
+# Michigan's WAF cookie comes from the Mac's mint (OPEN-188/189) and a cold hand-rolled scrape of
+# it risks the Barracuda block; the real runner reads the published cookie, a probe does not.
+FARGATE_REFUSED_STATES = {"mi"}
+
+GATE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8}
 
 
 # ── Pure helpers (unit-testable, no scraper/DB/network needed) ─────────────────
@@ -350,6 +374,19 @@ class GateResult:
 
     def symbol(self):
         return {"pass": "PASS", "warn": "WARN", "fail": "FAIL", "skip": "SKIP"}[self.status]
+
+    def to_dict(self):
+        return {
+            "gate": self.gate, "blocking": self.blocking, "status": self.status,
+            "summary": self.summary, "details": self.details, "block_signature": self.block_signature,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            d["gate"], d["blocking"], d["status"], d["summary"],
+            details=d.get("details"), block_signature=d.get("block_signature", False),
+        )
 
 
 # ── Gate implementations (need the real toolchain / DB) ─────────────────────
@@ -603,11 +640,7 @@ def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_d
     others = [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
     details = [f"probed session {session}: {len(vote_files)} vote event file(s)"]
     if not others:
-        return GateResult(
-            "I", True, "pass",
-            "only one active session, so there is no other session to collide with",
-            details=details,
-        )
+        return compare_vote_keys(vote_files, 1, [], details)
 
     unscraped = []
     for other in others:
@@ -619,6 +652,18 @@ def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_d
             unscraped.append(other)
         vote_files += found
 
+    return compare_vote_keys(vote_files, 1 + len(others), unscraped, details)
+
+
+def compare_vote_keys(vote_files, n_sessions, unscraped, details):
+    """The verdict half of gate I, shared by the live run (run_gate_i) and a run over a sample
+    scraped elsewhere (run_gate_i_from_dir): the same rules whoever did the scraping."""
+    if n_sessions == 1:
+        return GateResult(
+            "I", True, "pass",
+            "only one active session, so there is no other session to collide with",
+            details=details,
+        )
     collisions, unreadable = find_vote_key_collisions(vote_files)
     for key, where in sorted(collisions.items())[:10]:
         details.append(f"repeated key {key!r} on {where}")
@@ -649,9 +694,28 @@ def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_d
         )
     return GateResult(
         "I", True, "pass",
-        f"no vote key repeats across {1 + len(others)} sessions in the sample ({len(vote_files)} vote event files)",
+        f"no vote key repeats across {n_sessions} sessions in the sample ({len(vote_files)} vote event files)",
         details=details,
     )
+
+
+def run_gate_i_from_dir(st, session, active_sessions, scraped_data_dir):
+    """Gate I over a sample that was scraped somewhere else (OPEN-458: the Fargate probe's
+    downloaded `_probe` folder). Nothing is scraped here; the keys are compared by the same
+    compare_vote_keys() the live gate uses."""
+    probe_dir = os.path.join(scraped_data_dir, "_probe", st)
+    vote_files = sorted(glob.glob(os.path.join(probe_dir, "vote_event_*.json")))
+    others = [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
+    details = [f"probed session {session}: {len(vote_files)} vote event file(s)"]
+    unscraped = []
+    for other in others:
+        other_dir = os.path.join(scraped_data_dir, "_probe", f"{st}-session-{other}")
+        found = sorted(glob.glob(os.path.join(other_dir, "vote_event_*.json")))
+        details.append(f"session {other}: {len(found)} vote event file(s) in the downloaded sample")
+        if not glob.glob(os.path.join(other_dir, "bill_*.json")):
+            unscraped.append(other)
+        vote_files += found
+    return compare_vote_keys(vote_files, 1 + len(others), unscraped, details)
 
 
 def run_gate_e(conn, st, scrapers_source_dir):
@@ -803,6 +867,12 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
             )
         # Onboarding order: the jurisdiction and its sessions exist before bills load against them
         # (OPEN-456). A real scrape writes these objects first; the dry scrape does not.
+        if juris is None:
+            return GateResult(
+                "H", True, "fail",
+                f"the {module_name!r} scraper module could not be loaded on this machine, so the "
+                "jurisdiction and session objects cannot be written before the import",
+            )
         scrape_jurisdiction_objects(juris, datadir)
         import_cmd = [
             os.path.join(os_venv, "bin", "os-update"), module_name,
@@ -895,7 +965,7 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
 # ── Report rendering ───────────────────────────────────────────────────────────
 
 
-def render_report(st, name, classification, gate_results, wall_clock_s, run_at):
+def render_report(st, name, classification, gate_results, wall_clock_s, run_at, notes=None):
     lines = [
         f"# Onboarding Probe — {st} ({name})",
         "",
@@ -914,6 +984,9 @@ def render_report(st, name, classification, gate_results, wall_clock_s, run_at):
     ]
     for g in gate_results:
         lines.append(f"| {g.gate} | {'yes' if g.blocking else 'no'} | {g.symbol()} | {g.summary} |")
+    if notes:
+        at = lines.index("## Gate summary")
+        lines[at:at] = [*notes, ""]
 
     lines += ["", "## Details", ""]
     for g in gate_results:
@@ -945,6 +1018,141 @@ def render_report(st, name, classification, gate_results, wall_clock_s, run_at):
     return "\n".join(lines)
 
 
+# ── Fargate run and the Mac-side read of its output (OPEN-458) ───────────────
+
+
+def fargate_refusal(st, args, env):
+    """Why a Fargate run must not start, or None. There the probe is a bounded dry scrape and
+    nothing more: no database, no import, never Michigan, and never the real `prod` namespace."""
+    if st in FARGATE_REFUSED_STATES:
+        return f"{st} is not probed on Fargate (its WAF cookie comes from the Mac's mint; a cold scrape risks the block)"
+    if args.do_import or args.force_import:
+        return "--import is not allowed on Fargate (there is no database there); import on the Mac with --from-dir"
+    if not env.get("MEMORY_BUCKET"):
+        return "MEMORY_BUCKET is not set, so there is nowhere to put the report"
+    prefix = (env.get("MEMORY_PREFIX") or "").strip().strip("/")
+    if not prefix:
+        return "MEMORY_PREFIX is not set (it has no default, so one environment cannot write over another's)"
+    if prefix.split("/")[0].lower() == "prod":
+        return "MEMORY_PREFIX is 'prod' or under it; a probe writes under its own namespace (for example dev-probe-<state>-<date>)"
+    return None
+
+
+def _s3_client():
+    import boto3
+
+    return boto3.client("s3")
+
+
+def sample_manifest(root):
+    """{relative path: sha256} of the sample files the gates read (bills and vote events) under
+    <root>/_probe. result.json carries it, so --from-dir can tell the folder it was given is the
+    sample that run produced and not a mix of two runs. Files the Mac's own --import writes into
+    that folder (jurisdiction and organization objects, the staged _import copy) are not listed."""
+    found = {}
+    for pattern in ("bill_*.json", "vote_event_*.json"):
+        for path in glob.glob(os.path.join(root, "_probe", "**", pattern), recursive=True):
+            rel = os.path.relpath(path, root)
+            if rel.split(os.sep)[1] == "_import":
+                continue
+            with open(path, "rb") as f:
+                found[rel] = hashlib.sha256(f.read()).hexdigest()
+    return dict(sorted(found.items()))
+
+
+def upload_probe_output(s3, bucket, memory_prefix, st, run_id, report_text, payload, probe_root):
+    """report.md, result.json and the bounded sample (`_probe/` as one tarball) under
+    <MEMORY_PREFIX>/probe/<state>/<run id>/ -- the same bucket and prefix convention the
+    collector uses for its memory, so the task role already writes there. result.json goes up
+    last: a folder without it is an upload that did not finish. Returns the keys."""
+    base = f"{memory_prefix.strip('/')}/probe/{st}/{run_id}"
+    uploads = {}
+    sample_dir = os.path.join(probe_root, "_probe")
+    if os.path.isdir(sample_dir):
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+            tar.add(sample_dir, arcname="_probe")
+        uploads["sample.tar.gz"] = buf.getvalue()
+    uploads["report.md"] = report_text.encode()
+    uploads["result.json"] = json.dumps(payload, indent=2).encode()
+    keys = []
+    for name, body in uploads.items():
+        key = f"{base}/{name}"
+        s3.put_object(Bucket=bucket, Key=key, Body=body)
+        keys.append(key)
+    return keys
+
+
+def load_fargate_payload(from_dir, st):
+    """Read a downloaded Fargate probe folder: result.json plus the un-tarred `_probe/`."""
+    path = os.path.join(from_dir, "result.json")
+    try:
+        with open(path) as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{path} is missing or unreadable ({exc}); download the whole probe folder, result.json included")
+    if payload.get("state") != st:
+        raise ValueError(f"{path} is for {payload.get('state')!r}, not {st!r}")
+    if not os.path.isdir(os.path.join(from_dir, "_probe", st)):
+        raise ValueError(f"{os.path.join(from_dir, '_probe', st)} is missing; un-tar sample.tar.gz inside {from_dir} first")
+    try:
+        payload["gates"] = [GateResult.from_dict(g) for g in payload.get("gates", [])]
+    except (AssertionError, KeyError, TypeError) as exc:
+        raise ValueError(f"{path} has a malformed gate result ({type(exc).__name__}: {exc})")
+    for gate in ("A", "B", "D"):
+        if [g.gate for g in payload["gates"]].count(gate) != 1:
+            raise ValueError(f"{path} must hold exactly one gate {gate} result")
+    recorded, here = payload.get("sample_files"), sample_manifest(from_dir)
+    if recorded is None:
+        raise ValueError(f"{path} lists no sample files, so the folder cannot be matched to it")
+    if recorded != here:
+        missing = len(set(recorded) - set(here))
+        extra = len(set(here) - set(recorded))
+        changed = len([k for k in recorded if k in here and recorded[k] != here[k]])
+        raise ValueError(
+            f"the sample in {from_dir} is not the one {path} was written for ({missing} file(s) missing, "
+            f"{extra} unexpected, {changed} changed); un-tar sample.tar.gz into a fresh, empty folder"
+        )
+    return payload
+
+
+def emit_report(args, st, name, results, t0, run_at, ctx):
+    """Classify, write and print the report; on Fargate also upload it. Returns the exit code."""
+    results = sorted(results, key=lambda g: GATE_ORDER.get(g.gate, 99))
+    classification = classify_probe(results)
+    report_text = render_report(
+        st, name, classification, results, time.monotonic() - t0, run_at, notes=ctx.get("notes"),
+    )
+    os.makedirs(args.notes_dir, exist_ok=True)
+    report_path = os.path.join(args.notes_dir, f"{st}-onboarding-probe-{run_at.strftime('%Y%m%d')}.md")
+    with open(report_path, "w") as f:
+        f.write(report_text)
+    print(report_text)
+    print(f"\nWritten to {report_path}", file=sys.stderr)
+
+    if not ctx.get("fargate"):
+        return exit_code_for_classification(classification)
+
+    payload = {
+        "state": st, "name": name, "run_id": ctx["run_id"], "run_at": run_at.isoformat(),
+        "classification": classification, "session": ctx.get("session"),
+        "active_sessions": ctx.get("active_sessions", []), "sample_bills": args.sample_bills,
+        "sample_files": sample_manifest(os.environ["SCRAPED_DATA_DIR"]),
+        "gates": [g.to_dict() for g in results],
+    }
+    try:
+        keys = upload_probe_output(
+            _s3_client(), ctx["bucket"], ctx["memory_prefix"], st, ctx["run_id"],
+            report_text, payload, os.environ["SCRAPED_DATA_DIR"],
+        )
+    except Exception as exc:  # noqa: BLE001 -- any failure to publish means the run produced nothing readable
+        print(f"ERROR: could not upload the probe output: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return EXIT_UPLOAD_FAILED
+    for key in keys:
+        print(f"uploaded s3://{ctx['bucket']}/{key}")
+    return 0
+
+
 # ── main ────────────────────────────────────────────────────────────────────
 
 
@@ -962,10 +1170,63 @@ def main(argv=None):
         default=os.path.expanduser("~/Developer/repos/ddp-broker-py/common/fixtures/jurisdictions.csv"),
         help="best-effort path to ddp-broker-py's jurisdiction fixture, for gate G's district-count cross-check",
     )
+    parser.add_argument(
+        "--fargate", action="store_true",
+        help="run as a Fargate task: no database, no import; uploads report.md, result.json and the sample to "
+             "s3://$MEMORY_BUCKET/$MEMORY_PREFIX/probe/<state>/<run id>/ (OPEN-458)",
+    )
+    parser.add_argument(
+        "--from-dir", default=None,
+        help="finish a Fargate run on this machine: a downloaded probe folder (result.json and the un-tarred "
+             "_probe/). Gates A, B and D come from the Fargate run; the rest run here (OPEN-458)",
+    )
     args = parser.parse_args(argv)
+    if args.fargate and args.from_dir:
+        parser.error("--fargate and --from-dir cannot be combined")
 
     st = args.state.lower()
     module_name = scraper_module_name(st)
+    run_at = datetime.datetime.now(datetime.timezone.utc)
+    ctx = {"fargate": args.fargate, "notes": []}
+    payload = None
+
+    if args.fargate:
+        refusal = fargate_refusal(st, args, os.environ)
+        if refusal:
+            print(f"ERROR: {refusal}", file=sys.stderr)
+            return EXIT_REFUSED
+        # Everything the scrape writes goes to a scratch directory inside the container; the
+        # settings read these two variables when openstates is first imported (below).
+        work_root = tempfile.mkdtemp(prefix=f"probe-{st}-")
+        os.environ["SCRAPED_DATA_DIR"] = os.path.join(work_root, "scraped")
+        os.environ["CACHE_DIR"] = os.path.join(work_root, "cache")
+        # No database on Fargate: remove the variable itself, so scraper code and subprocesses
+        # cannot find it either, not just this script's own connection branch.
+        os.environ.pop("DATABASE_URL", None)
+        args.notes_dir = os.path.join(work_root, "notes")
+        ctx.update(
+            run_id=os.environ.get("RUN_ID") or f"probe-{st}-{run_at.strftime('%Y%m%dT%H%M%SZ')}",
+            bucket=os.environ["MEMORY_BUCKET"],
+            memory_prefix=os.environ["MEMORY_PREFIX"].strip().strip("/"),
+        )
+        ctx["notes"] = [
+            "Ran on Fargate: the people and database gates (G, H) were not run, so H shows SKIP. "
+            "A RED here is final; a YELLOW is provisional. Finish on the Mac: download this run's "
+            f"folder (`probe/{st}/{ctx['run_id']}/`), un-tar `sample.tar.gz` inside it, then run "
+            f"`verify-jurisdiction {st} --from-dir <that folder>`.",
+        ]
+    elif args.from_dir:
+        try:
+            payload = load_fargate_payload(args.from_dir, st)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return EXIT_REFUSED
+        os.environ["SCRAPED_DATA_DIR"] = os.path.abspath(args.from_dir)
+        args.session = payload.get("session")  # the sample is of this session, whatever was asked
+        ctx["notes"] = [
+            f"Gates A, B and D come from the Fargate run {payload.get('run_id')} "
+            f"({payload.get('run_at')}); C, E, F, G, H and I ran here against its downloaded sample.",
+        ]
 
     scraped_data_dir = os.environ.get("SCRAPED_DATA_DIR")
     scrapers_src_dir = os.environ.get("PYTHONPATH", "").split(":")[0] or "."
@@ -976,7 +1237,6 @@ def main(argv=None):
 
     from openstates.cli.update import get_jurisdiction
 
-    run_at = datetime.datetime.now(datetime.timezone.utc)
     t0 = time.monotonic()
 
     # Round-1 fold: get_jurisdiction() was called completely unguarded here. A missing Python
@@ -987,37 +1247,35 @@ def main(argv=None):
     # reported as a finding. Every other gate needs a real `juris` object, so this failure has to
     # be classified as an immediate, total stop -- there is nothing left to check -- rather than
     # letting the exception propagate past whatever caller is watching this process's exit code.
+    # (A --from-dir run already has gates A, B and D from Fargate; it only loses --import.)
     try:
         juris, _module = get_jurisdiction(module_name)
     except Exception as exc:
-        gate_a = GateResult(
-            "A", True, "fail",
-            f"could not import scraper module {module_name!r}: {type(exc).__name__}: {exc}",
+        if payload is None:
+            gate_a = GateResult(
+                "A", True, "fail",
+                f"could not import scraper module {module_name!r}: {type(exc).__name__}: {exc}",
+            )
+            return emit_report(args, st, st.upper(), [gate_a], t0, run_at, ctx)
+        juris = None
+        ctx["notes"].append(
+            f"The {module_name!r} scraper module could not be loaded on this machine "
+            f"({type(exc).__name__}: {exc}), so --import cannot run here."
         )
-        classification = classify_probe([gate_a])
-        report_text = render_report(
-            st, st.upper(), classification, [gate_a], time.monotonic() - t0, run_at,
-        )
-        os.makedirs(args.notes_dir, exist_ok=True)
-        report_path = os.path.join(
-            args.notes_dir, f"{st}-onboarding-probe-{run_at.strftime('%Y%m%d')}.md",
-        )
-        with open(report_path, "w") as f:
-            f.write(report_text)
-        print(report_text)
-        print(f"\nWritten to {report_path}", file=sys.stderr)
-        return exit_code_for_classification(classification)
 
     name = getattr(juris, "name", st.upper())
 
     results = []
-    results.append(run_gate_a(juris, module_name))
-    results.append(run_gate_b(juris, module_name, st, scrapers_src_dir))
-
-    active_sessions = []
-    for line in (results[0].details or []):
-        if line.startswith("active:"):
-            active_sessions = [s.strip() for s in line[len("active:"):].split(",") if s.strip()]
+    if payload is None:
+        results.append(run_gate_a(juris, module_name))
+        results.append(run_gate_b(juris, module_name, st, scrapers_src_dir))
+        active_sessions = []
+        for line in (results[0].details or []):
+            if line.startswith("active:"):
+                active_sessions = [s.strip() for s in line[len("active:"):].split(",") if s.strip()]
+    else:
+        results.extend(g for g in payload["gates"] if g.gate in ("A", "B"))
+        active_sessions = list(payload.get("active_sessions", []))
 
     conn = None
     database_url = os.environ.get("DATABASE_URL")
@@ -1055,14 +1313,26 @@ def main(argv=None):
             row = cur.fetchone()
             if row:
                 session = row[0]
+    ctx.update(session=session, active_sessions=active_sessions)
 
-    gate_d_result, bill_files, _scrape_report = run_gate_d(
-        juris, st, session, args.sample_bills, scraped_data_dir
-    )
-    results.append(gate_d_result)
-    results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir)
-                   if gate_d_result.status == "pass"
-                   else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
+    if payload is None:
+        gate_d_result, bill_files, _scrape_report = run_gate_d(
+            juris, st, session, args.sample_bills, scraped_data_dir
+        )
+        results.append(gate_d_result)
+        results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir)
+                       if gate_d_result.status == "pass"
+                       else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
+    else:
+        gate_d_result = next(
+            (g for g in payload["gates"] if g.gate == "D"),
+            GateResult("D", True, "skip", "the Fargate run recorded no gate D result"),
+        )
+        bill_files = sorted(glob.glob(os.path.join(scraped_data_dir, "_probe", st, "bill_*.json")))
+        results.append(gate_d_result)
+        results.append(run_gate_i_from_dir(st, session, active_sessions, scraped_data_dir)
+                       if gate_d_result.status == "pass"
+                       else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
 
     media_types_present = set()
     for path in bill_files:
@@ -1089,32 +1359,25 @@ def main(argv=None):
             results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir, juris))
         results.append(run_gate_e(conn, st, scrapers_src_dir))
     else:
-        results.append(GateResult("H", True, "skip", "no DATABASE_URL configured -- skipped"))
+        results.append(GateResult(
+            "H", True, "skip",
+            "no database on Fargate -- finish with --from-dir on the Mac" if args.fargate
+            else "no DATABASE_URL configured -- skipped",
+        ))
         results.append(run_gate_e(None, st, scrapers_src_dir))
 
     results.append(run_gate_f(bill_files))
-    results.append(run_gate_g(st, active_sessions, args.people_dir, args.broker_fixture))
+    if args.fargate:
+        results.append(GateResult(
+            "G", False, "skip", "not run on Fargate: it needs the people checkout and the dev database",
+        ))
+    else:
+        results.append(run_gate_g(st, active_sessions, args.people_dir, args.broker_fixture))
 
     if conn is not None:
         conn.close()
 
-    order = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8}
-    results.sort(key=lambda g: order.get(g.gate, 99))
-
-    classification = classify_probe(results)
-    wall_clock = time.monotonic() - t0
-
-    report_text = render_report(st, name, classification, results, wall_clock, run_at)
-    os.makedirs(args.notes_dir, exist_ok=True)
-    date_str = run_at.strftime("%Y%m%d")
-    report_path = os.path.join(args.notes_dir, f"{st}-onboarding-probe-{date_str}.md")
-    with open(report_path, "w") as f:
-        f.write(report_text)
-
-    print(report_text)
-    print(f"\nWritten to {report_path}", file=sys.stderr)
-
-    return exit_code_for_classification(classification)
+    return emit_report(args, st, name, results, t0, run_at, ctx)
 
 
 if __name__ == "__main__":

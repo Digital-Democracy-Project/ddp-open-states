@@ -137,7 +137,9 @@ WORKDIR /app
 # cloud_text_extract.py it needs no separate thin runner wrapper, so RUNNER_SCRIPT can point at
 # it directly. open304-add-lis-identifiers.py (OPEN-304) is the same shape -- a one-off,
 # idempotent, safe-to-re-run data patch, same DATABASE_URL convention.
-COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py import-summary.sh docker-entrypoint.sh ./
+# verify-jurisdiction (OPEN-458) is the onboarding probe; RUNNER_SCRIPT=verify-jurisdiction with `<state> --fargate`
+# runs it here so a state's website sees a cloud IP, with no database. It only reads the installed scrapers.
+COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
