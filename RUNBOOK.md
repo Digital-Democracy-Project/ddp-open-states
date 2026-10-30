@@ -27,7 +27,9 @@ source activate.sh
 ./run-scrape.sh wa "session=2025-2026"
 ./run-scrape.sh usa "session=119 chamber=lower"   # US House
 ./run-scrape.sh usa "session=119 chamber=upper"   # US Senate
-# Note: AL not tracked by DDP — omitted from nightly runs
+# Note: AL's bill-scraping is paused (archive/people-refresh still run) — see
+# `jurisdictions.yaml`'s per-jurisdiction `status`/`scrape` fields, or
+# `check-jurisdiction-drift.py --matrix`, for which jurisdictions are paused
 
 # Run data quality check against live v3.openstates.org
 OPENSTATES_API_KEY=<key> python3 quality_check.py

@@ -66,7 +66,7 @@ services:
       # migrated it to RDS yet) -- confirmed acceptable, NC has no production consumers yet.
       #
       # Confirmed via real code inspection: production `ddp-broker` (EC2, 10.0.0.11) was pointed
-      # at THIS Mac's api-v3 for all 8 DDP jurisdictions (DDP_OPENSTATES_API_ROOT=
+      # at THIS Mac's api-v3 for every jurisdiction in jurisdictions.yaml (DDP_OPENSTATES_API_ROOT=
       # http://host.docker.internal:8002) and calls `/people` (representative-roster sync,
       # openstates_service.py's update_representatives_for_jurisdiction) -- which needs tables
       # this database doesn't have. Per Ramon: production ddp-broker is being switched to the
@@ -80,7 +80,8 @@ services:
       # container), but do NOT actually recreate this container -- e.g. `docker compose up -d api`
       # -- until the ddp-broker EC2 switch above is confirmed done AND a real representative-roster
       # sync has been verified to succeed against the EC2 api-v3. Recreating this container first
-      # would knowingly break that sync for all 8 jurisdictions the moment it's next exercised.
+      # would knowingly break that sync for every jurisdiction in jurisdictions.yaml the moment it's
+      # next exercised.
       # (Separately confirmed via this container's own real access logs, last 72h: zero /people
       # requests have hit THIS Mac's api-v3 in that window -- the dependency is real per the code,
       # just not yet observed firing here; that's not a reason to skip the precondition, only
