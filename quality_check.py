@@ -87,6 +87,14 @@ DB_URL = _resolve_db_url()
 # validation stops the tool with the validator's messages instead of sweeping a guessed list.
 from validate_jurisdictions import load_and_validate
 
+# OPEN-445: shared with verify-jurisdiction's Stage 0 gates -- the one implementation of each rule.
+from qa_primitives import (
+    ocd_jurisdiction_id as _ocd_id,
+    count_people_loaded,
+    find_db_vote_key_collisions,
+    attribution_resolution_rates,
+)
+
 
 def _load_manifest():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
@@ -94,12 +102,6 @@ def _load_manifest():
     if errors:
         raise SystemExit("quality_check.py: jurisdictions.yaml is not usable:\n  " + "\n  ".join(errors))
     return data
-
-
-def _ocd_id(code):
-    if code == "us":
-        return "ocd-jurisdiction/country:us/government"
-    return f"ocd-jurisdiction/country:us/state:{code}/government"
 
 
 _MANIFEST = _load_manifest()
@@ -1355,6 +1357,223 @@ def run_bill_ids_check(report, conn, jurisdiction, session, identifiers, api_key
 
     return {"checked": len(identifiers)}
 
+# ── Stage 3 structural gates (OPEN-445) ──────────────────────────────────────────
+#
+# Tier 1/Tier 2 above compare COUNTS (bill identifiers, vote-event counts, sponsorship counts)
+# against the live API -- NC passed 2,338/2,338 bills and 1,081/1,081 Tier 2 checks while every
+# vote and sponsorship was unresolved, because a count gate can't see an unresolved reference, a
+# cross-session key collision, or missing structural fields. These four gates close that blind
+# spot. All four are read-only queries over whatever is already imported for the jurisdiction --
+# no live API call, no OPENSTATES_API_KEY needed -- so they run both under --coverage (Stage 3's
+# existing gate) and standalone under --structural (see main()).
+
+# Both ceilings below are derived from a real --structural sweep of all 9 tracked jurisdictions
+# against the production-mirrored DB, run 2026-10-30 -- see
+# notes/OPEN-445-stage3-structural-gates-floors-20261030.md for the full per-state table and
+# method. NC is the ticket's test subject, excluded from deriving its own bar. Two jurisdictions
+# that sweep measured -- VA and MA -- exceed the ceiling below on attribution resolution; they are
+# NOT folded into deriving it (the same reasoning that excludes NC: a state with a real, unticketed
+# gap is a finding this gate should surface, not evidence the bar is wrong). See the notes file for
+# both.
+#
+# Measured unresolved share, votes | sponsorships (9 tracked jurisdictions, 2026-10-30):
+#   us 4.30%|4.62%  fl 1.04%|2.68%  wa 0.39%|3.09%  va 7.79%|9.66% (**)  mi 0.97%|0.01%
+#   ut 0.00%|2.54%  az 0.37%|0.01%  ma 16.06%|1.55% (**)  nc 0.85%|3.44% (OPEN-233/234, test subject)
+#   (**) exceeds the ceiling below -- newly-discovered, not yet ticketed as of this sweep.
+
+# Gate 1 (attribution resolution): a CEILING on the UNRESOLVED share, not a floor on the resolved
+# share -- named _CEILING to avoid the floor/ceiling ambiguity the ticket's own "floor" wording
+# left open (an unresolved-share gate needs a maximum, not a minimum). 0.047 is the measured
+# maximum among the 6 jurisdictions not flagged above (us's 4.62% sponsorship rate), rounded up to
+# the next thousandth for a stable constant -- no further margin added. Matches the 95%-resolved
+# convention already on record (notes/nc-tier2-250-bill-baseline-sweep-20260831.md: "both
+# resolution rates now clear the plan's 95% sign-off bar").
+ATTRIBUTION_UNRESOLVED_CEILING = 0.047
+
+# Gate 3 (version stage coverage): a CEILING on the share of bill versions with NO stage
+# (note_stage() == STAGE_UNKNOWN). NC's own number here is NOW 250/6,191 (4.0%) -- OPEN-366 (the
+# 3,800/6,191 the ticket cites) has since shipped; 3,800/6,191 is what Stage 3 would have measured
+# before that fix, not what it measures today. 0.055 is the measured maximum among the 8 OTHER
+# tracked jurisdictions (mi's 5.49%), rounded up to the next thousandth -- no further margin added.
+#
+# Measured no-stage share (9 tracked jurisdictions, 2026-10-30):
+#   us 2.59%  fl 0.00%  wa 0.00%  va 0.15%  mi 5.49%  ut 0.02%  az 0.84%  ma 0.00%  nc 4.04% (test subject)
+VERSION_STAGE_UNKNOWN_CEILING = 0.055
+
+
+def run_people_loaded_gate(report, conn, jurisdiction_code):
+    """OPEN-445 Gate 4 (people loaded first): people for this jurisdiction must be > 0 in the
+    target database. Binary -- no threshold to calibrate.
+
+    This is the Stage 3 RE-ASSERTION of the exact invariant verify-jurisdiction's gate H already
+    enforces before the first import (OPEN-446): NC's root cause was that its legislators were
+    never loaded before the first import, and nothing re-checked that fact afterward. Reuses
+    qa_primitives.count_people_loaded() rather than a second copy of the query, so the two
+    checkpoints can't drift apart.
+
+    The AC's second checkpoint ("again... before routing") has no entry point in THIS repo --
+    jurisdiction routing is ddp-broker-py's concern (BROKER-302), a separate repo. This gate is
+    the "again" re-check within ddp-open-states' own pipeline stage; the literal pre-routing
+    checkpoint in the broker is out of reach here and is flagged, not silently dropped (see
+    RUNBOOK.md's Stage 3 structural gates section)."""
+    count = count_people_loaded(conn, jurisdiction_code)
+    label = f"{jurisdiction_code.upper()}: people loaded"
+    if count == 0:
+        report.record(FAIL, label,
+                      f"0 people loaded for {jurisdiction_code} -- run "
+                      f"`os-people to-database {jurisdiction_code}` before importing "
+                      "(votes and sponsorships would import unresolved)")
+    else:
+        report.record(PASS, label, f"{count} people loaded")
+    return count
+
+
+def run_vote_key_uniqueness_gate(report, conn, jurisdiction_code):
+    """OPEN-445 Gate 2 (unique vote keys): for a jurisdiction with more than one session that has
+    votes, every VoteEvent.dedupe_key must be unique across sessions and bills -- the importer
+    matches a keyed vote on the key alone (PRIMITIVES.md, OPEN-252/397), so a repeated key means
+    either two different votes were silently collapsed into one row, or a future import with a
+    fresh row for either one will fail. Binary -- no threshold to calibrate.
+
+    Same rule as verify-jurisdiction's gate I / compare_vote_keys() (OPEN-397), run here over the
+    full imported dataset instead of a bounded dry-scrape sample -- Stage 0's sample can miss a
+    collision Stage 3's full-dataset check will always catch."""
+    label = f"{jurisdiction_code.upper()}: unique vote keys"
+    collisions, n_sessions = find_db_vote_key_collisions(conn, jurisdiction_code)
+    if n_sessions <= 1:
+        report.record(SKIP, label,
+                      f"only {n_sessions} session(s) with votes -- nothing to collide with")
+        return collisions
+    if collisions:
+        examples = "; ".join(
+            f"{key!r} on {where}" for key, where in sorted(collisions.items())[:10]
+        )
+        report.record(FAIL, label,
+                      f"{len(collisions)} dedupe_key(s) repeat across sessions/bills "
+                      f"({n_sessions} sessions with votes): {examples}")
+    else:
+        report.record(PASS, label,
+                      f"no dedupe_key repeats across {n_sessions} sessions with votes")
+    return collisions
+
+
+def run_version_stage_coverage_gate(report, conn, jurisdiction_code):
+    """OPEN-445 Gate 3 (version stage coverage): what share of this jurisdiction's bill versions
+    have no classifiable stage. Imports note_stage()/STAGE_UNKNOWN from openstates-core's
+    version_ordering module (OPEN-34/OPEN-366-audited) rather than reimplementing stage
+    classification a second time -- "no stage" means exactly what api-v3's bill-detail endpoint
+    and text_extract.py already mean by it, nothing else.
+
+    0 bill versions is reported not-applicable (SKIP), never a vacuous pass or a ZeroDivisionError."""
+    from openstates.utils.version_ordering import note_stage, STAGE_UNKNOWN
+
+    label = f"{jurisdiction_code.upper()}: version stage coverage"
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT v.note
+        FROM opencivicdata_billversion v
+        JOIN opencivicdata_bill b ON b.id = v.bill_id
+        JOIN opencivicdata_legislativesession ls ON ls.id = b.legislative_session_id
+        WHERE ls.jurisdiction_id = %s
+        """,
+        (_ocd_id(jurisdiction_code),),
+    )
+    notes = [row[0] for row in cur.fetchall()]
+    total = len(notes)
+    if total == 0:
+        report.record(SKIP, label, "no bill versions for this jurisdiction")
+        return {"total": 0, "no_stage": 0}
+
+    no_stage = sum(1 for note in notes if note_stage(note)[0] == STAGE_UNKNOWN)
+    share = no_stage / total
+    detail = f"{no_stage}/{total} versions have no stage ({share:.1%})"
+    if share > VERSION_STAGE_UNKNOWN_CEILING:
+        report.record(FAIL, label,
+                      f"{detail}, exceeds the {VERSION_STAGE_UNKNOWN_CEILING:.0%} ceiling")
+    else:
+        report.record(PASS, label, detail)
+    return {"total": total, "no_stage": no_stage}
+
+
+def run_attribution_resolution_gate(report, conn, jurisdiction_code):
+    """OPEN-445 Gate 1 (attribution resolution): what share of this jurisdiction's imported vote
+    rows and person-sponsorships resolved to a person, not just a name. A voter_name with a NULL
+    voter_id counts as unresolved, which is exactly the NC failure mode (every vote and
+    sponsorship resolved to nobody because legislators were never loaded).
+
+    Reported SEPARATELY for votes and sponsorships (qa_primitives.attribution_resolution_rates())
+    -- they have different denominators and different known-exception tickets (OPEN-233/234 only
+    ever affected NC's votes, not its sponsorships), so a single blended rate would obscure which
+    side actually has a problem. Each side with 0 rows is reported not-applicable (SKIP).
+
+    OPEN-261 ("Add a probe/QA gate for unresolved voter attribution") named this exact gap first
+    and remains open with no implementation anywhere in this repo as of this ticket -- this gate
+    calls qa_primitives.attribution_resolution_rates(), the one real implementation, so OPEN-261
+    can adopt it rather than duplicate it."""
+    rates = attribution_resolution_rates(conn, jurisdiction_code)
+    results = {}
+    for kind in ("votes", "sponsorships"):
+        total = rates[kind]["total"]
+        unresolved = rates[kind]["unresolved"]
+        label = f"{jurisdiction_code.upper()}: attribution resolution ({kind})"
+        if total == 0:
+            report.record(SKIP, label, f"no {kind} for this jurisdiction")
+            results[kind] = {"total": 0, "unresolved": 0}
+            continue
+        share = unresolved / total
+        detail = f"{unresolved}/{total} unresolved ({share:.1%})"
+        if share > ATTRIBUTION_UNRESOLVED_CEILING:
+            report.record(FAIL, label,
+                          f"{detail}, exceeds the {ATTRIBUTION_UNRESOLVED_CEILING:.0%} ceiling")
+        else:
+            report.record(PASS, label, detail)
+        results[kind] = {"total": total, "unresolved": unresolved}
+    return results
+
+
+def run_structural_gates(report, conn, jurisdiction_code):
+    """Runs all four OPEN-445 Stage 3 gates against jurisdiction_code, writing into the same
+    Report object Tier 1/Tier 2 already use -- a FAIL here blocks Stage 3 through the exact same
+    Report/exit-code contract (report.summary() -> False -> non-zero exit) those checks already
+    use, so no new blocking mechanism is needed. Deliberately does NOT short-circuit: every gate
+    always runs and reports, even if an earlier one failed, so a single run surfaces every
+    applicable problem at once instead of stopping at the first one (NC's 2026-09-01 state fails
+    multiple gates simultaneously, and all of them should be visible in one report)."""
+    print(f"\n{'─'*60}")
+    print(f"  STRUCTURAL GATES (OPEN-445)")
+    print(f"{'─'*60}")
+    run_people_loaded_gate(report, conn, jurisdiction_code)
+    run_vote_key_uniqueness_gate(report, conn, jurisdiction_code)
+    run_version_stage_coverage_gate(report, conn, jurisdiction_code)
+    run_attribution_resolution_gate(report, conn, jurisdiction_code)
+
+
+def print_structural_gate_recommendation(report, jurisdiction_code):
+    """If any Stage 3 structural gate failed, print a recommendation naming what to do --
+    mirrors verify-jurisdiction's render_report() Recommendation section, the only existing
+    precedent in this repo for this shape (probe fails -> a human/agent files a ticket -> the
+    state's fix-cycle work happens at Stage 1). No Jira client exists anywhere in this repo, and
+    none is added here: this prints guidance for a human/agent to act on, the same as
+    verify-jurisdiction's own "File templated tickets per RUNBOOK.md §5 Stage 1" text.
+
+    Deliberately does NOT write to jurisdictions.yaml's `status` field -- that enum has no Stage-1
+    value (only live/probing/paused), and a script silently flipping it could overwrite a
+    deliberate human override (NC's `status: live`, OPEN-417)."""
+    failed_labels = [label for symbol, label, _ in report.checks if symbol == FAIL]
+    if not failed_labels:
+        return
+    print(f"\n{'─'*60}")
+    print("  RECOMMENDATION")
+    print(f"{'─'*60}")
+    print(f"  {jurisdiction_code.upper()} failed {len(failed_labels)} Stage 3 structural gate(s):")
+    for label in failed_labels:
+        print(f"    - {label}")
+    print(f"  File a `quality-regression`-labeled ticket per RUNBOOK.md's Stage 3 structural "
+          f"gates section and route {jurisdiction_code}'s fix-cycle work back through the Stage "
+          "1 convention (see RUNBOOK.md §5 Stage 1, same as verify-jurisdiction's own gate "
+          "failures) -- this script does not file the ticket or change jurisdictions.yaml itself.")
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1398,11 +1617,32 @@ def main():
                              "--bill-ids ut 2026 'HB392,HB223,SB189'. Only proves current "
                              "correctness -- can't reconstruct a bug window that predates "
                              "this jurisdiction's local scrape history.")
+    parser.add_argument("--structural", type=str, metavar="JURISDICTION",
+                        help="OPEN-445: run only the four Stage 3 structural gates (people "
+                             "loaded, unique vote keys, version stage coverage, attribution "
+                             "resolution) against this jurisdiction -- DB-only, no "
+                             "OPENSTATES_API_KEY/live API/govbot dependency. Cheap enough to "
+                             "sweep every tracked jurisdiction repeatedly when calibrating "
+                             "thresholds. Use --coverage instead for the full Tier 1+2+structural "
+                             "Stage 3 report.")
     args = parser.parse_args()
 
-    if not LIVE_KEY:
+    # --structural never calls the live API, so it's the one mode that doesn't need a key.
+    if not LIVE_KEY and not args.structural:
         print("ERROR: set OPENSTATES_API_KEY to your live v3.openstates.org API key")
         sys.exit(1)
+
+    if args.structural:
+        jurisdiction = args.structural
+        report = Report()
+        conn = psycopg2.connect(DB_URL)
+        try:
+            run_structural_gates(report, conn, jurisdiction)
+        finally:
+            conn.close()
+        ok = report.summary()
+        print_structural_gate_recommendation(report, jurisdiction)
+        sys.exit(0 if ok else 1)
 
     if args.coverage:
         jurisdiction, session = args.coverage
@@ -1419,11 +1659,13 @@ def main():
                     tier2_limit=args.tier2_limit,
                     tier2_random=args.tier2_random,
                     blast_radius_cache={})
+                run_structural_gates(report, conn, jurisdiction)
                 conn.close()
                 ok = report.summary()
                 print(f"  source: {coverage_result['source']}"
                       + (f" ({coverage_result['source_fallback_reason']})"
                          if coverage_result.get("source_fallback_reason") else ""))
+                print_structural_gate_recommendation(report, jurisdiction)
             finally:
                 sys.stdout = old_stdout
         print(f"\n  (full output also written to {log_path})")

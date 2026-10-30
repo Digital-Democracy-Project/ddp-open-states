@@ -26,7 +26,16 @@ from quality_check import (
     PASS,
     WARN,
     FAIL,
+    SKIP,
     _resolve_db_url,
+    run_people_loaded_gate,
+    run_vote_key_uniqueness_gate,
+    run_version_stage_coverage_gate,
+    run_attribution_resolution_gate,
+    run_structural_gates,
+    print_structural_gate_recommendation,
+    ATTRIBUTION_UNRESOLVED_CEILING,
+    VERSION_STAGE_UNKNOWN_CEILING,
 )
 
 
@@ -1049,3 +1058,253 @@ def test_govbot_bill_end_to_end_through_compare_bills(tmp_path):
     assert FAIL not in symbols, report.checks
     assert WARN not in symbols, report.checks
     assert symbols.count(PASS) >= 5  # title, latest_action, vote count, tally, sponsorships
+
+
+# ── OPEN-445: Stage 3 structural gates ───────────────────────────────────────────
+# Count-only Tier 1/Tier 2 checks can't see an unresolved reference, a cross-session key
+# collision, or missing structural fields -- these four gates close that blind spot. Each gate
+# function's own DB-touching dependency (count_people_loaded / find_db_vote_key_collisions /
+# attribution_resolution_rates, all from qa_primitives.py) is monkeypatched here, since
+# qa_primitives.py's own query-shape tests already live in test_qa_primitives.py -- these tests
+# cover the gate functions' PASS/FAIL/SKIP decisions given a measured value, not the SQL.
+# run_version_stage_coverage_gate is the one exception: it queries the DB directly and classifies
+# with the REAL note_stage() (openstates-core is installed in this environment), so its tests use
+# a fake cursor with real, recognizable note strings instead of a monkeypatched return value.
+
+class _FakeVersionCursor:
+    def __init__(self, notes):
+        self._notes = notes
+
+    def execute(self, sql, params):
+        pass
+
+    def fetchall(self):
+        return [(note,) for note in self._notes]
+
+
+class _FakeVersionConn:
+    def __init__(self, notes):
+        self._cursor = _FakeVersionCursor(notes)
+
+    def cursor(self):
+        return self._cursor
+
+
+# ── Gate 4: people loaded ───────────────────────────────────────────────────────
+
+def test_people_loaded_gate_fails_on_zero(monkeypatch):
+    monkeypatch.setattr("quality_check.count_people_loaded", lambda conn, st: 0)
+    report = Report()
+    run_people_loaded_gate(report, conn=None, jurisdiction_code="nc")
+    assert [s for s, _, _ in report.checks] == [FAIL]
+
+
+def test_people_loaded_gate_passes_on_positive_count(monkeypatch):
+    monkeypatch.setattr("quality_check.count_people_loaded", lambda conn, st: 508)
+    report = Report()
+    run_people_loaded_gate(report, conn=None, jurisdiction_code="nc")
+    symbol, label, detail = report.checks[0]
+    assert symbol == PASS
+    assert "508" in detail
+
+
+# ── Gate 2: unique vote keys ─────────────────────────────────────────────────────
+
+def test_vote_key_uniqueness_gate_not_applicable_for_single_session(monkeypatch):
+    monkeypatch.setattr("quality_check.find_db_vote_key_collisions",
+                         lambda conn, st: ({}, 1))
+    report = Report()
+    run_vote_key_uniqueness_gate(report, conn=None, jurisdiction_code="nc")
+    assert [s for s, _, _ in report.checks] == [SKIP]
+
+
+def test_vote_key_uniqueness_gate_not_applicable_for_zero_sessions(monkeypatch):
+    monkeypatch.setattr("quality_check.find_db_vote_key_collisions",
+                         lambda conn, st: ({}, 0))
+    report = Report()
+    run_vote_key_uniqueness_gate(report, conn=None, jurisdiction_code="us")
+    assert [s for s, _, _ in report.checks] == [SKIP]
+
+
+def test_vote_key_uniqueness_gate_passes_with_no_collision_multi_session(monkeypatch):
+    monkeypatch.setattr("quality_check.find_db_vote_key_collisions",
+                         lambda conn, st: ({}, 2))
+    report = Report()
+    run_vote_key_uniqueness_gate(report, conn=None, jurisdiction_code="va")
+    assert [s for s, _, _ in report.checks] == [PASS]
+
+
+def test_vote_key_uniqueness_gate_fails_on_collision(monkeypatch):
+    # OPEN-397 shape: one dedupe_key shared by two (session, bill) pairs.
+    monkeypatch.setattr(
+        "quality_check.find_db_vote_key_collisions",
+        lambda conn, st: ({"key-a": [("2025", "HB1"), ("2025E1", "HB1")]}, 2),
+    )
+    report = Report()
+    run_vote_key_uniqueness_gate(report, conn=None, jurisdiction_code="nc")
+    symbol, label, detail = report.checks[0]
+    assert symbol == FAIL
+    assert "key-a" in detail
+
+
+# ── Gate 3: version stage coverage ──────────────────────────────────────────────
+
+def test_version_stage_coverage_gate_not_applicable_with_no_versions():
+    conn = _FakeVersionConn([])
+    report = Report()
+    result = run_version_stage_coverage_gate(report, conn, "nc")
+    assert [s for s, _, _ in report.checks] == [SKIP]
+    assert result == {"total": 0, "no_stage": 0}
+
+
+def test_version_stage_coverage_gate_uses_real_note_stage_classifier():
+    # "Ratified" and "Bill Text" are both real, recognized note_stage() shapes; "Some Unrecognized
+    # Thing" matches none of them and classifies as STAGE_UNKNOWN.
+    conn = _FakeVersionConn(["Ratified", "Bill Text", "Some Unrecognized Thing"])
+    report = Report()
+    result = run_version_stage_coverage_gate(report, conn, "nc")
+    assert result == {"total": 3, "no_stage": 1}
+
+
+def test_version_stage_coverage_gate_fails_above_ceiling():
+    notes = ["Unrecognized A", "Unrecognized B", "Unrecognized C", "Unrecognized D", "Ratified"]
+    conn = _FakeVersionConn(notes)
+    assert (4 / 5) > VERSION_STAGE_UNKNOWN_CEILING
+    report = Report()
+    run_version_stage_coverage_gate(report, conn, "xx")
+    assert [s for s, _, _ in report.checks] == [FAIL]
+
+
+def test_version_stage_coverage_gate_passes_below_ceiling():
+    notes = ["Ratified"] * 99 + ["Unrecognized"]
+    conn = _FakeVersionConn(notes)
+    assert (1 / 100) < VERSION_STAGE_UNKNOWN_CEILING
+    report = Report()
+    run_version_stage_coverage_gate(report, conn, "xx")
+    assert [s for s, _, _ in report.checks] == [PASS]
+
+
+# ── Gate 1: attribution resolution ──────────────────────────────────────────────
+
+def test_attribution_resolution_gate_reports_votes_and_sponsorships_separately(monkeypatch):
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 72058, "unresolved": 611},
+        "sponsorships": {"total": 26095, "unresolved": 898},
+    })
+    report = Report()
+    run_attribution_resolution_gate(report, conn=None, jurisdiction_code="nc")
+    labels = [label for _, label, _ in report.checks]
+    assert any("votes" in label for label in labels)
+    assert any("sponsorships" in label for label in labels)
+    assert [s for s, _, _ in report.checks] == [PASS, PASS]
+
+
+def test_attribution_resolution_gate_fails_above_ceiling_independently(monkeypatch):
+    # MA shape: votes fail, sponsorships pass -- each side must be judged on its own.
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 44804, "unresolved": 7194},          # 16.1%, over the ceiling
+        "sponsorships": {"total": 37657, "unresolved": 582},    # 1.5%, under the ceiling
+    })
+    report = Report()
+    run_attribution_resolution_gate(report, conn=None, jurisdiction_code="ma")
+    votes_symbol = report.checks[0][0]
+    sponsorships_symbol = report.checks[1][0]
+    assert votes_symbol == FAIL
+    assert sponsorships_symbol == PASS
+
+
+def test_attribution_resolution_gate_not_applicable_for_zero_population(monkeypatch):
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 0, "unresolved": 0},
+        "sponsorships": {"total": 0, "unresolved": 0},
+    })
+    report = Report()
+    run_attribution_resolution_gate(report, conn=None, jurisdiction_code="xx")
+    assert [s for s, _, _ in report.checks] == [SKIP, SKIP]
+
+
+# ── NC acceptance scenarios (OPEN-445's own AC) ─────────────────────────────────
+# notes/nc-tier2-250-bill-baseline-sweep-20260831.md documents NC's exact measured numbers before
+# and after `os-people to-database nc` ran (2026-09-01 window) -- these fixtures reproduce those
+# exact documented numbers rather than requiring a live DB snapshot from that date, which does not
+# exist. The two gates reproduced here (people loaded, attribution resolution) are the ones that
+# note actually measured before/after; vote-key uniqueness and version stage coverage are
+# independently covered above and are not claimed to have had any particular value on 2026-09-01.
+
+def test_nc_2026_09_01_people_not_loaded_fails_people_and_attribution_gates(monkeypatch):
+    """NC's documented pre-fix state: 0 people loaded, every personvote/sponsorship unresolved
+    (100%/100%) -- the exact state the ticket exists to catch, where Tier 1/Tier 2 count gates
+    passed 2,338/2,338 bills and 1,081/1,081 checks regardless."""
+    monkeypatch.setattr("quality_check.count_people_loaded", lambda conn, st: 0)
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 72058, "unresolved": 72058},
+        "sponsorships": {"total": 26095, "unresolved": 26095},
+    })
+    report = Report()
+    run_people_loaded_gate(report, conn=None, jurisdiction_code="nc")
+    run_attribution_resolution_gate(report, conn=None, jurisdiction_code="nc")
+    symbols = [s for s, _, _ in report.checks]
+    assert symbols == [FAIL, FAIL, FAIL]
+    assert report.summary() is False  # blocking, not advisory
+
+
+def test_nc_today_passes_people_and_attribution_gates_with_the_documented_itemized_remainder(monkeypatch):
+    """NC's current documented state (OPEN-233/234's 611 unresolved vote rows, 898 unresolved
+    sponsorships) clears the calibrated ceiling -- the ticket's own acceptance wording ("gate 1
+    needs a stated threshold accounting for 611 unresolved vote rows")."""
+    monkeypatch.setattr("quality_check.count_people_loaded", lambda conn, st: 508)
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 72058, "unresolved": 611},
+        "sponsorships": {"total": 26095, "unresolved": 898},
+    })
+    assert (611 / 72058) < ATTRIBUTION_UNRESOLVED_CEILING
+    assert (898 / 26095) < ATTRIBUTION_UNRESOLVED_CEILING
+    report = Report()
+    run_people_loaded_gate(report, conn=None, jurisdiction_code="nc")
+    run_attribution_resolution_gate(report, conn=None, jurisdiction_code="nc")
+    symbols = [s for s, _, _ in report.checks]
+    assert FAIL not in symbols
+    assert report.summary() is True
+
+
+# ── run_structural_gates(): no short-circuiting, all four always run ────────────
+
+def test_run_structural_gates_runs_all_four_gates_independently(monkeypatch):
+    monkeypatch.setattr("quality_check.count_people_loaded", lambda conn, st: 0)
+    monkeypatch.setattr("quality_check.find_db_vote_key_collisions",
+                         lambda conn, st: ({"k": [("2025", "HB1"), ("2026", "HB1")]}, 2))
+    monkeypatch.setattr("quality_check.attribution_resolution_rates", lambda conn, st: {
+        "votes": {"total": 100, "unresolved": 100},
+        "sponsorships": {"total": 100, "unresolved": 100},
+    })
+    conn = _FakeVersionConn(["Unrecognized"] * 10)
+    report = Report()
+    run_structural_gates(report, conn, "nc")
+    # 5 checks: people, vote-keys, version-stage, attribution-votes, attribution-sponsorships --
+    # every gate ran and reported even though the first one already failed (no short-circuit).
+    assert len(report.checks) == 5
+    assert report.checks[0][0] == FAIL  # people loaded
+    assert report.checks[1][0] == FAIL  # vote key collision
+    assert report.checks[2][0] == FAIL  # version stage (10/10 unknown, over ceiling)
+    assert report.checks[3][0] == FAIL  # attribution votes
+    assert report.checks[4][0] == FAIL  # attribution sponsorships
+
+
+def test_print_structural_gate_recommendation_lists_failed_gates(capsys):
+    report = Report()
+    report.record(PASS, "NC: people loaded", "508 people loaded")
+    report.record(FAIL, "NC: attribution resolution (votes)", "100/100 unresolved (100.0%)")
+    print_structural_gate_recommendation(report, "nc")
+    out = capsys.readouterr().out
+    assert "attribution resolution (votes)" in out
+    assert "quality-regression" in out
+    assert "Stage 1" in out
+
+
+def test_print_structural_gate_recommendation_silent_when_nothing_failed(capsys):
+    report = Report()
+    report.record(PASS, "NC: people loaded", "508 people loaded")
+    capsys.readouterr()  # discard record()'s own print, only assert on the recommendation itself
+    print_structural_gate_recommendation(report, "nc")
+    out = capsys.readouterr().out
+    assert out == ""
