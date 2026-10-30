@@ -3,7 +3,7 @@
 verify-jurisdiction — the Onboarding Probe (OPEN-222, PLAN-push-button-onboarding.md §4.4).
 
 Answers "what will this state cost?" in ~30 minutes, before anyone commits to onboarding it,
-by running gates A-H against the real scraper toolchain and the local OpenStates DB. Read-only
+by running gates A-I against the real scraper toolchain and the local OpenStates DB. Read-only
 by design (see "Safety" below) -- it never writes to a production database, never edits scraper
 code, never files tickets, and never touches ddp-sync/ddp-broker-py/ddp-next/votebot.
 
@@ -23,7 +23,9 @@ Gates (PLAN-push-button-onboarding.md §4.4's table, ticket OPEN-222's restateme
                   itself is obsolete -- this gate reports a finding, never writes that field)
     G (advisory)  people data present; broker fixture district counts (best-effort); session
                   code shape vs. the broker's `^(\\d{3}|\\d{4}|\\d{4}[a-zA-Z]+)$` regex
-    H (blocking)  BillVersionLink rows exist and aren't a stale snapshot
+    H (blocking)  BillVersionLink rows exist and aren't a stale snapshot; with --import, the
+                  state's session rows are created the way a real import creates them and listed
+    I (blocking)  no vote dedupe_key repeats across the sessions sampled (OPEN-397's collision)
 
 Output: a scored, classified (green/yellow/red) markdown report written to
 notes/<st>-onboarding-probe-<date>.md (PLAN §5 Stage 0's exact naming convention).
@@ -62,6 +64,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -96,6 +99,7 @@ BROKER_SESSION_CODE_RE = re.compile(r"^(\d{3}|\d{4}|\d{4}[a-zA-Z]+)$")
 SCRAPE_LOCK_DIR = "/tmp/ddp-openstates-scrape-locks"
 
 DEFAULT_SAMPLE_BILLS = 20  # matches §4.4's "20-bill dry scrape" gate C example
+MAX_EXTRA_SESSIONS = 2  # gate I dry-scrapes at most this many sessions besides the probed one
 
 
 # ── Pure helpers (unit-testable, no scraper/DB/network needed) ─────────────────
@@ -471,7 +475,7 @@ def run_gate_c(media_types_present, conversion_functions_for_state, st):
     )
 
 
-def run_gate_d(juris, st, session, sample_bills, scraped_data_dir):
+def run_gate_d(juris, st, session, sample_bills, scraped_data_dir, datadir=None):
     lock_path = os.path.join(SCRAPE_LOCK_DIR, st)
     if os.path.isdir(lock_path):
         return GateResult(
@@ -484,7 +488,7 @@ def run_gate_d(juris, st, session, sample_bills, scraped_data_dir):
     if bills_cls is None:
         return GateResult("D", True, "fail", "no 'bills' scraper registered on this jurisdiction"), [], None
 
-    datadir = os.path.join(scraped_data_dir, "_probe", st)
+    datadir = datadir or os.path.join(scraped_data_dir, "_probe", st)
     os.makedirs(datadir, exist_ok=True)
     for f in glob.glob(os.path.join(datadir, "*.json")):
         os.remove(f)
@@ -542,6 +546,111 @@ def run_gate_d(juris, st, session, sample_bills, scraped_data_dir):
         GateResult("D", True, status, summary, details=details, block_signature=blocked),
         bill_files,
         report,
+    )
+
+
+def scrape_jurisdiction_objects(juris, datadir):
+    """Write the jurisdiction, organization and session objects into `datadir`, as the first step
+    of a real scrape does. The gate D dry scrape only runs the bills scraper, and `os-update
+    --import` creates a state's LegislativeSession rows from these files, so without them a first
+    import writes bills against sessions that do not exist (the NC and CO gate H caveat)."""
+    from openstates.scrape import JurisdictionScraper
+
+    JurisdictionScraper(juris, datadir, strict_validation=False).do_scrape()
+
+
+def stage_import_dir(datadir, module_name):
+    """Copy the probe's scraped JSON to `<root>/<module_name>` and return `<root>`. `os-update
+    --datadir X` sets the BASE directory and its import reads `X/<module>`, so pointing it at the
+    probe directory itself made the import read an empty directory and load nothing (OPEN-456)."""
+    import_root = os.path.join(os.path.dirname(datadir), "_import")
+    import_dir = os.path.join(import_root, module_name)
+    shutil.rmtree(import_dir, ignore_errors=True)
+    shutil.copytree(datadir, import_dir)
+    return import_root
+
+
+def find_vote_key_collisions(vote_event_files):
+    """Vote `dedupe_key`s that sit on votes for more than one (session, bill) in these scraped
+    vote_event_*.json files, as ({key: [(session, bill_identifier), ...]}, [unreadable paths]).
+    The importer matches a keyed vote on the key alone (PRIMITIVES.md, OPEN-252/397), so a repeated
+    key fails the whole load. The same key on the same session and bill is a re-yield of one vote,
+    not a collision. A file that cannot be read is reported, never skipped silently."""
+    seen = {}
+    unreadable = []
+    for path in vote_event_files:
+        try:
+            with open(path) as f:
+                vote = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            unreadable.append(path)
+            continue
+        key = vote.get("dedupe_key")
+        if key:
+            seen.setdefault(key, set()).add(
+                (str(vote.get("legislative_session")), str(vote.get("bill_identifier")))
+            )
+    return {key: sorted(where) for key, where in seen.items() if len(where) > 1}, unreadable
+
+
+def run_gate_i(juris, st, session, active_sessions, sample_bills, scraped_data_dir):
+    """Vote keys must not repeat across sessions (OPEN-397: NC's 2025E1 vote keys collided with
+    2025's, and no count gate saw it because one session loaded alone is clean). Dry-scrapes up to
+    MAX_EXTRA_SESSIONS other active sessions with the same bounded sample as gate D and compares
+    the keys. A bounded sample, so a pass means none repeated in it, not that none ever will."""
+    probe_dir = os.path.join(scraped_data_dir, "_probe", st)
+    vote_files = sorted(glob.glob(os.path.join(probe_dir, "vote_event_*.json")))
+    others = [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
+    details = [f"probed session {session}: {len(vote_files)} vote event file(s)"]
+    if not others:
+        return GateResult(
+            "I", True, "pass",
+            "only one active session, so there is no other session to collide with",
+            details=details,
+        )
+
+    unscraped = []
+    for other in others:
+        other_dir = os.path.join(scraped_data_dir, "_probe", f"{st}-session-{other}")
+        result, _files, _report = run_gate_d(juris, st, other, sample_bills, scraped_data_dir, datadir=other_dir)
+        found = sorted(glob.glob(os.path.join(other_dir, "vote_event_*.json")))
+        details.append(f"session {other}: dry scrape {result.status}, {len(found)} vote event file(s)")
+        if result.status != "pass":
+            unscraped.append(other)
+        vote_files += found
+
+    collisions, unreadable = find_vote_key_collisions(vote_files)
+    for key, where in sorted(collisions.items())[:10]:
+        details.append(f"repeated key {key!r} on {where}")
+    if collisions:
+        return GateResult(
+            "I", True, "fail",
+            f"{len(collisions)} vote dedupe_key(s) repeat across sessions/bills; the importer "
+            "would fail the whole load (qualify the key with the session, as scrapers/nc/bills.py "
+            "vote_dedupe_key() does)",
+            details=details,
+        )
+    if unreadable:
+        details += [f"could not read {p}" for p in unreadable[:10]]
+        return GateResult(
+            "I", True, "warn",
+            f"no repeats found, but {len(unreadable)} vote event file(s) could not be read",
+            details=details,
+        )
+    if unscraped:
+        return GateResult(
+            "I", True, "warn",
+            f"no repeats found, but session(s) {', '.join(unscraped)} could not be sampled",
+            details=details,
+        )
+    if not vote_files:
+        return GateResult(
+            "I", True, "warn", "no vote events in the sample, so no keys were compared", details=details,
+        )
+    return GateResult(
+        "I", True, "pass",
+        f"no vote key repeats across {1 + len(others)} sessions in the sample ({len(vote_files)} vote event files)",
+        details=details,
     )
 
 
@@ -675,7 +784,7 @@ def count_people_loaded(conn, st):
     return cur.fetchone()[0]
 
 
-def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_name, datadir):
+def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_name, datadir, juris):
     # Note: main() already refuses to call this with do_import=True against a DB that looks
     # like production (see the is_probably_production_db() check around the call site) -- this
     # function trusts that gate and does not re-derive DATABASE_URL from the live connection.
@@ -692,9 +801,12 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
                 "then re-run --import (votes and sponsorships would import unresolved)",
                 details=[f"people with a membership in {ocd_jurisdiction_id(st)}: 0"],
             )
+        # Onboarding order: the jurisdiction and its sessions exist before bills load against them
+        # (OPEN-456). A real scrape writes these objects first; the dry scrape does not.
+        scrape_jurisdiction_objects(juris, datadir)
         import_cmd = [
             os.path.join(os_venv, "bin", "os-update"), module_name,
-            "--import", "--datadir", datadir,
+            "--import", "--datadir", stage_import_dir(datadir, module_name),
         ]
         result = subprocess.run(import_cmd, capture_output=True, text=True)
         details.append(f"import command: {' '.join(import_cmd)}")
@@ -702,6 +814,19 @@ def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_n
         if result.returncode != 0:
             return GateResult(
                 "H", True, "fail", "import step failed", details=details + [result.stderr[-2000:]],
+            )
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT identifier FROM opencivicdata_legislativesession WHERE jurisdiction_id = %s ORDER BY identifier",
+            (ocd_jurisdiction_id(st),),
+        )
+        session_rows = [r[0] for r in cur.fetchall()]
+        details.append(f"LegislativeSession rows for {st} after import: {len(session_rows)} ({', '.join(session_rows)})")
+        if session and session not in session_rows:
+            return GateResult(
+                "H", True, "fail",
+                f"the probed session {session} has no LegislativeSession row after the import, so its bills could not have loaded",
+                details=details,
             )
 
     # Round-1 PM review fold: scoped to the session actually being probed when one is known,
@@ -935,6 +1060,9 @@ def main(argv=None):
         juris, st, session, args.sample_bills, scraped_data_dir
     )
     results.append(gate_d_result)
+    results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir)
+                   if gate_d_result.status == "pass"
+                   else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
 
     media_types_present = set()
     for path in bill_files:
@@ -958,7 +1086,7 @@ def main(argv=None):
             ))
         else:
             datadir = os.path.join(scraped_data_dir, "_probe", st)
-            results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir))
+            results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir, juris))
         results.append(run_gate_e(conn, st, scrapers_src_dir))
     else:
         results.append(GateResult("H", True, "skip", "no DATABASE_URL configured -- skipped"))
@@ -970,7 +1098,7 @@ def main(argv=None):
     if conn is not None:
         conn.close()
 
-    order = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7}
+    order = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8}
     results.sort(key=lambda g: order.get(g.gate, 99))
 
     classification = classify_probe(results)

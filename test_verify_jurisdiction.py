@@ -447,14 +447,17 @@ def test_main_reports_red_instead_of_crashing_when_module_import_fails(tmp_path,
 
 
 class _FakeCursor:
-    def __init__(self, people):
+    def __init__(self, people, sessions=("2025",)):
         self._people = people
+        self._sessions = sessions
         self._row = None
         self.executed = []
 
     def execute(self, sql, params=None):
         self.executed.append((sql, params))
-        if "opencivicdata_membership" in sql:
+        if "FROM opencivicdata_legislativesession WHERE" in sql:
+            self._rows = [(i,) for i in self._sessions]
+        elif "opencivicdata_membership" in sql:
             self._row = (self._people,)
         elif "count(*)" in sql:
             self._row = (3,)
@@ -464,14 +467,18 @@ class _FakeCursor:
     def fetchone(self):
         return self._row
 
+    def fetchall(self):
+        return self._rows
+
 
 class _FakeConn:
-    def __init__(self, people):
+    def __init__(self, people, sessions=("2025",)):
         self._people = people
+        self._sessions = sessions
         self.cursors = []
 
     def cursor(self):
-        cur = _FakeCursor(self._people)
+        cur = _FakeCursor(self._people, self._sessions)
         self.cursors.append(cur)
         return cur
 
@@ -486,7 +493,7 @@ def test_count_people_loaded_reads_the_jurisdictions_membership_count():
 
 def test_gate_h_import_refused_when_no_people_loaded_and_nothing_is_run():
     with patch.object(vj.subprocess, "run", side_effect=AssertionError("os-update must not run")):
-        result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], True, "/venv", "nc", "/data")
+        result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], True, "/venv", "nc", "/data", object())
     assert result.status == "fail"
     assert result.blocking is True
     assert "os-people to-database nc" in result.summary
@@ -494,13 +501,181 @@ def test_gate_h_import_refused_when_no_people_loaded_and_nothing_is_run():
 
 def test_gate_h_import_runs_when_people_are_loaded():
     done = type("Done", (), {"returncode": 0, "stderr": ""})()
-    with patch.object(vj.subprocess, "run", return_value=done) as run:
-        result = vj.run_gate_h(_FakeConn(508), "nc", "2025", [], True, "/venv", "nc", "/data")
+    with patch.object(vj, "scrape_jurisdiction_objects"), patch.object(vj, "stage_import_dir", return_value="/root"), patch.object(vj.subprocess, "run", return_value=done) as run:
+        result = vj.run_gate_h(_FakeConn(508), "nc", "2025", [], True, "/venv", "nc", "/data", object())
     assert run.called
     assert result.status == "pass"
 
 
 def test_gate_h_without_import_does_not_ask_for_people():
     """The people rule is about the first import; a probe run without --import only reads."""
-    result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], False, "/venv", "nc", "/data")
+    result = vj.run_gate_h(_FakeConn(0), "nc", "2025", [], False, "/venv", "nc", "/data", object())
     assert result.status == "pass"
+
+
+# ── gate H: session rows exist after --import (OPEN-456) ───────────────────────
+
+
+_DONE = type("Done", (), {"returncode": 0, "stderr": ""})()
+
+
+def test_gate_h_import_writes_the_jurisdiction_objects_before_the_bills_import():
+    calls = []
+    juris = object()
+    with patch.object(vj, "scrape_jurisdiction_objects", side_effect=lambda j, d: calls.append(("objects", j, d))), \
+            patch.object(vj, "stage_import_dir", return_value="/root"), \
+            patch.object(vj.subprocess, "run", side_effect=lambda cmd, **k: calls.append(("import", cmd[-1])) or _DONE):
+        vj.run_gate_h(_FakeConn(508), "nc", "2025", [], True, "/venv", "nc", "/data", juris)
+    assert calls == [("objects", juris, "/data"), ("import", "/root")]
+
+
+def test_stage_import_dir_puts_the_probe_files_where_os_update_reads_them(tmp_path):
+    probe = tmp_path / "_probe" / "us"
+    probe.mkdir(parents=True)
+    (probe / "bill_1.json").write_text("{}")
+    stale = tmp_path / "_probe" / "_import" / "usa"
+    stale.mkdir(parents=True)
+    (stale / "old.json").write_text("{}")
+    root = vj.stage_import_dir(str(probe), "usa")
+    # os-update reads <--datadir>/<module>: the module is usa even though the probe dir is us
+    assert sorted(os.listdir(os.path.join(root, "usa"))) == ["bill_1.json"]
+
+
+def test_gate_h_import_reports_the_session_rows_it_created():
+    with patch.object(vj, "scrape_jurisdiction_objects"), patch.object(vj, "stage_import_dir", return_value="/root"), patch.object(vj.subprocess, "run", return_value=_DONE):
+        result = vj.run_gate_h(_FakeConn(508, ("2025", "2025E1")), "nc", "2025", [], True, "/venv", "nc", "/data", object())
+    assert result.status == "pass"
+    assert any("2 (2025, 2025E1)" in d for d in result.details)
+
+
+def test_gate_h_import_fails_when_the_probed_session_has_no_row_after_the_import():
+    with patch.object(vj, "scrape_jurisdiction_objects"), patch.object(vj, "stage_import_dir", return_value="/root"), patch.object(vj.subprocess, "run", return_value=_DONE):
+        result = vj.run_gate_h(_FakeConn(508, ("2024",)), "nc", "2025", [], True, "/venv", "nc", "/data", object())
+    assert result.status == "fail"
+    assert "2025" in result.summary and "no LegislativeSession row" in result.summary
+
+
+# ── gate I: vote keys must not repeat across sessions (OPEN-456, OPEN-397) ─────
+
+
+def _write_vote(path, key, session, bill):
+    import json
+
+    path.write_text(json.dumps({"dedupe_key": key, "legislative_session": session, "bill_identifier": bill}))
+    return str(path)
+
+
+def test_vote_key_collision_found_across_sessions(tmp_path):
+    a = _write_vote(tmp_path / "vote_event_a.json", "roll-call-7", "2025", "HB 1")
+    b = _write_vote(tmp_path / "vote_event_b.json", "roll-call-7", "2025E1", "HB 1")
+    collisions, unreadable = vj.find_vote_key_collisions([a, b])
+    assert collisions == {"roll-call-7": [("2025", "HB 1"), ("2025E1", "HB 1")]}
+    assert unreadable == []
+
+
+def test_vote_key_collision_found_across_bills_in_one_session(tmp_path):
+    a = _write_vote(tmp_path / "vote_event_a.json", "pdf-url", "194th", "S1")
+    b = _write_vote(tmp_path / "vote_event_b.json", "pdf-url", "194th", "H2")
+    assert list(vj.find_vote_key_collisions([a, b])[0]) == ["pdf-url"]
+
+
+def test_vote_key_repeated_on_the_same_session_and_bill_is_not_a_collision(tmp_path):
+    a = _write_vote(tmp_path / "vote_event_a.json", "k", "2025", "HB 1")
+    b = _write_vote(tmp_path / "vote_event_b.json", "k", "2025", "HB 1")
+    assert vj.find_vote_key_collisions([a, b]) == ({}, [])
+
+
+def test_votes_without_a_key_are_ignored_and_unreadable_files_are_reported(tmp_path):
+    a = _write_vote(tmp_path / "vote_event_a.json", None, "2025", "HB 1")
+    b = _write_vote(tmp_path / "vote_event_b.json", "", "2025E1", "HB 1")
+    bad = tmp_path / "vote_event_c.json"
+    bad.write_text("{not json")
+    missing = str(tmp_path / "missing.json")
+    assert vj.find_vote_key_collisions([a, b, str(bad), missing]) == ({}, [str(bad), missing])
+
+
+def _fake_gate_d(votes_by_session, status="pass"):
+    """A run_gate_d stand-in that writes each session's votes into the datadir it is given."""
+    def fake(juris, st, session, sample, scraped_data_dir, datadir=None):
+        import os
+
+        os.makedirs(datadir, exist_ok=True)
+        for i, (key, bill) in enumerate(votes_by_session.get(session, [])):
+            _write_vote(__import__("pathlib").Path(datadir) / f"vote_event_{i}.json", key, session, bill)
+        return vj.GateResult("D", True, status, "x"), [], None
+    return fake
+
+
+def _probe_votes(tmp_path, votes):
+    import pathlib
+
+    d = pathlib.Path(tmp_path) / "_probe" / "nc"
+    d.mkdir(parents=True)
+    for i, (key, session, bill) in enumerate(votes):
+        _write_vote(d / f"vote_event_{i}.json", key, session, bill)
+
+
+def test_gate_i_passes_with_a_single_active_session(tmp_path):
+    result = vj.run_gate_i(object(), "nc", "2025", ["2025"], 5, str(tmp_path))
+    assert result.status == "pass" and result.blocking is True
+
+
+def test_gate_i_fails_when_a_key_repeats_in_another_session(tmp_path):
+    _probe_votes(tmp_path, [("roll-call-7", "2025", "HB 1")])
+    fake = _fake_gate_d({"2025E1": [("roll-call-7", "HB 9")]})
+    with patch.object(vj, "run_gate_d", side_effect=fake):
+        result = vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 5, str(tmp_path))
+    assert result.status == "fail"
+    assert any("roll-call-7" in d for d in result.details)
+
+
+def test_gate_i_passes_when_keys_differ_across_sessions(tmp_path):
+    _probe_votes(tmp_path, [("2025-roll-call-7", "2025", "HB 1")])
+    fake = _fake_gate_d({"2025E1": [("2025E1-roll-call-7", "HB 9")]})
+    with patch.object(vj, "run_gate_d", side_effect=fake):
+        result = vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 5, str(tmp_path))
+    assert result.status == "pass"
+
+
+def test_gate_i_is_inconclusive_when_another_session_cannot_be_sampled(tmp_path):
+    _probe_votes(tmp_path, [("k", "2025", "HB 1")])
+    with patch.object(vj, "run_gate_d", side_effect=_fake_gate_d({}, status="fail")):
+        result = vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 5, str(tmp_path))
+    assert result.status == "warn"
+
+
+def test_gate_i_is_inconclusive_when_the_sample_has_no_vote_events(tmp_path):
+    (__import__("pathlib").Path(tmp_path) / "_probe" / "nc").mkdir(parents=True)
+    with patch.object(vj, "run_gate_d", side_effect=_fake_gate_d({})):
+        result = vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 5, str(tmp_path))
+    assert result.status == "warn"
+
+
+def test_gate_i_is_inconclusive_when_a_vote_file_cannot_be_read(tmp_path):
+    _probe_votes(tmp_path, [("2025-k", "2025", "HB 1")])
+    (__import__("pathlib").Path(tmp_path) / "_probe" / "nc" / "vote_event_bad.json").write_text("{not json")
+    fake = _fake_gate_d({"2025E1": [("2025E1-k", "HB 9")]})
+    with patch.object(vj, "run_gate_d", side_effect=fake):
+        result = vj.run_gate_i(object(), "nc", "2025", ["2025", "2025E1"], 5, str(tmp_path))
+    assert result.status == "warn"
+    assert any("vote_event_bad.json" in d for d in result.details)
+
+
+def test_gate_i_samples_at_most_the_capped_number_of_other_sessions(tmp_path):
+    _probe_votes(tmp_path, [("k", "2025", "HB 1")])
+    seen = []
+
+    def fake(juris, st, session, sample, scraped_data_dir, datadir=None):
+        seen.append(session)
+        return vj.GateResult("D", True, "pass", "x"), [], None
+
+    with patch.object(vj, "run_gate_d", side_effect=fake):
+        vj.run_gate_i(object(), "nc", "2025", ["2025", "a", "b", "c", "d"], 5, str(tmp_path))
+    assert seen == ["a", "b"]
+
+
+def test_classify_gate_i_failure_is_yellow_and_inconclusive_is_not_green():
+    base = [vj.GateResult("A", True, "pass", "x")]
+    assert vj.classify_probe(base + [vj.GateResult("I", True, "fail", "x")]) == "yellow"
+    assert vj.classify_probe(base + [vj.GateResult("I", True, "warn", "x")]) == "yellow"
+    assert vj.classify_probe(base + [vj.GateResult("I", True, "pass", "x")]) == "green"

@@ -954,14 +954,22 @@ scope line was deliberate, not an oversight.
 
 Read-only diagnostic answering "what will onboarding this state actually cost?" in ~30 minutes,
 before anyone commits to it. Reads and writes an entry in `jurisdictions.yaml` above per its
-schema. Runs eight gates, four of them (A/B/C/D/H) **blocking** and three (E/F/G) **advisory-only**
+schema. Runs nine gates, six of them (A/B/C/D/H/I) **blocking** and three (E/F/G) **advisory-only**
 — an advisory gate can never turn a green verdict red, only add a note:
 
 - **A** session list check, **B** scraper module shape (votes scraper? `start=` supported?
   required API keys present, per the credentials table above?), **C** `CONVERSION_FUNCTIONS`
   coverage for every upstream `media_type`, **D** a bounded, timed dry scrape with a
   nonzero-objects assertion, **H** `BillVersionLink` rows actually exist (not a stale snapshot)
-  — all blocking.
+  — all blocking. With `--import`, H first refuses a state with no people loaded (OPEN-446), then
+  writes the jurisdiction/session objects and imports the sample, and lists the state's
+  `LegislativeSession` rows afterwards (OPEN-456). **I** (OPEN-456, blocking) dry-scrapes up to two
+  other active sessions and fails when a vote `dedupe_key` repeats across sessions or bills (the
+  OPEN-397 collision; a bounded sample, so a pass means none repeated in it).
+  **Trap fixed in OPEN-456:** `os-update --datadir X` sets the *base* directory and its import reads
+  `X/<module>`, so the probe's `--import` had been reading an empty directory and loading nothing;
+  `stage_import_dir()` now lays the files out where `os-update` looks. Reuse it, do not pass a
+  scrape directory straight to `--datadir`.
 - **E** `motion_classification.yaml` coverage, **F** version-walk direction, **G** people
   data/broker fixture shape — all advisory.
 
