@@ -461,9 +461,10 @@ step matters — a newer pip breaks one of the pinned deps' build.
   different probing loop. **Also ensures `bulk_dataexport` exists** (idempotent
   `create_all(checkfirst=True)` via `docker exec` into the api-v3 container, using api-v3's own
   `DataExport` model as schema source of truth) and then smoke-tests
-  `GET /jurisdictions/{iso2}?include=legislative_sessions` for all 7 tracked jurisdictions,
-  alerting to Slack on either failure. `bulk_dataexport` is part of openstates.org's own bulk-CSV-
-  export Django app, not the OCD/pupa scraping schema `openstates-core`'s `os-initdb` creates —
+  `GET /jurisdictions/{iso2}?include=legislative_sessions` for every jurisdiction in
+  `jurisdictions.yaml`, alerting to Slack on either failure. `bulk_dataexport` is part of
+  openstates.org's own bulk-CSV-export Django app, not the OCD/pupa scraping schema
+  `openstates-core`'s `os-initdb` creates —
   so it's absent from a freshly-initialized DDP database, and `JurisdictionPagination`
   (`api-v3/api/pagination.py`) always selectinloads `legislative_sessions.downloads` alongside
   `legislative_sessions`, 500ing that include for every jurisdiction until the table exists. At
@@ -529,9 +530,10 @@ Samples bills/people from the local DB, fetches the same records from both `loca
 (local api-v3) and `v3.openstates.org` (live, real API key), diffs key fields. `Report` class
 gives a uniform ✓/✗/~/`-` console output — **reuse this class for any new comparison/audit
 script's output** rather than hand-rolling print statements. `OCD_TO_CODE` is the canonical
-OCD-jurisdiction-string → short-code mapping for the 7 non-US state jurisdictions this repo
-tracks (`fl wa mi ut al ma az`) plus `us` handled separately — if a new script needs this
-mapping, import/copy from here, don't re-derive it from the OCD URIs inline.
+OCD-jurisdiction-string → short-code mapping, derived from every entry in `jurisdictions.yaml`
+(OPEN-327, not hand-typed) — `us` uses a different OCD-id format than the states but is included
+in the same mapping — if a new script needs this mapping, import/copy from here, don't re-derive
+it from the OCD URIs inline.
 
 `compare_bills()`'s vote-tally-mismatch branch (OPEN-32) already does the specific-voter and
 blast-radius diagnosis that OPEN-26 (VA, Bennett-Parker) and OPEN-28 (MI, mass-vote-day) both
