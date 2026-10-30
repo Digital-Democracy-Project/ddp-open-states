@@ -504,6 +504,13 @@ step matters — a newer pip breaks one of the pinned deps' build.
   the shared Postgres untouched by construction. Run manually after merging a PR to the fork's
   `main` — no cron yet, same "not worth it until deploy volume justifies it" call
   `PLAN-fork-management.md` §5.F made for drift visibility.
+  **It does not run `ensure` for the bill-search table (OPEN-457, 2026-10-30).** When a merged api-v3 change adds a column to
+  `ddp_bill_search` (OPEN-457 added `alt_titles`), the table must get it **before** the new container serves, because
+  `ensure` runs only on `refresh`, never at boot: build the image, run
+  `cd deploy && docker-compose -f docker-compose.ddp.yml run --rm --no-deps api python -m api.search_projection ensure`
+  from the new image, then `./refresh-api-v3.sh`, then `docker exec ddp-openstates-api-1 python -m api.search_projection refresh --full`.
+  Running the script first leaves every `/ddp/search` call answering 500 until `ensure` is run. Full order, rollback and
+  the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
 - **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
   scraper changes to Fargate: build `ddp-scrapers:vN` on the Mac, smoke-test it, push to ECR, and
