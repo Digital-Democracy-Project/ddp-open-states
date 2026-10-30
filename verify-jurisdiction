@@ -80,6 +80,10 @@ import tempfile
 import time
 from urllib.parse import urlparse
 
+# OPEN-445: shared with quality_check.py's Stage 3 gates -- the one implementation of each rule,
+# not a second copy in a script that can't be `import`ed by name (no .py extension).
+from qa_primitives import ocd_jurisdiction_id, count_people_loaded
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 # PRIMITIVES.md's documented gotcha: the scraper module is "usa", the DB/manifest short code
@@ -145,15 +149,6 @@ def scraper_module_name(st):
     $STATE), not the way check-scraper-imports.sh does.
     """
     return SCRAPER_MODULE_OVERRIDES.get(st, st)
-
-
-def ocd_jurisdiction_id(st):
-    """Short code -> the OCD jurisdiction id string used throughout the local DB (matches
-    quality_check.py's OCD_TO_CODE mapping direction, generalized to any state, not just the
-    7 it hardcodes)."""
-    if st == "us":
-        return "ocd-jurisdiction/country:us/government"
-    return f"ocd-jurisdiction/country:us/state:{st}/government"
 
 
 def looks_like_unreachable_site(text):
@@ -881,23 +876,6 @@ def run_gate_g(st, active_sessions, people_dir_root, broker_fixture_path):
     status = "warn" if issues else "pass"
     summary = "people data / broker session-shape check" + (" -- see details" if issues else " OK")
     return GateResult("G", False, status, summary, details=details)
-
-
-def count_people_loaded(conn, st):
-    """Distinct people with a membership in one of this jurisdiction's organizations. Zero means no
-    qualifying people are present (usually `os-people to-database <st>` has not run); a positive
-    count says some are present, not that the roster is complete (the parity gate checks that)."""
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT count(DISTINCT m.person_id)
-        FROM opencivicdata_membership m
-        JOIN opencivicdata_organization o ON o.id = m.organization_id
-        WHERE o.jurisdiction_id = %s AND m.person_id IS NOT NULL
-        """,
-        (ocd_jurisdiction_id(st),),
-    )
-    return cur.fetchone()[0]
 
 
 def run_gate_h(conn, st, session, dry_scrape_files, do_import, os_venv, module_name, datadir, juris):
