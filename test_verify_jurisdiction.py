@@ -1232,3 +1232,21 @@ def test_gate_d_warns_plainly_when_the_cap_is_reached_before_the_first_bill(tmp_
     assert files == [] and result.status == "warn"
     assert "raise --max-objects" in result.summary and "before the first bill" in result.summary
     assert vj.classify_probe([result]) == "yellow"  # inconclusive, not the red of a state that cannot be scraped
+
+
+def test_every_repo_module_the_probe_imports_is_copied_into_the_image():
+    # The probe runs on Fargate from the Dockerfile's COPY line; a module it imports that is not copied
+    # there makes the next image's probe fail to start (OPEN-445's qa_primitives.py nearly did).
+    import ast
+    import re
+    with open(os.path.join(_HERE, "verify-jurisdiction")) as f:
+        tree = ast.parse(f.read())
+    imported = {n.split(".")[0] for node in ast.walk(tree)
+                for n in ([a.name for a in node.names] if isinstance(node, ast.Import)
+                          else [node.module] if isinstance(node, ast.ImportFrom) and node.module else [])}
+    local = {m for m in imported if os.path.exists(os.path.join(_HERE, m + ".py"))}
+    with open(os.path.join(_HERE, "Dockerfile")) as f:
+        copy_lines = [l for l in f.read().splitlines() if l.startswith("COPY ") and "verify-jurisdiction" in l.split()]
+    assert len(copy_lines) == 1
+    copied = set(copy_lines[0].split()[1:-1])
+    assert {m + ".py" for m in local} <= copied, sorted({m + ".py" for m in local} - copied)

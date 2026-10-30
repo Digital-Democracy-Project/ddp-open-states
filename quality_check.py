@@ -1490,7 +1490,7 @@ def run_version_stage_coverage_gate(report, conn, jurisdiction_code):
     detail = f"{no_stage}/{total} versions have no stage ({share:.1%})"
     if share > VERSION_STAGE_UNKNOWN_CEILING:
         report.record(FAIL, label,
-                      f"{detail}, exceeds the {VERSION_STAGE_UNKNOWN_CEILING:.0%} ceiling")
+                      f"{detail}, exceeds the {VERSION_STAGE_UNKNOWN_CEILING:.1%} ceiling")
     else:
         report.record(PASS, label, detail)
     return {"total": total, "no_stage": no_stage}
@@ -1525,7 +1525,7 @@ def run_attribution_resolution_gate(report, conn, jurisdiction_code):
         detail = f"{unresolved}/{total} unresolved ({share:.1%})"
         if share > ATTRIBUTION_UNRESOLVED_CEILING:
             report.record(FAIL, label,
-                          f"{detail}, exceeds the {ATTRIBUTION_UNRESOLVED_CEILING:.0%} ceiling")
+                          f"{detail}, exceeds the {ATTRIBUTION_UNRESOLVED_CEILING:.1%} ceiling")
         else:
             report.record(PASS, label, detail)
         results[kind] = {"total": total, "unresolved": unresolved}
