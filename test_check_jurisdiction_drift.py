@@ -260,11 +260,16 @@ def test_the_real_checked_in_files_agree_with_the_real_manifest():
 
 def test_the_real_manifest_enrolls_every_archived_jurisdiction_somewhere_visible():
     """The matrix is how today's gaps (NC on 2 of 6 feature lists, MA on 3, AL on 2) stay visible: it must
-    cover every manifest entry, including paused al."""
+    cover every manifest entry, including paused al. Not pinned to today's exact code count -- adding a
+    state to the manifest must not break this (OPEN-465) -- but the original eight (OPEN-318) must never
+    silently drop off the matrix."""
+    with open(os.path.join(HERE, "jurisdictions.yaml")) as f:
+        manifest = yaml.safe_load(f)
     out = io.StringIO()
     assert drift.main(["check", "--matrix"], out) == 0
     codes = [l.split()[0] for l in out.getvalue().strip().splitlines()[1:]]
-    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma", "nc", "al"} == set(codes)
+    assert set(manifest.keys()) == set(codes)
+    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= set(codes)
 
 
 def test_deepcopy_of_the_fixture_manifest_still_agrees(world):

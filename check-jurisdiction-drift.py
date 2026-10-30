@@ -27,8 +27,8 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
 
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
-votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk), and
-run-all-scrapes.sh (the retired nightly runner). Each is a follow-up under OPEN-318.
+votebot, ddp-agents, and the per-feature opt-in lists (sweep_import, scrape_retry, full_walk).
+Each is a follow-up under OPEN-318.
 
 Usage:
     python3 check-jurisdiction-drift.py                                  # this repo's lists

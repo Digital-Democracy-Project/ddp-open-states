@@ -28,14 +28,14 @@ run-scrape.sh <state> [session=X]      ← the one true scrape+import entrypoint
     ├─ os-update --scrape bills ...    ← from openstates-scrapers (fork main)
     └─ os-update --import ...          ← writes to the dedicated Postgres (:5433)
 
-run-all-scrapes.sh / run-people-refresh.sh   ← nightly drivers that call run-scrape.sh per jurisdiction
+run-people-refresh.sh                        ← nightly driver that calls run-scrape.sh per jurisdiction
 backfill-fl-historical.sh                    ← one-off historical driver, same run-scrape.sh calls, resumable
 ```
 
-**Scheduling note:** `run-all-scrapes.sh` and the old `com.ddp.openstates-scraper` launchd job
-are legacy — scheduling moved to `ddp-sync`'s APScheduler on 2026-06-22 (see `RUNBOOK.md` →
-"Services"). `run-scrape.sh` itself is still the live entrypoint either way; only what *calls*
-it changed. Don't add new schedule logic here — add a job to `ddp-sync/config/sync_schedule.yaml`
+**Scheduling note:** the old ad-hoc per-repo nightly runner and the old `com.ddp.openstates-scraper`
+launchd job are retired (OPEN-465) — scheduling moved to `ddp-sync`'s APScheduler on 2026-06-22 (see
+`RUNBOOK.md` → "Services"). `run-scrape.sh` itself is still the live entrypoint either way; only what
+*calls* it changed. Don't add new schedule logic here — add a job to `ddp-sync/config/sync_schedule.yaml`
 instead.
 
 ## `run-scrape.sh` — the scrape+import entrypoint (repo root)
@@ -52,7 +52,7 @@ should reuse rather than reimplement:
   than duplicating cutoff logic).
 - **`log()`** — `echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a logs/scraper.log`. Every DDP
   script in this repo defines its own copy of this exact pattern (`run-scrape.sh`,
-  `run-all-scrapes.sh`, `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write
+  `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write
   to their own log files but same shape). `start-os-api.sh`/`backup-openstates-db.sh` use a UTC
   variant (`date -u '+%Y-%m-%dT%H:%M:%SZ'`) for their own `[start-os-api]`/`[db-backup]`-prefixed
   logs. **Use one of these exact one-liners in any new script** — don't invent a third logging
@@ -783,8 +783,8 @@ putting the loader in `.env` isn't a thing.
 
 **This is not new ground: `va` already does exactly this in production.** `VA_API_KEY` sits in
 `.env` today and `openstates-scrapers/scrapers/va/bills.py:79` reads it, for a jurisdiction in
-the live rotation. `run-all-scrapes.sh:32` even carries the comment `# va requires VA_API_KEY in
-.env`. So the convention below is a written-down version of what already works, not a proposal.
+the live rotation; the now-retired nightly runner used to carry an inline comment noting the same
+requirement. So the convention below is a written-down version of what already works, not a proposal.
 
 **Why not AWS Secrets Manager**, notwithstanding that the fleet uses it: there is no read path
 from this machine. `~/.aws` is root-owned with no readable credentials and no `AWS_*` is set in
@@ -945,8 +945,8 @@ scope line was deliberate, not an oversight.
   For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,
   `run-people-refresh.sh`, `start-os-api.sh`, `run-scrape.sh` and `quality_check.py` **derive** their lists
   from the manifest, and the drift check's job for them is to fail (exit 2) if one stops deriving or grows a
-  hand-typed list again. `run-all-scrapes.sh` is deliberately not converted (retired runner; its lists are
-  stale and it is not compared). The "do not wire this file into another repo" rule above still stands for
+  hand-typed list again. The old retired nightly runner that used to carry its own stale, hand-typed
+  lists was deleted outright instead (OPEN-465), rather than converted. The "do not wire this file into another repo" rule above still stands for
   other repos' consumers: ddp-sync's own lists stay where they are until the dual-read migration the plan's
   §4.1 requires (OPEN-328). Written by hitting two real
   stale manifest values on its first run (`ma` allow_duplicates, MI's archive timeout), which the
