@@ -344,7 +344,7 @@ finishing, not silently dropping bills mid-flight.
 1. **MA never actually gets incremental mode, despite having it implemented.**
    `run-scrape.sh` computes its incremental-cutoff lookup key as
    `SCRAPE_KEY=$(echo "${STATE}${SESSION_ARG:+ $SESSION_ARG}" | tr ' =' '__')` — when
-   `run-all-scrapes.sh` invokes MA's weekly run with no explicit session argument (`bash
+   the old nightly runner invokes MA's weekly run with no explicit session argument (`bash
    run-scrape.sh "$state"` inside the `for state in va mi ma ut az` loop), `SESSION_ARG` is
    empty, so `SCRAPE_KEY="ma"` and the script looks for `logs/last-run/ma.ts` — **which does
    not exist and never has.** The file that *does* exist,
@@ -372,7 +372,7 @@ combined with a caching bug that guarantees it can never benefit from being fast
 run.
 
 **Fix, scoped but not yet implemented:**
-1. Fix `run-all-scrapes.sh`'s MA invocation to pass an explicit `session=194th` argument (the
+1. Fix the old nightly runner's MA invocation to pass an explicit `session=194th` argument (the
    same pattern FL's own invocation already uses for its multiple sessions), so `SCRAPE_KEY`
    correctly resolves to `ma_session_194th` and the existing (if stale) incremental
    infrastructure actually engages.
@@ -389,7 +389,7 @@ run.
 **Not yet done:** running this same Tier 1 check against the other 7 tracked jurisdictions to
 determine whether this specific bug (missing session arg in the weekly batch invocation) or
 this general shape of problem (a scrape too slow to complete before being superseded) affects
-anyone else. `run-all-scrapes.sh`'s invocations for `va`, `mi`, `ut`, `az` all have the same
+anyone else. The old nightly runner's invocations for `va`, `mi`, `ut`, `az` all have the same
 "no explicit session" shape as MA's — worth checking whether they simply have small enough
 sessions that it never mattered, or whether they have the same latent bug.
 
@@ -411,13 +411,13 @@ happen" fix proposals do not — see §12 before acting on them.
 
 **§10's proposed fix (item 1: pass an explicit `session=194th` argument for MA) was built —
 [`ddp-open-states` commit `a139ca2`](https://github.com/Digital-Democracy-Project/ddp-open-states/commit/a139ca2)
-(2026-07-28), changing `run-all-scrapes.sh` to invoke
+(2026-07-28), changing the old nightly runner to invoke
 `bash run-scrape.sh ma "session=194th"`.** Confirmed still present in the file today. On its own
 terms, this is exactly the fix §10 asked for.
 
-**But `run-all-scrapes.sh` is no longer the production scheduler for secondary-state scrapes.**
-`ddp-sync/config/sync_schedule.yaml` states outright: *"Replaces the ad-hoc
-run-all-scrapes.sh launchd job."* The real driver is `ddp-sync`'s own
+**But the old nightly runner is no longer the production scheduler for secondary-state scrapes.**
+`ddp-sync/config/sync_schedule.yaml` states outright that it replaces the ad-hoc old-nightly-runner
+launchd job (paraphrased here; ddp-sync's own comment names the retired script directly). The real driver is `ddp-sync`'s own
 `run_secondary_scrapes_job()` (`ddp-sync/src/ddp_sync/pipelines/openstates_scrape.py:589-608`),
 which fans out over `secondary.jurisdictions` (`va, mi, ma, ut, az`,
 `sync_schedule.yaml:263-268` — no `sessions:` key for this block, unlike `fl`/`usa`, which do
@@ -426,7 +426,7 @@ have one) via `asyncio.gather(*[_run_scrape(j, None, openstates_root) for j in j
 including MA.** `_run_scrape` (same file, ~line 210-225) only appends a session argument
 `if session_arg:` — so the live, actually-scheduled path still invokes MA bare, exactly the
 behavior §10 diagnosed as the root cause. **The fix in `a139ca2` never had a chance to run in
-production** — `run-all-scrapes.sh` is dead code as far as the real weekly schedule is
+production** — the old nightly runner is dead code as far as the real weekly schedule is
 concerned.
 
 **What this means concretely, re-checked against real logs:**
@@ -463,7 +463,7 @@ jurisdiction's session through `sync_schedule.yaml`'s `secondary.jurisdictions` 
 way `fl`/`usa` already carry an explicit `sessions:` block) or in `run_secondary_scrapes_job`
 itself defaulting each jurisdiction to its current session via the same lookup
 `list_current_session_bill_candidates` uses elsewhere. Either fixes the real bug; `a139ca2`'s
-fix to the now-bypassed `run-all-scrapes.sh` does not, for any of the five secondary
+fix to the now-bypassed old nightly runner does not, for any of the five secondary
 jurisdictions, not just MA.~~ **Neither of these should be built — see §12.**
 
 ---

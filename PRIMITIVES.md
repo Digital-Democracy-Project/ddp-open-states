@@ -28,14 +28,14 @@ run-scrape.sh <state> [session=X]      ← the one true scrape+import entrypoint
     ├─ os-update --scrape bills ...    ← from openstates-scrapers (fork main)
     └─ os-update --import ...          ← writes to the dedicated Postgres (:5433)
 
-run-all-scrapes.sh / run-people-refresh.sh   ← nightly drivers that call run-scrape.sh per jurisdiction
+run-people-refresh.sh                        ← nightly driver that calls run-scrape.sh per jurisdiction
 backfill-fl-historical.sh                    ← one-off historical driver, same run-scrape.sh calls, resumable
 ```
 
-**Scheduling note:** `run-all-scrapes.sh` and the old `com.ddp.openstates-scraper` launchd job
-are legacy — scheduling moved to `ddp-sync`'s APScheduler on 2026-06-22 (see `RUNBOOK.md` →
-"Services"). `run-scrape.sh` itself is still the live entrypoint either way; only what *calls*
-it changed. Don't add new schedule logic here — add a job to `ddp-sync/config/sync_schedule.yaml`
+**Scheduling note:** the old ad-hoc per-repo nightly runner and the old `com.ddp.openstates-scraper`
+launchd job are retired (OPEN-465) — scheduling moved to `ddp-sync`'s APScheduler on 2026-06-22 (see
+`RUNBOOK.md` → "Services"). `run-scrape.sh` itself is still the live entrypoint either way; only what
+*calls* it changed. Don't add new schedule logic here — add a job to `ddp-sync/config/sync_schedule.yaml`
 instead.
 
 ## `run-scrape.sh` — the scrape+import entrypoint (repo root)
@@ -52,7 +52,7 @@ should reuse rather than reimplement:
   than duplicating cutoff logic).
 - **`log()`** — `echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a logs/scraper.log`. Every DDP
   script in this repo defines its own copy of this exact pattern (`run-scrape.sh`,
-  `run-all-scrapes.sh`, `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write
+  `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write
   to their own log files but same shape). `start-os-api.sh`/`backup-openstates-db.sh` use a UTC
   variant (`date -u '+%Y-%m-%dT%H:%M:%SZ'`) for their own `[start-os-api]`/`[db-backup]`-prefixed
   logs. **Use one of these exact one-liners in any new script** — don't invent a third logging
@@ -791,8 +791,8 @@ putting the loader in `.env` isn't a thing.
 
 **This is not new ground: `va` already does exactly this in production.** `VA_API_KEY` sits in
 `.env` today and `openstates-scrapers/scrapers/va/bills.py:79` reads it, for a jurisdiction in
-the live rotation. `run-all-scrapes.sh:32` even carries the comment `# va requires VA_API_KEY in
-.env`. So the convention below is a written-down version of what already works, not a proposal.
+the live rotation; the now-retired nightly runner used to carry an inline comment noting the same
+requirement. So the convention below is a written-down version of what already works, not a proposal.
 
 **Why not AWS Secrets Manager**, notwithstanding that the fleet uses it: there is no read path
 from this machine. `~/.aws` is root-owned with no readable credentials and no `AWS_*` is set in
@@ -953,8 +953,8 @@ scope line was deliberate, not an oversight.
   For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,
   `run-people-refresh.sh`, `start-os-api.sh`, `run-scrape.sh` and `quality_check.py` **derive** their lists
   from the manifest, and the drift check's job for them is to fail (exit 2) if one stops deriving or grows a
-  hand-typed list again. `run-all-scrapes.sh` is deliberately not converted (retired runner; its lists are
-  stale and it is not compared). The "do not wire this file into another repo" rule above still stands for
+  hand-typed list again. The old retired nightly runner that used to carry its own stale, hand-typed
+  lists was deleted outright instead (OPEN-465), rather than converted. The "do not wire this file into another repo" rule above still stands for
   other repos' consumers: ddp-sync's own lists stay where they are until the dual-read migration the plan's
   §4.1 requires (OPEN-328). Written by hitting two real
   stale manifest values on its first run (`ma` allow_duplicates, MI's archive timeout), which the
@@ -1047,6 +1047,47 @@ warned or been skipped, not actually confirmed passing — fixed so GREEN requir
 gate to have genuinely passed. Calibrated by running it against an already-onboarded, healthy
 state (FL) and confirming GREEN — proving the gates recognize a healthy state correctly, not just
 that they can reject a broken one, which is the easier half to get right by accident.
+
+## `new-jurisdiction <state> --from-probe <result.json-or-folder>` — the manifest entry from a probe result (repo root, OPEN-461)
+
+Stage 0 of the onboarding plan ends with "manifest entry with `status: probing`", which was always
+hand-typed — OPEN-318 made `jurisdictions.yaml` the one place a state is declared, so that entry was
+the one hand edit left at the start of every onboarding. This generates it instead, from the
+probe's own `result.json` (the Fargate run's upload, or a `--from-dir` finish — see "the onboarding
+probe" above and RUNBOOK.md "Running the onboarding probe on Fargate"):
+
+```
+new-jurisdiction co --from-probe notes/probe-co-20261030/        # a folder (reads result.json inside it)
+new-jurisdiction co --from-probe notes/probe-co-20261030/result.json --dry-run   # or the file directly
+```
+
+- **What it writes:** `status: probing`, every `enrollment.*` field `false` (enrolling a state
+  anywhere stays a deliberate, later, gated step — §5.1, out of scope here), `scrape.votes_scraper` /
+  `scrape.start_filter` / `api_keys` parsed from probe gate B's recorded facts, and the platform's
+  documented no-override timeouts (`scrape.timeout_s` 21600, `archive.timeout_s` 14400 —
+  `check-jurisdiction-drift.py`'s required default for a code with no ddp-sync-specific entry).
+  **Never** inferred from gate D's dry-scrape wall-clock/per-bill latency, which measures something
+  else entirely (an open question for a future, explicitly-named measured-timeout probe field).
+- **Never guesses `tier`, `waf.profile` or `quality.diff_cleaner`** — these are always written as
+  safe placeholders (`secondary` / `none` / `none`) and printed as needing a human, exactly because
+  a probe-derived guess here is the mistake the diff_cleaner survey already found wrong for MA, NC
+  and AL. Fill them in by hand after reviewing the probe's own report.
+- **Fails closed on gate B:** verify-jurisdiction's gate B has no structured output, only fixed
+  detail strings (`"votes scraper registered: ..."`, `"bills scraper accepts start=: ..."`,
+  `"credential env-var references found in source: ..."` / `"no credential env-var references
+  found..."`). Missing or unrecognized wording refuses to write rather than guessing.
+- **Validated before any write:** the full candidate manifest (existing text plus the new block) is
+  parsed and run through `validate_jurisdictions.py`'s own `validate()` — a rejected candidate
+  leaves `jurisdictions.yaml` byte-for-byte unchanged.
+- **Append-only, never a full YAML load+dump:** a round-trip through PyYAML's dumper would strip or
+  reflow every hand-written comment in the file (see the file's own header). This only ever appends
+  text for a brand-new state, so it can never touch another state's bytes.
+- **Idempotent, never a silent overwrite:** an already-present state that matches is a no-op; one
+  that differs (including a human's own edit to `quality.diff_cleaner`/`waf.profile`/`tier`) prints
+  the exact field-level differences and still writes nothing.
+- Does **not** enroll a jurisdiction anywhere, touch ddp-sync, or run any gate itself — it only
+  reads a probe's already-produced `result.json`. Wired into
+  `.github/workflows/validate-jurisdictions.yml` alongside the validator and drift check.
 
 ## Cross-cutting conventions (don't reinvent these)
 
