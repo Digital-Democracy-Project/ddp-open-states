@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+"""
+probe-on-fargate -- launch the onboarding probe (`verify-jurisdiction --fargate`) as Fargate tasks, one per
+state, all at once, and read back how the tasks ended (OPEN-460, on top of OPEN-458 and OPEN-459).
+
+    probe-on-fargate co ga oh                 launch these states
+    probe-on-fargate --all                    every jurisdiction the scrapers code has a bills scraper for, not Michigan
+    probe-on-fargate --all --dry-run          print what would be launched and change nothing
+    probe-on-fargate --status --out DIR       how each launched task ended (exit 0 = finished and uploaded,
+                                              3 = refused to start, 4 = upload failed, 2 = an option the image does
+                                              not know: the image predates the probe's current options)
+
+It only launches tasks and describes them. Each task runs in the existing `ddp-scrapers` task definition with
+`RUNNER_SCRIPT=verify-jurisdiction`, writes under its own `MEMORY_PREFIX` (never `prod`) and touches no database.
+The probe's own reports are read by the prod agent (the scraper login cannot read the logs or the bucket): see
+RUNBOOK.md "Running the onboarding probe on Fargate".
+
+AWS credentials come from the environment: load the dev `.env` first, e.g.
+    ( set -a; source ~/Developer/repos/ddp-open-states-dev/.env; set +a; ./probe-on-fargate --all )
+Needs boto3 (the dev venv has it).
+"""
+
+import argparse
+import datetime
+import hashlib
+import json
+import os
+import sys
+import time
+
+REGION = "us-east-1"
+CLUSTER = "ddp-scrapers"
+TASK_DEFINITION = "ddp-scrapers"
+CONTAINER = "scraper"
+# ddp-sync's cloud_path.fargate values (config/sync_schedule.yaml): public subnets and the scraper-task security group.
+SUBNETS = ["subnet-0fdc71c33a5cb60bc", "subnet-0dbb01bb8fd1cd1e8", "subnet-087136704d428e5f2"]
+SECURITY_GROUPS = ["sg-09346518873d48a08"]
+
+# The scraper module for US Congress is `usa`; the probe (and the database) call it `us`.
+MODULE_TO_STATE = {"usa": "us"}
+# Michigan's WAF cookie comes from the Mac's mint, so the probe refuses it on Fargate (verify-jurisdiction).
+REFUSED_STATES = {"mi"}
+DEFAULT_SAMPLE_BILLS = 10
+DEFAULT_MAX_OBJECTS = 200
+DEFAULT_WAVE = 20
+
+
+def probeable_states(scrapers_dir):
+    """Every jurisdiction directory under the scrapers code with a bills scraper, as the probe's state codes,
+    without the refused ones."""
+    states = []
+    for name in sorted(os.listdir(scrapers_dir)):
+        path = os.path.join(scrapers_dir, name)
+        if not os.path.isdir(path):
+            continue
+        if not (os.path.isfile(os.path.join(path, "bills.py")) or os.path.isdir(os.path.join(path, "bills"))):
+            continue
+        state = MODULE_TO_STATE.get(name, name)
+        if state not in REFUSED_STATES:
+            states.append(state)
+    return states
+
+
+def normalize_states(states):
+    """Lower-case, map module names to state codes (usa -> us) and drop repeats, keeping the order: one task per state."""
+    seen, out = set(), []
+    for state in states:
+        state = MODULE_TO_STATE.get(state.lower(), state.lower())
+        if state not in seen:
+            seen.add(state)
+            out.append(state)
+    return out
+
+
+def refusal(states, prefix):
+    """Why this launch must not happen, or None."""
+    refused = sorted(set(states) & REFUSED_STATES)
+    if refused:
+        return f"{', '.join(refused)} is not probed on Fargate (see verify-jurisdiction)"
+    if not states:
+        return "no states to launch"
+    if prefix.strip("/").split("/")[0].lower() == "prod":
+        return "the memory prefix is 'prod' or under it; use a probe prefix such as dev-probe-all-<date>"
+    return None
+
+
+def task_overrides(state, run_id, prefix, sample_bills, max_objects):
+    return {"containerOverrides": [{
+        "name": CONTAINER,
+        "command": [state, "--fargate", "--sample-bills", str(sample_bills), "--max-objects", str(max_objects)],
+        "environment": [
+            {"name": "RUNNER_SCRIPT", "value": "verify-jurisdiction"},
+            {"name": "RUN_ID", "value": run_id},
+            {"name": "MEMORY_PREFIX", "value": prefix},
+        ],
+    }]}
+
+
+def client_token(prefix, run_id):
+    """ECS's idempotency token for one state's launch: a retry after a timeout that hid a success returns the
+    task that was already started instead of starting a second one."""
+    return hashlib.sha256(f"{prefix}/{run_id}".encode()).hexdigest()[:48]
+
+
+def launch_one(ecs, state, run_id, prefix, sample_bills, max_objects):
+    """Start one probe task. Returns (task id, None, revision) or (None, why it did not start, None)."""
+    try:
+        resp = ecs.run_task(
+            cluster=CLUSTER, taskDefinition=TASK_DEFINITION, launchType="FARGATE",
+            clientToken=client_token(prefix, run_id),
+            networkConfiguration={"awsvpcConfiguration": {
+                "subnets": SUBNETS, "securityGroups": SECURITY_GROUPS, "assignPublicIp": "ENABLED",
+            }},
+            overrides=task_overrides(state, run_id, prefix, sample_bills, max_objects),
+        )
+    except Exception as exc:  # noqa: BLE001 -- a refused call is a result to record, not a crash of the whole launch
+        return None, f"{type(exc).__name__}: {exc}", None
+    tasks = resp.get("tasks") or []
+    if resp.get("failures") or not tasks:
+        return None, "; ".join(f.get("reason", "unknown") for f in resp.get("failures", [])) or "no task returned", None
+    return tasks[0]["taskArn"].rsplit("/", 1)[-1], None, tasks[0].get("taskDefinitionArn", "").rsplit(":", 1)[-1] or None
+
+
+def launch_all(ecs, states, date, prefix, sample_bills, max_objects, wave, wave_pause, sleep=time.sleep, checkpoint=None):
+    """Launch in waves of `wave` tasks. A state that could not be placed is retried once after the last wave (with
+    the same idempotency token). `checkpoint(entries)` is called before the first launch and after every one, so
+    an interruption leaves a record of every task that was started.
+    Returns {state: {"run_id", "task_id", "error", "revision"}}."""
+    entries = {s: {"run_id": f"probe-{s}-{date}", "task_id": None, "error": None, "revision": None} for s in states}
+    if checkpoint:
+        checkpoint(entries)
+
+    def run(batch):
+        for state in batch:
+            e = entries[state]
+            e["task_id"], e["error"], e["revision"] = launch_one(ecs, state, e["run_id"], prefix, sample_bills, max_objects)
+            if checkpoint:
+                checkpoint(entries)
+
+    for i in range(0, len(states), wave):
+        if i:
+            sleep(wave_pause)
+        run(states[i:i + wave])
+    failed = [s for s in states if entries[s]["task_id"] is None]
+    if failed:
+        sleep(wave_pause)
+        run(failed)
+    return entries
+
+
+def read_status(ecs, entries):
+    """Describe every launched task: {state: (last status, exit code, stop reason)}."""
+    by_id = {e["task_id"]: s for s, e in entries.items() if e.get("task_id")}
+    ids = list(by_id)
+    out = {}
+    for i in range(0, len(ids), 100):
+        resp = ecs.describe_tasks(cluster=CLUSTER, tasks=ids[i:i + 100])
+        for t in resp.get("tasks", []):
+            c = (t.get("containers") or [{}])[0]
+            out[by_id[t["taskArn"].rsplit("/", 1)[-1]]] = (t.get("lastStatus"), c.get("exitCode"), t.get("stoppedReason"))
+        for f in resp.get("failures", []):
+            tid = f.get("arn", "").rsplit("/", 1)[-1]
+            if tid in by_id:
+                out[by_id[tid]] = ("UNKNOWN", None, f.get("reason"))
+    return out
+
+
+def format_status(entries, status):
+    lines = [f"{'state':<6} {'task':<34} {'status':<12} exit  note"]
+    meaning = {0: "finished, uploaded", 2: "image does not know an option (rebuild?)", 3: "refused to start", 4: "upload failed"}
+    for state in sorted(entries):
+        e = entries[state]
+        if not e.get("task_id"):
+            lines.append(f"{state:<6} {'-':<34} {'NOT LAUNCHED':<12} -     {e.get('error')}")
+            continue
+        last, code, why = status.get(state, ("UNKNOWN", None, None))
+        note = meaning.get(code, why or "") if last == "STOPPED" else ""
+        lines.append(f"{state:<6} {e['task_id']:<34} {last or '-':<12} {code if code is not None else '-':<5} {note}")
+    stopped = [s for s in entries if status.get(s, (None,))[0] == "STOPPED"]
+    ok = [s for s in stopped if status[s][1] == 0]
+    revisions = sorted({e["revision"] for e in entries.values() if e.get("revision")})
+    lines.append(f"\ntask definition revision(s) used: {', '.join(revisions) or 'not recorded'}"
+                 + ("  <-- MIXED: the active revision changed during the launch" if len(revisions) > 1 else ""))
+    lines.append(
+        f"{len(entries)} state(s): {len(ok)} finished and uploaded, {len(stopped) - len(ok)} stopped otherwise, "
+        f"{sum(1 for s in entries if status.get(s, (None,))[0] in ('PENDING', 'PROVISIONING', 'RUNNING', 'ACTIVATING'))} "
+        f"still running, {sum(1 for e in entries.values() if not e.get('task_id'))} not launched"
+    )
+    return "\n".join(lines)
+
+
+def _ecs_client():
+    import boto3
+
+    return boto3.client("ecs", region_name=REGION)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("states", nargs="*", help="state codes to probe, e.g. co ga oh")
+    parser.add_argument("--all", action="store_true", help="every jurisdiction with a bills scraper (not Michigan)")
+    parser.add_argument("--status", action="store_true", help="read how the tasks launched into --out ended")
+    parser.add_argument("--dry-run", action="store_true", help="print what would be launched; change nothing")
+    parser.add_argument("--date", default=datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d"), help="date used in run ids and the prefix")
+    parser.add_argument("--prefix", default=None, help="MEMORY_PREFIX for the run (default dev-probe-all-<date>); never prod")
+    parser.add_argument("--sample-bills", type=int, default=DEFAULT_SAMPLE_BILLS, help=f"bills per sample (default {DEFAULT_SAMPLE_BILLS})")
+    parser.add_argument("--max-objects", type=int, default=DEFAULT_MAX_OBJECTS, help=f"cap on everything a scrape returns (default {DEFAULT_MAX_OBJECTS})")
+    parser.add_argument("--wave", type=int, default=DEFAULT_WAVE, help=f"tasks launched per wave (default {DEFAULT_WAVE})")
+    parser.add_argument("--wave-pause", type=int, default=30, help="seconds between waves (default 30)")
+    parser.add_argument("--scrapers-dir", default=None, help="the openstates-scrapers/scrapers directory (default: first PYTHONPATH entry)")
+    parser.add_argument("--out", default=None, help="folder for launched.json (default ./probe-all-<date>)")
+    args = parser.parse_args(argv)
+
+    out = args.out or f"probe-all-{args.date}"
+    launched_path = os.path.join(out, "launched.json")
+
+    if args.status:
+        try:
+            with open(launched_path) as f:
+                record = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"ERROR: cannot read {launched_path}: {exc}", file=sys.stderr)
+            return 3
+        print(format_status(record["entries"], read_status(_ecs_client(), record["entries"])))
+        return 0
+
+    prefix = args.prefix or f"dev-probe-all-{args.date}"
+    if args.all:
+        scrapers_dir = args.scrapers_dir or os.environ.get("PYTHONPATH", "").split(":")[0]
+        if not scrapers_dir or not os.path.isdir(scrapers_dir):
+            print("ERROR: --all needs the scrapers directory (--scrapers-dir, or source activate-dev.sh)", file=sys.stderr)
+            return 3
+        states = probeable_states(scrapers_dir)
+    else:
+        states = args.states
+    states = normalize_states(states)
+    problem = refusal(states, prefix)
+    if problem:
+        print(f"ERROR: {problem}", file=sys.stderr)
+        return 3
+    print(f"{len(states)} state(s) -> memory prefix {prefix}, {args.sample_bills} bills / {args.max_objects} objects each, "
+          f"waves of {args.wave}: {' '.join(states)}")
+    if args.dry_run:
+        return 0
+
+    os.makedirs(out, exist_ok=True)
+    try:
+        # Claim the record before any AWS call: exclusive creation, so two runs into one --out cannot both start.
+        open(launched_path, "x").close()
+    except FileExistsError:
+        print(f"ERROR: {launched_path} already exists: a rerun would lose the record of the tasks it lists. "
+              "Use another --out (to recover an interrupted launch, keep the same --date and prefix: see RUNBOOK.md).",
+              file=sys.stderr)
+        return 3
+
+    def checkpoint(entries):
+        tmp = f"{launched_path}.{os.getpid()}.tmp"
+        with open(tmp, "w") as f:
+            json.dump({"date": args.date, "prefix": prefix, "sample_bills": args.sample_bills,
+                       "max_objects": args.max_objects, "entries": entries}, f, indent=2)
+        os.replace(tmp, launched_path)
+
+    entries = launch_all(_ecs_client(), states, args.date, prefix, args.sample_bills, args.max_objects,
+                         args.wave, args.wave_pause, checkpoint=checkpoint)
+    failed = [s for s, e in entries.items() if not e["task_id"]]
+    print(f"launched {len(states) - len(failed)} task(s); written to {launched_path}")
+    for s in failed:
+        print(f"NOT LAUNCHED {s}: {entries[s]['error']}", file=sys.stderr)
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

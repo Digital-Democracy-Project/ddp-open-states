@@ -576,6 +576,49 @@ verify-jurisdiction co --from-dir . [--import]
   rebuild and new task-definition revision described above. One family serves every state, so that revision moves
   all of them at once; follow that section's checks.
 
+### Probing many states at once (OPEN-460)
+
+`probe-on-fargate` launches the probe as one task per state, all at the same time, and reads back how they ended. It
+needs an image built after OPEN-459 (the probe's `--max-objects` option); on an older one every task stops with exit 2.
+
+```bash
+cd ~/Developer/repos/ddp-open-states-dev && source activate-dev.sh      # the scrapers directory comes from this
+( set -a; source ~/Developer/repos/ddp-open-states-dev/.env; set +a; \
+  ./probe-on-fargate --all --dry-run )                                    # list the states; launches nothing
+( set -a; source ~/Developer/repos/ddp-open-states-dev/.env; set +a; \
+  ./probe-on-fargate --all --out probe-all-20261101 )                      # launch them
+( set -a; source ~/Developer/repos/ddp-open-states-dev/.env; set +a; \
+  ./probe-on-fargate --status --out probe-all-20261101 )                   # how each task ended
+```
+
+* **What `--all` launches:** every directory under `openstates-scrapers/scrapers` with a bills scraper, **not
+  Michigan** (refused by the probe), with `usa` passed as `us`. Recount before a big run: it is the code in the dev
+  checkout, not a list.
+* **Canary one state first** (`./probe-on-fargate co --out probe-co-canary`, then `--status`): it shows that the
+  rebuilt image, the permissions and the command all work before 55 tasks depend on them.
+* **Records and reruns:** `launched.json` in `--out` is written before the first launch and after every task, so an
+  interrupted run still lists what it started. It is never overwritten: a rerun into the same `--out` is refused;
+  use another `--out`. The record is claimed (created, exclusively) before the first launch, so two runs cannot share
+  an `--out`. Each launch carries an ECS idempotency token made from the prefix and the run id, so a retry after a
+  timeout that hid a success does not start a second task. **To recover an interrupted launch** (a task ECS accepted
+  whose id never reached the file), rerun the same command with the **same `--date`** (and prefix) and a **new
+  `--out`**: states already started come back with their task ids, nothing is started twice. States are
+  lower-cased, `usa` becomes `us`, and repeats are dropped.
+* **Waves:** 20 tasks at a time with a 30-second pause (`--wave`, `--wave-pause`). A state Fargate could not place
+  (`failures` in the answer) is retried once after the last wave; one still not placed is listed as NOT LAUNCHED and
+  the command exits 1. The account's Fargate vCPU quota is not known; each task is 1 vCPU.
+* **Where it writes:** each task under `dev-probe-all-<date>/probe/<state>/probe-<state>-<date>/` in the memory
+  bucket. Never `prod` (refused). No database.
+* **Which image ran:** each task's task-definition revision is recorded and `--status` prints it, flagged MIXED if
+  the active revision changed during the launch.
+* **Exit codes (`--status`):** 0 finished and uploaded; 2 an option the image does not know (rebuild); 3 refused to
+  start; 4 upload failed. Still-running tasks are counted, not waited for: run `--status` again.
+* **Do not launch a state at the moment its scheduled scrape runs** (WA daily 02:30 UTC, USA daily 03:00 UTC, the
+  Sunday 02:00 UTC batch). The probe makes only a few requests, but one state's site should not see both at once.
+* **Reading the results:** the prod agent reads every task's log and commits each state's `report.md`,
+  `result.json` and `sample.tar.gz` (a read-only request on `notes/ops-handoff`); then finish the states that matter
+  on the Mac with `--from-dir`, as above.
+
 ## Development / testing environment (`ddp-open-states-dev`)
 
 **Never edit code or switch branches directly in this checkout while a scrape is running anywhere**
