@@ -41,15 +41,14 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       is not "none" is compared (both directions) with RESILIENCE_PROFILES' keys, read by a
                       static ast parse (python_dict_keys(), the same discipline as python_int_table() --
                       never imported, so this checker stays free of openstates-core's own dependency chain).
-                      openstates-core is gitignored here like ddp-sync, but unlike ddp-sync it is a PRIVATE
-                      repo (see Dockerfile's token-based clone) -- CI does not check it out today, so this
-                      comparison only runs when a human or a future CI step passes --openstates-core-root.
+                      openstates-core is gitignored here like ddp-sync. CI checks out its public fork's main
+                      (OPEN-462) and passes --require-openstates-core, so this comparison runs in CI too.
 
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
 votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk),
-run-all-scrapes.sh (the retired nightly runner), and the version_ordering.py procedural-document table
-(survey row B6, OPEN-462's own PR). Each is a follow-up under OPEN-318 (or, for B6, a question for Ramon).
+and the version_ordering.py procedural-document table (survey row B6, OPEN-462's own PR). Each is a
+follow-up under OPEN-318 (or, for B6, a question for Ramon).
 Also deliberately not compared, by design (OPEN-419/OPEN-464 -- see PRIMITIVES.md's WAF-decision
 catalog): cloud_collector.py's and cloud_archiver.py's own `if state == "mi"` published-cookie gates
 (genuinely code, not manifest-derived behaviour, per this ticket's own scoping note below), and
@@ -403,7 +402,7 @@ def parse_live(items):
 
 
 def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_root=None,
-        require_openstates_core=False, require_openstates_core_root=False):
+        require_openstates_core=False):
     """Returns (exit_code). Prints every disagreement, not just the first."""
     expect = project(manifest)
     drift, errors = [], []
@@ -471,9 +470,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
     else:
         if require_openstates_core:
             errors.append("--require-openstates-core is set but no openstates-core checkout was given (--openstates-core-root / OPENSTATES_CORE_ROOT)")
-        if require_openstates_core_root:
-            errors.append("--require-openstates-core-root is set but no openstates-core checkout was given (--openstates-core-root)")
-        if not (require_openstates_core or require_openstates_core_root):
+        if not require_openstates_core:
             out.write("NOTE: openstates-core was not checked (no --openstates-core-root / OPENSTATES_CORE_ROOT); "
                       "quality.diff_cleaner and waf.profile were not compared against the code.\n")
 
@@ -528,15 +525,12 @@ def main(argv, out=sys.stdout):
     parser.add_argument("--ddp-sync-root", default=os.environ.get("DDP_SYNC_ROOT"))
     parser.add_argument("--require-ddp-sync", action="store_true")
     parser.add_argument("--openstates-core-root", default=os.environ.get("OPENSTATES_CORE_ROOT"),
-                        help="a sibling openstates-core checkout (private repo, not fetched by CI today -- see "
-                             "this repo's PRIMITIVES.md); when given, compares quality.diff_cleaner against "
+                        help="a sibling openstates-core checkout (CI fetches the public fork's main); when given, compares quality.diff_cleaner against "
                              "text_extract.py's apply_prediff_cleaning() (OPEN-462) and waf.profile against "
                              "openstates/utils/resilience_profiles.py's RESILIENCE_PROFILES (OPEN-464); "
                              "or OPENSTATES_CORE_ROOT")
     parser.add_argument("--require-openstates-core", action="store_true",
-                        help="a missing openstates-core checkout is an error for the quality.diff_cleaner comparison")
-    parser.add_argument("--require-openstates-core-root", action="store_true",
-                        help="a missing openstates-core checkout is an error for the waf.profile comparison")
+                        help="a missing openstates-core checkout is an error (quality.diff_cleaner and waf.profile comparisons)")
     parser.add_argument("--live", action="append", default=[], metavar="LABEL:NAME=a,b,c",
                         help="a value read from a host's environment (OPEN-330), e.g. "
                              "broker-prod:DDP_OPENSTATES_JURISDICTIONS=US,FL; repeatable; compared with the manifest")
@@ -554,8 +548,7 @@ def main(argv, out=sys.stdout):
         return 0
     return run(manifest, args.repo_root, args.ddp_sync_root, args.require_ddp_sync, out, args.live,
                openstates_core_root=args.openstates_core_root,
-               require_openstates_core=args.require_openstates_core,
-               require_openstates_core_root=args.require_openstates_core_root)
+               require_openstates_core=args.require_openstates_core)
 
 
 if __name__ == "__main__":

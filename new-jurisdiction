@@ -1,0 +1,434 @@
+#!/usr/bin/env python3
+"""
+new-jurisdiction — turn a probe's result.json into jurisdictions.yaml's Stage 0 entry (OPEN-461).
+
+PLAN-push-button-onboarding.md §5 Stage 0 ends with "manifest entry with status: probing", which
+until now was always hand-typed -- the one hand edit left at the start of every onboarding (OPEN-318
+made the manifest the one place a state is declared). This reads the onboarding probe's own
+`result.json` (verify-jurisdiction --fargate's upload, or a --from-dir finish -- see RUNBOOK.md
+"Running the onboarding probe on Fargate") and appends that entry instead.
+
+Usage:
+    new-jurisdiction <st> --from-probe <result.json or a folder containing one> [--dry-run]
+
+What it writes: status: probing, every enrollment.* field false (nothing enrolled -- enrolling a
+state anywhere stays a deliberate, later, gated step, plan §5.1), the session/scraper facts probe
+gate B actually recorded (scrape.votes_scraper, scrape.start_filter, api_keys), and the platform's
+documented no-override timeouts (scrape.timeout_s 21600, archive.timeout_s 14400 -- the values
+check-jurisdiction-drift.py requires for a code with no ddp-sync-specific entry; NOT inferred from
+the probe's dry-scrape wall-clock or per-bill latency, which measure something else entirely).
+tier, waf.profile and quality.diff_cleaner are never guessed from probe output (the exact mistake
+behind MA/NC/AL's wrong survey values) -- they are written as safe placeholders and printed as
+needing a human.
+
+Safety:
+  - Validates the composed manifest with validate_jurisdictions.py's own validate() before writing
+    anything; a rejected candidate leaves jurisdictions.yaml byte-for-byte unchanged.
+  - Append-only: the existing file's text is preserved exactly and only the new state's block is
+    added, never re-serialized -- a full YAML load+dump would strip or reflow every comment in the
+    file. It can therefore never touch another state's bytes.
+  - Refuses a probe result whose own "state" doesn't match the state you asked for.
+  - Idempotent: a state that's already in the manifest is never rewritten. An identical re-run is a
+    no-op; a differing one prints exactly which fields differ and still writes nothing -- a human's
+    own edits here (e.g. quality.diff_cleaner) are never silently clobbered.
+  - Fails closed on probe gate B facts: if gate B is missing, or its wording doesn't match the
+    handful of fixed strings verify-jurisdiction currently emits, this refuses to guess
+    votes_scraper/start_filter/api_keys rather than writing a value that could be wrong.
+
+Must be run with this repo's environment active (source activate.sh) for PyYAML, same as every
+other script here -- see PRIMITIVES.md.
+"""
+
+import argparse
+import datetime
+import json
+import os
+import re
+import sys
+import tempfile
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover - exercised only in a broken environment
+    sys.stderr.write(
+        "new-jurisdiction requires PyYAML (already a project dependency -- see "
+        "requirements-openstates.txt). Run this with the repo's own venv python, e.g.\n"
+        "    .venv/bin/python3 new-jurisdiction ...\n"
+    )
+    sys.exit(2)
+
+from validate_jurisdictions import (
+    DEFAULT_MANIFEST_PATH,
+    _DuplicateKeyCheckingLoader,
+    validate,
+)
+
+# ddp-sync SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S "default" entries (check-jurisdiction-drift.py's
+# timeouts() helper requires every manifest code with no ddp-sync-specific entry to equal these).
+# The probe's gate D dry-scrape measures per-bill latency on a tiny sample, which is NOT a timeout
+# recommendation -- deliberately not read here. See OPEN-461's open question: a real measured-
+# timeout probe field would need its own name/unit, decided separately.
+DEFAULT_SCRAPE_TIMEOUT_S = 21600
+DEFAULT_ARCHIVE_TIMEOUT_S = 14400
+
+ENROLLMENT_FIELD_ORDER = [
+    "people_refresh", "search_refresh", "embedding", "cloud_path",
+    "api_smoke_test", "qa_sweep", "replica_routing", "legbot_replica",
+]
+
+_GATE_B_VOTES_RE = re.compile(r"^votes scraper registered: (True|False)$")
+_GATE_B_START_RE = re.compile(r"^bills scraper accepts start=: (True|False)$")
+_GATE_B_NO_CREDS = "no credential env-var references found in scraper source"
+_GATE_B_CREDS_RE = re.compile(r"^credential env-var references found in source: ([^(]+?) \(present:")
+
+_SAFE_BARE_SCALAR_RE = re.compile(r"^[A-Za-z0-9 ,.'()/_-]+$")
+
+
+class JurisdictionError(Exception):
+    """Any input, parsing or probe-fact problem that must stop before anything is read or written."""
+
+
+def is_valid_jurisdiction_key(code):
+    """The exact key-shape rule validate_jurisdictions.py's validate() enforces on every top-level
+    key -- reused here (not reimplemented as a separate regex) so a fail-fast CLI error on a bad
+    `<state>` argument can never disagree with what the final validate() call would say anyway."""
+    return code.islower() and code.replace("_", "").isalpha()
+
+
+# ── probe result loading ────────────────────────────────────────────────────
+
+
+def resolve_probe_path(from_probe):
+    if os.path.isdir(from_probe):
+        path = os.path.join(from_probe, "result.json")
+    else:
+        path = from_probe
+    if not os.path.isfile(path):
+        raise JurisdictionError(f"no result.json found at {path!r}")
+    return path
+
+
+def load_probe_result(from_probe):
+    path = resolve_probe_path(from_probe)
+    try:
+        with open(path, "r") as f:
+            raw = f.read()
+    except OSError as exc:
+        raise JurisdictionError(f"cannot read {path}: {exc}") from exc
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise JurisdictionError(f"{path} is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise JurisdictionError(f"{path}: expected a JSON object, got {type(data).__name__}")
+    if not isinstance(data.get("state"), str) or not data["state"]:
+        raise JurisdictionError(f"{path}: missing or empty \"state\" field")
+    if not isinstance(data.get("gates"), list):
+        raise JurisdictionError(f"{path}: missing or non-list \"gates\" field")
+    return data, path
+
+
+def find_gate(data, letter):
+    for gate in data["gates"]:
+        if isinstance(gate, dict) and gate.get("gate") == letter:
+            return gate
+    return None
+
+
+def extract_gate_b_facts(data):
+    """Fail closed: only the exact wording verify-jurisdiction's run_gate_b() currently emits is
+    trusted. Anything else (missing gate, reworded detail, absent line) refuses rather than
+    guessing -- a wrong votes_scraper/start_filter/api_keys value is worse than no value."""
+    gate_b = find_gate(data, "B")
+    if gate_b is None:
+        raise JurisdictionError(
+            "probe result has no gate B (scraper module shape) -- cannot derive "
+            "scrape.votes_scraper, scrape.start_filter or api_keys"
+        )
+    details = gate_b.get("details")
+    if not isinstance(details, list):
+        raise JurisdictionError("probe result's gate B has no \"details\" list to parse")
+
+    votes_scraper = None
+    start_filter = None
+    api_keys = None
+    for line in details:
+        if not isinstance(line, str):
+            continue
+        m = _GATE_B_VOTES_RE.match(line)
+        if m:
+            votes_scraper = m.group(1) == "True"
+            continue
+        m = _GATE_B_START_RE.match(line)
+        if m:
+            start_filter = m.group(1) == "True"
+            continue
+        if line == _GATE_B_NO_CREDS:
+            api_keys = []
+            continue
+        m = _GATE_B_CREDS_RE.match(line)
+        if m:
+            api_keys = [k.strip() for k in m.group(1).split(",") if k.strip()]
+            continue
+
+    missing = []
+    if votes_scraper is None:
+        missing.append("\"votes scraper registered: True/False\"")
+    if start_filter is None:
+        missing.append("\"bills scraper accepts start=: True/False\"")
+    if api_keys is None:
+        missing.append(
+            "\"credential env-var references found in source: ...\" or "
+            f"\"{_GATE_B_NO_CREDS}\""
+        )
+    if missing:
+        raise JurisdictionError(
+            "probe result's gate B details do not include the recognized line(s) for "
+            + "; ".join(missing)
+            + " -- refusing to guess (unrecognized probe wording; see OPEN-461)"
+        )
+
+    return {"votes_scraper": votes_scraper, "start_filter": start_filter, "api_keys": api_keys}
+
+
+# ── entry composition ────────────────────────────────────────────────────────
+
+
+def compose_entry(data, gate_b_facts):
+    """The schema-complete status: probing entry (validate_jurisdictions.py's TOP_LEVEL_FIELDS
+    etc. is the schema authority -- this mirrors it, it does not redefine it)."""
+    run_id = data.get("run_id")
+    entry = {
+        "name": data["name"] if isinstance(data.get("name"), str) and data["name"] else data["state"],
+        "status": "probing",
+        "tier": "secondary",
+        "scrape": {
+            "allow_duplicates": False,
+            "timeout_s": DEFAULT_SCRAPE_TIMEOUT_S,
+            "session_arg": None,
+            "votes_scraper": gate_b_facts["votes_scraper"],
+            "start_filter": gate_b_facts["start_filter"],
+        },
+        "archive": {
+            "enabled": False,
+            "scheduled": False,
+            "timeout_s": DEFAULT_ARCHIVE_TIMEOUT_S,
+        },
+        "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
+        "waf": {"profile": "none", "fargate_safe": True},
+        "quality": {"diff_cleaner": "none"},
+        "api_keys": gate_b_facts["api_keys"],
+        "onboarding": {
+            "epic": None,
+            "evidence": f"notes/{run_id}/report.md" if run_id else None,
+        },
+    }
+    needs_human = [
+        ("tier", "no tier decision made yet (Stage 2 picks primary/secondary)"),
+        ("waf.profile", "probe gate B's heuristic cannot see a brand-new state's real WAF shape"),
+        ("waf.fargate_safe", "defaults to true (the probe produced a usable result, so the site was reachable); "
+                             "set false only for a state whose cookie must be minted on the Mac, as mi's is"),
+        ("quality.diff_cleaner", "never guessed from probe output (the MA/NC/AL survey's wrong-value mistake)"),
+    ]
+    if not entry["onboarding"]["evidence"]:
+        needs_human.append(("onboarding.evidence", "probe result had no run_id to derive a notes/ path from"))
+    return entry, needs_human
+
+
+# ── YAML rendering (append-only; never a full load+dump) ───────────────────
+
+
+def _scalar(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        if value and _SAFE_BARE_SCALAR_RE.match(value):
+            return value
+        return json.dumps(value)
+    raise TypeError(f"no scalar rendering for {value!r}")  # pragma: no cover - schema is closed
+
+
+def render_block(code, entry, needs_human, source_desc):
+    needs_human_fields = {path for path, _reason in needs_human}
+
+    def note(path):
+        return "  # NEEDS HUMAN REVIEW" if path in needs_human_fields else ""
+
+    lines = [
+        f"# written by new-jurisdiction from {source_desc} on "
+        f"{datetime.date.today().isoformat()} (OPEN-461)",
+        f"{code}:",
+        f"  name: {_scalar(entry['name'])}",
+        f"  status: {_scalar(entry['status'])}",
+        f"  tier: {_scalar(entry['tier'])}{note('tier')}",
+        "  scrape:",
+        f"    allow_duplicates: {_scalar(entry['scrape']['allow_duplicates'])}",
+        f"    timeout_s: {_scalar(entry['scrape']['timeout_s'])}"
+        f"               # SCRAPE_TIMEOUT_S default, 6h -- no {code}-specific entry in ddp-sync yet",
+        f"    session_arg: {_scalar(entry['scrape']['session_arg'])}"
+        f"                # ALWAYS null (OPEN-24 resolution)",
+        f"    votes_scraper: {_scalar(entry['scrape']['votes_scraper'])}"
+        f"           # probe gate B: \"votes scraper registered\"",
+        f"    start_filter: {_scalar(entry['scrape']['start_filter'])}"
+        f"            # probe gate B: \"bills scraper accepts start=\"",
+        "  archive:",
+        f"    enabled: {_scalar(entry['archive']['enabled'])}",
+        f"    scheduled: {_scalar(entry['archive']['scheduled'])}",
+        f"    timeout_s: {_scalar(entry['archive']['timeout_s'])}"
+        f"               # ARCHIVE_TIMEOUT_S default, 4h -- no {code}-specific entry in ddp-sync yet",
+        "  enrollment:",
+    ]
+    for field in ENROLLMENT_FIELD_ORDER:
+        lines.append(f"    {field}: {_scalar(entry['enrollment'][field])}")
+    lines += [
+        "  waf:",
+        f"    profile: {_scalar(entry['waf']['profile'])}{note('waf.profile')}",
+        f"    fargate_safe: {_scalar(entry['waf']['fargate_safe'])}{note('waf.fargate_safe')}",
+        "  quality:",
+        f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
+        "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
+        "  onboarding:",
+        f"    epic: {_scalar(entry['onboarding']['epic'])}",
+        f"    evidence: {_scalar(entry['onboarding']['evidence'])}{note('onboarding.evidence')}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def append_block(original_text, block_text):
+    return original_text.rstrip("\n") + "\n\n" + block_text.rstrip("\n") + "\n"
+
+
+# ── diffing an existing entry ────────────────────────────────────────────────
+
+
+def diff_entries(current, proposed, prefix=""):
+    """Yield (path, current_value, proposed_value) for every leaf where the two disagree,
+    including keys present on only one side."""
+    if isinstance(current, dict) and isinstance(proposed, dict):
+        for key in sorted(set(current) | set(proposed)):
+            path = f"{prefix}.{key}" if prefix else key
+            if key not in current:
+                yield (path, "<missing>", proposed[key])
+            elif key not in proposed:
+                yield (path, current[key], "<not generated>")
+            else:
+                yield from diff_entries(current[key], proposed[key], path)
+    elif current != proposed:
+        yield (prefix, current, proposed)
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("state", help="jurisdiction short code, e.g. co, ga, oh")
+    parser.add_argument("--from-probe", required=True, metavar="PATH",
+                         help="the probe's result.json, or a folder containing one")
+    parser.add_argument("--dry-run", action="store_true", help="Print changes without writing")
+    parser.add_argument("--manifest", default=DEFAULT_MANIFEST_PATH,
+                         help=f"manifest path (default: {DEFAULT_MANIFEST_PATH})")
+    args = parser.parse_args(argv)
+
+    state = args.state.lower()
+    if not is_valid_jurisdiction_key(state):
+        sys.stderr.write(
+            f"new-jurisdiction: {args.state!r} is not a valid jurisdiction key (lowercase letters, "
+            "optionally underscore-separated, e.g. 'co', 'us')\n"
+        )
+        return 1
+
+    try:
+        data, probe_path = load_probe_result(args.from_probe)
+        if data["state"].lower() != state:
+            raise JurisdictionError(
+                f"probe result at {probe_path} is for state {data['state']!r}, not {args.state!r} -- "
+                "refusing to create or compare the wrong state's entry"
+            )
+        gate_b_facts = extract_gate_b_facts(data)
+    except JurisdictionError as exc:
+        sys.stderr.write(f"new-jurisdiction: {exc}\n")
+        return 1
+
+    entry, needs_human = compose_entry(data, gate_b_facts)
+
+    try:
+        with open(args.manifest, "r") as f:
+            original_text = f.read()
+    except OSError as exc:
+        sys.stderr.write(f"new-jurisdiction: cannot read {args.manifest}: {exc}\n")
+        return 1
+
+    try:
+        existing_data = yaml.load(original_text, Loader=_DuplicateKeyCheckingLoader)
+    except yaml.YAMLError as exc:
+        sys.stderr.write(f"new-jurisdiction: {args.manifest} is not valid YAML: {exc}\n")
+        return 1
+    if not isinstance(existing_data, dict):
+        existing_data = {}
+
+    def print_needs_human():
+        if needs_human:
+            print("Fields that still need a human:")
+            for path, reason in needs_human:
+                print(f"  - {path}: {reason}")
+
+    if state in existing_data:
+        existing_entry = existing_data[state]
+        diffs = list(diff_entries(existing_entry, entry))
+        if not diffs:
+            print(f"{state}: already up to date, no changes")
+            return 0
+        print(f"{state}: existing entry differs from the probe-derived entry -- refusing to overwrite")
+        for path, current, proposed in diffs:
+            print(f"  {path}: current={current!r} probe-derived={proposed!r}")
+        return 0
+
+    block_text = render_block(state, entry, needs_human, probe_path)
+    candidate_text = append_block(original_text, block_text)
+
+    try:
+        candidate_data = yaml.load(candidate_text, Loader=_DuplicateKeyCheckingLoader)
+    except yaml.YAMLError as exc:  # pragma: no cover - render_block output is well-formed by construction
+        sys.stderr.write(f"new-jurisdiction: internal error -- generated invalid YAML: {exc}\n")
+        return 1
+
+    errors = validate(candidate_data)
+    if errors:
+        sys.stderr.write(
+            f"new-jurisdiction: validate_jurisdictions.py rejects the candidate manifest "
+            f"({len(errors)} problem(s)); {args.manifest} was NOT modified:\n"
+        )
+        for e in errors:
+            sys.stderr.write(f"  - {e}\n")
+        return 1
+
+    print(block_text, end="")
+    print_needs_human()
+
+    if args.dry_run:
+        print(f"[dry-run] {args.manifest} was NOT modified.")
+        return 0
+
+    fd, tmp_path = tempfile.mkstemp(
+        prefix=f".{os.path.basename(args.manifest)}.", dir=os.path.dirname(os.path.abspath(args.manifest)) or "."
+    )
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(candidate_text)
+        os.replace(tmp_path, args.manifest)
+    except BaseException:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
+
+    print(f"{state}: appended to {args.manifest} (status: probing)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

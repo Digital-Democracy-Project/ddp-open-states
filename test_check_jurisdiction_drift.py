@@ -429,12 +429,6 @@ def test_openstates_core_root_absent_prints_a_note_and_passes(world):
     assert "NOTE: openstates-core was not checked" in out
 
 
-def test_require_openstates_core_root_without_a_checkout_is_an_error_not_a_pass(world):
-    code, out = _run(world, with_sync=False, with_core=False, extra=["--require-openstates-core-root"])
-    assert code == 2
-    assert "--require-openstates-core-root is set but no openstates-core checkout was given" in out
-
-
 def test_two_definitions_of_resilience_profiles_are_ambiguous(world):
     _edit(world, "openstates/utils/resilience_profiles.py", 'RESILIENCE_PROFILES: dict = {',
           'RESILIENCE_PROFILES: dict = {"default": 1}\nRESILIENCE_PROFILES: dict = {', root="core")
@@ -497,11 +491,16 @@ def test_the_real_openstates_core_agrees_with_the_real_manifests_waf_profile():
 
 def test_the_real_manifest_enrolls_every_archived_jurisdiction_somewhere_visible():
     """The matrix is how today's gaps (NC on 2 of 6 feature lists, MA on 3, AL on 2) stay visible: it must
-    cover every manifest entry, including paused al."""
+    cover every manifest entry, including paused al. Not pinned to today's exact code count -- adding a
+    state to the manifest must not break this (OPEN-465) -- but the original eight (OPEN-318) must never
+    silently drop off the matrix."""
+    with open(os.path.join(HERE, "jurisdictions.yaml")) as f:
+        manifest = yaml.safe_load(f)
     out = io.StringIO()
     assert drift.main(["check", "--matrix"], out) == 0
     codes = [l.split()[0] for l in out.getvalue().strip().splitlines()[1:]]
-    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma", "nc", "al"} == set(codes)
+    assert set(manifest.keys()) == set(codes)
+    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= set(codes)
 
 
 def test_deepcopy_of_the_fixture_manifest_still_agrees(world):

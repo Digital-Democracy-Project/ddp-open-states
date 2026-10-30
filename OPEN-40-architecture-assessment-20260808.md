@@ -17,7 +17,7 @@ share a failure domain with the thing it watches, and what is the correct key→
 |-------|-----------|-------|
 | Scrape runner | `run-scrape.sh` (bash 3.2, this repo) | Writes `logs/last-run/<SCRAPE_KEY>.ts` on every successful completion (normal path `run-scrape.sh:431` and incremental no-op path `finish_no_op()` at `:283`) — the signal the watchdog reads |
 | Scheduler | ddp-sync APScheduler (`src/ddp_sync/pipelines/openstates_scrape.py`), system LaunchDaemon `com.ddp.ddp-sync` | Replaced the `com.ddp.openstates-scraper` launchd job 2026-06-22 (plist deleted 2026-06-24, RUNBOOK.md:88-91). Invokes `run-scrape.sh` per jurisdiction |
-| Legacy runner | `run-all-scrapes.sh` (this repo) | **No longer scheduled by anything** — kept for manual runs; its header comment ("called by com.ddp.openstates-scraper launchd job") is stale |
+| Legacy runner | the old nightly runner (this repo; since deleted, OPEN-465) | **No longer scheduled by anything** — kept for manual runs; its header comment ("called by com.ddp.openstates-scraper launchd job") is stale |
 | Existing health monitor | `ddp-agents/deployment/scripts/health-check-slack.sh`, system LaunchDaemon `com.ddp.health-monitor`, every 5 min | Independent of ddp-sync; already does Slack token lookup from `ddp-agents/.env`, boot grace, state-file de-dupe in `/var/tmp`, recovery messages; already checks CAMS (:8000) and os-api (:8002) |
 | Failure alerting | `on_failure()` + `report_failure_to_cams()` in `run-scrape.sh:62-99` | Dual path: Slack `#automation-errors` + structured POST to CAMS `/api/v1/failures` (service `ddp-open-states`), both best-effort (`curl -sf … || true`) |
 | Conventions catalog | `PRIMITIVES.md` | Slack alert-on-failure is a **copy-the-pattern** primitive (used by `run-scrape.sh`, `backup-openstates-db.sh`, `run-archive.sh`), not a shared sourced file |
@@ -28,10 +28,10 @@ Verified against ddp-sync `config/sync_schedule.yaml` + `pipelines/openstates_sc
 from GitHub main) and the production `logs/last-run/` directory (read-only, 2026-08-08):
 
 1. **The design's deployment vector is dead.** §11.3 says to append the check to
-   `run-all-scrapes.sh` because it "already runs daily via the existing
+   the old nightly runner because it "already runs daily via the existing
    `com.ddp.openstates-scraper` launchd job — no new launchd job needed." That launchd job was
    deleted 2026-06-24 (RUNBOOK.md:88-89); scheduling moved to ddp-sync's per-jurisdiction
-   APScheduler jobs, none of which call `run-all-scrapes.sh`. Built as written, the watchdog
+   APScheduler jobs, none of which call that runner. Built as written, the watchdog
    would never execute. Worse, even when that job existed, the placement was self-defeating:
    a watchdog that runs at the end of the scrape pipeline it watches can never catch "the
    pipeline never started" — which is one of the exact failure modes the ticket names
@@ -45,7 +45,7 @@ from GitHub main) and the production `logs/last-run/` directory (read-only, 2026
    derives `SCRAPE_KEY=ma` and writes `ma.ts`. Production confirms: `ma.ts` exists (fresh,
    2026-08-01) and `ma_session_194th.ts` does not exist at all. Watching `ma_session_194th`
    would fire a **permanent false alert** from day one and never clear. The `session=194th` fix
-   in `run-all-scrapes.sh:46-47` only governs the manual path; the live key is `ma`. (Same
+   in the old nightly runner only governs the manual path; the live key is `ma`. (Same
    reasoning applies to `va/mi/ut/az` — bare keys — which the design already has right.)
 
 3. **FL is weekly, not daily, right now.** The design's table puts the four FL session keys in
@@ -64,13 +64,13 @@ integration test the design asked for, but whoever deploys should expect it.
 
 ## Approaches Evaluated
 
-### Approach A: Build the design as written — append to `run-all-scrapes.sh`
+### Approach A: Build the design as written — append to the old nightly runner
 
-**How it works:** Add `check-scrape-staleness.sh`, call it at the end of `run-all-scrapes.sh`.
+**How it works:** Add `check-scrape-staleness.sh`, call it at the end of the old nightly runner.
 
 **Pros:** Matches the §11.3 text verbatim; zero cross-repo changes.
 
-**Cons:** Does not work. `run-all-scrapes.sh` has no scheduler, so the check never runs.
+**Cons:** Does not work. The old nightly runner has no scheduler, so the check never runs.
 Re-scheduling it just to host the watchdog would resurrect the monolithic runner ddp-sync
 deliberately replaced, and still leaves the watchdog sharing fate with the scrape pipeline —
 a scheduler outage (observed live, 4 days, July 2026) silences scrapes *and* watchdog together.
@@ -138,7 +138,7 @@ sentinel state (the same state-file pattern health-check-slack.sh already uses).
 
 ## Tradeoff Matrix
 
-| Dimension | A: run-all-scrapes.sh | B: ddp-sync job | C: health-monitor hook |
+| Dimension | A: old nightly runner | B: ddp-sync job | C: health-monitor hook |
 |-----------|----------------------|-----------------|------------------------|
 | Actually runs today | **No** | Yes | Yes |
 | Catches scheduler-dead | No | **No** | Yes |
