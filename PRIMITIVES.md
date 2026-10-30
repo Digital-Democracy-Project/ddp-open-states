@@ -1048,6 +1048,47 @@ gate to have genuinely passed. Calibrated by running it against an already-onboa
 state (FL) and confirming GREEN — proving the gates recognize a healthy state correctly, not just
 that they can reject a broken one, which is the easier half to get right by accident.
 
+## `new-jurisdiction <state> --from-probe <result.json-or-folder>` — the manifest entry from a probe result (repo root, OPEN-461)
+
+Stage 0 of the onboarding plan ends with "manifest entry with `status: probing`", which was always
+hand-typed — OPEN-318 made `jurisdictions.yaml` the one place a state is declared, so that entry was
+the one hand edit left at the start of every onboarding. This generates it instead, from the
+probe's own `result.json` (the Fargate run's upload, or a `--from-dir` finish — see "the onboarding
+probe" above and RUNBOOK.md "Running the onboarding probe on Fargate"):
+
+```
+new-jurisdiction co --from-probe notes/probe-co-20261030/        # a folder (reads result.json inside it)
+new-jurisdiction co --from-probe notes/probe-co-20261030/result.json --dry-run   # or the file directly
+```
+
+- **What it writes:** `status: probing`, every `enrollment.*` field `false` (enrolling a state
+  anywhere stays a deliberate, later, gated step — §5.1, out of scope here), `scrape.votes_scraper` /
+  `scrape.start_filter` / `api_keys` parsed from probe gate B's recorded facts, and the platform's
+  documented no-override timeouts (`scrape.timeout_s` 21600, `archive.timeout_s` 14400 —
+  `check-jurisdiction-drift.py`'s required default for a code with no ddp-sync-specific entry).
+  **Never** inferred from gate D's dry-scrape wall-clock/per-bill latency, which measures something
+  else entirely (an open question for a future, explicitly-named measured-timeout probe field).
+- **Never guesses `tier`, `waf.profile` or `quality.diff_cleaner`** — these are always written as
+  safe placeholders (`secondary` / `none` / `none`) and printed as needing a human, exactly because
+  a probe-derived guess here is the mistake the diff_cleaner survey already found wrong for MA, NC
+  and AL. Fill them in by hand after reviewing the probe's own report.
+- **Fails closed on gate B:** verify-jurisdiction's gate B has no structured output, only fixed
+  detail strings (`"votes scraper registered: ..."`, `"bills scraper accepts start=: ..."`,
+  `"credential env-var references found in source: ..."` / `"no credential env-var references
+  found..."`). Missing or unrecognized wording refuses to write rather than guessing.
+- **Validated before any write:** the full candidate manifest (existing text plus the new block) is
+  parsed and run through `validate_jurisdictions.py`'s own `validate()` — a rejected candidate
+  leaves `jurisdictions.yaml` byte-for-byte unchanged.
+- **Append-only, never a full YAML load+dump:** a round-trip through PyYAML's dumper would strip or
+  reflow every hand-written comment in the file (see the file's own header). This only ever appends
+  text for a brand-new state, so it can never touch another state's bytes.
+- **Idempotent, never a silent overwrite:** an already-present state that matches is a no-op; one
+  that differs (including a human's own edit to `quality.diff_cleaner`/`waf.profile`/`tier`) prints
+  the exact field-level differences and still writes nothing.
+- Does **not** enroll a jurisdiction anywhere, touch ddp-sync, or run any gate itself — it only
+  reads a probe's already-produced `result.json`. Wired into
+  `.github/workflows/validate-jurisdictions.yml` alongside the validator and drift check.
+
 ## Cross-cutting conventions (don't reinvent these)
 
 - **DB connection defaults** — every Python script here defaults to
