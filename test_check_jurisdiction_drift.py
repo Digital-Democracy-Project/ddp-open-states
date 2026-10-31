@@ -27,17 +27,19 @@ _spec.loader.exec_module(drift)
 # the fixture world: fl (primary), us (primary, "usa" in ddp-sync), nc (secondary), al (paused)
 # ---------------------------------------------------------------------------------------------------
 
-def _entry(tier="secondary", status="live", archive=True, scheduled=None, **enrollment):
+def _entry(tier="secondary", status="live", archive=True, scheduled=None, waf_profile="none", waf_fargate_safe=True, **enrollment):
     e = _valid_entry()
     e["tier"], e["status"] = tier, status
     e["archive"]["enabled"] = archive
     e["archive"]["scheduled"] = archive if scheduled is None else scheduled
     e["enrollment"].update({k: v for k, v in enrollment.items()})
+    e["waf"]["profile"] = waf_profile
+    e["waf"]["fargate_safe"] = waf_fargate_safe
     return e
 
 
 def _manifest():
-    fl = _entry("primary", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=True)
+    fl = _entry("primary", waf_profile="cookie_provider", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=True)
     fl["scrape"]["allow_duplicates"] = True
     fl["scrape"]["timeout_s"] = 16 * 3600
     fl["archive"]["timeout_s"] = 16 * 3600
@@ -97,6 +99,10 @@ def apply_prediff_cleaning(prior_text, raw_text, *, jurisdiction_name, is_bill, 
 
 CORE_TEXT_EXTRACT_RELPATH = os.path.join("openstates", "cli", "text_extract.py")
 
+# OPEN-464: a stub of openstates-core's RESILIENCE_PROFILES -- python_dict_keys() never inspects values,
+# so these need not be real WafResilienceProfile(...) calls, just a module-level dict with string keys.
+RESILIENCE_PROFILES_PY = 'RESILIENCE_PROFILES: dict = {\n    "fl": "stub -- values are never inspected",\n}\n'
+
 
 def _write(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -106,39 +112,42 @@ def _write(path, text):
 
 @pytest.fixture
 def world(tmp_path):
-    """(repo_root, sync_root, manifest_path): every list agrees with the manifest."""
-    repo, sync = tmp_path / "repo", tmp_path / "ddp-sync"
+    """(repo_root, sync_root, manifest_path, openstates_core_root): every list agrees with the manifest."""
+    repo, sync, core = tmp_path / "repo", tmp_path / "ddp-sync", tmp_path / "openstates-core"
     for name, text in REPO_FILES.items():
         _write(str(repo / name), text)
     _write(str(sync / "config" / "sync_schedule.yaml"), yaml.safe_dump(SYNC_YAML))
     _write(str(sync / "src/ddp_sync/pipelines/openstates_scrape.py"), SYNC_SCRAPE_PY)
     _write(str(sync / "src/ddp_sync/pipelines/openstates_archive.py"), SYNC_ARCHIVE_PY)
+    _write(str(core / "openstates" / "utils" / "resilience_profiles.py"), RESILIENCE_PROFILES_PY)
+    _write(str(core / CORE_TEXT_EXTRACT_RELPATH), CORE_TEXT_EXTRACT_PY)
     manifest = tmp_path / "jurisdictions.yaml"
     manifest.write_text(yaml.safe_dump(_manifest()))
-    return str(repo), str(sync), str(manifest)
+    return str(repo), str(sync), str(manifest), str(core)
 
 
 @pytest.fixture
-def core_root(tmp_path):
-    """openstates-core stand-in: agrees with the fixture manifest's nc/al out of the box."""
-    core = tmp_path / "openstates-core"
-    _write(str(core / CORE_TEXT_EXTRACT_RELPATH), CORE_TEXT_EXTRACT_PY)
-    return str(core)
+def core_root(world):
+    """Alias for world's own openstates-core dir (OPEN-462's fixture name, kept for its tests below):
+    world already carries both the diff_cleaner dispatch and the RESILIENCE_PROFILES stub, agreeing
+    with the fixture manifest's nc/al/fl out of the box."""
+    return world[3]
 
 
-def _run(world, with_sync=True, extra=(), core=None):
-    repo, sync, manifest = world
+def _run(world, with_sync=True, with_core=True, extra=(), core=None):
+    repo, sync, manifest, core_dir = world
     argv = ["check", "--manifest", manifest, "--repo-root", repo, *extra]
     if with_sync:
         argv += ["--ddp-sync-root", sync]
-    if core:
-        argv += ["--openstates-core-root", core]
+    core_path = core if core is not None else (core_dir if with_core else None)
+    if core_path:
+        argv += ["--openstates-core-root", core_path]
     out = io.StringIO()
     return drift.main(argv, out), out.getvalue()
 
 
 def _edit(world, relpath, old, new, root="repo"):
-    base = world[0] if root == "repo" else world[1]
+    base = {"repo": world[0], "sync": world[1], "core": world[3]}[root]
     path = os.path.join(base, relpath)
     text = open(path).read()
     assert old in text, (relpath, old)
@@ -280,13 +289,13 @@ def test_diff_cleaner_matching_the_dispatch_passes(world, core_root):
 
 
 def test_diff_cleaner_is_not_checked_without_a_core_root(world):
-    code, out = _run(world, with_sync=False)
+    code, out = _run(world, with_sync=False, with_core=False)
     assert code == 0
     assert "openstates-core was not checked" in out
 
 
 def test_require_openstates_core_without_a_checkout_is_an_error(world):
-    code, out = _run(world, with_sync=False, extra=["--require-openstates-core"])
+    code, out = _run(world, with_sync=False, with_core=False, extra=["--require-openstates-core"])
     assert code == 2
     assert "--require-openstates-core" in out
 
@@ -387,6 +396,67 @@ def test_the_real_text_extract_dispatch_agrees_with_the_real_manifest():
 
 
 # ---------------------------------------------------------------------------------------------------
+# waf.profile vs. openstates-core's RESILIENCE_PROFILES (OPEN-464)
+# ---------------------------------------------------------------------------------------------------
+
+def test_waf_profile_agrees_with_resilience_profiles(world):
+    code, out = _run(world, with_sync=False)
+    assert code == 0, out
+
+
+def test_a_cookie_provider_state_with_no_code_handler_is_drift(world):
+    """AC: a state declared waf.profile: cookie_provider that no code handles fails the drift check."""
+    text = open(world[2]).read()
+    _write(world[2], text.replace("profile: none\n", "profile: cookie_provider\n", 1))
+    code, out = _run(world, with_sync=False)
+    assert code == 1
+    assert "DRIFT waf.profile: openstates-core RESILIENCE_PROFILES" in out
+    assert "in the manifest but not in openstates-core RESILIENCE_PROFILES" in out
+
+
+def test_a_resilience_profile_the_manifest_does_not_declare_is_drift(world):
+    """The reverse direction: code handles a state the manifest says has no WAF profile."""
+    _edit(world, "openstates/utils/resilience_profiles.py", '"fl": "stub -- values are never inspected",',
+          '"fl": "stub -- values are never inspected",\n    "us": "stub",', root="core")
+    code, out = _run(world, with_sync=False)
+    assert code == 1
+    assert "in openstates-core RESILIENCE_PROFILES but not in the manifest: us" in out
+
+
+def test_openstates_core_root_absent_prints_a_note_and_passes(world):
+    code, out = _run(world, with_sync=False, with_core=False)
+    assert code == 0, out
+    assert "NOTE: openstates-core was not checked" in out
+
+
+def test_two_definitions_of_resilience_profiles_are_ambiguous(world):
+    _edit(world, "openstates/utils/resilience_profiles.py", 'RESILIENCE_PROFILES: dict = {',
+          'RESILIENCE_PROFILES: dict = {"default": 1}\nRESILIENCE_PROFILES: dict = {', root="core")
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "exactly one module-level RESILIENCE_PROFILES" in out
+
+
+def test_a_duplicate_key_in_resilience_profiles_is_an_error(world):
+    _edit(world, "openstates/utils/resilience_profiles.py", '"fl": "stub -- values are never inspected",',
+          '"fl": "stub -- values are never inspected",\n    "fl": "again",', root="core")
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "RESILIENCE_PROFILES has a duplicate key" in out
+
+
+def test_a_non_string_key_in_resilience_profiles_is_an_error(world):
+    _edit(world, "openstates/utils/resilience_profiles.py", '"fl": "stub -- values are never inspected",',
+          '"fl": "stub -- values are never inspected",\n    1: "bad key",', root="core")
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "RESILIENCE_PROFILES has a key that is not a string literal" in out
+
+
+def test_a_missing_resilience_profiles_file_is_an_error(world):
+    os.remove(os.path.join(world[3], "openstates", "utils", "resilience_profiles.py"))
+    code, out = _run(world, with_sync=False)
+    assert code == 2 and "cannot read" in out
+
+
+# ---------------------------------------------------------------------------------------------------
 
 def test_matrix_lists_every_jurisdiction_and_feature(world):
     code, out = _run(world, with_sync=False, extra=["--matrix"])
@@ -403,6 +473,19 @@ def test_the_real_checked_in_files_agree_with_the_real_manifest():
     """This repo's own lists against its own manifest, today. (ddp-sync is checked in CI, where its checkout exists.)"""
     out = io.StringIO()
     code = drift.main(["check"], out)
+    assert code == 0, out.getvalue()
+
+
+@pytest.mark.skipif(
+    not os.path.isfile(os.path.join(HERE, "openstates-core", "openstates", "utils", "resilience_profiles.py")),
+    reason="openstates-core is a local dev checkout (private repo, not fetched by CI) -- OPEN-464",
+)
+def test_the_real_openstates_core_agrees_with_the_real_manifests_waf_profile():
+    """waf.profile vs. RESILIENCE_PROFILES, when a real openstates-core checkout sits next to this repo
+    (as it does on both dev checkouts per CLAUDE.md). Not run in CI today -- see check-jurisdiction-drift.py's
+    module docstring and PRIMITIVES.md's WAF-decision catalog (OPEN-464)."""
+    out = io.StringIO()
+    code = drift.main(["check", "--openstates-core-root", os.path.join(HERE, "openstates-core")], out)
     assert code == 0, out.getvalue()
 
 

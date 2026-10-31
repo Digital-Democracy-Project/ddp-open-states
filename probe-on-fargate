@@ -4,7 +4,8 @@ probe-on-fargate -- launch the onboarding probe (`verify-jurisdiction --fargate`
 state, all at once, and read back how the tasks ended (OPEN-460, on top of OPEN-458 and OPEN-459).
 
     probe-on-fargate co ga oh                 launch these states
-    probe-on-fargate --all                    every jurisdiction the scrapers code has a bills scraper for, not Michigan
+    probe-on-fargate --all                    every jurisdiction the scrapers code has a bills scraper for, minus
+                                              whichever ones the manifest says cannot run on Fargate (waf.fargate_safe)
     probe-on-fargate --all --dry-run          print what would be launched and change nothing
     probe-on-fargate --status --out DIR       how each launched task ended (exit 0 = finished and uploaded,
                                               3 = refused to start, 4 = upload failed, 2 = an option the image does
@@ -28,6 +29,10 @@ import os
 import sys
 import time
 
+from validate_jurisdictions import load_and_validate
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 REGION = "us-east-1"
 CLUSTER = "ddp-scrapers"
 TASK_DEFINITION = "ddp-scrapers"
@@ -38,14 +43,19 @@ SECURITY_GROUPS = ["sg-09346518873d48a08"]
 
 # The scraper module for US Congress is `usa`; the probe (and the database) call it `us`.
 MODULE_TO_STATE = {"usa": "us"}
-# Michigan's WAF cookie comes from the Mac's mint, so the probe refuses it on Fargate (verify-jurisdiction).
-REFUSED_STATES = {"mi"}
 DEFAULT_SAMPLE_BILLS = 10
 DEFAULT_MAX_OBJECTS = 200
 DEFAULT_WAVE = 20
 
 
-def probeable_states(scrapers_dir):
+def refused_states(manifest):
+    """OPEN-464: the set of codes the manifest says cannot run on Fargate (waf.fargate_safe: false),
+    replacing a hard-coded {"mi"} -- so this stays in step with verify-jurisdiction's own
+    fargate_refusal() without either one keeping its own copy."""
+    return {code for code, entry in manifest.items() if not entry["waf"]["fargate_safe"]}
+
+
+def probeable_states(scrapers_dir, refused):
     """Every jurisdiction directory under the scrapers code with a bills scraper, as the probe's state codes,
     without the refused ones."""
     states = []
@@ -56,7 +66,7 @@ def probeable_states(scrapers_dir):
         if not (os.path.isfile(os.path.join(path, "bills.py")) or os.path.isdir(os.path.join(path, "bills"))):
             continue
         state = MODULE_TO_STATE.get(name, name)
-        if state not in REFUSED_STATES:
+        if state not in refused:
             states.append(state)
     return states
 
@@ -72,11 +82,11 @@ def normalize_states(states):
     return out
 
 
-def refusal(states, prefix):
+def refusal(states, prefix, refused):
     """Why this launch must not happen, or None."""
-    refused = sorted(set(states) & REFUSED_STATES)
-    if refused:
-        return f"{', '.join(refused)} is not probed on Fargate (see verify-jurisdiction)"
+    hit = sorted(set(states) & refused)
+    if hit:
+        return f"{', '.join(hit)} is not probed on Fargate (see verify-jurisdiction)"
     if not states:
         return "no states to launch"
     if prefix.strip("/").split("/")[0].lower() == "prod":
@@ -198,7 +208,7 @@ def _ecs_client():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("states", nargs="*", help="state codes to probe, e.g. co ga oh")
-    parser.add_argument("--all", action="store_true", help="every jurisdiction with a bills scraper (not Michigan)")
+    parser.add_argument("--all", action="store_true", help="every jurisdiction with a bills scraper, minus the manifest's waf.fargate_safe: false states")
     parser.add_argument("--status", action="store_true", help="read how the tasks launched into --out ended")
     parser.add_argument("--dry-run", action="store_true", help="print what would be launched; change nothing")
     parser.add_argument("--date", default=datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d"), help="date used in run ids and the prefix")
@@ -209,6 +219,7 @@ def main(argv=None):
     parser.add_argument("--wave-pause", type=int, default=30, help="seconds between waves (default 30)")
     parser.add_argument("--scrapers-dir", default=None, help="the openstates-scrapers/scrapers directory (default: first PYTHONPATH entry)")
     parser.add_argument("--out", default=None, help="folder for launched.json (default ./probe-all-<date>)")
+    parser.add_argument("--manifest", default=os.path.join(HERE, "jurisdictions.yaml"))
     args = parser.parse_args(argv)
 
     out = args.out or f"probe-all-{args.date}"
@@ -224,17 +235,24 @@ def main(argv=None):
         print(format_status(record["entries"], read_status(_ecs_client(), record["entries"])))
         return 0
 
+    manifest, problems = load_and_validate(args.manifest)
+    if problems:
+        print(f"ERROR: {args.manifest} does not validate, so waf.fargate_safe cannot be checked for any state "
+              f"(run validate_jurisdictions.py): {problems[0]}", file=sys.stderr)
+        return 3
+    refused = refused_states(manifest)
+
     prefix = args.prefix or f"dev-probe-all-{args.date}"
     if args.all:
         scrapers_dir = args.scrapers_dir or os.environ.get("PYTHONPATH", "").split(":")[0]
         if not scrapers_dir or not os.path.isdir(scrapers_dir):
             print("ERROR: --all needs the scrapers directory (--scrapers-dir, or source activate-dev.sh)", file=sys.stderr)
             return 3
-        states = probeable_states(scrapers_dir)
+        states = probeable_states(scrapers_dir, refused)
     else:
         states = args.states
     states = normalize_states(states)
-    problem = refusal(states, prefix)
+    problem = refusal(states, prefix, refused)
     if problem:
         print(f"ERROR: {problem}", file=sys.stderr)
         return 3

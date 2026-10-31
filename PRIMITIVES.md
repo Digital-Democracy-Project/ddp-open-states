@@ -687,6 +687,52 @@ per-state code folders) fit their own repo's different constraints and aren't be
   for a newly-blocked jurisdiction is "add a `RESILIENCE_PROFILES` entry," not another hand-wired
   branch copied from Michigan's original one-off machinery.
 
+### WAF decision catalog, and OPEN-419's by-design note extended (OPEN-464, 2026-10-30)
+
+Which jurisdiction gets WAF handling, and how, is decided in several places; this is where each one
+lives and what should drive it. `jurisdictions.yaml`'s `waf.profile` says WHICH WAF implementation
+applies (compared against `RESILIENCE_PROFILES`'s keys by `check-jurisdiction-drift.py
+--openstates-core-root`, OPEN-464). `waf.fargate_safe` is a separate question: whether that
+implementation's cookie can be produced from an arbitrary cloud IP. `mi` and `fl` share
+`waf.profile: cookie_provider` but answer `fargate_safe` differently -- see `jurisdictions.yaml`'s
+own header comment for why (mi's cookie can only be minted by the Mac; fl's warm-up runs wherever
+the scraper does).
+
+| Where | What | Driven by |
+|-------|------|-----------|
+| `openstates-core/openstates/utils/resilience_profiles.py` | `RESILIENCE_PROFILES` -- which jurisdictions get WAF/cookie resilience machinery at all | `waf.profile != "none"`, compared by the drift check (OPEN-464) |
+| `openstates-core/openstates/utils/mi_cookies.py`, `fl_cookies.py` | the actual cookie-acquisition mechanism per jurisdiction (the leaf implementations `RESILIENCE_PROFILES` points at) | not separately manifest-driven -- genuinely code, one per WAF vendor |
+| `ddp-open-states/cloud_collector.py` (~line 626, `if source == "mi"`), `cloud_archiver.py` (~line 274, `if state == "mi"`) | the published-cookie gate: refuses a bare run with no fresh Mac-minted cookie (OPEN-188) | genuinely code, by design -- see below |
+| `ddp-open-states/verify-jurisdiction` (`fargate_refusal()`), `ddp-open-states/probe-on-fargate` (`refused_states()`) | refuses to run the onboarding probe on Fargate for a state whose cookie needs the Mac's mint | `waf.fargate_safe` (OPEN-464; previously two independent hard-coded `{"mi"}` sets, one per script) |
+| `ddp-agents/config/scrapebot_jurisdictions.yaml` (MI only) | ScrapeBot/CAMS's own per-jurisdiction cookie-mint-and-publish schedule | a different repo/deployable -- see below |
+| `ddp-sync/mi_cookie_publish.py` | the daily job that mints and publishes MI's cookie for `cloud_collector.py`/`cloud_archiver.py` to read | a different repo/deployable -- see below |
+
+**Why `cloud_collector.py`/`cloud_archiver.py`'s MI gate stays hard-coded:** this is "genuinely
+code" behaviour in OPEN-318's own scoping sense -- its note explicitly excludes "per-state
+behaviour that is genuinely code (MI-specific archiver path, `RESILIENCE_PROFILES`, per-state
+eligibility rules, timeouts)" from the drift check. It is not "which WAF profile applies" (that
+question is `waf.profile`, now compared); it is "how this one profile's cookie actually gets
+produced for a real scrape," the same question `waf.fargate_safe` answers for the onboarding
+probe above -- but here the two code paths already read `cloud_collector.py`'s own memory-store
+cookie directly rather than branching on a manifest field, and OPEN-188's own acceptance criterion
+("a bare run... must be impossible by construction, not convention") is already satisfied without
+one.
+
+**Why `ddp-agents` and `ddp-sync`'s copies stay hard-coded, by design (extends OPEN-419):**
+OPEN-419 (2026-10-22) already found and recorded this exact shape of gap for a sibling list,
+`ddp-sync`'s `scrapebot_fallback`: *"The manifest's existing `waf.profile` does not predict it (FL
+has the same profile and is not on the list), so it cannot be derived."* The same reasoning applies
+here, for the same reason: `waf.profile: cookie_provider` is true for both `mi` and `fl`, so it
+cannot distinguish `ddp-agents`' MI-only `scrapebot_jurisdictions.yaml` entry or `ddp-sync`'s
+`mi_cookie_publish.py` job from a hypothetical future FL-shaped equivalent. Unlike the probe's
+Fargate refusal (this repo's own onboarding-safety gate, closed above with `waf.fargate_safe`),
+these two live in a different repo and a different deployable each -- `ddp-open-states` has no
+runtime access to either one's code or config, and building a second local copy of
+`waf.fargate_safe` just to describe them would be exactly the kind of duplicate-source-of-truth
+list OPEN-318 exists to retire, not close. They stay hard-coded, same as `scrapebot_fallback`,
+until `ddp-agents`/`ddp-sync` are wired to read this manifest directly (OPEN-328/OPEN-329 track
+that, repo by repo).
+
 **Why not a database table (like `ddp-broker-py`'s `JurisdictionEligibilityConfig`) here:**
 `openstates-core`/`openstates-scrapers` are forks that get merged from a public project DDP
 doesn't control (see `apply-local-patches.sh` above) — every DDP-only migration added to either

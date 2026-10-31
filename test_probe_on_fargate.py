@@ -65,15 +65,38 @@ def test_probeable_states_takes_every_bills_scraper_maps_usa_and_skips_michigan(
         elif has == "nothing":
             (d / "people.py").write_text("")
     (tmp_path / "stray.txt").write_text("")
-    assert pof.probeable_states(str(tmp_path)) == ["ak", "us", "xx"]
+    assert pof.probeable_states(str(tmp_path), {"mi"}) == ["ak", "us", "xx"]
 
 
 def test_refusal_covers_michigan_nothing_to_launch_and_a_prod_prefix():
-    assert "mi" in pof.refusal(["co", "mi"], "dev-probe-all-x")
-    assert "no states" in pof.refusal([], "dev-probe-all-x")
+    assert "mi" in pof.refusal(["co", "mi"], "dev-probe-all-x", {"mi"})
+    assert "no states" in pof.refusal([], "dev-probe-all-x", {"mi"})
     for prefix in ("prod", "PROD", "/prod/", "prod/probe"):
-        assert "'prod'" in pof.refusal(["co"], prefix)
-    assert pof.refusal(["co", "ga"], "dev-probe-all-20261030") is None
+        assert "'prod'" in pof.refusal(["co"], prefix, {"mi"})
+    assert pof.refusal(["co", "ga"], "dev-probe-all-20261030", {"mi"}) is None
+
+
+def test_refusal_does_not_refuse_florida_despite_sharing_the_cookie_provider_profile():
+    """AC: the probe's refusal and the manifest agree for every state -- fl shares waf.profile:
+    cookie_provider with mi but is not in the manifest's refused set."""
+    assert pof.refusal(["fl"], "dev-probe-all-x", {"mi"}) is None
+
+
+def test_refused_states_reads_waf_fargate_safe_not_a_hard_coded_set():
+    manifest = {
+        "mi": {"waf": {"fargate_safe": False}},
+        "fl": {"waf": {"fargate_safe": True}},
+        "xx": {"waf": {"fargate_safe": False}},
+    }
+    assert pof.refused_states(manifest) == {"mi", "xx"}
+
+
+def test_refused_states_agrees_with_the_real_manifest():
+    from validate_jurisdictions import load_and_validate
+
+    manifest, problems = load_and_validate(pof.HERE + "/jurisdictions.yaml")
+    assert not problems, problems
+    assert pof.refused_states(manifest) == {"mi"}
 
 
 # ── what each task is told to run ────────────────────────────────────────────
@@ -162,6 +185,33 @@ def test_main_refuses_michigan_and_a_prod_prefix_before_calling_aws(tmp_path):
         assert pof.main(["mi", "--out", str(tmp_path)]) == 3
         assert pof.main(["co", "--prefix", "prod", "--out", str(tmp_path)]) == 3
         assert pof.main(["--out", str(tmp_path)]) == 3  # nothing to launch
+
+
+def test_main_does_not_refuse_florida_before_calling_aws(tmp_path):
+    ecs = _FakeEcs()
+    with patch.object(pof, "_ecs_client", return_value=ecs):
+        assert pof.main(["fl", "--out", str(tmp_path)]) == 0
+    assert _called_states(ecs) == ["fl"]
+
+
+def test_main_fails_closed_when_the_manifest_cannot_be_read(tmp_path):
+    with patch.object(pof, "_ecs_client", side_effect=AssertionError("must not reach AWS")):
+        code = pof.main(["co", "--out", str(tmp_path), "--manifest", str(tmp_path / "does-not-exist.yaml")])
+    assert code == 3
+
+
+def test_main_fails_closed_when_the_manifest_does_not_validate(tmp_path):
+    import yaml
+
+    from test_validate_jurisdictions import _valid_entry
+
+    bad = _valid_entry()
+    del bad["waf"]["fargate_safe"]
+    manifest_path = tmp_path / "jurisdictions.yaml"
+    manifest_path.write_text(yaml.safe_dump({"co": bad}))
+    with patch.object(pof, "_ecs_client", side_effect=AssertionError("must not reach AWS")):
+        code = pof.main(["co", "--out", str(tmp_path), "--manifest", str(manifest_path)])
+    assert code == 3
 
 
 def test_all_reads_the_scrapers_directory(tmp_path, capsys):

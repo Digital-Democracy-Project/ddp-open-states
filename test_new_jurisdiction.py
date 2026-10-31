@@ -112,6 +112,15 @@ def test_real_colorado_probe_produces_a_valid_probing_entry(tmp_path, real_manif
     assert data["co"]["status"] == "probing"
 
 
+def test_fargate_safe_is_written_true_and_flagged_for_human_review(tmp_path, real_manifest_copy):
+    # OPEN-464 made waf.fargate_safe required; a block without it is refused by the validator.
+    probe_path = _write_json(tmp_path / "result.json", CO_RESULT)
+    assert _run(real_manifest_copy, "co", probe_path) == 0
+    text = real_manifest_copy.read_text()
+    assert yaml.safe_load(text)["co"]["waf"]["fargate_safe"] is True
+    assert "fargate_safe: true  # NEEDS HUMAN REVIEW" in text
+
+
 @pytest.mark.parametrize("classification", ["red", "yellow", "green"])
 def test_status_is_always_probing_regardless_of_classification(classification):
     data = copy.deepcopy(CO_RESULT)

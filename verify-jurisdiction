@@ -86,11 +86,15 @@ import tempfile
 import time
 from urllib.parse import urlparse
 
+from validate_jurisdictions import load_and_validate
 # OPEN-445: shared with quality_check.py's Stage 3 gates -- the one implementation of each rule,
 # not a second copy in a script that can't be `import`ed by name (no .py extension).
 from qa_primitives import ocd_jurisdiction_id, count_people_loaded
 
 # ── Constants ──────────────────────────────────────────────────────────────────
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+MANIFEST_PATH = os.path.join(HERE, "jurisdictions.yaml")
 
 # PRIMITIVES.md's documented gotcha: the scraper module is "usa", the DB/manifest short code
 # is "us". Every other jurisdiction's module name matches its short code.
@@ -132,10 +136,6 @@ MAX_EXTRA_SESSIONS = 2  # gate I dry-scrapes at most this many sessions besides 
 # state as a failed task -- the colour is in report.md and result.json.
 EXIT_REFUSED = 3
 EXIT_UPLOAD_FAILED = 4
-# Michigan's WAF cookie comes from the Mac's mint (OPEN-188/189) and a cold hand-rolled scrape of
-# it risks the Barracuda block; the real runner reads the published cookie, a probe does not.
-FARGATE_REFUSED_STATES = {"mi"}
-
 GATE_ORDER = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8, "J": 9}
 
 # OPEN-261: gate J samples at most this many sessions besides the probed one, same cap and
@@ -1138,8 +1138,22 @@ def render_report(st, name, classification, gate_results, wall_clock_s, run_at, 
 
 def fargate_refusal(st, args, env):
     """Why a Fargate run must not start, or None. There the probe is a bounded dry scrape and
-    nothing more: no database, no import, never Michigan, and never the real `prod` namespace."""
-    if st in FARGATE_REFUSED_STATES:
+    nothing more: no database, no import, never a state whose WAF cookie needs the Mac's mint
+    (waf.fargate_safe: false in the manifest -- OPEN-464, replacing a hard-coded set), and never
+    the real `prod` namespace.
+
+    A state absent from the manifest entirely is NOT refused here -- a brand-new onboarding
+    candidate has no manifest entry yet, and that is exactly the case this probe exists to run
+    against (see the module docstring). But a manifest that fails to load or validate is refused
+    for EVERY state: with no manifest, fargate_safe cannot be checked for anyone, and a silent
+    pass here would recreate the exact "measured zero" gap OPEN-188/OPEN-152/OPEN-153 already
+    describe -- fail loud and closed, never quiet and open."""
+    manifest, problems = load_and_validate(MANIFEST_PATH)
+    if problems:
+        return (f"the jurisdiction manifest ({MANIFEST_PATH}) does not validate, so waf.fargate_safe "
+                f"cannot be checked for any state: {problems[0]}")
+    entry = manifest.get(st)
+    if entry is not None and not entry["waf"]["fargate_safe"]:
         return f"{st} is not probed on Fargate (its WAF cookie comes from the Mac's mint; a cold scrape risks the block)"
     if args.do_import or args.force_import:
         return "--import is not allowed on Fargate (there is no database there); import on the Mac with --from-dir"

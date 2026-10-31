@@ -215,7 +215,7 @@ def compose_entry(data, gate_b_facts):
             "timeout_s": DEFAULT_ARCHIVE_TIMEOUT_S,
         },
         "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
-        "waf": {"profile": "none"},
+        "waf": {"profile": "none", "fargate_safe": True},
         "quality": {"diff_cleaner": "none"},
         "api_keys": gate_b_facts["api_keys"],
         "onboarding": {
@@ -226,6 +226,8 @@ def compose_entry(data, gate_b_facts):
     needs_human = [
         ("tier", "no tier decision made yet (Stage 2 picks primary/secondary)"),
         ("waf.profile", "probe gate B's heuristic cannot see a brand-new state's real WAF shape"),
+        ("waf.fargate_safe", "defaults to true (the probe produced a usable result, so the site was reachable); "
+                             "set false only for a state whose cookie must be minted on the Mac, as mi's is"),
         ("quality.diff_cleaner", "never guessed from probe output (the MA/NC/AL survey's wrong-value mistake)"),
     ]
     if not entry["onboarding"]["evidence"]:
@@ -285,6 +287,7 @@ def render_block(code, entry, needs_human, source_desc):
     lines += [
         "  waf:",
         f"    profile: {_scalar(entry['waf']['profile'])}{note('waf.profile')}",
+        f"    fargate_safe: {_scalar(entry['waf']['fargate_safe'])}{note('waf.fargate_safe')}",
         "  quality:",
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
