@@ -1074,6 +1074,10 @@ batch. It only launches and describes tasks (the scraper login cannot read the p
 agent reads the reports. It refuses Michigan and a `prod` memory prefix, and passes the OPEN-459 limits, so it needs
 an image built after OPEN-459 (an older one stops with exit 2, "unknown option").
 
+**One crashing gate never means no report (OPEN-470).** `main()` runs every gate through `guarded()`: if a gate
+raises (Vermont's scraper returns a generator, California's needs a MySQL driver), that gate is reported as failed
+with the error and the report and `result.json` are still written. Do not call a `run_gate_*` bare in `main()`.
+
 **Two places to run it (OPEN-458).** `verify-jurisdiction <st> --fargate` runs as a task in the same
 `ddp-scrapers` definition the scrapes use (`RUNNER_SCRIPT=verify-jurisdiction`; the file is in the Dockerfile's
 `COPY` line), so a state's website sees a cloud IP, not the Mac's. There it has no database: G and H are skipped

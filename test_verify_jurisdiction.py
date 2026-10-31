@@ -1432,3 +1432,63 @@ def test_every_repo_module_the_probe_imports_is_copied_into_the_image():
     assert len(copy_lines) == 1
     copied = set(copy_lines[0].split()[1:-1])
     assert {m + ".py" for m in local} <= copied, sorted({m + ".py" for m in local} - copied)
+
+
+# ── a crashing gate still gives a report (OPEN-470) ───────────────────────────
+
+
+class _GeneratorSessions:
+    """Vermont's scraper returns its session list as a generator (OPEN-470)."""
+
+    def __init__(self, sessions):
+        self._sessions = sessions
+
+    def get_session_list(self):
+        return (s for s in self._sessions)
+
+
+def test_gate_a_counts_a_generator_session_list_instead_of_crashing():
+    with patch("openstates.cli.update.check_session_list", return_value=["2026"]):
+        result = vj.run_gate_a(_GeneratorSessions(["2025", "2026"]), "vt")
+    assert result.status == "pass"
+    assert result.summary == "2 scraped session(s), 1 active"
+
+
+def test_gate_a_fails_on_an_empty_generator_session_list():
+    # A generator is always truthy, so before list() an empty one skipped the "no sessions" failure.
+    result = vj.run_gate_a(_GeneratorSessions([]), "vt")
+    assert result.status == "fail"
+    assert "no sessions" in result.summary
+
+
+def test_guarded_turns_a_raising_gate_into_a_failed_gate_that_names_the_error():
+    def boom():
+        raise ModuleNotFoundError("No module named 'MySQLdb'")
+
+    result = vj.guarded("D", True, boom)
+    assert (result.gate, result.blocking, result.status) == ("D", True, "fail")
+    assert "gate D crashed" in result.summary and "MySQLdb" in result.summary
+    assert vj.guarded("F", False, lambda: "fine") == "fine"
+
+
+def test_main_still_writes_the_report_when_gate_d_crashes(tmp_path, monkeypatch):
+    """California's scraper builds a MySQL connection when it is created: gate D raised out of
+    main() and the Fargate task wrote no result.json at all."""
+    import json
+
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-probe-x")
+    monkeypatch.setenv("RUN_ID", "run1")
+    monkeypatch.setenv("PYTHONPATH", str(tmp_path))
+    s3 = _FakeS3()
+    gate_a = vj.GateResult("A", True, "pass", "ok", details=["active: 2026"])
+    with patch("openstates.cli.update.get_jurisdiction", return_value=(type("J", (), {"name": "X"})(), None)), \
+            patch.object(vj, "run_gate_a", return_value=gate_a), patch.object(vj, "run_gate_b", return_value=_passing("B")), \
+            patch.object(vj, "run_gate_d", side_effect=ModuleNotFoundError("No module named 'MySQLdb'")), \
+            patch.object(vj, "_s3_client", return_value=s3):
+        code = vj.main(["ca", "--fargate"])
+    assert code == 0  # a Fargate task exits 0 once its output is uploaded, whatever the colour
+    result = json.loads(s3.objects[("bucket", "dev-probe-x/probe/ca/run1/result.json")])
+    d = next(g for g in result["gates"] if g["gate"] == "D")
+    assert d["status"] == "fail" and "MySQLdb" in d["summary"]
+    assert ("bucket", "dev-probe-x/probe/ca/run1/report.md") in s3.objects  # the readable report is uploaded too
