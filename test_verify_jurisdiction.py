@@ -738,6 +738,17 @@ def test_gate_j_skips_when_the_sample_has_no_personvote_rows():
     assert "nothing to resolve" in result.summary
 
 
+def test_gate_j_skips_instead_of_crashing_when_no_session_was_found():
+    # IL, IN, NY and VI had no session (the Fargate scrape failed first): session=None reached the join
+    # of sampled sessions and raised TypeError, which ended the whole Mac half with no report (OPEN-472).
+    conn = _FakeVoterConn(0, 0)
+    for active in ([], ["2026"]):
+        result = vj.run_gate_j(conn, "il", None, active)
+        assert (result.gate, result.blocking, result.status) == ("J", False, "skip")
+        assert "no session" in result.summary
+    assert conn._cursor.executed == []  # nothing was queried
+
+
 def test_gate_j_samples_at_most_the_capped_number_of_other_sessions():
     conn = _FakeVoterConn(0, 0)
     vj.run_gate_j(conn, "nc", "2025", ["2025", "a", "b", "c", "d"])
