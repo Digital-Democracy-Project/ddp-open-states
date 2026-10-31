@@ -513,6 +513,18 @@ step matters — a newer pip breaks one of the pinned deps' build.
   Running the script first leaves every `/ddp/search` call answering 500 until `ensure` is run. Full order, rollback and
   the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
+- **The "current session" rule lives in api-v3, once (OPEN-467, 2026-10-31).** `api-v3/api/current_session.py`
+  (`session_flags`) decides which legislative sessions are current and previous, and
+  `GET /jurisdictions/{id}?include=legislative_sessions` publishes the answer as `is_current` and `is_previous` on every
+  session (api-v3 PR #42). **Do not add a second rule** in ddp-sync, a scraper script, the broker or the website: read
+  the flag. Rule: a session that has not started is never flagged; current = every active session (a special session
+  counts, Ramon 2026-10-31) plus, when no regular session is active, the newest started regular one; previous = the
+  regular session before the current regular one. Virginia and Washington leave `classification` blank, so the rule
+  reads their special sessions from the identifier (`2026S1`, `2018specialI`). Consumers are their own tickets:
+  SYNC-139, OPEN-468 (replaces the hard-coded `194th` in `run-all-scrapes.sh`, itself retired by OPEN-465, so
+  re-check that ticket's scope), BROKER-369, NEXT-109. No schema change, so no `ensure` or refresh on deploy; it needs a
+  new api image on both hosts (the Mac :8002 and the EC2 host).
+
 - **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
   scraper changes to Fargate: build `ddp-scrapers:vN` on the Mac, smoke-test it, push to ECR, and
   register a new task-definition revision. `RUNBOOK.md` → "Deploying a Fargate image change" is the
