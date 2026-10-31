@@ -1432,3 +1432,19 @@ def test_every_repo_module_the_probe_imports_is_copied_into_the_image():
     assert len(copy_lines) == 1
     copied = set(copy_lines[0].split()[1:-1])
     assert {m + ".py" for m in local} <= copied, sorted({m + ".py" for m in local} - copied)
+
+
+def test_the_runtime_image_installs_the_command_line_tools_a_state_scraper_runs():
+    """OPEN-471: New Mexico's scraper shells out to `mdb-export` (mdbtools); the image did not have it, so
+    NM was RED on Fargate for a reason that had nothing to do with the state. These tools belong in the
+    FINAL stage (the one that runs), not the builder's apt-get."""
+    import re
+
+    with open(os.path.join(_HERE, "Dockerfile")) as f:
+        final_stage = f.read().split("\nFROM ")[-1]
+    # Comments name the packages too, so look only at what the apt-get install commands actually list.
+    code = "\n".join(line for line in final_stage.splitlines() if not line.lstrip().startswith("#"))
+    installed = " ".join(re.findall(r"apt-get install([^&]*)", code))
+    for package in ("poppler-utils", "mdbtools"):
+        assert re.search(rf"(?<![\w-]){re.escape(package)}(?![\w-])", installed), \
+            f"{package} is not installed in the runtime stage of the Dockerfile"
