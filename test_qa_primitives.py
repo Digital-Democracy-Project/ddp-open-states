@@ -46,6 +46,44 @@ def test_ocd_jurisdiction_id_us_branch():
     assert ocd_jurisdiction_id("us") == "ocd-jurisdiction/country:us/government"
 
 
+def test_ocd_jurisdiction_id_dc_and_the_territories_are_not_states():
+    # OPEN-472: the state-style id matched nothing for these six, so the people check said "none loaded".
+    assert ocd_jurisdiction_id("dc") == "ocd-jurisdiction/country:us/district:dc/government"
+    for code in ("as", "gu", "mp", "pr", "vi"):
+        assert ocd_jurisdiction_id(code) == f"ocd-jurisdiction/country:us/territory:{code}/government"
+
+
+def test_count_people_loaded_queries_a_territory_by_its_real_id():
+    conn = FakeConn(fetchone_results=[(289,)])
+    assert count_people_loaded(conn, "pr") == 289
+    assert conn._cursor.executed[0][1] == ("ocd-jurisdiction/country:us/territory:pr/government",)
+
+
+def test_ocd_jurisdiction_id_matches_every_id_the_dev_database_holds():
+    """The independent check: the ids os-update actually created, read from the dev Postgres (skipped when
+    it is not reachable). A code the helper builds wrongly shows up as an id nothing in the database has."""
+    import re
+    pytest = __import__("pytest")
+    psycopg2 = pytest.importorskip("psycopg2")
+    try:
+        conn = psycopg2.connect("postgresql://openstates:openstates_dev@localhost:5433/openstates_dev", connect_timeout=2)
+    except psycopg2.OperationalError:
+        pytest.skip("dev Postgres not reachable")
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM opencivicdata_jurisdiction")
+    ids = [row[0] for row in cur.fetchall()]
+    conn.close()
+    pattern = re.compile(r"^ocd-jurisdiction/country:us/(?:state|territory|district):([a-z]{2})/government$")
+    checked = 0
+    for ocd_id in ids:
+        m = pattern.match(ocd_id)
+        if m:
+            assert ocd_jurisdiction_id(m.group(1)) == ocd_id
+            checked += 1
+    if not checked:
+        pytest.skip("the dev database holds no jurisdictions")
+
+
 def test_ocd_jurisdiction_id_state_branch():
     assert ocd_jurisdiction_id("nc") == "ocd-jurisdiction/country:us/state:nc/government"
     assert ocd_jurisdiction_id("fl") == "ocd-jurisdiction/country:us/state:fl/government"
