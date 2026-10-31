@@ -521,8 +521,13 @@ step matters — a newer pip breaks one of the pinned deps' build.
   counts, Ramon 2026-10-31) plus, when no regular session is active, the newest started regular one; previous = the
   regular session before the current regular one. Virginia and Washington leave `classification` blank, so the rule
   reads their special sessions from the identifier (`2026S1`, `2018specialI`). Consumers are their own tickets:
-  SYNC-139, OPEN-468 (replaces the hard-coded `194th` in `run-all-scrapes.sh`, itself retired by OPEN-465, so
-  re-check that ticket's scope), BROKER-369, NEXT-109. No schema change, so no `ensure` or refresh on deploy; it needs a
+  SYNC-139, BROKER-369, NEXT-109. (OPEN-468 was a consumer too, for the hard-coded `194th` in `run-all-scrapes.sh`.
+  OPEN-465 deleted that script, so its acceptance lines no longer apply; they were not met, they have no target.
+  Today no scraper entry point in this repo names a current session: ddp-sync passes none for MA, and `os-update`
+  scrapes every session its scraper metadata marks `active` (`openstates-scrapers/scrapers/<state>/__init__.py`;
+  MA marks the 194th). That list is upstream's, so a new MA session (the 195th, January 2027) reaches the scrape only
+  when the fork takes that metadata change. Not verified that it will in time; check it before January. The
+  session logic that ddp-sync itself uses is SYNC-139's. Do not add a flag reader to `run-scrape.sh`.) No schema change, so no `ensure` or refresh on deploy; it needs a
   new api image on both hosts (the Mac :8002 and the EC2 host).
 
 - **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
