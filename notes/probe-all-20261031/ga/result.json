@@ -1,0 +1,153 @@
+{
+  "state": "ga",
+  "name": "Georgia",
+  "run_id": "probe-ga-20261031",
+  "run_at": "2026-10-31T18:40:09.134918+00:00",
+  "classification": "yellow",
+  "session": "2026_ss",
+  "active_sessions": [
+    "2026_ss"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/ga/bill_189a7392-d55b-11f1-8c61-0a58a9feac02.json": "824ba0ab64fa7e8a35b999aa0289df9c948349bc6c6b14d2b91dcbb267581f67",
+    "_probe/ga/bill_1bac01b8-d55b-11f1-8c61-0a58a9feac02.json": "783e980acab8615d8f2b90285a577695ccf4bc0947b11ec7b53405dd2eb2797b",
+    "_probe/ga/bill_1ee91082-d55b-11f1-8c61-0a58a9feac02.json": "e106773771018a8cfa332a0558e3d5c593c59e10508eb4fec148e46b91154a40",
+    "_probe/ga/bill_21fbef60-d55b-11f1-8c61-0a58a9feac02.json": "8e83e22b0db5324e3863204434ea7681aa95f6d158c4dbfd945a9a9cfdd3ad1d",
+    "_probe/ga/bill_25090f94-d55b-11f1-8c61-0a58a9feac02.json": "fcb37f1d2d6653427224566ce5217b7f759058c10ba8bed1b2fd85359d77385e",
+    "_probe/ga/bill_2822db42-d55b-11f1-8c61-0a58a9feac02.json": "87d985d4afade1597d6d22fee276c385e1339b69efbb84ae8f29ef756ce5e004",
+    "_probe/ga/bill_2b382774-d55b-11f1-8c61-0a58a9feac02.json": "c6c024a3a171fa6886b8ac4429f5f13e7c4bc18dde8952803e097b8e703c2897",
+    "_probe/ga/bill_2e65b7ea-d55b-11f1-8c61-0a58a9feac02.json": "83ed4c2be034f2c16f9bee6553893b5a41acf84f467e55c039fffe9735b530f8",
+    "_probe/ga/bill_3199e846-d55b-11f1-8c61-0a58a9feac02.json": "6e18ff4194035e05f513497f4674c0c49d842ee8d2b0fe8a17ff57983a6591ac",
+    "_probe/ga/bill_8fb9d95a-d55a-11f1-8c61-0a58a9feac02.json": "06d133c0ebd22c0904f0411c4d69c369f693f75fecc34ced0930803c9ac86005",
+    "_probe/ga/vote_event_17dad2a8-d55b-11f1-8c61-0a58a9feac02.json": "f431b0dc001f9a496d3aab4631b78bcc06d679a5d00bb7cddb268f9770f6ae17",
+    "_probe/ga/vote_event_17db3798-d55b-11f1-8c61-0a58a9feac02.json": "a06bc171ffca8ab195f29cf898029a0db0808427f7f9f1b73a78c9c303221372",
+    "_probe/ga/vote_event_1ae9c972-d55b-11f1-8c61-0a58a9feac02.json": "78a26ae544c949f183aec4f35528268d5cd115f4296e6172b73eeceec408bc30",
+    "_probe/ga/vote_event_1aea302e-d55b-11f1-8c61-0a58a9feac02.json": "b27ab34435e8b8cf43ec60df865a20a96921b3d3ee926b9f25d61f2a89ed06f6",
+    "_probe/ga/vote_event_1aea8d94-d55b-11f1-8c61-0a58a9feac02.json": "45be08c47dc651cadea9488fa41ebc712869bc55cc666e475c0a5c36dfc04ddc",
+    "_probe/ga/vote_event_1e0dcedc-d55b-11f1-8c61-0a58a9feac02.json": "5fbd706fa4e87b1f80297a8f4b5b9a79e31921d9ac9e260a71dfb4ff35fb37f2",
+    "_probe/ga/vote_event_1e0e31d8-d55b-11f1-8c61-0a58a9feac02.json": "6629af91d8cede220039ef6ef6f0cc918411f16cf88585b6267358dbe5c965d5",
+    "_probe/ga/vote_event_1e1030aa-d55b-11f1-8c61-0a58a9feac02.json": "835358e4a20c9db95e6ce5e383c624ad1839819e7a19cbd458f06d68b92202f7",
+    "_probe/ga/vote_event_213d6da6-d55b-11f1-8c61-0a58a9feac02.json": "134dd9f2f9d8869fb11cf2f18baf8dc20cad54c9f29e89b714e7263da7866350",
+    "_probe/ga/vote_event_213dcf80-d55b-11f1-8c61-0a58a9feac02.json": "99adc41ba44659450e9f946dfabcc6fd8f30e6137eaa2ce4e6404241d5d49b8a",
+    "_probe/ga/vote_event_213e2570-d55b-11f1-8c61-0a58a9feac02.json": "24ac95183fd47201a9728ccfcf929909c7483fbe6303e8fccb17a5eec9931d88",
+    "_probe/ga/vote_event_243d98fa-d55b-11f1-8c61-0a58a9feac02.json": "d6fd3459475778b645cde8473c33264a4de77ecc1e49019fe760c722a008d27c",
+    "_probe/ga/vote_event_243dfad4-d55b-11f1-8c61-0a58a9feac02.json": "89cf563a1a906f7d05124e56efed9dbee5e20cca73d6c7e91413e146665b934f",
+    "_probe/ga/vote_event_243e57cc-d55b-11f1-8c61-0a58a9feac02.json": "11b8d41be87dd73be82e4fdac32c9ffaba7e9db4a0529cd5be7fd106516d89cf",
+    "_probe/ga/vote_event_2762af0c-d55b-11f1-8c61-0a58a9feac02.json": "cf085c39f653efb2b909c8202131ec5d0a47dfcfeeacd092f12b42d22b3c8132",
+    "_probe/ga/vote_event_276310d2-d55b-11f1-8c61-0a58a9feac02.json": "a22af2b8fe123c8e484b1c3b50edabb260fde81b0ef82a04d64ad85129e2defc",
+    "_probe/ga/vote_event_27636b68-d55b-11f1-8c61-0a58a9feac02.json": "5f4d5dae0e82a5bfcfba76a68e930d765a831d637cf5fc23deba6bb6571c54bb",
+    "_probe/ga/vote_event_2a746ab4-d55b-11f1-8c61-0a58a9feac02.json": "a19a105a71bab7ba7a6c190d71bd9fc01469530a0fa8484c6c6b52ec82562964",
+    "_probe/ga/vote_event_2a74cf90-d55b-11f1-8c61-0a58a9feac02.json": "9882ab95d26ec22e8c4f4a5b3c64e3ce6ea667889a26636f394dfd9a8280174e",
+    "_probe/ga/vote_event_2a752990-d55b-11f1-8c61-0a58a9feac02.json": "14ec105967cedc7f39989723e61d1e5ca357393db82f8e20a40ec520a5dcfc58",
+    "_probe/ga/vote_event_2d925bca-d55b-11f1-8c61-0a58a9feac02.json": "86ed2228befd2d98303b74b6de97607315e2987f952d8de9ae6a0d47ede5d70c",
+    "_probe/ga/vote_event_2d92c560-d55b-11f1-8c61-0a58a9feac02.json": "c3b1190480834b493e605ef5356fc47dc1e3942aedc2e65bb828ca065f4e9517",
+    "_probe/ga/vote_event_2d931e02-d55b-11f1-8c61-0a58a9feac02.json": "3b8621ffe5d09e1658211f6e15d654cb9771f13d66723eed12ebbe2e4ff1b9e6",
+    "_probe/ga/vote_event_30d02ea2-d55b-11f1-8c61-0a58a9feac02.json": "519a685c7b26065ee1b476ddebbb1cef7195a7824e216b6de70babc9743fe2bd",
+    "_probe/ga/vote_event_30d09770-d55b-11f1-8c61-0a58a9feac02.json": "91eb24375a5501d59e9464ac6eda634231652761c7b77be43ac5ed8f178a5be5",
+    "_probe/ga/vote_event_30d0f274-d55b-11f1-8c61-0a58a9feac02.json": "77814e6eca0339b170e1425edc83dd79707626aea0280598b4ba8e3f502c0768",
+    "_probe/ga/vote_event_34035702-d55b-11f1-8c61-0a58a9feac02.json": "0231feff7a8facf8f9f73b3b05059a72a0d06502fcba70ed7434588067a0f6ac",
+    "_probe/ga/vote_event_3403bddc-d55b-11f1-8c61-0a58a9feac02.json": "68d056c608f8d20f345efd8e8a6bd2de9d92f7fbbc30c7db88c58bc7fa388174",
+    "_probe/ga/vote_event_34041a66-d55b-11f1-8c61-0a58a9feac02.json": "656ef1152a7f7fd992a08e000222f7ea4f4b6a0abd8bf69b14ac3aef1465b76d",
+    "_probe/ga/vote_event_921f3474-d55a-11f1-8c61-0a58a9feac02.json": "6229c0437f630b0b6c9084aace6b2e9a5bd1a4c574e2d85db644479115c1fd90"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "23 scraped session(s), 1 active",
+      "details": [
+        "active: 2026_ss"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (GA_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 1 media_type(s) seen have an extractor entry: application/pdf",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 294.2s",
+      "details": [
+        "wall clock: 294.2s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 30 vote event(s) (40 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 29.42s",
+        "warnings/errors logged during scrape: Code HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized.\nCode HRECL for action House Lost Reconsidered Bill/Resolution not recognized."
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'ga' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "only one active session, so there is no other session to collide with",
+      "details": [
+        "probed session 2026_ss: 30 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

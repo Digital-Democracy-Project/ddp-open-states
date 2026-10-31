@@ -1,0 +1,149 @@
+{
+  "state": "nc",
+  "name": "North Carolina",
+  "run_id": "probe-nc-20261031",
+  "run_at": "2026-10-31T18:40:53.293605+00:00",
+  "classification": "yellow",
+  "session": "2025E1",
+  "active_sessions": [
+    "2025",
+    "2025E1"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/nc-session-2025/bill_aa6463ce-d55a-11f1-8e6b-0a58a9feac02.json": "845ad20cc75979f3824286c30d38843482729408a408665c95fdf155a3fb98fa",
+    "_probe/nc-session-2025/bill_ac225a68-d55a-11f1-8e6b-0a58a9feac02.json": "592a3564682272559e542930716a2277b47d95371278d7b3782f6a06371d6a5b",
+    "_probe/nc-session-2025/bill_aded8c78-d55a-11f1-8e6b-0a58a9feac02.json": "320e4ac01f3bcab2d42a9b0c7841ce41edd5145f8b9adecd144366507365d942",
+    "_probe/nc-session-2025/bill_afb7d9f0-d55a-11f1-8e6b-0a58a9feac02.json": "4a668fc3a34463dfc8affe639adee8cf16584c7743057ecf035ff2b93be36c1c",
+    "_probe/nc-session-2025/bill_b18174a8-d55a-11f1-8e6b-0a58a9feac02.json": "e2faafce40b99c0498404be8daa83b754d00252bbc843af350ba5ed23db59c7b",
+    "_probe/nc-session-2025/bill_b349ef7c-d55a-11f1-8e6b-0a58a9feac02.json": "2501496c53cc61a7075c685a62223071abff69c8f629cc52a0084a60491599cb",
+    "_probe/nc-session-2025/bill_b3e5d31a-d55a-11f1-8e6b-0a58a9feac02.json": "ee6c5ba0ac7f4e21b35ef6e4d590260a527babf540aedde1a0c41f294be7a44f",
+    "_probe/nc-session-2025/bill_b485fa5c-d55a-11f1-8e6b-0a58a9feac02.json": "8dca545107f4bca5ec443a29e417cf891ff1ccf6c57bd6a8b833a0cd1b67f04d",
+    "_probe/nc-session-2025/bill_b5ae4f7e-d55a-11f1-8e6b-0a58a9feac02.json": "93981bb458d2cee8c40e5aa83d71a6da2ee61e199a1864f9ee12c1c627bad887",
+    "_probe/nc-session-2025/bill_b6482a2c-d55a-11f1-8e6b-0a58a9feac02.json": "f3704a63e6efaee548cd426e061e1ef759d24522a7fe97082f9d723732fab945",
+    "_probe/nc-session-2025/vote_event_aa64e98e-d55a-11f1-8e6b-0a58a9feac02.json": "a79eabe12cd0f2853f7cd0fc8062415fa97a14dc28f8d70a807d279dd78c580c",
+    "_probe/nc-session-2025/vote_event_aae09890-d55a-11f1-8e6b-0a58a9feac02.json": "cdd171205069021d77fabafe0645a6ed223b8ad1b365a2b2d5317baf59c8665c",
+    "_probe/nc-session-2025/vote_event_ac22e550-d55a-11f1-8e6b-0a58a9feac02.json": "bcc10be1a97c2fefc110657a8363bf321d08ac2aff117af1915ed4dac076ccd0",
+    "_probe/nc-session-2025/vote_event_acab73e8-d55a-11f1-8e6b-0a58a9feac02.json": "ee6a98196ecda9b3f87e4ec7ae8ebe3d095646036bf3a9606a188ccc39f379a1",
+    "_probe/nc-session-2025/vote_event_adee0824-d55a-11f1-8e6b-0a58a9feac02.json": "8b78d05f1c19bcc11acbdb9c3d9f02346c2b2e196216986bd668818b966996f7",
+    "_probe/nc-session-2025/vote_event_ae72f728-d55a-11f1-8e6b-0a58a9feac02.json": "8049e25c28262bf1363de905527ae253434b728f3da7b12bd5f861baddff40bf",
+    "_probe/nc-session-2025/vote_event_afb86686-d55a-11f1-8e6b-0a58a9feac02.json": "5069f61672989825735e9ae8160e7bc9b5616a2cab7d4289d7c23a1465bdeee3",
+    "_probe/nc-session-2025/vote_event_b03e872a-d55a-11f1-8e6b-0a58a9feac02.json": "7aa35486bec5d444f714ad8944ab95494bb0a3cc6c113878ea421226a5c54852",
+    "_probe/nc-session-2025/vote_event_b181f478-d55a-11f1-8e6b-0a58a9feac02.json": "038e4d4836163e745024da740d1cca085aad67dd286944069e495c7403b5a4d4",
+    "_probe/nc-session-2025/vote_event_b207ce40-d55a-11f1-8e6b-0a58a9feac02.json": "6233ff4cbbbd23c90b2a669fccec321f83fe6a33938ae92fc4a90cdba05d306b",
+    "_probe/nc-session-2025/vote_event_b4864534-d55a-11f1-8e6b-0a58a9feac02.json": "a3aebc275ac134f9cf8b124f009dcce18dd38ea1b6bd702201ffd6f8248fa4da",
+    "_probe/nc-session-2025/vote_event_b648886e-d55a-11f1-8e6b-0a58a9feac02.json": "e1e2a8289adffeb831a8713be65508de5e323b9fcdfa4d993b87e0e3ac0744cd",
+    "_probe/nc-session-2025/vote_event_b6d0355c-d55a-11f1-8e6b-0a58a9feac02.json": "b17555b511f173317a4ed553c15b8c4dd97a96dfc433c508fccb80aad88525bd",
+    "_probe/nc/bill_9bac7ae2-d55a-11f1-8e6b-0a58a9feac02.json": "e756d6335fb924c18b531630aaf3ddaa9dd5c83576e785130448570a8af9cec4",
+    "_probe/nc/bill_9c42cc0e-d55a-11f1-8e6b-0a58a9feac02.json": "45c4ac09f0116961f70e6c55764e7a307d8cdb4ff90ad1634d8064fec246458a",
+    "_probe/nc/bill_9e11cdbe-d55a-11f1-8e6b-0a58a9feac02.json": "aa4a78ea7ca8fd3eb3a174527ec27e572f28a5a71f057691bb1804c75b8346ce",
+    "_probe/nc/bill_9fd8f032-d55a-11f1-8e6b-0a58a9feac02.json": "d2c2607e56f7f147534a9e3643ee419f31a931ec58567b5cf734b3403ffd7658",
+    "_probe/nc/bill_a19e71b2-d55a-11f1-8e6b-0a58a9feac02.json": "bb7da9ae3c31ce8fea1ca8fa66f26d54929d486f30b0ca0ab446cefc7ea3b8f6",
+    "_probe/nc/vote_event_9c432fa0-d55a-11f1-8e6b-0a58a9feac02.json": "a6911f3827d60e52d9377c0d9b19181e636605af4ce6c90b761b3da25c4299d8",
+    "_probe/nc/vote_event_9e13b8ea-d55a-11f1-8e6b-0a58a9feac02.json": "ab26091ddb0d61255a4d7bc69ce7b1238ff64d247235c79e1e0ca6d250eb4758",
+    "_probe/nc/vote_event_9e9f54c2-d55a-11f1-8e6b-0a58a9feac02.json": "f491c02740608ab0e6aee8b98eed0aa858a3dd9b50f8644e71751dee1fcc0c72",
+    "_probe/nc/vote_event_9fd960d0-d55a-11f1-8e6b-0a58a9feac02.json": "f6895ea5fc2a31097490f2d4552b890ca367538aea662c57d90fc74af839f449",
+    "_probe/nc/vote_event_a0687608-d55a-11f1-8e6b-0a58a9feac02.json": "b1abea054a039e56ae0268ffbe8f0708730d67b74b39c718ad5da64248760459",
+    "_probe/nc/vote_event_a19ebc08-d55a-11f1-8e6b-0a58a9feac02.json": "4aba4125a0c453484e6de425bf18dffb98ca25c7c7189e45c32377293fb57661",
+    "_probe/nc/vote_event_a232be08-d55a-11f1-8e6b-0a58a9feac02.json": "b8529b06701f18feedbeed5e47408a972e08c5f9c12d8f780b2a6557cd66f968"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "46 scraped session(s), 2 active",
+      "details": [
+        "active: 2025, 2025E1"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: True",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (NC_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 1 media_type(s) seen have an extractor entry: application/pdf",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 5 bill(s) in 13.1s",
+      "details": [
+        "wall clock: 13.1s",
+        "objects written: 5",
+        "sample: 5 bill(s) and 7 vote event(s) (12 objects); stopped by: scraper finished (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 2.61s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'nc' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "no vote key repeats across 2 sessions in the sample (20 vote event files)",
+      "details": [
+        "probed session 2025E1: 7 vote event file(s)",
+        "session 2025: dry scrape pass, 13 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

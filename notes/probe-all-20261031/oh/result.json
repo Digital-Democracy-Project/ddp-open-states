@@ -1,0 +1,127 @@
+{
+  "state": "oh",
+  "name": "Ohio",
+  "run_id": "probe-oh-20261031",
+  "run_at": "2026-10-31T18:40:55.201256+00:00",
+  "classification": "yellow",
+  "session": "136",
+  "active_sessions": [
+    "136"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/oh/bill_9d3ff352-d55a-11f1-9677-0a58a9feac02.json": "00058e6b2d97c6ffce50cd25e5e51e8c22d5f81a9b69e0f938078449fcda11d1",
+    "_probe/oh/bill_9f960772-d55a-11f1-9677-0a58a9feac02.json": "2dfaa35ac26eb6c687082fd1f0cede8540ddef55b53ea9bb068218c1127bb0e3",
+    "_probe/oh/bill_a1e95c7c-d55a-11f1-9677-0a58a9feac02.json": "b6d77c880249792d4e058313f7ff251baf92530b06300cf7bc2c5fa9547e2c08",
+    "_probe/oh/bill_a4402546-d55a-11f1-9677-0a58a9feac02.json": "21379c5de2d1dabdf2c12b5abe12ff18d71d6b02c335ed603dd0403489aa7d55",
+    "_probe/oh/bill_a6a95ea6-d55a-11f1-9677-0a58a9feac02.json": "adc8bb02c2bbcd6b668663bcf9833e70a5cfa67e6279800a2f4e1176be7099f5",
+    "_probe/oh/bill_a8fc373c-d55a-11f1-9677-0a58a9feac02.json": "c28f8e4b6403d98d43169b2124137dc12397e76996b3d0fda3051e18d97c6b27",
+    "_probe/oh/bill_ab6bd7ac-d55a-11f1-9677-0a58a9feac02.json": "043130cdc01fa56bff8a2d5eca4793e76d4881e484b298a62c2d8383762fe20a",
+    "_probe/oh/bill_addece72-d55a-11f1-9677-0a58a9feac02.json": "a08449deb4fefb411544eca8c7566fecd5ea3def274661191cb78e846cea01b2",
+    "_probe/oh/bill_b028ff5e-d55a-11f1-9677-0a58a9feac02.json": "ae38261c8aa965bb26facaa382ac48a9f0f56b20fd6c8430fdcf661b35b0c894",
+    "_probe/oh/bill_b2840d70-d55a-11f1-9677-0a58a9feac02.json": "98bf906512b28f9a0719e62c1814b408cf5592a276e3e6bb8fa88abfe2239f3c",
+    "_probe/oh/vote_event_a1e5aa82-d55a-11f1-9677-0a58a9feac02.json": "27d10a05308f0e9237b147cdbf9f2a3fbea5f9e4e7505256887a2129e84e8ac5",
+    "_probe/oh/vote_event_a1e5c396-d55a-11f1-9677-0a58a9feac02.json": "b944962b69e5df4e91c7a952e0427e8b8941b4806bf6cc46eb1a18cfd3b6bc50",
+    "_probe/oh/vote_event_a1e5cf76-d55a-11f1-9677-0a58a9feac02.json": "84a5b2e6720ee4441e202f788e6a4993b65b584f005543fc3d068fb2a9ae38c4",
+    "_probe/oh/vote_event_a1e5d584-d55a-11f1-9677-0a58a9feac02.json": "904c8ab69a9cbd937245878d36228e2d4b3a5ecb8f17522416e6ea8b0de94cce",
+    "_probe/oh/vote_event_a1e5e8f8-d55a-11f1-9677-0a58a9feac02.json": "0eb0570e2b15f835184f7c393ca792fc53de27c24af7e354f1dfa576d451fc56"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "17 scraped session(s), 1 active",
+      "details": [
+        "active: 136"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (OH_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "fail",
+      "summary": "1 media_type(s) with no CONVERSION_FUNCTIONS['oh'] entry: text/html",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 41.4s",
+      "details": [
+        "wall clock: 41.4s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 5 vote event(s) (15 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 4.14s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'oh' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "only one active session, so there is no other session to collide with",
+      "details": [
+        "probed session 136: 5 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

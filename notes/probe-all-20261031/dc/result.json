@@ -1,0 +1,22 @@
+{
+  "state": "dc",
+  "name": "DC",
+  "run_id": "probe-dc-20261031",
+  "run_at": "2026-10-31T18:40:06.079913+00:00",
+  "classification": "red",
+  "session": null,
+  "active_sessions": [],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {},
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "fail",
+      "summary": "could not import scraper module 'dc': KeyError: 'DC_API_KEY'",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

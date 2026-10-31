@@ -1,0 +1,103 @@
+{
+  "state": "vi",
+  "name": "Virgin Islands",
+  "run_id": "probe-vi-20261031",
+  "run_at": "2026-10-31T18:41:33.148833+00:00",
+  "classification": "red",
+  "session": null,
+  "active_sessions": [],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {},
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "fail",
+      "summary": "get_session_list() raised ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='billtracking.legvi.org', port=8082): Max retries exceeded with url: /legislatures (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffff7f23ada0>, 'Connection to billtracking.legvi.org timed out. (connect timeout=None)'))\"))",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (VI_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "warn",
+      "summary": "dry scrape produced no document links to check extractor coverage against (inconclusive, not a pass) -- widen --sample-bills or re-run once bills exist",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "fail",
+      "summary": "dry scrape raised: ConnectTimeout: HTTPSConnectionPool(host='billtracking.legvi.org', port=8082): Max retries exceeded with url: /search (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0xffff7f2576a0>, 'Connection to billtracking.legvi.org timed out. (connect timeout=60)'))",
+      "details": [
+        "wall clock: 310.3s",
+        "objects written: 0"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'vi' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "skip",
+      "summary": "gate D did not pass, so there is no sample to compare",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

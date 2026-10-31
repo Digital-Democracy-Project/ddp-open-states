@@ -1,0 +1,160 @@
+{
+  "state": "ut",
+  "name": "Utah",
+  "run_id": "probe-ut-20261031",
+  "run_at": "2026-10-31T18:41:33.363999+00:00",
+  "classification": "yellow",
+  "session": "2026",
+  "active_sessions": [
+    "2025S2",
+    "2026"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/ut-session-2025S2/bill_cbfad95a-d55a-11f1-91d3-0a58a9feac02.json": "69e8de4142de49edc914a061805e98e15329a9d2429e4e06c998010101ccaf48",
+    "_probe/ut-session-2025S2/bill_ce5c869e-d55a-11f1-91d3-0a58a9feac02.json": "5fe06a7996c7aa70cb3c73f02446fe44cc52414a6dd6233f5b4530fb88a3868d",
+    "_probe/ut-session-2025S2/bill_d0c0caa8-d55a-11f1-91d3-0a58a9feac02.json": "c93b310b9cc9acf760896b24aa1a26527ee3b43bcbcbe16823c95a87c2f5e8e3",
+    "_probe/ut-session-2025S2/bill_d321e1a6-d55a-11f1-91d3-0a58a9feac02.json": "5372a2c445425691a315789e4c8d9fe15ff46c4e64611d097668595e11badfef",
+    "_probe/ut-session-2025S2/bill_d5871ab0-d55a-11f1-91d3-0a58a9feac02.json": "16e67cff3bff637c08027d6fe314ae11e35ebb3a4ed2e37f3bee52a149511b8d",
+    "_probe/ut-session-2025S2/vote_event_cd39ae90-d55a-11f1-91d3-0a58a9feac02.json": "c486f55a80d23bd67d2667fb2fca5627688ab7987d6dcad8a7aa26cf96e85615",
+    "_probe/ut-session-2025S2/vote_event_cdd215b8-d55a-11f1-91d3-0a58a9feac02.json": "483735b4c48726ef4d0095b6e77f10943faf287a99a036e25f2d65411eae95f1",
+    "_probe/ut-session-2025S2/vote_event_cf973bb2-d55a-11f1-91d3-0a58a9feac02.json": "82552473250c44defa602b7f934cb00864df3715ba37c912bf00edb1867573f6",
+    "_probe/ut-session-2025S2/vote_event_d032005c-d55a-11f1-91d3-0a58a9feac02.json": "c077ef0f8a00738816e3ac393124f1f09e6e077cbd173e0c7d2cc8a45cc84458",
+    "_probe/ut-session-2025S2/vote_event_d21ad664-d55a-11f1-91d3-0a58a9feac02.json": "450faeb3e29ef5c05dc04b3264d4a26578c3e4f6651c4deefd4b50c4b8bc1c8d",
+    "_probe/ut-session-2025S2/vote_event_d2cb6d12-d55a-11f1-91d3-0a58a9feac02.json": "1cfef765ba4c36e18c16491254ca57ef6fdeae3997f7beefa835b949d85b7059",
+    "_probe/ut-session-2025S2/vote_event_d46571fe-d55a-11f1-91d3-0a58a9feac02.json": "51adf0d101815e6386b13adcdc9dc4b5bf0c33a462f220469bbd6d37abf0c9ef",
+    "_probe/ut-session-2025S2/vote_event_d51db03e-d55a-11f1-91d3-0a58a9feac02.json": "b91324e42048a0653f51e390a0f05b2c1dd9a9b517b94e0f5a22519502318b67",
+    "_probe/ut-session-2025S2/vote_event_d6cc7fbe-d55a-11f1-91d3-0a58a9feac02.json": "506bb0002a8c8a69d23421a58e0e1b86aa8644dc937c4145791562cbd52a913c",
+    "_probe/ut-session-2025S2/vote_event_d75bd47a-d55a-11f1-91d3-0a58a9feac02.json": "61e4c9fd956d8031f72a7d2fc5c7521b9c5cd5a218b12c727153781e96af1efd",
+    "_probe/ut/bill_b3fe90c6-d55a-11f1-91d3-0a58a9feac02.json": "80ce0b1ba651ce79af213a9d11d1e27f796c07e9406dcb95fe05b29e5b012952",
+    "_probe/ut/bill_b661e00c-d55a-11f1-91d3-0a58a9feac02.json": "35be2ee616f5dd4a8a70b7c749abe6978f20f222286c70eed21016c484b5e708",
+    "_probe/ut/bill_b8c15120-d55a-11f1-91d3-0a58a9feac02.json": "e233fcdde3e5779351170fbeae62f56b348a555e7cb5b95ab864f75b7a9dc32d",
+    "_probe/ut/bill_bb2732e0-d55a-11f1-91d3-0a58a9feac02.json": "bb5d5cf8554e4ef4022572f0f57a55c2b3642671239bd44bf4fed9545ac23c7a",
+    "_probe/ut/bill_bd8980d8-d55a-11f1-91d3-0a58a9feac02.json": "11b3a5e669111a903a574d874d4a3355642122c58b5cd452be0e294a7194de97",
+    "_probe/ut/bill_bfecb426-d55a-11f1-91d3-0a58a9feac02.json": "1cd3b759d56fe1bc52c709c25767bbd749944cfefba6707dfede202950274f68",
+    "_probe/ut/bill_c24f4dbe-d55a-11f1-91d3-0a58a9feac02.json": "457a217feaf30e2fde6b9a8f4f6db99f5adb82566f190c0ef71106f119216d2f",
+    "_probe/ut/bill_c4ae4ede-d55a-11f1-91d3-0a58a9feac02.json": "717fe33ed9e5d6e2f43f0c30cd20e1e1922a9669a0723d9f39016b6c9eb29c3a",
+    "_probe/ut/bill_c7ae1ba0-d55a-11f1-91d3-0a58a9feac02.json": "2bcda8cee64ab28ff6c448f3cf966c377533accd45728f8cb35bd8f9ecc3349b",
+    "_probe/ut/bill_ca10ce74-d55a-11f1-91d3-0a58a9feac02.json": "63c8402bb528415ec5b90eb0d1dcad4868b6c0ec4aa90a9c382ebf11596155e3",
+    "_probe/ut/vote_event_b53cdb28-d55a-11f1-91d3-0a58a9feac02.json": "5cf185992aa6881da3787b81af92ceb7d2f91a694ca22f7fb6de5b709f65f37c",
+    "_probe/ut/vote_event_b5d25112-d55a-11f1-91d3-0a58a9feac02.json": "e36cabcbc213b5a42d910c223fffce35296b8f4dfb71cc5ea1f0a13196ddaec1",
+    "_probe/ut/vote_event_b7a1f6b4-d55a-11f1-91d3-0a58a9feac02.json": "cabdeb678c17a3e84b2ea2636a8dcbdd2d62f3cd126a41da61bfaa5b0974e37f",
+    "_probe/ut/vote_event_b83838cc-d55a-11f1-91d3-0a58a9feac02.json": "ee7c093eefbf863031cf7095de66c2be14899272c550a2194fca22387a09c0bf",
+    "_probe/ut/vote_event_ba005f9a-d55a-11f1-91d3-0a58a9feac02.json": "ceddf9a0a46dd2cc8c8e10cc97120008a20b24a0af6b1b8f0d3be3bb4e81cc65",
+    "_probe/ut/vote_event_ba94e7b4-d55a-11f1-91d3-0a58a9feac02.json": "9d6d8adf6e3bd3ef7179042d267392a3ce12b415b4a5d9cda9542794ae87cf63",
+    "_probe/ut/vote_event_bc5f98f0-d55a-11f1-91d3-0a58a9feac02.json": "97e1d9acc7e2a81954761743803ef5e4313237be2b3f47c2506c443b863273f3",
+    "_probe/ut/vote_event_bcf84c94-d55a-11f1-91d3-0a58a9feac02.json": "83903d47d233a30706579d88fec535027232a9929d5874241252daa5baf254eb",
+    "_probe/ut/vote_event_bec2ae48-d55a-11f1-91d3-0a58a9feac02.json": "7d1bef0591c32cc80f53b638e0012ca026bf8ecde0f440ced1923a181dbf3030",
+    "_probe/ut/vote_event_bf5aaf68-d55a-11f1-91d3-0a58a9feac02.json": "d436365826886d91ba50935e4a6c62658818992388e355482b9ac145aa3a71be",
+    "_probe/ut/vote_event_c1263894-d55a-11f1-91d3-0a58a9feac02.json": "54825e69e0fc42c0db9eeb4eb61a6688ce75ed536442415708a938c8dbbbbc5b",
+    "_probe/ut/vote_event_c1be0d68-d55a-11f1-91d3-0a58a9feac02.json": "86b1b125fc843fc65d7d43c51a6b503b6e89b3c9deb432a78f16b7b42bd15e2c",
+    "_probe/ut/vote_event_c3a9a8da-d55a-11f1-91d3-0a58a9feac02.json": "7925f39134568aa18c4c5d03f5917b15295d9d4e8a653cfbc633a671a47233ca",
+    "_probe/ut/vote_event_c43befc4-d55a-11f1-91d3-0a58a9feac02.json": "bc9a6ed912d7038c8aca2ef926b2283ac9285053b4bf4d50fd121b3ef558d925",
+    "_probe/ut/vote_event_c5f0d38e-d55a-11f1-91d3-0a58a9feac02.json": "d26213542bc9ae4d95732b8bbbb8e4271469b038332d52ce402badc3e8cad0c7",
+    "_probe/ut/vote_event_c68e0c08-d55a-11f1-91d3-0a58a9feac02.json": "fd53e39a0e400c88f9eb9de6c34c39806e08561ff0f180d1597f6dcdaa5c1301",
+    "_probe/ut/vote_event_c71d0fde-d55a-11f1-91d3-0a58a9feac02.json": "11255b610690a9fdfd48cd1919bf5ad0dac938aaeaafc72fa35509829012165f",
+    "_probe/ut/vote_event_c8f164f4-d55a-11f1-91d3-0a58a9feac02.json": "441a4f0e42d9c91b5adafa78ea221cfe4583093aecc49ec67680a689293b2da1",
+    "_probe/ut/vote_event_c9869d58-d55a-11f1-91d3-0a58a9feac02.json": "e960b45a8cba9eee1e4a715ad8bb8c4d42d0f3a9c39e6caa94b96b0a74cd7a0d",
+    "_probe/ut/vote_event_cb50a48a-d55a-11f1-91d3-0a58a9feac02.json": "0a8bb1fe9fb84fe72d09059940d6ef0f1546c07e48e56087322576b55be6fb84"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "84 scraped session(s), 2 active",
+      "details": [
+        "active: 2025S2, 2026"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "warn",
+      "summary": "module shape recorded -- USER_AGENT referenced in source but absent from the environment (could be method-time-optional; confirm via gate D)",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: True",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (UT_SCRAPELIB_RPM not set) -- platform default applies",
+        "credential env-var references found in source: USER_AGENT (present: none; absent: USER_AGENT)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 2 media_type(s) seen have an extractor entry: application/pdf, text/xml",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 40.2s",
+      "details": [
+        "wall clock: 40.2s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 20 vote event(s) (30 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 4.02s",
+        "warnings/errors logged during scrape: Found unexpected actor Legislative Fiscal Analyst at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Legislative Fiscal Agency at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Version Sponsor at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Released at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Legislative Research and General Counsel / Enrolling at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Legislative Research and General Counsel / Enrolling at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Legislative Research and General Counsel / Enrolling at https://le.utah.gov/data/2026GS/HB0001.json?_=1793472096877\nFound unexpected actor Legislative Fiscal Analyst at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Legislative Fiscal Agency at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Version Sponsor at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Released at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Legislative Research and General Counsel / Enrolling at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Legislative Research and General Counsel / Enrolling at https://le.utah.gov/data/2026GS/HB0002.json?_=1793472100883\nFound unexpected actor Legislative Fiscal Analyst at https://le.utah.gov/data/2026GS/HB0003.json?_=1793472104864\nFound unexpected actor Legislative Fiscal Agency at https://le.utah.gov/data/2026GS/HB0003.json?_=1793472104864\nFound unexpected actor Version Sponsor at https://le.utah.gov/data/2026GS/HB0003.json?_=1793472104864\nFound unexpected actor Released at https://le.utah.gov/data/2026GS/HB0003.json?_=1793472104864\nFound unexpected actor Legislative Rese"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "pass",
+      "summary": "motion_classification.yaml has a 'ut' block",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "no vote key repeats across 2 sessions in the sample (30 vote event files)",
+      "details": [
+        "probed session 2026: 20 vote event file(s)",
+        "session 2025S2: dry scrape pass, 10 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

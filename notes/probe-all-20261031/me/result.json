@@ -1,0 +1,126 @@
+{
+  "state": "me",
+  "name": "Maine",
+  "run_id": "probe-me-20261031",
+  "run_at": "2026-10-31T18:40:47.651557+00:00",
+  "classification": "yellow",
+  "session": "132",
+  "active_sessions": [
+    "132"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/me/bill_97d43658-d55a-11f1-807f-0a58a9feac02.json": "3c9af10e07bb17155799cbe935f0b5795409b0e022375a7bd58a1d47451cdada",
+    "_probe/me/bill_9b0d78d4-d55a-11f1-807f-0a58a9feac02.json": "689d1f1955f6e4e5c03a07e0b63422d4c3ffd0a5cc93973a5386a216c880d091",
+    "_probe/me/bill_9ea350c2-d55a-11f1-807f-0a58a9feac02.json": "fb5a7c145fdbc6881862f45e147091d160c2dab4b65e215aab90f4d0a0629289",
+    "_probe/me/bill_a22b1cac-d55a-11f1-807f-0a58a9feac02.json": "4302c75e1da309e21b30d303cba203315abf053fd28cf4c6fe2dce19918b8093",
+    "_probe/me/bill_a5e92078-d55a-11f1-807f-0a58a9feac02.json": "853294f473e433fdf684117628b1a75c58097390ebb5c3c552c35fdcf60d0d69",
+    "_probe/me/bill_a95cf37e-d55a-11f1-807f-0a58a9feac02.json": "1533051ae0fc3021c1da1ac85556d24423bad7571c7ec611acd068d035b7ad5a",
+    "_probe/me/bill_acde6078-d55a-11f1-807f-0a58a9feac02.json": "eade6b322af2339fb1b2e862ffc317ac5ac4302be51190fa086d39a15b85b446",
+    "_probe/me/bill_b07eb61a-d55a-11f1-807f-0a58a9feac02.json": "cc6086d56831d66b837c5362eb12829e5bf1f621aa414664ba7185e8be0eb7f6",
+    "_probe/me/bill_b4480a3a-d55a-11f1-807f-0a58a9feac02.json": "4a613427ee393ec37441dfe89bc29270172530b2d5d11bd960c6cfcc031cb003",
+    "_probe/me/bill_b79e5f68-d55a-11f1-807f-0a58a9feac02.json": "9fb99a769819d39c225aae7bcc373627a9b6b8658d6259c1917430209e0f5132",
+    "_probe/me/vote_event_ba7ab2cc-d55a-11f1-807f-0a58a9feac02.json": "7be990054451c95b8adf6de0402bd39efa3cd1dc1a23849e36c935787e8c5ab6",
+    "_probe/me/vote_event_bb10ebca-d55a-11f1-807f-0a58a9feac02.json": "1c6ff2a346eb89d336cee05d33884cce9b06a1ae8d429720976b1d371715e0f7",
+    "_probe/me/vote_event_bba96904-d55a-11f1-807f-0a58a9feac02.json": "080474f370d82ec2a0dd8ddb54b185bfffd37b38bb34ab50a9282de0c5c49717",
+    "_probe/me/vote_event_bc44da06-d55a-11f1-807f-0a58a9feac02.json": "1137d23a2729a92bcb0d8d687a36c1f57babb87a3d5b2221780822d6cf4b932e"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "13 scraped session(s), 1 active",
+      "details": [
+        "active: 132"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (ME_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 1 media_type(s) seen have an extractor entry: application/pdf",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 63.8s",
+      "details": [
+        "wall clock: 63.8s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 4 vote event(s) (14 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 6.38s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'me' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "only one active session, so there is no other session to collide with",
+      "details": [
+        "probed session 132: 4 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

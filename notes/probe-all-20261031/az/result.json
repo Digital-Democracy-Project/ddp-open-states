@@ -1,0 +1,134 @@
+{
+  "state": "az",
+  "name": "Arizona",
+  "run_id": "probe-az-20261031",
+  "run_at": "2026-10-31T18:40:02.354758+00:00",
+  "classification": "yellow",
+  "session": "57th-2nd-regular",
+  "active_sessions": [
+    "57th-2nd-regular"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/az/bill_80b3c8da-d55a-11f1-87d9-0a58a9feac02.json": "5f52fe17416f00409a6f221a788c45e1b65790119045b43f6cb4ac5eb1dd1dec",
+    "_probe/az/bill_837ff3c2-d55a-11f1-87d9-0a58a9feac02.json": "1d72c2b9559194c2a480818050b7fc766224fde7cca1a997f13df147b8eecb62",
+    "_probe/az/bill_875cb2dc-d55a-11f1-87d9-0a58a9feac02.json": "8cc252998ab7a22c7317b4e1d8ccc060d75e8f7cb5b2d64f1774d104b859baec",
+    "_probe/az/bill_8a334b38-d55a-11f1-87d9-0a58a9feac02.json": "988ed09522aa630e15ce8414715f4ca6f22ea1fc9728f38431e2ec34fb434a11",
+    "_probe/az/bill_8ed22eb6-d55a-11f1-87d9-0a58a9feac02.json": "bc027c51b67ecd6425aa51d0599108bbe507fc27464c0ba61ec061412a5a12ee",
+    "_probe/az/bill_9156318c-d55a-11f1-87d9-0a58a9feac02.json": "bfd001fdd19da7272a3decc069356ed52615b5a3c44c837b1d7445f991c56417",
+    "_probe/az/bill_95643a94-d55a-11f1-87d9-0a58a9feac02.json": "bf8e8da4c38bfa302841513b010dd6d0974c122f51548ce1fac263f16fead31b",
+    "_probe/az/bill_9998a32a-d55a-11f1-87d9-0a58a9feac02.json": "0e72891ce018a293ba2cdeccd457e19a0b96f3f74af3f86345c2704a20cbfe68",
+    "_probe/az/bill_9d263066-d55a-11f1-87d9-0a58a9feac02.json": "b055f7e4ba80bc9156937e478f2abe9b13401e0ef18fc593a446b4423b6370b6",
+    "_probe/az/bill_a0bcd518-d55a-11f1-87d9-0a58a9feac02.json": "02b46db45c3cf908569b87eda0661cbe1d1f6a84786e5b24236290c87d931e04",
+    "_probe/az/vote_event_85dfc20a-d55a-11f1-87d9-0a58a9feac02.json": "823eb852727ba7749b1482e44a3065decae85b986141e7be44766b7464f36e9b",
+    "_probe/az/vote_event_86775b88-d55a-11f1-87d9-0a58a9feac02.json": "230ba5b23018415e40ff165969bc7f946ba6f20a81b4ae1efb1d34231aa853e7",
+    "_probe/az/vote_event_8972e4c4-d55a-11f1-87d9-0a58a9feac02.json": "021350e9b6d35581e056767a89f7190e256d9519eb1e81a6d8a0b64aa164bfab",
+    "_probe/az/vote_event_8d083922-d55a-11f1-87d9-0a58a9feac02.json": "ce5b016ccdb6bbd256818d25206583ccb0b47f7edc9ea3da4463c45707e2f3f0",
+    "_probe/az/vote_event_8e37c1a0-d55a-11f1-87d9-0a58a9feac02.json": "e3b309925dfb0734a7e7f36dd2441bf9037fb998082d1f4045576e5fb4b649a5",
+    "_probe/az/vote_event_93989994-d55a-11f1-87d9-0a58a9feac02.json": "88b95be74939aa08b1d5ffd87cc23003548101e0e25ee591fbc281e248338e37",
+    "_probe/az/vote_event_94c92f9a-d55a-11f1-87d9-0a58a9feac02.json": "fd78cf1cf2fc04898a14291920efa620d9fe325d4e6c453ac3dadd0f314414c4",
+    "_probe/az/vote_event_985d8250-d55a-11f1-87d9-0a58a9feac02.json": "b84d822a3247963fdbbfc5ad123f79a256027a0d59f153bc2c0c71ac9cdb8241",
+    "_probe/az/vote_event_98f5b9bc-d55a-11f1-87d9-0a58a9feac02.json": "e6d8e3460468b6701e9c44089fb3a7e5cbd5e13dd54bb669860fb859dea7ae59",
+    "_probe/az/vote_event_9c8abc12-d55a-11f1-87d9-0a58a9feac02.json": "758cc541b167a6468f2277c5a50fe34cd56c695b9a1bbcaaa41e2f7453048fa7",
+    "_probe/az/vote_event_a01e0488-d55a-11f1-87d9-0a58a9feac02.json": "0ba698831bc17e7e02caa3f07735b82a58334839e92a98ba478c76842e651529",
+    "_probe/az/vote_event_a3b2836c-d55a-11f1-87d9-0a58a9feac02.json": "16e991156253fcb7919ae89a7e7cfd277761c9192e7c7d48ee6203d65dbcc18f"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "108 scraped session(s), 1 active",
+      "details": [
+        "active: 57th-2nd-regular"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: True",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (AZ_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 2 media_type(s) seen have an extractor entry: application/pdf, text/html",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 62.6s",
+      "details": [
+        "wall clock: 62.6s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 12 vote event(s) (22 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 6.26s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "pass",
+      "summary": "motion_classification.yaml has a 'az' block",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "only one active session, so there is no other session to collide with",
+      "details": [
+        "probed session 57th-2nd-regular: 12 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

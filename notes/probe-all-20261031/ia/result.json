@@ -1,0 +1,122 @@
+{
+  "state": "ia",
+  "name": "Iowa",
+  "run_id": "probe-ia-20261031",
+  "run_at": "2026-10-31T18:40:10.541145+00:00",
+  "classification": "yellow",
+  "session": "2025-2026",
+  "active_sessions": [
+    "2025-2026"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/ia/bill_8163f08e-d55a-11f1-999c-0a58a9feac02.json": "fe57a7a3c2ca56e359748ada6937e41df8ced99b5e82df457e47557faa53bcd9",
+    "_probe/ia/bill_81644728-d55a-11f1-999c-0a58a9feac02.json": "8e4a03696d5da2f61073a49486481f80ab577d2068c64c01208a67915fecc554",
+    "_probe/ia/bill_81647acc-d55a-11f1-999c-0a58a9feac02.json": "0116899a14ed125b4068a3bd6619903685ef121f2daca153060d8923d07dbaf4",
+    "_probe/ia/bill_8164aaec-d55a-11f1-999c-0a58a9feac02.json": "8e92a72191292fbb91a1294c66bcd2e50af7cb8dee6825189b3c48075e46e257",
+    "_probe/ia/bill_8164d81e-d55a-11f1-999c-0a58a9feac02.json": "cf069540fdd195e1696456f09b07e912dd4bea0b97b7242c66293b8504b63b7c",
+    "_probe/ia/bill_8165083e-d55a-11f1-999c-0a58a9feac02.json": "f27230bddb63506123ab12080e9b297023f39d25f69aae4e5fe2c07ddf3aaf2f",
+    "_probe/ia/bill_8165358e-d55a-11f1-999c-0a58a9feac02.json": "ab6115c3439495522cd992866ace5b216e0a61fcd6eea710a648a258aa4486fc",
+    "_probe/ia/bill_81656018-d55a-11f1-999c-0a58a9feac02.json": "98fbe94864f8378164e625470771562af7cc7d7a971eeca442ca156a13594ef1",
+    "_probe/ia/bill_81658a3e-d55a-11f1-999c-0a58a9feac02.json": "81824faabdba4c9f4780fc66bab05b0a6afb0784568d28cb42f21b3ec28f173a",
+    "_probe/ia/bill_8165b31a-d55a-11f1-999c-0a58a9feac02.json": "e627c9fc6289516800e5333349e7d1a81a98a21504f38dba5fda8f1c94cd68d7"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "16 scraped session(s), 1 active",
+      "details": [
+        "active: 2025-2026"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: True",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (IA_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 1 media_type(s) seen have an extractor entry: application/pdf",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 10 bill(s) in 0.3s",
+      "details": [
+        "wall clock: 0.3s",
+        "objects written: 10",
+        "sample: 10 bill(s) and 0 vote event(s) (10 objects); stopped by: bill limit (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 0.03s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'ia' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "only one active session, so there is no other session to collide with",
+      "details": [
+        "probed session 2025-2026: 0 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}

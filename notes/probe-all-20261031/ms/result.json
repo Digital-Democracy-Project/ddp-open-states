@@ -1,0 +1,143 @@
+{
+  "state": "ms",
+  "name": "Mississippi",
+  "run_id": "probe-ms-20261031",
+  "run_at": "2026-10-31T18:40:48.339104+00:00",
+  "classification": "yellow",
+  "session": "20261E",
+  "active_sessions": [
+    "2026",
+    "20261E"
+  ],
+  "sample_bills": 10,
+  "max_objects": 200,
+  "sample_files": {
+    "_probe/ms-session-2026/bill_a06bc0ce-d55a-11f1-bf1b-0a58a9feac02.json": "326d11868d95df6b0db806a44840172f021ad4f0ee2bc78f40a2369744595b68",
+    "_probe/ms-session-2026/bill_a19e2b12-d55a-11f1-bf1b-0a58a9feac02.json": "dc5a3fa44c87cbff03d11cc2422291cfed36828e381c4fedc76a93a97867e6ca",
+    "_probe/ms-session-2026/bill_a2e27488-d55a-11f1-bf1b-0a58a9feac02.json": "0f1bacdb2ec8e6d94bcc63f50e1cf5b1749aae7915492fcc5343f58e89cb9d74",
+    "_probe/ms-session-2026/bill_a367fd24-d55a-11f1-bf1b-0a58a9feac02.json": "0865c225ca664531647b7519dc25b3369531958ae6f803ff20373738e601b04b",
+    "_probe/ms-session-2026/bill_a4993a1e-d55a-11f1-bf1b-0a58a9feac02.json": "c9ab1bbc003c4089f20b04c675d8dcf143f45b3ce07b812ad0a4d2b1ca97402d",
+    "_probe/ms-session-2026/bill_a666a322-d55a-11f1-bf1b-0a58a9feac02.json": "2df4c309fd7e08496e0e76a5ff235a55a0308366cd1bec78c6a8ca6ec2293b66",
+    "_probe/ms-session-2026/bill_a6ffaac2-d55a-11f1-bf1b-0a58a9feac02.json": "b14925cbdaf4aabfaadeb283ca48cf8548cee02890624936c5ab4a683267fade",
+    "_probe/ms-session-2026/bill_a8c64550-d55a-11f1-bf1b-0a58a9feac02.json": "0276fd33672c5dd033d86c887a397f3210c5149001b45001d256b54fe195fc86",
+    "_probe/ms-session-2026/bill_a95effb6-d55a-11f1-bf1b-0a58a9feac02.json": "4555e8714ec888bce7de30b67c914c0754273ee2e5a3e5ca5889c09fb61c622e",
+    "_probe/ms-session-2026/bill_a9fad5b2-d55a-11f1-bf1b-0a58a9feac02.json": "dbc6de9bb4828bdabb815173115987e850d122f01c086105f03f61741ae2bcf8",
+    "_probe/ms-session-2026/vote_event_a12d0a90-d55a-11f1-bf1b-0a58a9feac02.json": "74d874bbd026688052848df0fb519dc62879d841f1e6440fcde711c5317ce9d8",
+    "_probe/ms-session-2026/vote_event_a25ae75c-d55a-11f1-bf1b-0a58a9feac02.json": "4e7c60a40390c708da347f27a94ae77da4a9dd91885f77a9ee6b9e089b7ea215",
+    "_probe/ms-session-2026/vote_event_a424b61c-d55a-11f1-bf1b-0a58a9feac02.json": "5b0a35f45dd496691be2cd0d515baf0f66b5c37af5bf79875e017f2431335e5f",
+    "_probe/ms-session-2026/vote_event_a537edf8-d55a-11f1-bf1b-0a58a9feac02.json": "ac5bef699e7b7bbc3f0942d7bc0dc0628880bea97251309ebb8946cd9a0d0a46",
+    "_probe/ms-session-2026/vote_event_a5ed088c-d55a-11f1-bf1b-0a58a9feac02.json": "6097fca34dec848c63733fe6ecc625fa4d933a76ed057305a7c91f18d8b711c3",
+    "_probe/ms-session-2026/vote_event_a79c9fda-d55a-11f1-bf1b-0a58a9feac02.json": "34567df76185b77e8ee86e53f9da4a4a16bee0a418d4fc89d582460fbfdf6116",
+    "_probe/ms-session-2026/vote_event_a833b0dc-d55a-11f1-bf1b-0a58a9feac02.json": "bd2beca1e78dea3f6309383c731aaf744d40a95ef7b7674a15506512db2e6026",
+    "_probe/ms/bill_98a993de-d55a-11f1-bf1b-0a58a9feac02.json": "dc2025a89bc257af918f291202fdd65fa072dd815695d3f0b2c30af4c302ceb2",
+    "_probe/ms/bill_9a70377c-d55a-11f1-bf1b-0a58a9feac02.json": "85c37eafd2c5f7bfd7a9140892cf19d4fa9abbe1cca64bfd4bd33e4e5c78d7c5",
+    "_probe/ms/bill_9b075ddc-d55a-11f1-bf1b-0a58a9feac02.json": "a93f4a4187739d154e0916ec0c267e3c11da7ccd8d81121d2ce4454fafdde07e",
+    "_probe/ms/bill_9ba1b756-d55a-11f1-bf1b-0a58a9feac02.json": "8b909fe20571b87138eb056e517bfa254ed7c47ba85ee11ba03d12ca5d9c1468",
+    "_probe/ms/bill_9cd23aa6-d55a-11f1-bf1b-0a58a9feac02.json": "932126a421c783da297c5466018c5b04918d4c22b049cf0466029c07b518f741",
+    "_probe/ms/bill_9e00a264-d55a-11f1-bf1b-0a58a9feac02.json": "85338bc1284105410ede9a4bcdd0027558e9c4824c30baf4b13c43dbe642c154",
+    "_probe/ms/bill_9f34ddb2-d55a-11f1-bf1b-0a58a9feac02.json": "c85c5fdb0b332e336e1553874d06ff60de755d5fd229ef82c2b6afe48c554bd0",
+    "_probe/ms/bill_9fcde0a2-d55a-11f1-bf1b-0a58a9feac02.json": "75353b140dad51196cf9ae017ea09dc80bf9ea3133cb9a31f18e377720b1a08c",
+    "_probe/ms/vote_event_9988525e-d55a-11f1-bf1b-0a58a9feac02.json": "e7fe2a5021b826d3936edd49ed99dfc4f2adff0e37219b079ae8e5bd54e67f7f",
+    "_probe/ms/vote_event_99fd2188-d55a-11f1-bf1b-0a58a9feac02.json": "1bb51dac38952d361688a6d988c703a24f5aaff57d32773a43ea5e7b516542a1",
+    "_probe/ms/vote_event_9d927384-d55a-11f1-bf1b-0a58a9feac02.json": "862d8603f48b55f3330a8739a7196cfd741ee621783c251c602c44869156b2cd",
+    "_probe/ms/vote_event_9ee09310-d55a-11f1-bf1b-0a58a9feac02.json": "29f0e586545e252d531290ed835b7080fc265d444ee31de4707249e4a77fa7e8"
+  },
+  "gates": [
+    {
+      "gate": "A",
+      "blocking": true,
+      "status": "pass",
+      "summary": "69 scraped session(s), 2 active",
+      "details": [
+        "active: 2026, 20261E"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "B",
+      "blocking": true,
+      "status": "pass",
+      "summary": "module shape recorded",
+      "details": [
+        "votes scraper registered: False",
+        "bills scraper accepts start=: False",
+        "WAF resilience profile: none",
+        "no module-level RPM override found (MS_SCRAPELIB_RPM not set) -- platform default applies",
+        "no credential env-var references found in scraper source"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "C",
+      "blocking": true,
+      "status": "pass",
+      "summary": "all 2 media_type(s) seen have an extractor entry: application/pdf, text/html",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "D",
+      "blocking": true,
+      "status": "pass",
+      "summary": "dry scrape OK: 8 bill(s) in 13.1s",
+      "details": [
+        "wall clock: 13.1s",
+        "objects written: 8",
+        "sample: 8 bill(s) and 4 vote event(s) (12 objects); stopped by: scraper finished (limits: 10 bills, 200 objects)",
+        "avg per-bill latency: 1.64s"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "E",
+      "blocking": false,
+      "status": "warn",
+      "summary": "no motion_classification.yaml block for 'ms' yet",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "F",
+      "blocking": false,
+      "status": "skip",
+      "summary": "walk direction (informational only, NOT written to the manifest per OPEN-34's 2026-08-07 correction): unknown (0 classifiable multi-version bill(s) in this dry scrape's sample)",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "G",
+      "blocking": false,
+      "status": "skip",
+      "summary": "not run on Fargate: it needs the people checkout and the dev database",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "H",
+      "blocking": true,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    },
+    {
+      "gate": "I",
+      "blocking": true,
+      "status": "pass",
+      "summary": "no vote key repeats across 2 sessions in the sample (11 vote event files)",
+      "details": [
+        "probed session 20261E: 4 vote event file(s)",
+        "session 2026: dry scrape pass, 7 vote event file(s)"
+      ],
+      "block_signature": false
+    },
+    {
+      "gate": "J",
+      "blocking": false,
+      "status": "skip",
+      "summary": "no database on Fargate -- finish with --from-dir on the Mac",
+      "details": [],
+      "block_signature": false
+    }
+  ]
+}
