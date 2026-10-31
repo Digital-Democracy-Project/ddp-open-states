@@ -17,11 +17,23 @@ else reuses them yet.
 """
 
 
+# DC is a district and the five territories are territories in the ids the scrapers create in the database,
+# not states (OPEN-472: the state-style id counted zero people for them even after they loaded).
+_NON_STATE_DIVISIONS = {
+    "as": "territory:as",
+    "dc": "district:dc",
+    "gu": "territory:gu",
+    "mp": "territory:mp",
+    "pr": "territory:pr",
+    "vi": "territory:vi",
+}
+
+
 def ocd_jurisdiction_id(st):
     """Short code -> the OCD jurisdiction id string used throughout the local DB."""
     if st == "us":
         return "ocd-jurisdiction/country:us/government"
-    return f"ocd-jurisdiction/country:us/state:{st}/government"
+    return f"ocd-jurisdiction/country:us/{_NON_STATE_DIVISIONS.get(st, f'state:{st}')}/government"
 
 
 def count_people_loaded(conn, st):
