@@ -513,6 +513,23 @@ step matters — a newer pip breaks one of the pinned deps' build.
   Running the script first leaves every `/ddp/search` call answering 500 until `ensure` is run. Full order, rollback and
   the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
+- **The "current session" rule lives in api-v3, once (OPEN-467, 2026-10-31).** `api-v3/api/current_session.py`
+  (`session_flags`) decides which legislative sessions are current and previous, and
+  `GET /jurisdictions/{id}?include=legislative_sessions` publishes the answer as `is_current` and `is_previous` on every
+  session (api-v3 PR #42). **Do not add a second rule** in ddp-sync, a scraper script, the broker or the website: read
+  the flag. Rule: a session that has not started is never flagged; current = every active session (a special session
+  counts, Ramon 2026-10-31) plus, when no regular session is active, the newest started regular one; previous = the
+  regular session before the current regular one. Virginia and Washington leave `classification` blank, so the rule
+  reads their special sessions from the identifier (`2026S1`, `2018specialI`). Consumers are their own tickets:
+  SYNC-139, BROKER-369, NEXT-109. (OPEN-468 was a consumer too, for the hard-coded `194th` in `run-all-scrapes.sh`.
+  OPEN-465 deleted that script, so its acceptance lines no longer apply; they were not met, they have no target.
+  Today no scraper entry point in this repo names a current session: ddp-sync passes none for MA, and `os-update`
+  scrapes every session its scraper metadata marks `active` (`openstates-scrapers/scrapers/<state>/__init__.py`;
+  MA marks the 194th). That list is upstream's, so a new MA session (the 195th, January 2027) reaches the scrape only
+  when the fork takes that metadata change. Not verified that it will in time; check it before January. The
+  session logic that ddp-sync itself uses is SYNC-139's. Do not add a flag reader to `run-scrape.sh`.) No schema change, so no `ensure` or refresh on deploy; it needs a
+  new api image on both hosts (the Mac :8002 and the EC2 host).
+
 - **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
   scraper changes to Fargate: build `ddp-scrapers:vN` on the Mac, smoke-test it, push to ECR, and
   register a new task-definition revision. `RUNBOOK.md` → "Deploying a Fargate image change" is the
@@ -1061,6 +1078,10 @@ scraper, not Michigan) launches one `verify-jurisdiction --fargate` task per sta
 batch. It only launches and describes tasks (the scraper login cannot read the probe logs or the bucket); the prod
 agent reads the reports. It refuses Michigan and a `prod` memory prefix, and passes the OPEN-459 limits, so it needs
 an image built after OPEN-459 (an older one stops with exit 2, "unknown option").
+
+**One crashing gate never means no report (OPEN-470).** `main()` runs every gate through `guarded()`: if a gate
+raises (Vermont's scraper returns a generator, California's needs a MySQL driver), that gate is reported as failed
+with the error and the report and `result.json` are still written. Do not call a `run_gate_*` bare in `main()`.
 
 **Two places to run it (OPEN-458).** `verify-jurisdiction <st> --fargate` runs as a task in the same
 `ddp-scrapers` definition the scrapes use (`RUNNER_SCRIPT=verify-jurisdiction`; the file is in the Dockerfile's

@@ -400,11 +400,24 @@ class GateResult:
 # ── Gate implementations (need the real toolchain / DB) ─────────────────────
 
 
+def guarded(gate, blocking, fn, *args, **kwargs):
+    """Run one gate; if it raises, report that gate as failed with the error instead of letting
+    the exception end the whole probe with no report (OPEN-470: Vermont's generator in gate A,
+    California's scraper needing a MySQL driver in gate D -- both left their state with no
+    result.json). The probe's own colour then comes from the normal classification."""
+    try:
+        return fn(*args, **kwargs)
+    except Exception as exc:  # noqa: BLE001 -- any gate crash must still produce a report
+        return GateResult(gate, blocking, "fail", f"gate {gate} crashed: {type(exc).__name__}: {exc}")
+
+
 def run_gate_a(juris, module_name):
     from openstates.cli.update import check_session_list, CommandError
 
     try:
-        scraped_sessions = juris.get_session_list()
+        # list(): some scrapers (Vermont's) return a generator, which has no len() and is always truthy,
+        # so an empty one would have passed the check below.
+        scraped_sessions = list(juris.get_session_list())
     except Exception as exc:  # pragma: no cover - exercised only against a real broken scraper
         return GateResult("A", True, "fail", f"get_session_list() raised {exc!r}")
 
@@ -1398,8 +1411,8 @@ def main(argv=None):
 
     results = []
     if payload is None:
-        results.append(run_gate_a(juris, module_name))
-        results.append(run_gate_b(juris, module_name, st, scrapers_src_dir))
+        results.append(guarded("A", True, run_gate_a, juris, module_name))
+        results.append(guarded("B", True, run_gate_b, juris, module_name, st, scrapers_src_dir))
         active_sessions = []
         for line in (results[0].details or []):
             if line.startswith("active:"):
@@ -1447,12 +1460,14 @@ def main(argv=None):
     ctx.update(session=session, active_sessions=active_sessions)
 
     if payload is None:
-        gate_d_result, bill_files, _scrape_report = run_gate_d(
+        gate_d = guarded(
+            "D", True, run_gate_d,
             juris, st, session, args.sample_bills, scraped_data_dir, max_objects=args.max_objects,
         )
+        gate_d_result, bill_files = (gate_d, []) if isinstance(gate_d, GateResult) else gate_d[:2]
         results.append(gate_d_result)
-        results.append(run_gate_i(juris, st, session, active_sessions, args.sample_bills, scraped_data_dir,
-                                  max_objects=args.max_objects)
+        results.append(guarded("I", True, run_gate_i, juris, st, session, active_sessions, args.sample_bills,
+                               scraped_data_dir, max_objects=args.max_objects)
                        if gate_d_result.status == "pass"
                        else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
     else:
@@ -1462,7 +1477,7 @@ def main(argv=None):
         )
         bill_files = sorted(glob.glob(os.path.join(scraped_data_dir, "_probe", st, "bill_*.json")))
         results.append(gate_d_result)
-        results.append(run_gate_i_from_dir(st, session, active_sessions, scraped_data_dir)
+        results.append(guarded("I", True, run_gate_i_from_dir, st, session, active_sessions, scraped_data_dir)
                        if gate_d_result.status == "pass"
                        else GateResult("I", True, "skip", "gate D did not pass, so there is no sample to compare"))
 
@@ -1476,7 +1491,7 @@ def main(argv=None):
 
     from openstates.fulltext import CONVERSION_FUNCTIONS
 
-    results.insert(2, run_gate_c(media_types_present, CONVERSION_FUNCTIONS.get(st), st))
+    results.insert(2, guarded("C", True, run_gate_c, media_types_present, CONVERSION_FUNCTIONS.get(st), st))
 
     if conn is not None:
         do_import = args.do_import
@@ -1488,9 +1503,10 @@ def main(argv=None):
             ))
         else:
             datadir = os.path.join(scraped_data_dir, "_probe", st)
-            results.append(run_gate_h(conn, st, session, bill_files, do_import, os_venv, module_name, datadir, juris))
-        results.append(run_gate_j(conn, st, session, active_sessions))
-        results.append(run_gate_e(conn, st, scrapers_src_dir))
+            results.append(guarded("H", True, run_gate_h, conn, st, session, bill_files, do_import, os_venv,
+                                   module_name, datadir, juris))
+        results.append(guarded("J", False, run_gate_j, conn, st, session, active_sessions))
+        results.append(guarded("E", False, run_gate_e, conn, st, scrapers_src_dir))
     else:
         results.append(GateResult(
             "H", True, "skip",
@@ -1502,15 +1518,15 @@ def main(argv=None):
             "no database on Fargate -- finish with --from-dir on the Mac" if args.fargate
             else "no DATABASE_URL configured -- skipped",
         ))
-        results.append(run_gate_e(None, st, scrapers_src_dir))
+        results.append(guarded("E", False, run_gate_e, None, st, scrapers_src_dir))
 
-    results.append(run_gate_f(bill_files))
+    results.append(guarded("F", False, run_gate_f, bill_files))
     if args.fargate:
         results.append(GateResult(
             "G", False, "skip", "not run on Fargate: it needs the people checkout and the dev database",
         ))
     else:
-        results.append(run_gate_g(st, active_sessions, args.people_dir, args.broker_fixture))
+        results.append(guarded("G", False, run_gate_g, st, active_sessions, args.people_dir, args.broker_fixture))
 
     if conn is not None:
         conn.close()
