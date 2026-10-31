@@ -561,7 +561,8 @@ the limits (the collector has no cap, so do not run a state through it to "probe
 
 * **It refuses to start** (exit 3, one line in the log) for Michigan, for `--import`, without `MEMORY_BUCKET`, and
   with `MEMORY_PREFIX` unset or `prod`. Use a throwaway prefix such as `dev-probe-<state>-<date>`.
-* **No database, no import.** Gates G (people) and H (database rows, session rows) are reported as skipped. A
+* **No database, no import.** Gates G (people), H (database rows, session rows) and J (voter-attribution
+  resolution, OPEN-261) are reported as skipped.
   **RED is final; a YELLOW is provisional** until the Mac half has run. The task exits 0 once its output is
   uploaded, whatever the colour (a yellow probe is not a failed task); exit 4 means the upload failed.
 * **Output:** `s3://ddp-openstates-scraper-memory/<MEMORY_PREFIX>/probe/<state>/<RUN_ID>/` holds `report.md`,
@@ -580,8 +581,9 @@ source ~/Developer/repos/ddp-open-states-dev/activate-dev.sh
 verify-jurisdiction co --from-dir . [--import]
 ```
 
-  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H and I here against the downloaded
-  sample (the vote-key check compares the files, it scrapes nothing). It refuses a folder whose bill and vote files
+  `--from-dir` takes gates A, B and D from the Fargate run and runs C, E, F, G, H, I and J here against the
+  downloaded sample (I compares the vote-key files, J queries the database for the same sessions -- OPEN-261's
+  voter-attribution resolution check; neither scrapes). It refuses a folder whose bill and vote files
   are not exactly the ones `result.json` lists (a leftover from another run, an edited or missing file). `--import`
   works as on any Mac run: the people guard, session rows, dev database only.
 * **Deploying it:** the probe is one more file in the image (`Dockerfile`'s `COPY` line), so it needs the image
@@ -1783,6 +1785,57 @@ OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage mi 2025-2026 --tier
   `ddp-openstates-api:local` image on a different host port with `DATABASE_URL` pointed at the DB
   you actually want to test (hit a Colima host-port-forwarding snag doing this once — worth
   budgeting time to debug that, or falling back to the direct-query workaround).
+
+### Stage 3 structural gates (OPEN-445)
+
+Tier 1/Tier 2 above compare **counts** (bill identifiers, vote-event counts, sponsorship counts)
+against the live API — NC passed 2,338/2,338 bills and 1,081/1,081 Tier 2 checks while every vote
+and sponsorship was unresolved, because a count gate can't see an unresolved reference, a
+cross-session key collision, or missing structural fields. Four read-only DB queries close that
+blind spot, wired into `--coverage`'s existing Stage 3 report:
+
+| Gate | What it checks | Blocking? |
+|---|---|---|
+| People loaded | `count_people_loaded()` (shared with `verify-jurisdiction`'s gate H, `qa_primitives.py`) > 0 for the jurisdiction | Yes — FAIL on 0 |
+| Unique vote keys | For jurisdictions with >1 session that has votes, every `VoteEvent.dedupe_key` is unique across sessions/bills (OPEN-397's rule, run over the full imported dataset instead of `verify-jurisdiction` gate I's bounded sample) | Yes — FAIL on any collision. **Not applicable** (reported, not failed) with ≤1 session with votes |
+| Version stage coverage | Share of the jurisdiction's `BillVersion.note` rows that classify as `STAGE_UNKNOWN` via openstates-core's canonical `note_stage()` (never reimplemented) | Yes — FAIL above `VERSION_STAGE_UNKNOWN_CEILING` (`quality_check.py`). **Not applicable** with 0 bill versions |
+| Attribution resolution | Share of `PersonVote`/person-type `BillSponsorship` rows with a NULL `voter_id`/`person_id` (a name with no resolved person — NC's exact failure mode) | Yes — FAIL above `ATTRIBUTION_UNRESOLVED_CEILING` (`quality_check.py`), **votes and sponsorships checked separately**. **Not applicable** with 0 rows on either side |
+
+```bash
+# Full Stage 3 report: Tier 1 + Tier 2 + all four structural gates
+OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage nc 2025
+
+# Structural gates only -- DB-only, no OPENSTATES_API_KEY/live API/govbot needed, cheap to sweep
+# every tracked jurisdiction repeatedly (used to calibrate the two ceilings above)
+python3 quality_check.py --structural nc
+```
+
+Both numeric ceilings are module-level constants in `quality_check.py`, derived from a real sweep
+of every tracked jurisdiction, never invented — see
+`notes/OPEN-445-stage3-structural-gates-floors-20261030.md` for the full per-state table, the
+exact derivation, and which jurisdictions were excluded from deriving their own bar (NC, the
+ticket's test subject; VA and MA, which that sweep found genuinely exceed it with no prior
+ticket — see that note before assuming either is a false positive).
+
+**On any failure**, the run exits non-zero exactly like a Tier 1/Tier 2 failure already does (this
+is a blocking gate, not an advisory one) and prints a Recommendation block naming the failing
+gate(s), the measured number, and the ceiling. As with every other failure this script reports,
+**it does not file the ticket itself** — no Jira client exists anywhere in this repo. File a
+`quality-regression`-labeled ticket (copy the AC shape from OPEN-233/234 for an attribution
+finding, or OPEN-397/OPEN-366 for a vote-key/version-stage finding) and route the jurisdiction's
+fix-cycle work back through Stage 1, the same convention `verify-jurisdiction`'s own gate failures
+already use ("File templated tickets per RUNBOOK.md §5 Stage 1" — see that script's
+`render_report()`). This script also does **not** write to `jurisdictions.yaml`'s `status` field —
+that enum has no Stage 1 value, and a deliberate human override (e.g. NC's own `status: live`,
+OPEN-417) should never be silently reversed by a QA script.
+
+**People loaded is checked at two points, not just here**: `verify-jurisdiction`'s gate H already
+refuses `--import` when no people are loaded (OPEN-446, the original root-cause fix), and this
+Stage 3 gate re-asserts the same invariant afterward via the shared `qa_primitives.count_people_loaded()`
+— defense in depth, since NC's actual incident was this exact check silently never running at either
+point. The AC's third checkpoint, "again before routing," has no entry point in this repo —
+jurisdiction routing is `ddp-broker-py`'s concern (BROKER-302); only the two checkpoints above
+exist in `ddp-open-states` today.
 
 ---
 
