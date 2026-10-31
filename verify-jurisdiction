@@ -1028,6 +1028,10 @@ def run_gate_j(conn, st, session, active_sessions):
     not a gate that can realistically block a fresh onboarding. It lists the top unresolved names.
     The enforced line is Stage 3's attribution gate in quality_check.py (OPEN-445): a ceiling set
     from the live states' measured rates, for votes and sponsorships -- not this gate."""
+    if not session:
+        # No session was found (the scrape failed before one existed): nothing to sample. OPEN-472: the
+        # None used to reach the join below and crash the whole probe for IL, IN, NY and VI.
+        return GateResult("J", False, "skip", "no session was found for this state, so there is nothing to sample")
     sessions = [session] + [s for s in active_sessions if s != session][:MAX_EXTRA_SESSIONS]
     cur = conn.cursor()
     cur.execute(
