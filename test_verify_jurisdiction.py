@@ -1492,3 +1492,19 @@ def test_main_still_writes_the_report_when_gate_d_crashes(tmp_path, monkeypatch)
     d = next(g for g in result["gates"] if g["gate"] == "D")
     assert d["status"] == "fail" and "MySQLdb" in d["summary"]
     assert ("bucket", "dev-probe-x/probe/ca/run1/report.md") in s3.objects  # the readable report is uploaded too
+
+
+def test_the_runtime_image_installs_the_command_line_tools_a_state_scraper_runs():
+    """OPEN-471: New Mexico's scraper shells out to `mdb-export` (mdbtools); the image did not have it, so
+    NM was RED on Fargate for a reason that had nothing to do with the state. These tools belong in the
+    FINAL stage (the one that runs), not the builder's apt-get."""
+    import re
+
+    with open(os.path.join(_HERE, "Dockerfile")) as f:
+        final_stage = f.read().split("\nFROM ")[-1]
+    # Comments name the packages too, so look only at what the apt-get install commands actually list.
+    code = "\n".join(line for line in final_stage.splitlines() if not line.lstrip().startswith("#"))
+    installed = " ".join(re.findall(r"apt-get install([^&]*)", code))
+    for package in ("poppler-utils", "mdbtools"):
+        assert re.search(rf"(?<![\w-]){re.escape(package)}(?![\w-])", installed), \
+            f"{package} is not installed in the runtime stage of the Dockerfile"

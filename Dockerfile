@@ -100,8 +100,13 @@ FROM python:3.10-slim-bookworm
 # stage, not the builder's apt-get above. Found missing by actually running a real FL scrape here
 # (2026-08-29): FileNotFoundError: 'pdftotext', after do_update() got past every network call
 # cleanly -- the fetch worked, the CLI to parse what it fetched was simply never installed.
+# mdbtools: provides `mdb-export`, invoked as a subprocess at RUNTIME by New Mexico's bill scraper
+# (nm/bills.py reads the legislature's Microsoft Access file with it). Found missing by the all-states
+# probe on Fargate (OPEN-460, 2026-10-31): FileNotFoundError: 'mdb-export', which left NM RED for a
+# reason that has nothing to do with the state's site.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         poppler-utils \
+        mdbtools \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --gid 1000 scraper && useradd --uid 1000 --gid scraper --shell /bin/bash --create-home scraper
