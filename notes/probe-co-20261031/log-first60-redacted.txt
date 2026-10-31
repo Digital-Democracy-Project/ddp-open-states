@@ -1,0 +1,60 @@
+/opt/venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:242: FutureWarning: You are using a non-supported Python version (3.10.22). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.11, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+18:00:46 DEBUG openstates.stats: Stat emission is not enabled.
+18:00:46 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): leg.colorado.gov:443
+18:00:46 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /bills/bill-search HTTP/1.1" 200 22955
+18:00:46 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): leg.colorado.gov:443
+18:00:47 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /bills/bill-search HTTP/1.1" 200 22950
+18:00:47 INFO openstates: Scraping page 1
+18:00:47 INFO scrapelib: POST - 'https://leg.colorado.gov/bills/bill-search'
+18:00:47 DEBUG urllib3.connectionpool: Starting new HTTPS connection (1): leg.colorado.gov:443
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:47 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "POST /bills/bill-search HTTP/1.1" 200 19141
+18:00:48 INFO scrapelib: GET - 'https://leg.colorado.gov/bills/HB26-1116'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:49 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /bills/HB26-1116 HTTP/1.1" 200 13777
+18:00:49 INFO scrapelib: GET - 'https://leg.colorado.gov/committee_meeting_hearing_items/30226/votes/44343'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:51 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /committee_meeting_hearing_items/30226/votes/44343 HTTP/1.1" 200 7661
+18:00:51 INFO scrapelib: GET - 'https://leg.colorado.gov/committee_meeting_hearing_items/29718/votes/44240'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:53 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /committee_meeting_hearing_items/29718/votes/44240 HTTP/1.1" 200 7437
+18:00:53 INFO scrapelib: GET - 'https://leg.colorado.gov/committee_meeting_hearing_items/29718/votes/43198'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:55 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /committee_meeting_hearing_items/29718/votes/43198 HTTP/1.1" 200 7727
+18:00:55 INFO scrapelib: GET - 'https://leg.colorado.gov/bill_votes/29130'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:57 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /bill_votes/29130 HTTP/1.1" 200 8199
+18:00:57 INFO scrapelib: GET - 'https://leg.colorado.gov/bill_votes/28694'
+/opt/venv/lib/python3.10/site-packages/urllib3/connectionpool.py:1064: InsecureRequestWarning: Unverified HTTPS request is being made to host 'leg.colorado.gov'. Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#ssl-warnings
+  warnings.warn(
+18:00:59 DEBUG urllib3.connectionpool: https://leg.colorado.gov:443 "GET /bill_votes/28694 HTTP/1.1" 200 8301
+18:00:59 INFO openstates: save vote_event 2026A - 2026-04-09 - Refer House Bill 26-1116 to the Committee of the Whole and with a recommendation that it be placed on the consent calendar. as vote_event_01698b96-d555-11f1-8476-0a58a9feac02.json
+18:00:59 DEBUG openstates: {
+    "_id": "01698b96-d555-11f1-8476-0a58a9feac02",
+    "bill": "016746ba-d555-11f1-8476-0a58a9feac02",
+    "bill_action": null,
+    "bill_identifier": "HB 1116",
+    "counts": [
+        {
+            "option": "yes",
+            "value": 6
+        },
+        {
+            "option": "no",
+            "value": 0
+        },
+        {
+            "option": "other",
+            "value": 1
+        }
+    ],
+    "extras": {},
+    "identifier": "",
+    "legislative_session": "2026A",
