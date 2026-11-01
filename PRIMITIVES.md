@@ -1095,6 +1095,16 @@ an image built after OPEN-459 (an older one stops with exit 2, "unknown option")
 raises (Vermont's scraper returns a generator, California's needs a MySQL driver), that gate is reported as failed
 with the error and the report and `result.json` are still written. Do not call a `run_gate_*` bare in `main()`.
 
+**Gate J and state ids (OPEN-472).** Gate J (advisory, the Mac half: do the sampled votes' voters resolve to people)
+reports `skip` when no session was found for the state, instead of crashing on a `None` in its session list (Illinois,
+Indiana, New York and the Virgin Islands crashed it before). `qa_primitives.ocd_jurisdiction_id()` is the one place that
+turns a state code into a jurisdiction id; it maps `dc` to `district:dc` and `as`, `gu`, `mp`, `pr`, `vi` to
+`territory:<code>`, so the people check counts them. Do not build an id with `state:` + code anywhere else.
+
+**What the image must carry for a scraper to run (OPEN-471).** New Mexico's scraper calls `mdb-export`, so the runtime
+stage of the `Dockerfile` installs `mdbtools` (a guard test reads the `apt-get install` lines). California's needs a
+MySQL driver and a loaded `capublic` database the cloud task does not have; Ramon left it out of the probe (2026-10-31).
+
 **Two places to run it (OPEN-458).** `verify-jurisdiction <st> --fargate` runs as a task in the same
 `ddp-scrapers` definition the scrapes use (`RUNNER_SCRIPT=verify-jurisdiction`; the file is in the Dockerfile's
 `COPY` line), so a state's website sees a cloud IP, not the Mac's. There it has no database: G and H are skipped
