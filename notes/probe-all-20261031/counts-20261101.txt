@@ -1,0 +1,21 @@
+db time 2026-11-01 13:13:53.131789+00:00
+== per-state counts (jurisdiction name: bills | vote events | person votes)
+Virginia: bills 4405 | vote_events 11553 | person_votes 452159
+Arizona: bills 2190 | vote_events 3411 | person_votes 75720
+Washington: bills 3411 | vote_events 2302 | person_votes 171556
+Florida: bills 7702 | vote_events 10228 | person_votes 324838
+Michigan: bills 4164 | vote_events 1279 | person_votes 96376
+United States: bills 39136 | vote_events 1600 | person_votes 560633
+Utah: bills 1021 | vote_events 1917 | person_votes 93865
+Massachusetts: bills 11840 | vote_events 529 | person_votes 46448
+North Carolina: bills 2343 | vote_events 781 | person_votes 72705
+== Virginia motion rows with classification containing 'passage'
+VA passage ('2026', 4136)
+VA passage ('2026S1', 29)
+VA passage total 4165
+== Virginia 'H VOTE:' motion_text count
+VA H VOTE: 2188
+== duplicate vote events (same bill+motion_text+start_date within a session, count>1)
+[('Arizona', 247), ('Massachusetts', 32), ('Virginia', 290), ('Washington', 1)]
+== Florida House committee votes without member rows
+FL committee(House-named org) votes without person votes: 0
