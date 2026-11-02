@@ -542,8 +542,8 @@ step matters — a newer pip breaks one of the pinned deps' build.
   image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
-- **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, not merged, not
-  live).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
+- **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
+  live on the EC2 api-v3 per the prod agent's note of 2026-11-02 20:40 UTC).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
   cast, newest `start_date` first (ties by vote event id, so paging is stable), paged (max 50), with the person's own option, the
   vote event with its totals, and a compact bill (absent for a vote with no bill); page 1 carries `summary.counts` over all pages.
   Optional `jurisdiction` and `session` filters. **Do not fetch every bill with `?include=votes` to build a "how did they vote"
