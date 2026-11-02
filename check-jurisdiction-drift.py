@@ -93,6 +93,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # ddp-sync names the US scraper "usa" in its scrape tables and lists; everything else uses "us".
 SYNC_SCRAPE_CODE = {"us": "usa"}
 
+# A paused state is on no scrape schedule, and neither is one still being probed (PLAN-push-button-onboarding.md
+# Stage 0): it joins ddp-sync's scrape list at Stage 2, when its status moves to `scraping`. Without this a brand-new
+# `new-jurisdiction` entry (a tier is required) is reported as drift on every daily run until Stage 2 (OPEN-478/479/480).
+UNSCHEDULED_STATUSES = ("paused", "probing")
+
 
 class SourceError(Exception):
     """A source file is missing or does not have the shape this checker expects."""
@@ -279,9 +284,9 @@ def project(manifest):
         "legbot_replica": where(manifest, lambda e: e["enrollment"]["legbot_replica"]),
         "allow_duplicates": where(manifest, lambda e: e["scrape"]["allow_duplicates"]),
         "cookie_provider": where(manifest, lambda e: e["waf"]["profile"] != "none"),
-        # A paused jurisdiction is on no scrape schedule whatever its (required) tier field says.
-        "primary": where(manifest, lambda e: e["tier"] == "primary" and e["status"] != "paused"),
-        "secondary": where(manifest, lambda e: e["tier"] == "secondary" and e["status"] != "paused"),
+        # A paused or probing jurisdiction is on no scrape schedule whatever its (required) tier field says.
+        "primary": where(manifest, lambda e: e["tier"] == "primary" and e["status"] not in UNSCHEDULED_STATUSES),
+        "secondary": where(manifest, lambda e: e["tier"] == "secondary" and e["status"] not in UNSCHEDULED_STATUSES),
     }
 
 
