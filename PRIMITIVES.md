@@ -542,6 +542,16 @@ step matters — a newer pip breaks one of the pinned deps' build.
   image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
+- **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, not merged, not
+  live).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
+  cast, newest `start_date` first (ties by vote event id, so paging is stable), paged (max 50), with the person's own option, the
+  vote event with its totals, and a compact bill (absent for a vote with no bill); page 1 carries `summary.counts` over all pages.
+  Optional `jurisdiction` and `session` filters. **Do not fetch every bill with `?include=votes` to build a "how did they vote"
+  view, and do not add a second per-person votes route in the broker or the website that reads the database.** Completeness is
+  bounded by attribution quality: a vote with a NULL `voter_id` (a name never matched to a legislator; MA 16%, VA 7.8%, OPEN-474,
+  OPEN-473) is returned for nobody, and nothing matches on `voter_name` (OPEN-141). No schema change, no index (it uses the existing
+  `voter_id` index; page of 50 about 6 ms on the Mac replica); it needs a new api image on both hosts. The broker route is BROKER-410.
+
 - **`deploy-scrapers-image.sh`** (repo root) — the **one command a human operator runs** to ship
   scraper changes to Fargate: build `ddp-scrapers:vN` on the Mac, smoke-test it, push to ECR, and
   register a new task-definition revision. `RUNBOOK.md` → "Deploying a Fargate image change" is the
