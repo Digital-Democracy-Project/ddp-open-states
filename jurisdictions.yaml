@@ -474,7 +474,7 @@ al:
 # written by new-jurisdiction from notes/probe-pa-20261031/result.json on 2026-11-02 (OPEN-461)
 pa:
   name: Pennsylvania
-  status: probing
+  status: scraping
   tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
@@ -490,7 +490,7 @@ pa:
     people_refresh: false
     search_refresh: false
     embedding: false
-    cloud_path: false
+    cloud_path: true
     api_smoke_test: false
     qa_sweep: false
     replica_routing: false
@@ -508,7 +508,7 @@ pa:
 # written by new-jurisdiction from notes/probe-ne-20261031/result.json on 2026-11-02 (OPEN-461)
 ne:
   name: Nebraska
-  status: probing
+  status: scraping
   tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
@@ -524,7 +524,7 @@ ne:
     people_refresh: false
     search_refresh: false
     embedding: false
-    cloud_path: false
+    cloud_path: true
     api_smoke_test: false
     qa_sweep: false
     replica_routing: false
@@ -542,7 +542,7 @@ ne:
 # written by new-jurisdiction from notes/probe-la-20261031/result.json on 2026-11-02 (OPEN-461)
 la:
   name: Louisiana
-  status: probing
+  status: scraping
   tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
@@ -558,7 +558,7 @@ la:
     people_refresh: false
     search_refresh: false
     embedding: false
-    cloud_path: false
+    cloud_path: true
     api_smoke_test: false
     qa_sweep: false
     replica_routing: false
