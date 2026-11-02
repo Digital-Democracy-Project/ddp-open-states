@@ -21,6 +21,17 @@ Use your 10-31 commands unchanged (scratch clone at the SHA above in a scratch f
 
 ## The 11 expected hashes (save as `expected.sha256`; `sha256sum -c` on the out folder, and again on the live copies)
 ```
+27c0332581c82847a09ce7eae4b46766974bd8474d3a73d21b5f7265727e77b9  LA/2025/cd.geojson
+7919069215fc4cafa051ed226d282ea0a99c7d43abe5351a3295f92839220b12  LA/2025/sldl.geojson
+83379616b9036256303a61d8c247fd1a22c5623ad8938d265e911d6138c39bbf  LA/2025/sldu.geojson
+51e5393478df99773621edc82d6aab77877993949b7e01207351b03254f0d468  LA/2025/state.geojson
+532f0b5832424860f2c04eb08a2810b4d6ab1d5188ca5ac3368ca24535308c75  NE/2025/cd.geojson
+96ecea0694a8beea3898e658cc0ddd229f0aac845916c24a9c63e5b84fc8de67  NE/2025/sldu.geojson
+9814148c62f4395140d32053f7ba8e5b06edab0447dd5e4fe093c3ed714e8711  NE/2025/state.geojson
+adb215b089b7ce5e8cfc09d4479f81764196c13f4290d098fc981a3dc91d2a62  PA/2025/cd.geojson
+b3c33cd22344057fa11c7165d36d8490b73b9fc4326bbf67efa2626057fcf39e  PA/2025/sldl.geojson
+bd76396c4961ef53859acec4dead51dc04dc78d1520a14d44d868326d0d2141b  PA/2025/sldu.geojson
+38fef48b092ccd4aea18752d9dd4a36d4ea5ce1a16c52caf257cb99d8035bc01  PA/2025/state.geojson
 ```
 **Feature counts** (cd/sldl/sldu/state): **PA 17/203/50/1; NE 3/none/49/1; LA 6/105/40/1**. Ids look like `PA0138L`, `PA0046U`, `PA0017L-US`, `PA0000`. Nothing is public until the website asks for these years (the broker's `years` route says the default for a state is its newest year), so nothing public changes on its own.
 
