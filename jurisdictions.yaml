@@ -470,3 +470,105 @@ al:
   onboarding:
     epic: null
     evidence: null
+
+# written by new-jurisdiction from notes/probe-pa-20261031/result.json on 2026-11-02 (OPEN-461)
+pa:
+  name: Pennsylvania
+  status: probing
+  tier: secondary  # NEEDS HUMAN REVIEW
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+  archive:
+    enabled: false
+    scheduled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  api_keys: []
+  onboarding:
+    epic: OPEN-478
+    evidence: notes/probe-pa-20261031/report.md
+
+# written by new-jurisdiction from notes/probe-ne-20261031/result.json on 2026-11-02 (OPEN-461)
+ne:
+  name: Nebraska
+  status: probing
+  tier: secondary  # NEEDS HUMAN REVIEW
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ne-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+  archive:
+    enabled: false
+    scheduled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  api_keys: []
+  onboarding:
+    epic: OPEN-479
+    evidence: notes/probe-ne-20261031/report.md
+
+# written by new-jurisdiction from notes/probe-la-20261031/result.json on 2026-11-02 (OPEN-461)
+la:
+  name: Louisiana
+  status: probing
+  tier: secondary  # NEEDS HUMAN REVIEW
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no la-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+  archive:
+    enabled: false
+    scheduled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  api_keys: []
+  onboarding:
+    epic: OPEN-480
+    evidence: notes/probe-la-20261031/report.md

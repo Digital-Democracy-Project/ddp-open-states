@@ -1022,7 +1022,10 @@ scope line was deliberate, not an oversight.
   and `tier`), seeded from the lists' real values, and **`check-jurisdiction-drift.py` compares every list
   it knows about to the manifest and fails on any disagreement**: `activate.sh`, `run-people-refresh.sh`,
   `start-os-api.sh`, `quality_check.py`, `run-scrape.sh` (derivation checked, see below), and (with `--ddp-sync-root`) ddp-sync's
-  `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. Run in CI against
+  `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. **A `paused` or `probing` state is on no scrape
+  schedule whatever its (required) `tier` says** (`UNSCHEDULED_STATUSES`; a state joins ddp-sync's scrape list when its status moves to
+  `scraping`, Stage 2), so a Stage 0 entry from `new-jurisdiction` is not drift (OPEN-478/479/480); ddp-sync's `jurisdiction_enrollment.py`
+  mirrors this rule and must be released first. Run in CI against
   ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
   who is enrolled in what. **OPEN-331 (2026-10-21) resolved the gaps it first showed:** NC now refreshes its people, is in the boot smoke test and the QA sweep (it had been missing from all three because the hand-kept lists predated it); MA joined the smoke test. What is still off is **deliberate and written beside the flag in `jurisdictions.yaml`**: NC `embedding` (waits for its knowledge-base backfill), MA `search_refresh` and `embedding` (MA is not routed to the replica yet, BROKER-16), and AL's search, embedding, cloud path and smoke test (paused).
   For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,

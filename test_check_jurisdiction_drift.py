@@ -597,6 +597,45 @@ def test_the_shell_gate_still_follows_archive_enabled_not_scheduled(world):
     assert drift.project(manifest)["archive"] >= {"nc"} and "nc" not in drift.project(manifest)["archive_scheduled"]
 
 
+# ---------------------------------------------------------------------------------------------------
+# OPEN-478/479/480: a probing state (Stage 0) is on no scrape schedule yet; it joins at Stage 2 (`scraping`)
+# ---------------------------------------------------------------------------------------------------
+
+def _add_pilot_state(world, tier, status):
+    """A brand-new state as `new-jurisdiction` writes it: every enrollment flag off, archive off."""
+    manifest_path = world[2]
+    data = yaml.safe_load(open(manifest_path))
+    e = _entry(tier, status=status, archive=False, people_refresh=False, search_refresh=False, embedding=False,
+               cloud_path=False, api_smoke_test=False, qa_sweep=False, replica_routing=False, legbot_replica=False)
+    e["name"] = "Pennsylvania"
+    data["pa"] = e
+    _write(manifest_path, yaml.safe_dump(data))
+
+
+@pytest.mark.parametrize("tier", ["primary", "secondary"])
+def test_a_probing_state_is_on_no_schedule_so_it_need_not_be_on_the_ddp_sync_list(world, tier):
+    _add_pilot_state(world, tier, "probing")
+    code, out = _run(world)
+    assert code == 0, out
+
+
+@pytest.mark.parametrize("status", ["scraping", "validating", "archived", "live"])
+def test_a_state_past_probing_must_be_on_the_ddp_sync_scrape_list(world, status):
+    """Stage 2 moves a state to `scraping` and adds it to ddp-sync's list in the same change: a state that is
+    past probing but not on the list is still drift."""
+    _add_pilot_state(world, "secondary", status)
+    code, out = _run(world)
+    assert code == 1, out
+    assert "in the manifest but not in ddp-sync openstates_scrape.secondary.jurisdictions: pa" in out
+
+
+def test_the_projection_leaves_a_probing_state_off_both_scrape_lists(world):
+    _add_pilot_state(world, "secondary", "probing")
+    manifest = yaml.safe_load(open(world[2]))
+    expected = drift.project(manifest)
+    assert "pa" not in expected["primary"] and "pa" not in expected["secondary"]
+
+
 def test_the_matrix_shows_the_scheduled_column(world):
     code, out = _run(world, with_sync=False, extra=["--matrix"])
     assert code == 0
