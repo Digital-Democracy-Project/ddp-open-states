@@ -1150,6 +1150,17 @@ gate to have genuinely passed. Calibrated by running it against an already-onboa
 state (FL) and confirming GREEN — proving the gates recognize a healthy state correctly, not just
 that they can reject a broken one, which is the easier half to get right by accident.
 
+## `deploy/sync-manifest.sh` — keep api-v3's copy of the state list current after a pull (OPEN-483)
+
+`GET /ddp/enrollment` (api-v3) serves the shared state list and re-reads it when the file's modification time changes
+(`api/ddp_enrollment.py`). It could not see a `git pull`: the old single-file bind mount keeps the file's OLD inode when git
+replaces it (proven with a real container on native Linux Docker, 2026-11-03), so every pull needed an api recreate. Both
+compose files now mount **only the directory `deploy/manifest/`** (never the checkout: it holds `.env` files) and set
+`DDP_JURISDICTIONS_MANIFEST=/app/manifest/jurisdictions.yaml`; `bash deploy/sync-manifest.sh` copies `../jurisdictions.yaml`
+into it atomically (temp file, rename, source's modification time kept; an empty or missing source leaves the copy alone).
+`--check` changes nothing and exits 1 when the copy differs. Do not add a second way to hand the file to the container, and
+do not go back to a single-file mount. One recreate switches a running container to the new mount (RUNBOOK.md).
+
 ## `new-jurisdiction <state> --from-probe <result.json-or-folder>` — the manifest entry from a probe result (repo root, OPEN-461)
 
 Stage 0 of the onboarding plan ends with "manifest entry with `status: probing`", which was always

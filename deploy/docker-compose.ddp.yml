@@ -92,21 +92,22 @@ services:
       RRL_REDIS_DB: "1"
       WEB_CONCURRENCY: "4"
       FORWARDED_ALLOW_IPS: "*"
+      DDP_JURISDICTIONS_MANIFEST: "/app/manifest/jurisdictions.yaml"
     ports:
       - "0.0.0.0:8002:80"
     networks:
       - default
       - ddp-agents_default
-    # OPEN-329: GET /ddp/enrollment serves this checkout's jurisdictions.yaml, mounted read-only (compose paths are
-    # relative to THIS file's directory, so ../ is the ddp-open-states checkout on whichever host runs this file).
-    # CAVEAT: a single-file bind mount can keep the file's OLD inode after `git pull` replaces the file (native Linux
-    # Docker: expected; tested on this Mac's Colima 2026-10-21: a replaced file showed at once, but an in-place edit
-    # showed truncated old-length content until a restart). After any pull that changes the manifest, restart the
-    # container (`docker restart ddp-openstates-api-1`, no rebuild) and CHECK that GET /ddp/enrollment's manifest_mtime
-    # equals the host file's mtime; if it does not, recreate the api service. Do not mount the whole checkout instead:
-    # it holds .env files.
+    # OPEN-329 / OPEN-483: GET /ddp/enrollment serves the shared state list. api-v3 re-reads it whenever the file's
+    # modification time changes, but a SINGLE-FILE bind mount cannot see a `git pull` (git replaces the file; the
+    # container keeps the old inode for good -- proven on native Linux Docker 2026-11-03), which is why every pull used to
+    # need a container recreate. A DIRECTORY mount sees replaced files at once, so this mounts deploy/manifest/ (compose
+    # paths are relative to THIS file's directory), which holds ONLY a copy of ../jurisdictions.yaml and nothing else (the
+    # checkout itself holds .env files and must never be mounted). `bash deploy/sync-manifest.sh` refreshes the copy
+    # after a pull; no recreate is needed. ONE recreate is needed to switch an existing container from the old mount:
+    # run the sync script first (the directory must exist and hold the file), then recreate the api service once.
     volumes:
-      - ../jurisdictions.yaml:/app/jurisdictions.yaml:ro
+      - ./manifest:/app/manifest:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:80/healthz', timeout=3).status==200 else 1)\""]
       interval: 15s
