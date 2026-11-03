@@ -44,3 +44,6 @@ _archive_scratch/
 .sandbox-write-probe*
 logs/
 activate-dev.sh
+
+# OPEN-483: the copy of jurisdictions.yaml that api-v3 reads (written by deploy/sync-manifest.sh)
+deploy/manifest/
