@@ -87,7 +87,11 @@ mount keeps the old inode for good, and `/ddp/enrollment` kept the old list unti
 Docker 2026-11-03: after a rename-style replace the single-file mount still showed the old content and old
 time, the directory mount showed the new file at once. The Mac's Colima happened to show a replaced file, which is why
 the old note said it worked; EC2 is native Linux.) Verify with `bash deploy/sync-manifest.sh --check` (exit 1 if the copy differs
-from the checkout) and `GET /ddp/enrollment`'s `manifest_mtime` (the copy keeps the source's modification time). **Switching
+from the checkout) and `GET /ddp/enrollment`'s `manifest_mtime` (the copy keeps the source's modification time). **`start-os-api.sh` (the boot LaunchDaemon) and `refresh-api-v3.sh` run `deploy/sync-manifest.sh` themselves before any `docker-compose` call, and stop with the reason if it fails**, so a pull followed by a reboot or a refresh cannot start the container without its copy (Docker would create an empty `deploy/manifest` and `/ddp/enrollment` would answer 503). If it stops with "deploy/sync-manifest.sh failed" (logged in `logs/os-api.log`, one Slack alert per failure streak), nothing is wrong
+with the container: the usual causes are `jurisdictions.yaml` missing or empty in the checkout (`git checkout -- jurisdictions.yaml`) or an
+empty `deploy/manifest` directory owned by root (remove it). Fix it, run `bash deploy/sync-manifest.sh` by hand (it should print
+`synced ...`), and launchd relaunches the script within about 30 s; confirm with `docker ps` (healthy) and `GET /ddp/enrollment`'s
+`manifest_mtime` equal to the checkout file's. **Switching
 an already-running container from the old mount needs ONE recreate:** run `bash deploy/sync-manifest.sh` first (the
 directory must exist and hold the file), then `docker compose -p ddp-openstates -f deploy/docker-compose.<ddp|rds>.yml up -d
 --no-deps --force-recreate api`. Do not mount the whole checkout instead: it holds `.env` files. Until the mount exists

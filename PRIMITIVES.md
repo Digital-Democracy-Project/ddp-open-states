@@ -1160,6 +1160,7 @@ compose files now mount **only the directory `deploy/manifest/`** (never the che
 into it atomically (temp file, rename, source's modification time kept; an empty or missing source leaves the copy alone).
 `--check` changes nothing and exits 1 when the copy differs. Do not add a second way to hand the file to the container, and
 do not go back to a single-file mount. One recreate switches a running container to the new mount (RUNBOOK.md).
+`start-os-api.sh` (boot) and `refresh-api-v3.sh` call it before any `docker-compose` call and stop when it fails (tests: `test_api_boot_scripts_sync_manifest.py`). api-v3's loader behaviour it relies on (re-read by modification time alone) is pinned in api-v3's `api/tests/test_ddp_enrollment.py`.
 
 ## `new-jurisdiction <state> --from-probe <result.json-or-folder>` — the manifest entry from a probe result (repo root, OPEN-461)
 

@@ -11,9 +11,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 [ -r "$SCRIPT_DIR/lib/slack-alert.sh" ] && source "$SCRIPT_DIR/lib/slack-alert.sh" \
     || post_slack_alert() { echo "slack-alert: lib/slack-alert.sh not found; alert not sent: ${1:-}" >&2; return 0; }
 
-COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/deploy"
+# COMPOSE_DIR and LOG can be overridden (the tests do); the defaults are the production checkout.
+COMPOSE_DIR="${COMPOSE_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/deploy}"
 COMPOSE_FILE="docker-compose.ddp.yml"
-LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
+LOG="${LOG:-/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log}"
 
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [start-os-api] $*" | tee -a "$LOG"; }
 
@@ -54,6 +55,24 @@ until docker exec ddp-agents-redis-1 redis-cli ping >/dev/null 2>&1; do
 done
 
 cd "$COMPOSE_DIR"
+# OPEN-483: the compose file mounts deploy/manifest/ (a copy of jurisdictions.yaml, gitignored), and `up` with no such
+# directory makes Docker create it EMPTY (and owned by whoever runs docker), after which api-v3 answers 503 on
+# /ddp/enrollment and sync-manifest.sh refuses to write into it. So the copy is refreshed before ANY `up`; if that fails
+# (missing or empty source, unwritable directory) stop here with the reason rather than start a container without it.
+# launchd relaunches this one-shot (KeepAlive on failure) once someone fixes the cause.
+# (COMPOSE_DIR must be an absolute path: the script cd's into it and then refers to it.)
+SYNC_ALERTED_FLAG="$(dirname "$LOG")/.start-os-api-sync-alerted"
+if ! bash "$COMPOSE_DIR/sync-manifest.sh" >>"$LOG" 2>&1; then
+    log "ERROR: deploy/sync-manifest.sh failed, so api-v3 would start without its copy of jurisdictions.yaml; not running docker-compose up (details in $LOG)"
+    # launchd relaunches this one-shot every ~30 s while it keeps failing: alert ONCE per failure streak, not every time.
+    if [ ! -e "$SYNC_ALERTED_FLAG" ]; then
+        post_slack_alert ":red_circle: openstates api-v3 not started at boot: deploy/sync-manifest.sh failed (the copy of jurisdictions.yaml api-v3 reads could not be made). Recovery: RUNBOOK.md, 'The jurisdiction manifest inside api-v3'. Further retries stay silent until it works once." --direct || true
+        : > "$SYNC_ALERTED_FLAG" 2>/dev/null || true
+    fi
+    exit 1
+fi
+rm -f "$SYNC_ALERTED_FLAG"
+log "api-v3's copy of jurisdictions.yaml refreshed (deploy/sync-manifest.sh)"
 log "Bringing up api-v3 stack (docker-compose up -d)"
 # Image is built ahead of time on deploy; do not --build here (slow at boot).
 docker-compose -f "$COMPOSE_FILE" up -d

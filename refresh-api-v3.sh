@@ -25,10 +25,11 @@
 # that changes, same call PLAN-fork-management.md §5.F made for drift visibility).
 set -euo pipefail
 
-API_V3_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/api-v3"
-COMPOSE_DIR="/Users/agentsmith/Developer/repos/ddp-open-states/deploy"
+# The four paths can be overridden (the tests do); the defaults are the production checkout.
+API_V3_DIR="${API_V3_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/api-v3}"
+COMPOSE_DIR="${COMPOSE_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/deploy}"
 COMPOSE_FILE="docker-compose.ddp.yml"
-LOG="/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log"
+LOG="${LOG:-/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log}"
 
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [refresh-api-v3] $*" | tee -a "$LOG"; }
 
@@ -55,6 +56,11 @@ API_CONTAINER="ddp-openstates-api-1"
 postgres_started_before="$(docker inspect --format '{{.State.StartedAt}}' "$POSTGRES_CONTAINER")"
 
 cd "$COMPOSE_DIR"
+# OPEN-483: refresh api-v3's copy of jurisdictions.yaml BEFORE any docker-compose call. The compose file mounts
+# deploy/manifest/; without it `up` makes Docker create an empty directory there and /ddp/enrollment answers 503. A
+# failed sync (set -e) stops the refresh before the build and before the container is touched.
+bash "$COMPOSE_DIR/sync-manifest.sh" 2>&1 | tee -a "$LOG"
+log "api-v3's copy of jurisdictions.yaml refreshed (deploy/sync-manifest.sh)"
 log "rebuilding ddp-openstates-api:local image"
 docker-compose -f "$COMPOSE_FILE" build api
 
