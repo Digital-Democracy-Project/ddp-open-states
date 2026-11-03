@@ -1162,6 +1162,22 @@ into it atomically (temp file, rename, source's modification time kept; an empty
 do not go back to a single-file mount. One recreate switches a running container to the new mount (RUNBOOK.md).
 `start-os-api.sh` (boot) and `refresh-api-v3.sh` call it before any `docker-compose` call and stop when it fails (tests: `test_api_boot_scripts_sync_manifest.py`). api-v3's loader behaviour it relies on (re-read by modification time alone) is pinned in api-v3's `api/tests/test_ddp_enrollment.py`.
 
+## `deploy/rollout-manifest.sh --host mac|ec2` — one command to roll a merged state-list change out on a host (OPEN-483)
+
+Replaces the hand steps every state needed on each host (each of them its own request note to the prod agent in pilot #2):
+gates, pull, record the revision, refresh api-v3's copy, the drift check, read the values back. It stops at the first failed
+gate or check and prints a value for every step; `--dry-run` changes nothing.
+- **Gates:** the branch is `main` and no tracked file is modified; **no real `run-scrape.sh` process** (the listing is parsed
+  by field, so a shell that only contains the text, a grep or this script never counts; a plain `ps | grep run-scrape` matched
+  its own shell on 2026-11-03); no cloud scrape tasks (`aws ecs list-tasks`; if it cannot be listed the gate stops unless you say
+  `--skip-ecs-check`); not within 10 minutes of the 02:00, 02:30 and 03:00 UTC jobs.
+- **Steps:** fast-forward pull (never a merge or a reset), `deploy/sync-manifest.sh` and `--check`, `validate_jurisdictions.py`,
+  the combined drift check (`--ddp-sync-root`), then the api container: healthy, copy md5 equal to the checkout's.
+- **Never:** restarts anything, touches ddp-sync, the broker, the database container or any `.env`. The only docker command it can
+  run is `up -d --no-deps --force-recreate api`, and only with `--recreate` (the one-time switch from the old single-file
+  mount, exit code 3 until then). ddp-sync is restarted only on a person's word, when the drift check says its own lists changed.
+- Do not add a second hand-run copy of these steps to a request note; run this and paste its output.
+
 ## `new-jurisdiction <state> --from-probe <result.json-or-folder>` — the manifest entry from a probe result (repo root, OPEN-461)
 
 Stage 0 of the onboarding plan ends with "manifest entry with `status: probing`", which was always
