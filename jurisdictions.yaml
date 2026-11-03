@@ -14,6 +14,11 @@
 # check-jurisdiction-drift.py --matrix` prints who is enrolled in what. `al` was added then: it is on the
 # archive, people-refresh and QA lists, so it belongs here (status paused: its bills are not scraped).
 #
+# Moving a state forward (2026-11-03): do not hand-edit the status and its flags. `advance-jurisdiction <st> scraping|live`
+# sets status plus the flags that status needs (people_refresh, archive.enabled, cloud_path, and at live archive.scheduled),
+# and validate_jurisdictions.py refuses a state past `probing` that lacks them. LegBot (legbot_replica), embedding and
+# routing are never set by it: they stay human decisions.
+#
 # OPEN-221 / PLAN-push-button-onboarding.md §4.1 ("Manifest v0"). This is deliberately a SMALL
 # first step: the file + validate_jurisdictions.py + jurisdiction-field.sh, consumed ONLY by
 # ddp-open-states scripts and the onboarding probe (this repo's scripts were wired in by OPEN-327, see

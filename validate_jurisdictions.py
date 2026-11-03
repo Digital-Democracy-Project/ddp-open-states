@@ -90,6 +90,11 @@ ARCHIVE_FIELDS = {
 # OPEN-418: a state may be on the recurring archive schedule only once a human has promoted it (plan 4.6, Stage 6),
 # or while it is paused. `enabled` without `scheduled` is how Stage 4's manual validation run works before `live`.
 SCHEDULABLE_STATUSES = {"live", "paused"}
+# 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
+# has to remember to flip them. Pilot #2's first scrapes loaded with 0 legislators because people_refresh was
+# still false when the state went to `scraping`. `paused` is left out on purpose (a paused state keeps whatever
+# it had), and LegBot (enrollment.legbot_replica), embedding and routing stay human decisions: they are not here.
+STATUSES_THAT_NEED_PEOPLE_AND_ARCHIVE = {"scraping", "validating", "archived", "live"}
 
 # OPEN-318: which per-feature jurisdiction lists this jurisdiction belongs to. Each is the manifest's
 # statement of a list that is otherwise hard-coded somewhere (see check-jurisdiction-drift.py for where),
@@ -230,6 +235,25 @@ def validate(data):
 
         if isinstance(entry.get("enrollment"), dict):
             _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors)
+
+        status = entry.get("status")
+        if isinstance(status, str) and status in STATUSES_THAT_NEED_PEOPLE_AND_ARCHIVE:
+            if isinstance(entry.get("enrollment"), dict) and entry["enrollment"].get("people_refresh") is False:
+                errors.append(
+                    f"{code}.enrollment.people_refresh: must be true when status is {status!r}: the weekly legislator "
+                    f"refresh has to include every state that has been scraped, or its votes and sponsors import "
+                    f"unresolved (runbook rule 1; pilot #2, 2026-11-03). `advance-jurisdiction` sets it."
+                )
+            if isinstance(entry.get("archive"), dict) and entry["archive"].get("enabled") is False:
+                errors.append(
+                    f"{code}.archive.enabled: must be true when status is {status!r}: it only means the state MAY be "
+                    f"archived by hand (the recurring schedule is archive.scheduled). `advance-jurisdiction` sets it."
+                )
+        if status == "live" and isinstance(entry.get("archive"), dict) and entry["archive"].get("scheduled") is False:
+            errors.append(
+                f"{code}.archive.scheduled: must be true when status is 'live' (runbook Stage 6: going live puts the "
+                f"state on the recurring archive schedule). `advance-jurisdiction` sets it."
+            )
 
         if isinstance(entry.get("waf"), dict):
             _check_block(entry["waf"], WAF_FIELDS, f"{code}.waf", errors)

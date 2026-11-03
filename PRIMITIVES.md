@@ -1191,6 +1191,28 @@ new-jurisdiction co --from-probe notes/probe-co-20261030/result.json --dry-run  
   reads a probe's already-produced `result.json`. Wired into
   `.github/workflows/validate-jurisdictions.yml` alongside the validator and drift check.
 
+## `advance-jurisdiction <state> <scraping|live>` — move a state forward and set the flags that status needs (repo root, 2026-11-03)
+
+Pilot #2's first scrapes loaded with 0 legislators because `enrollment.people_refresh` was still false when the
+state went to `scraping`: the rule was in the runbook, nobody owned it, and the manifest let the state advance
+without it. Two pieces make that impossible now:
+
+- **`validate_jurisdictions.py` refuses** a state at `scraping`, `validating`, `archived` or `live` whose
+  `enrollment.people_refresh` or `archive.enabled` is false, and a `live` state whose `archive.scheduled` is false.
+  `probing` and `paused` are exempt. It runs in CI (`.github/workflows/validate-jurisdictions.yml`), so the miss is caught
+  in review instead of three days later.
+- **`advance-jurisdiction`** sets them, in one step: `scraping` (from `probing`) sets `status`, `people_refresh`,
+  `archive.enabled` and `enrollment.cloud_path` (left alone with a warning when `waf.fargate_safe` is false); `live`
+  (from `scraping`, `validating`, `archived` or `paused`) sets all of those plus `archive.scheduled`. `--dry-run` prints the
+  lines it would change.
+- **Never touches** `tier`, `legbot_replica`, `embedding`, `replica_routing`, `search_refresh`, `qa_sweep`,
+  `api_smoke_test`, `waf` or `quality.diff_cleaner`. LegBot stays the one switch a human flips (Ramon, 2026-11-03: it
+  depends on the data being good); embedding and routing stay behind their own gates (backfill, parity check).
+- Same safety shape as `new-jurisdiction`: line-for-line edits of one state's block (comments and every other state's bytes
+  survive), the result is validated before anything is written, and a re-run changes nothing. It does **not** edit ddp-sync's
+  yaml lists or any host; those are separate rows of the 2026-11-03 friction audit (OPEN-328, SYNC-142).
+- Do not hand-edit those flags in a status flip any more; run this and commit the diff.
+
 ## Cross-cutting conventions (don't reinvent these)
 
 - **DB connection defaults** — every Python script here defaults to

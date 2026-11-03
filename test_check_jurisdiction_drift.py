@@ -46,7 +46,7 @@ def _manifest():
     us = _entry("primary", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=False)
     us["scrape"]["timeout_s"] = 4 * 3600
     us["archive"]["timeout_s"] = 24 * 3600
-    nc = _entry("secondary", people_refresh=False, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
+    nc = _entry("secondary", people_refresh=True, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
     # OPEN-462: fl/us keep the default "Test State" name (no branch in CORE_TEXT_EXTRACT_PY below, so
     # their expected diff_cleaner is "none"); nc/al get real display names so the fixture dispatch
     # below (keyed on those exact strings, like the real one) has something to match against.
@@ -605,8 +605,12 @@ def _add_pilot_state(world, tier, status):
     """A brand-new state as `new-jurisdiction` writes it: every enrollment flag off, archive off."""
     manifest_path = world[2]
     data = yaml.safe_load(open(manifest_path))
-    e = _entry(tier, status=status, archive=False, people_refresh=False, search_refresh=False, embedding=False,
-               cloud_path=False, api_smoke_test=False, qa_sweep=False, replica_routing=False, legbot_replica=False)
+    # Past probing the validator requires people_refresh and archive.enabled (and, at live, archive.scheduled):
+    # advance-jurisdiction sets them. Everything else is still off, as `new-jurisdiction` writes it.
+    past_probing = status != "probing"
+    e = _entry(tier, status=status, archive=past_probing, scheduled=(status == "live"), people_refresh=past_probing,
+               search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=False,
+               replica_routing=False, legbot_replica=False)
     e["name"] = "Pennsylvania"
     data["pa"] = e
     _write(manifest_path, yaml.safe_dump(data))
