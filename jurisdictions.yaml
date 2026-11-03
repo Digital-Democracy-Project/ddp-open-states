@@ -483,11 +483,11 @@ pa:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
     scheduled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
   enrollment:
-    people_refresh: false
+    people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
     search_refresh: false
     embedding: false
     cloud_path: true
@@ -517,11 +517,11 @@ ne:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
     scheduled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
   enrollment:
-    people_refresh: false
+    people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
     search_refresh: false
     embedding: false
     cloud_path: true
@@ -551,11 +551,11 @@ la:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
     scheduled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
   enrollment:
-    people_refresh: false
+    people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
     search_refresh: false
     embedding: false
     cloud_path: true
