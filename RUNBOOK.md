@@ -98,6 +98,12 @@ directory must exist and hold the file), then `docker compose -p ddp-openstates 
 the endpoint answers 503 by design. The Mac's recreate is gated by the compose file's own HARD PRECONDITION (do not
 recreate until ddp-broker has been switched to the EC2 api-v3); read that comment first.
 
+**Rolling out a merged change of the state list on a host (OPEN-483): one command.** `bash deploy/rollout-manifest.sh --host
+mac|ec2 --ddp-sync-root <ddp-sync checkout> [--dry-run] [--state XX]` (the gates, the pull, the checks on the pulled file, then the
+copy for api-v3, then the container checks and the values read back; see PRIMITIVES.md). Run it with `--dry-run` first and
+paste both outputs into the evidence comment. It restarts nothing. **If a check fails after the pull, the pulled checkout stays but
+api-v3 keeps serving the previous list** (its copy is made only after the checks pass): fix the list on `main`, pull, rerun.
+
 **`com.ddp.openstates-api` and `com.ddp.openstates-db-backup` are system LaunchDaemons**
 (`/Library/LaunchDaemons/`), migrated 2026-07-17 from GUI LaunchAgents as Phase 2 of
 `PLAN-cams-hardening-isolation.md` (`ddp-agents` repo, PR #20 + hotfix #21 + follow-up #22) —
