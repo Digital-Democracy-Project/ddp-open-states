@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""
+advance-jurisdiction -- move a state to its next status in jurisdictions.yaml and set every flag that
+status needs, in one step (PLAN-push-button-onboarding.md section 5.3 and the Stage 2/4/6 text).
+
+Why it exists: advancing a state used to mean editing four to seven separate lines by hand
+(status, enrollment.cloud_path, enrollment.people_refresh, archive.enabled, archive.scheduled ...), and
+forgetting one is how pilot #2's first scrapes loaded with 0 legislators (2026-11-03). Now the
+validator (validate_jurisdictions.py) REFUSES a state at `scraping` or `live` that lacks them, and this
+command sets them.
+
+Usage:
+    advance-jurisdiction <st> scraping [--dry-run] [--manifest PATH]
+    advance-jurisdiction <st> live     [--dry-run] [--manifest PATH]
+
+  scraping  (from probing)              status; people_refresh true; archive.enabled true; cloud_path true
+                                        (left alone, with a warning, when waf.fargate_safe is false)
+  live      (from scraping/validating/  everything `scraping` sets, plus archive.scheduled true.
+             archived/paused)           `live` is a human decision (plan section 4.6): this command is how
+                                        you record it, it does not decide it.
+
+What it NEVER touches: tier, enrollment.legbot_replica, embedding, replica_routing, search_refresh,
+qa_sweep, api_smoke_test, waf, quality.diff_cleaner. LegBot in particular stays the one switch a human
+flips, because it depends on the data being good.
+
+Safety: line-by-line edits of the one state's block only, so every comment and every other state's
+bytes are preserved; the result is checked with validate_jurisdictions.validate() before anything is
+written; an invalid result leaves the file unchanged. Idempotent: re-running changes nothing.
+
+Run with this repo's environment (PyYAML), like new-jurisdiction.
+"""
+
+import argparse
+import os
+import re
+import sys
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover
+    sys.stderr.write("advance-jurisdiction requires PyYAML; run it with the repo's venv python.\n")
+    sys.exit(2)
+
+from validate_jurisdictions import DEFAULT_MANIFEST_PATH, _DuplicateKeyCheckingLoader, validate
+
+# What each target status sets: (section or None for a top-level field, key, value).
+_FOR_SCRAPING = [
+    ("enrollment", "people_refresh", True),
+    ("archive", "enabled", True),
+    ("enrollment", "cloud_path", True),
+]
+SETS = {
+    "scraping": _FOR_SCRAPING,
+    "live": _FOR_SCRAPING + [("archive", "scheduled", True)],
+}
+ALLOWED_FROM = {
+    "scraping": {"probing", "scraping"},
+    "live": {"scraping", "validating", "archived", "paused", "live"},
+}
+
+
+def _find_block(lines, code):
+    start = next((i for i, l in enumerate(lines) if re.match(rf"^{re.escape(code)}:\s*(#.*)?$", l)), None)
+    if start is None:
+        return None
+    end = start + 1
+    while end < len(lines) and (lines[end].startswith(" ") or not lines[end].strip()):
+        end += 1
+    return start, end
+
+
+def _set_in_block(lines, start, end, section, key, text_value):
+    """Replace one scalar inside the block, keeping spacing and any trailing comment. Returns True if changed."""
+    current = None
+    indent = 2 if section is None else 4
+    pattern = re.compile(rf"^( {{{indent}}}{re.escape(key)}:\s*)([^\s#]+)(.*)$")
+    for i in range(start + 1, end):
+        line = lines[i]
+        m_section = re.match(r"^  ([A-Za-z_]+):\s*(#.*)?$", line)
+        if m_section:
+            current = m_section.group(1)
+            continue
+        if (section is None and current is None) or (section is not None and current == section):
+            m = pattern.match(line)
+            if m:
+                if m.group(2) == text_value:
+                    return False
+                lines[i] = f"{m.group(1)}{text_value}{m.group(3)}"
+                return True
+    raise KeyError(f"{section + '.' if section else ''}{key} not found in the entry")
+
+
+def advance(text, code, target):
+    """Return (new_text, changes, warnings, error). Pure: no I/O."""
+    if target not in SETS:
+        return text, [], [], f"target status must be one of {sorted(SETS)}, got {target!r}"
+    lines = text.split("\n")
+    block = _find_block(lines, code)
+    if block is None:
+        return text, [], [], f"{code!r} is not in the manifest (create it with new-jurisdiction first)"
+    start, end = block
+    entry = yaml.load(text, Loader=_DuplicateKeyCheckingLoader)[code]
+    current = entry["status"]
+    if current not in ALLOWED_FROM[target]:
+        return text, [], [], (
+            f"{code} is {current!r}; it can only go to {target!r} from {sorted(ALLOWED_FROM[target])}"
+        )
+    changes, warnings = [], []
+    if _set_in_block(lines, start, end, None, "status", target):
+        changes.append(f"status: {current} -> {target}")
+    for section, key, value in SETS[target]:
+        if (section, key) == ("enrollment", "cloud_path") and entry["waf"]["fargate_safe"] is False:
+            warnings.append(
+                "enrollment.cloud_path left as it is: waf.fargate_safe is false, so this state may need the Mac "
+                "(a human call)"
+            )
+            continue
+        if _set_in_block(lines, start, end, section, key, "true" if value else "false"):
+            changes.append(f"{section}.{key}: {entry[section][key]} -> {value}")
+    return "\n".join(lines), changes, warnings, None
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("state")
+    parser.add_argument("status", choices=sorted(SETS))
+    parser.add_argument("--manifest", default=DEFAULT_MANIFEST_PATH)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args(argv)
+
+    with open(args.manifest) as f:
+        original = f.read()
+    new_text, changes, warnings, error = advance(original, args.state, args.status)
+    if error:
+        print(f"STOP: {error}", file=sys.stderr)
+        return 1
+    errors = validate(yaml.load(new_text, Loader=_DuplicateKeyCheckingLoader))
+    if errors:
+        print("STOP: the result would not validate; nothing was written:", file=sys.stderr)
+        for e in errors:
+            print(f"  {e}", file=sys.stderr)
+        return 1
+    for w in warnings:
+        print(f"WARNING: {w}")
+    if not changes:
+        print(f"{args.state} is already {args.status} with every flag set; nothing to change.")
+        return 0
+    print(f"{args.state} -> {args.status}:")
+    for c in changes:
+        print(f"  {c}")
+    if args.dry_run:
+        # Edits are line-for-line, so show exactly the lines that differ (a unified diff mis-aligns here).
+        for before, after in zip(original.split("\n"), new_text.split("\n")):
+            if before != after:
+                print(f"  - {before.strip()}\n  + {after.strip()}")
+        print("(dry run: nothing written)")
+        return 0
+    with open(args.manifest, "w") as f:
+        f.write(new_text)
+    print(
+        "Written. Still yours, on purpose: LegBot (enrollment.legbot_replica), embedding and routing are not set by "
+        "this command."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

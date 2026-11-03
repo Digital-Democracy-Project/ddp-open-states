@@ -255,6 +255,9 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
    against a newer probe result to see exactly what changed. Finish with step 2 below (the validator and drift
    check) before committing. See PRIMITIVES.md for exactly what it writes and what it deliberately never
    guesses.
+1. **Moving a state to `scraping` or `live` (2026-11-03): run `advance-jurisdiction <st> scraping|live [--dry-run]`.** It sets the status and
+   the flags that status needs (`people_refresh`, `archive.enabled`, `cloud_path`, and at `live` `archive.scheduled`); the validator
+   refuses a state past `probing` without them. It never sets LegBot, embedding or routing.
 1. For everything past the initial entry: edit `jurisdictions.yaml` directly — the flag (`archive.enabled`,
    `enrollment.*`), or filling in a field step 0 left as a human-review placeholder. **This repo's own
    scripts need nothing else** (OPEN-327): `activate.sh`'s archive gate, the people refresh, the API boot smoke

@@ -470,7 +470,8 @@ def test_the_stage_4_case_is_enabled_but_not_scheduled_and_is_valid_before_live(
 
 def test_scheduled_requires_enabled():
     errors = validate(_with(enabled=False, scheduled=True))
-    assert errors == ["ts.archive.scheduled: true requires archive.enabled: true"]
+    # (a live state also has to be archive.enabled: that is its own, second message)
+    assert "ts.archive.scheduled: true requires archive.enabled: true" in errors
 
 
 def test_not_enabled_and_not_scheduled_is_valid_for_any_status():
