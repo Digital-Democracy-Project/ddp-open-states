@@ -158,3 +158,31 @@ def test_an_unwritable_directory_gives_the_root_owned_hint(tmp_path):
     finally:
         dest_dir.chmod(0o755)
     assert r.returncode == 1 and "created it as root" in r.stderr
+
+
+@pytest.mark.parametrize("failing", ["cp", "mv"])
+def test_a_failure_while_publishing_leaves_the_served_copy_intact_and_no_partial_file(tmp_path, failing):
+    """api-v3 reads deploy/manifest/jurisdictions.yaml directly, so it must never see a partial file, and a failed sync
+    must keep the previous copy. The copy is written to a temp file in the same directory and published by rename; here
+    `cp` dies halfway (leaving a partial temp file) or `mv` fails, and the served file must be untouched."""
+    src = tmp_path / "jurisdictions.yaml"
+    dest_dir = tmp_path / "manifest"
+    src.write_text("v1\n")
+    assert _run(src, dest_dir).returncode == 0
+    served = dest_dir / "jurisdictions.yaml"
+    before = (served.read_text(), served.stat().st_ino, served.stat().st_mtime)
+    src.write_text("v2 is a much longer document\n" * 50)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    real = shutil.which(failing)
+    stub = bin_dir / failing
+    if failing == "cp":   # writes half the content to the destination argument, then dies
+        stub.write_text(f'#!/usr/bin/env bash\nfor last; do :; done\nhead -c 20 "${{@: -2:1}}" > "$last"\nexit 1\n')
+    else:
+        stub.write_text("#!/usr/bin/env bash\nexit 1\n")
+    stub.chmod(0o755)
+    env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}", MANIFEST_SOURCE=str(src), MANIFEST_DEST_DIR=str(dest_dir))
+    r = subprocess.run(["bash", SCRIPT], env=env, capture_output=True, text=True)
+    assert r.returncode != 0
+    assert (served.read_text(), served.stat().st_ino, served.stat().st_mtime) == before   # same content, same file
+    assert [p.name for p in dest_dir.iterdir()] == ["jurisdictions.yaml"]                  # no partial temp file left
