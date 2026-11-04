@@ -344,7 +344,7 @@ The scheduled, alerting wrapper for the logical replica LegBot reads. **Reuses, 
 `compare-schema.sh` (published-vs-subscribed table set + column agreement) do all the assessing; this
 script only runs them, keeps a two-strikes alert state per check in `logs/last-run/replica-health.*.state`,
 and posts one Slack message (plus recovery) to `#automation-errors`. Credential-free checks run every
-time; the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL` /
+time (and, since OPEN-314, stage 3 runs `sync-structure.sh` whenever its credential file exists); the RDS-side and schema stages run only when `RDS_MONITORING_DATABASE_URL` /
 `RDS_HOST`+`RDS_REPLICATION_PASSWORD` are in the environment. Same invocation model as
 the retired `check-scrape-staleness.sh` (one-line hook in `ddp-agents`' `health-check-slack.sh`; always exits 0).
 Sets `DOCKER_HOST` to Colima itself when run as a root daemon (copied from `start-os-api.sh`).
@@ -355,6 +355,27 @@ It runs with `HOME` unset and a minimal `PATH`; the helper needs neither. (A mon
 self-contained, as OPEN-43 noted for the retired staleness watchdog: it should not break because the thing it
 watches did. The helper depends on nothing but `curl` and `/usr/bin`.) Test seams: `REPLICA_*` env vars, see
 `test-replica-monitoring.sh`. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
+
+## `ops/postgres-replica/local/sync-structure.sh` — the Mac replica follows RDS's table structure by itself (OPEN-314)
+
+Logical replication never carries structure, so a new column on a published table used to stall the Mac's apply worker
+until a person added it by hand, in order. This script does the safe additive part: it adds a missing nullable column or one with a plain-constant default (all
+of a table's additions in one transaction, none if any of its columns is refused), creates a published table that is
+missing locally (columns, primary key, other indexes; no foreign keys) and refreshes the subscription only when **every**
+pending published table is ready (exists locally and `ddp_local_replication` can `SELECT` it), and **refuses** (a `FAIL:` line)
+a `NOT NULL` column with no default, an identity/generated column, a function default (it would be evaluated again on
+the Mac and give existing rows different values), a changed type, a table with a generated column, or a table with no primary key. It reads RDS only
+(no publication or grant changes: those stay the prod agent's), never touches local-only tables, the locally built
+`ddp_bill_search` or the foreign keys the Mac dropped, and reports a new RDS table the publication does not carry only
+after `--seed-known-unpublished`. One run at a time (lock), bounded run time (watchdog kills the whole process tree),
+idempotent, `--dry-run`. Credential: the existing read-only replication login from a mode-600 file
+(`STRUCTURE_SYNC_ENV_FILE`) or the environment, never printed. **Reuses, does not reimplement:** the column read is
+`compare-schema.sh`'s `pg_attribute`/`format_type()` query (extended with default and identity), the table list is the
+publication's own (OPEN-312), and the scheduling and alerting are `check-replica-health.sh` stage 3 (its two-strikes
+state, `logs/last-run/replica-health.structure.state`, one Slack message, recovery). **Do not** add a second scheduler,
+a second alert path or an RDS write to this; if a case is not additive, the answer is the break-glass procedure
+(README) or a rebuild. Tests: `test-structure-sync.sh` (real throwaway Postgres pair) and `test-replica-monitoring.sh`.
+Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-314".
 
 ## `backfill-fl-historical.sh` — historical/one-off backfill driver (repo root)
 

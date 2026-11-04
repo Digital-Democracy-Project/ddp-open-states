@@ -73,10 +73,55 @@ infrastructure (`ddp-openstates-postgres-1`, `ddp-openstates-api-1`, `ddp-agents
 confirmed untouched throughout via `docker ps` and a row-count check on the real (not test)
 `opencivicdata_billversionlink` table.
 
-## Django migration procedure (OPEN-277, plan §7.9)
+## Changing the replicated schema: the automated path (OPEN-314), then the manual break-glass procedure
 
-Not a script — a documented procedure for when a Django migration touches any of the 7 tables
-this plan replicates. Logical replication does **not** propagate DDL, so RDS and the local
+### `sync-structure.sh` (OPEN-314): the Mac follows RDS's structure by itself
+
+Logical replication copies rows, never structure. `sync-structure.sh` does the safe, additive part of the manual
+procedure below with no person involved, and `check-replica-health.sh` runs it every 5 minutes (stage 3) once it is
+switched on. **RDS is only ever read**: the job never changes the publication, grants or anything else there.
+
+| What RDS did | What the Mac job does |
+|---|---|
+| New nullable column (or one whose default is a plain constant: `true`, a number, a quoted literal) on a published table | `ADD COLUMN` locally, same type (this is the case OPEN-492's `is_bill_version` is). All of one table's new columns go in **one transaction**, and only if none of that table's columns was refused: a table is changed all or not at all |
+| New column that is `NOT NULL` with no default, identity/generated, or whose default is not a plain constant (`now()`, `gen_random_uuid()`, `nextval()`, any function) | **Refuses**: prints a `FAIL:` line, never applies it. A function default would be evaluated again on the Mac and give existing rows values that differ from RDS, for good (replication never replays RDS's backfill). Decide by hand |
+| A column's type or `NOT NULL` changed | **Refuses** (`FAIL:` line). Rebuild the replica (below) |
+| New table added to the publication | Creates it locally (columns, types, `NOT NULL`, primary key, other indexes; no foreign keys, defaults or triggers: the Mac copy is read-only; an identity column becomes a plain column), in one transaction. A table with a **generated** column is refused (its value is not replicated, the Mac would hold NULL for ever), as is one with no primary key. Then `ALTER SUBSCRIPTION ... REFRESH PUBLICATION`, which subscribes **every** pending published table, so it runs only when **all** of them exist locally and `ddp_local_replication` can `SELECT` them on RDS; if any one is not ready it prints a `FAIL:` line (the prod agent must `GRANT` it) and refreshes **nothing**, so no table-copy worker can crash-loop |
+| A table on RDS that is not in the publication | Never acted on. A `FAIL:` line only if it is **new** since `--seed-known-unpublished` (see install step 3); `ddp_bill_search` (the Mac builds its own) is always known |
+| A column that exists only on the Mac | Left alone (`INFO:` line) |
+
+It never touches local-only tables (`profiles_profile`, the locally built `ddp_bill_search`) or the foreign keys the Mac
+dropped on purpose, because it only reads the publication's own table list. **What stays manual, by design:** the RDS
+side of a new table (`GRANT SELECT` to `ddp_local_replication` and `ALTER PUBLICATION ... ADD TABLE`, the prod agent),
+and anything destructive. A published table with no primary key is refused (the Mac could not apply updates to it).
+
+**Stall window.** A new column only stalls the Mac when a row that carries it is written on RDS: the apply worker then
+fails and retries every ~5 s until the Mac has the column. With the job running every 5 minutes the worst case is the
+schedule interval + the job's run time + one retry, about 5 min 6 s, inside the agreed ~10 minutes; no data is lost
+(RDS retains the WAL). Measured on the throwaway pair (`test-structure-sync.sh`): the job took 1 s and the stalled row
+was visible 0 to 1 s after it ended. A refusal that nobody fixes shows up as the replica check's own "bad" state
+(and one Slack message after two runs), not as silence.
+
+**Install (human steps; nothing is installed by the code):**
+1. Create the credential file `/Users/agentsmith/.config/ddp/replica-structure-sync.env`, mode **600** (the script
+   refuses any other mode), with exactly:
+   `RDS_HOST=<the RDS endpoint>` and `RDS_REPLICATION_PASSWORD=<the ddp_local_replication password>` (the same value
+   `compare-schema.sh` already takes; optional `RDS_PORT`, `RDS_DATABASE`). Never paste it anywhere else.
+2. First look: `bash ops/postgres-replica/local/sync-structure.sh --dry-run` (prints `WOULD:` lines, changes nothing).
+3. Once: `bash ops/postgres-replica/local/sync-structure.sh --seed-known-unpublished` (records today's unpublished RDS
+   tables as "intentionally not copied" in `logs/last-run/structure-sync.known-unpublished`; add a name to that file to
+   acknowledge a later one).
+4. The existing 5-minute hook runs it as soon as the file exists and this checkout has the change pulled. **Turn it
+   off** by removing or renaming the credential file. Logs: `logs/replica-check.log` (`structure sync: APPLIED: ...`).
+5. Not part of this change and still to do before it matters in production: OPEN-313 (the monitoring itself live).
+
+Tests: `bash test-structure-sync.sh` (a throwaway publisher/subscriber pair of two `postgres:16` containers, about a minute,
+needs Docker and the `postgres:16` image) and `bash test-replica-monitoring.sh` (the alert glue, no database).
+
+### Manual break-glass procedure (OPEN-277, plan §7.9)
+
+Use this when the job refused something, is switched off, or the change is destructive. It is a documented procedure
+for when a Django migration touches any of the tables this plan replicates. Logical replication does **not** propagate DDL, so RDS and the local
 replica never automatically agree on schema after a migration; how to reconcile them depends on
 the migration's own shape:
 
