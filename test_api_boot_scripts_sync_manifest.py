@@ -11,10 +11,15 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 
 import pytest
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+
+GOOD_LIST = open(os.path.join(_HERE, "jurisdictions.yaml")).read()  # the real list: the sync now validates it
+# parses as YAML and looks like a list, but the validator refuses it (status not in the allowed set)
+BAD_LIST = GOOD_LIST.replace("\n  status: live", "\n  status: not-a-status", 1)
 
 STUB_DOCKER = """#!/usr/bin/env bash
 echo "docker $*" >> "$STUB_LOG"
@@ -37,7 +42,8 @@ def host(tmp_path):
     deploy = tmp_path / "ddp-open-states" / "deploy"
     deploy.mkdir(parents=True)
     shutil.copy(os.path.join(_HERE, "deploy", "sync-manifest.sh"), deploy)
-    (tmp_path / "ddp-open-states" / "jurisdictions.yaml").write_text("nc:\n  name: North Carolina\n  status: live\n")
+    shutil.copy(os.path.join(_HERE, "validate_jurisdictions.py"), tmp_path / "ddp-open-states")
+    (tmp_path / "ddp-open-states" / "jurisdictions.yaml").write_text(GOOD_LIST)
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     for name in ("start-os-api.sh", "refresh-api-v3.sh"):
@@ -73,6 +79,7 @@ def _run(host, script):
         LOG=str(host["tmp"] / "os-api.log"),
         API_V3_DIR=str(host["api_v3"]),
         DOCKER_HOST="unix:///nonexistent",
+        MANIFEST_PYTHON=sys.executable,
     )
     return subprocess.run(["bash", str(host["scripts"] / script)], env=env, capture_output=True, text=True, timeout=60)
 
@@ -87,7 +94,7 @@ def test_the_copy_exists_before_the_first_docker_compose_call(host, script):
     calls = _compose_calls(host)
     assert calls, "docker-compose was never reached"
     assert "copy_present=yes" in calls[0], calls[0]
-    assert (host["deploy"] / "manifest" / "jurisdictions.yaml").read_text().startswith("nc:")
+    assert (host["deploy"] / "manifest" / "jurisdictions.yaml").read_text() == GOOD_LIST
 
 
 @pytest.mark.parametrize("script", ["start-os-api.sh", "refresh-api-v3.sh"])
@@ -109,7 +116,7 @@ def test_a_good_existing_copy_survives_a_failed_sync(host, script):
     assert subprocess.run(["bash", str(host["deploy"] / "sync-manifest.sh")], capture_output=True).returncode == 0
     (host["tmp"] / "ddp-open-states" / "jurisdictions.yaml").write_text("")
     _run(host, script)
-    assert (host["deploy"] / "manifest" / "jurisdictions.yaml").read_text().startswith("nc:")
+    assert (host["deploy"] / "manifest" / "jurisdictions.yaml").read_text() == GOOD_LIST
     assert _compose_calls(host) == []
 
 
@@ -141,3 +148,36 @@ def test_a_persistent_sync_failure_alerts_once_per_streak_not_on_every_relaunch(
     src.write_text("")
     again = _run(host, "start-os-api.sh")
     assert _alerts(again) == 1  # a new streak alerts again
+
+
+@pytest.mark.parametrize("script", ["start-os-api.sh", "refresh-api-v3.sh"])
+def test_a_list_the_validator_rejects_stops_before_any_docker_compose_call(host, script):
+    """OPEN-488: after a pull whose validation failed, a reboot or a refresh must not serve the unvalidated list."""
+    (host["tmp"] / "ddp-open-states" / "jurisdictions.yaml").write_text(BAD_LIST)
+    r = _run(host, script)
+    assert r.returncode != 0
+    assert _compose_calls(host) == [], f"docker-compose ran although the list is invalid:\n{r.stdout}{r.stderr}"
+    assert not (host["deploy"] / "manifest").exists(), "an invalid list was copied"
+
+
+@pytest.mark.parametrize("script", ["start-os-api.sh", "refresh-api-v3.sh"])
+def test_the_previous_good_copy_keeps_serving_when_the_new_list_is_rejected(host, script):
+    _run(host, script)  # first run: the stub docker-compose aborts right after the sync
+    served = host["deploy"] / "manifest" / "jurisdictions.yaml"
+    assert served.read_text() == GOOD_LIST
+    (host["tmp"] / "ddp-open-states" / "jurisdictions.yaml").write_text(BAD_LIST)
+    host["log"].write_text("")
+    _run(host, script)
+    assert served.read_text() == GOOD_LIST
+    assert _compose_calls(host) == []
+
+
+def test_a_rejected_list_alerts_once_per_streak_and_a_good_list_rearms_it(host):
+    src = host["tmp"] / "ddp-open-states" / "jurisdictions.yaml"
+    src.write_text(BAD_LIST)
+    runs = [_run(host, "start-os-api.sh") for _ in range(3)]
+    assert [_alerts(r) for r in runs] == [1, 0, 0]
+    src.write_text(GOOD_LIST)
+    _run(host, "start-os-api.sh")
+    src.write_text(BAD_LIST)
+    assert _alerts(_run(host, "start-os-api.sh")) == 1
