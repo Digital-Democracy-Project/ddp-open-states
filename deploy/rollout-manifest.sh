@@ -81,31 +81,66 @@ val "branch: $BRANCH"
 say "1. Gates"
 # (a) a REAL scrape, archive or people-refresh process. These all read this checkout (scripts, activate.sh, the list), and
 # run-scrape-retrying.sh stays alive while it SLEEPS between attempts (up to 900 s) with no run-scrape.sh alive, so it is
-# matched too. The listing is parsed by field: a real run is `<path>/<name>.sh ...`, or a shell (optionally behind `env`) whose
-# first non-option argument is that script (`bash -x <path>/run-scrape.sh`). A shell that merely CONTAINS the text
-# (`zsh -c "... run-scrape ..."`, a grep, this script's own command line) never matches: a plain `ps | grep run-scrape`
-# matched its own shell on 2026-11-03 and nearly caused a wrong call.
+# matched too. The listing is parsed by field: a real run is `<path>/<name>.sh ...`; or a SHELL whose first non-option
+# argument is that script (`bash -x <path>/run-scrape.sh`, `bash -o pipefail run-scrape.sh`: the value of -o is skipped);
+# or a known WRAPPER (env, nohup, caffeinate, time, sudo, nice, ionice, timeout, setsid, stdbuf, arch, doas) whose COMMAND (after its
+# options and their values) is the job or a shell on it (`caffeinate -i run-scrape.sh`, `/usr/bin/time -p run-archive.sh`,
+# `sudo -u git run-people-refresh.sh`, `nohup bash run-scrape.sh`) (OPEN-488).
+# Anything else never matches: a shell that merely CONTAINS the text (`zsh -c "... run-scrape ..."`), a grep, an editor or an
+# echo (also behind a wrapper), this script's own command line. A plain `ps | grep run-scrape` matched its
+# own shell on 2026-11-03 and nearly caused a wrong call.
 # ROLLOUT_PS_FILE (tests only): a file holding a fake `ps -axo pid=,command=` listing.
 if [ -n "${ROLLOUT_PS_FILE:-}" ]; then PS_LIST="$(cat "$ROLLOUT_PS_FILE")"; else PS_LIST="$(ps -axo pid=,command=)"; fi
 REAL_SCRAPES="$(printf '%s\n' "$PS_LIST" | awk '
     function base(p,   a, n) { n = split(p, a, "/"); return a[n] }
     function is_shell(b) { return b == "bash" || b == "sh" || b == "zsh" || b == "dash" || b == "ksh" }
     function is_job(b) { return b == "run-scrape.sh" || b == "run-scrape-retrying.sh" || b == "run-archive.sh" || b == "run-people-refresh.sh" }
-    {
-        i = 2
-        # `env [-opts] [NAME=value ...] cmd ...` runs cmd: look at cmd instead.
-        if (base($i) == "env") { i++; while (i <= NF && ($i ~ /^-/ || $i ~ /=/)) i++ }
-        if (is_job(base($i))) { print $1 " " base($i); next }
-        if (is_shell(base($i))) {
-            # `bash [-x -e ...] run-scrape.sh ...` runs the script; `bash -c "..."` merely carries text, and the
-            # script it starts is a child process of its own that this listing shows separately.
-            for (j = i + 1; j <= NF; j++) {
-                if ($j ~ /^-[A-Za-z]*c[A-Za-z]*$/) break
-                if ($j ~ /^-/) continue
-                if (is_job(base($j))) print $1 " " base($j)
-                break
-            }
+    function is_wrapper(b) { return b == "env" || b == "nohup" || b == "caffeinate" || b == "time" || b == "sudo" || b == "nice" || b == "ionice" || b == "timeout" || b == "setsid" || b == "stdbuf" || b == "arch" || b == "doas" }
+    # Options of a wrapper that take a VALUE as the next field (`sudo -u git`, `caffeinate -t 60`, `nice -n 5`): that value is
+    # never the wrapped command. A wrapper not listed here and an option not listed take no value.
+    function takes_value(w, o) {
+        if (w == "sudo") return o ~ /^-[ughpCDRTU]$/
+        if (w == "doas") return o ~ /^-[uC]$/
+        if (w == "caffeinate") return o ~ /^-[tw]$/
+        if (w == "nice") return o == "-n"
+        if (w == "ionice") return o ~ /^-[cnpPu]$/
+        if (w == "timeout") return o ~ /^-[sk]$/
+        if (w == "env") return o ~ /^-[uCS]$/
+        if (w == "time") return o ~ /^-[fo]$/
+        if (w == "stdbuf") return o ~ /^-[ioe]$/
+        if (w == "arch") return o == "-arch"
+        return 0
+    }
+    # `bash [-x -e -o name ...] run-scrape.sh ...` runs the script; `bash -c "..."` merely carries text, and the script it
+    # starts is a child process of its own that this listing shows separately.
+    function shell_scan(k,   j) {
+        for (j = k; j <= NF; j++) {
+            if ($j ~ /^-[A-Za-z]*c[A-Za-z]*$/) return
+            if ($j ~ /^[-+][A-Za-z]*[oO]$/ || $j == "--rcfile" || $j == "--init-file") { j++; continue }
+            if ($j ~ /^[-+]/) continue
+            if (is_job(base($j))) print $1 " " base($j)
+            return
         }
+    }
+    # `<wrapper> [options and their values] [NAME=value] [duration] <command> ...`: find the COMMAND the wrapper runs, and only
+    # that: `nohup echo run-scrape.sh` and `sudo vim run-scrape.sh` run echo and vim, `sudo -u git bash run-scrape.sh` runs bash.
+    function wrapper_scan(w, k,   j, bj) {
+        for (j = k; j <= NF; j++) {
+            if ($j ~ /^-/) { if (takes_value(w, $j)) j++; continue }
+            if (w == "env" && $j ~ /=/) continue
+            if (w == "timeout" && $j ~ /^[0-9.]+[smhd]?$/) continue
+            bj = base($j)
+            if (is_job(bj)) print $1 " " bj
+            else if (is_shell(bj)) shell_scan(j + 1)
+            else if (is_wrapper(bj)) wrapper_scan(bj, j + 1)
+            return
+        }
+    }
+    {
+        b = base($2)
+        if (is_job(b)) { print $1 " " b; next }
+        if (is_shell(b)) { shell_scan(3); next }
+        if (is_wrapper(b)) wrapper_scan(b, 3)
     }')"
 if [ -n "$REAL_SCRAPES" ]; then
     die "a real scrape, archive or people-refresh job is running ($(echo "$REAL_SCRAPES" | tr '\n' ';')); leave this checkout alone until it finishes"
