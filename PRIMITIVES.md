@@ -536,10 +536,15 @@ step matters — a newer pip breaks one of the pinned deps' build.
   (every other order still answers 400 without one, and `session` still needs a `jurisdiction`), so a browse list over all
   jurisdictions asks for it. `latest_action_date` is free text (date-only for MA, full timestamps for UT and US; of the
   77,688 bills 73 have none and every other one starts with an ISO date), so the order is exact to the day. **Do not add a second ordered-list route
-  or a sort on `ddp_bill_search`:** the main table has the index (`opencivicdata_bill_latest_action_idx`); measured on the
+  or a sort on `ddp_bill_search`:** measured on the
   Mac, 20 a page: 103 ms for page 1, 168 ms at the deepest page, one state 27 to 92 ms (EC2 page 1 613 ms, prod agent
-  report `2a588e6`, about six times slower; not investigated). No schema change, so no `ensure` or refresh; it needs a new api
-  image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
+  report `2a588e6`, about six times slower). **Correction (OPEN-484, 2026-11-03):** this entry first said the table's index
+  (`opencivicdata_bill_latest_action_idx`) serves this order. It does not: that index is ascending and has no `id`, so Postgres
+  reads and sorts every bill for each page (`EXPLAIN ANALYZE` on the production-copy database: page query 39 ms, 43 ms more for the
+  page's total count). An index that matches the order (`latest_action_date DESC NULLS LAST, id`) takes the page query to
+  0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **open, not merged, not
+  deployed**; runbook `docs/runbook/ddp-bill-search.md` section 9, which needs a production baseline and Ramon's go first). The
+  endpoint itself needed no schema change, so no `ensure` or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
 - **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
