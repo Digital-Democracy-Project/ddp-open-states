@@ -542,9 +542,13 @@ step matters — a newer pip breaks one of the pinned deps' build.
   (`opencivicdata_bill_latest_action_idx`) serves this order. It does not: that index is ascending and has no `id`, so Postgres
   reads and sorts every bill for each page (`EXPLAIN ANALYZE` on the production-copy database: page query 39 ms, 43 ms more for the
   page's total count). An index that matches the order (`latest_action_date DESC NULLS LAST, id`) takes the page query to
-  0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **open, not merged, not
-  deployed**; runbook `docs/runbook/ddp-bill-search.md` section 9, which needs a production baseline and Ramon's go first). The
-  endpoint itself needed no schema change, so no `ensure` or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
+  0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **merged 2026-11-04 as
+  `16c5168b`, not deployed, flag not run in production**; runbook `docs/runbook/ddp-bill-search.md` section 9, which needs a
+  production baseline and Ramon's go first). **Production baseline (prod agent, 2026-11-04 04:01 UTC):** the endpoint answers in
+  642 ms (page 1) but its page query takes 158 ms and the count 80 ms, so about 400 ms is outside both queries and unexplained; the
+  index alone will not reach 300 ms. Separately the shared pagination counted with `ORDER BY` inside the subquery, sorting every
+  row to count it (80 ms against 30 ms on the Mac; api-v3 PR #48, open). The endpoint itself needed no schema change, so no `ensure`
+  or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
 - **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
