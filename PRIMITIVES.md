@@ -707,6 +707,19 @@ functions, layered on top of the ordering work above rather than changing it.
 
 ## Motion classification tooling
 
+- **OPEN-492 — each saved bill document records, once, whether it is a real bill version.** `BillVersionDocument.is_bill_version`
+  in openstates-core (`ddp_bill_version_document`, a nullable true/false column, migration `0049`; empty means "not decided yet").
+  `is_bill_version(jurisdiction_name, note)` in `utils/version_ordering.py` is `not is_procedural_document(...)`: **the one
+  definition** of "is it a real bill version". The archiver writes it on every new row; `recompute-diff-order <state>` sets it
+  for rows already saved (dry run prints `is_bill_version: set=N changed=N not_a_version=N`; `--commit` saves). The archiver's
+  skip path does not touch an old row on purpose. api-v3 reads the flag (OPEN-422) instead of keeping a list, so **do not add
+  a second list of procedural notes anywhere else** (api-v3, ddp-sync, LegBot): add the state's rule to the table in
+  `version_ordering.py` and recompute that state. The flag says nothing about the stage (a version `note_stage()` cannot place
+  is still true here; readers keep handling that). **Release order matters:** the column must exist on the Mac replica
+  (`ddp_legbot_subscription` does not replicate structure changes), then on RDS, **before** any scrapers image with this code
+  runs; then the image, then the recompute per state (each with Ramon's go), then api-v3. Built 2026-11-04 (openstates-core
+  PR #80, not merged, not deployed; measured on the replica: Nebraska 790, Louisiana 3,328, Virginia 1,828, Utah 3,170,
+  Arizona 16, North Carolina 54, Alabama 45 flagged "not a version", every state without rules 0).
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
