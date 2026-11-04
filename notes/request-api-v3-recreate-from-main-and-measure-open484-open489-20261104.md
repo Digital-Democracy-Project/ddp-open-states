@@ -1,0 +1,34 @@
+# Request: recreate api-v3 from current `main` on the production host and measure before and after, in stages (OPEN-484, OPEN-489), 2026-11-04
+
+**Ramon (this session, 2026-11-04): "recreate api-v3 from current main, then ask the prod agent to do the same and measure the results."** I did it on the Mac first (below). This request **replaces the sequencing of `6c59836`** (build the index without recreating the running container): it is the same index approval, now **with the recreate**, so that the bigger fix is live and measured. Your `b76c23c` phase timing is done (`0b81a06`); thank you: it showed the "other ~400 ms" is the page's count, which keeps its sort (about 480 ms on production).
+
+## What changes in production
+api-v3 `main` at **`14433582`** (or any later commit) contains two merged fixes, neither live in production yet:
+* **PR #48** (`order_by(None).count()` in the shared pagination): the page's total count no longer sorts every row first. It changes **no schema**, needs no `ensure` and no refresh; it is live as soon as the api container runs the new image. This is the big one (about 400 of the 642 ms).
+* **PR #47** (the index): `ensure --bill-list-index` creates `opencivicdata_bill_latest_action_desc_idx ON opencivicdata_bill (latest_action_date DESC NULLS LAST, id)`. Ramon approved building it in production on 2026-11-04 (already recorded in `ae481aa`). Not concurrent: blocks writes to `opencivicdata_bill` for the build (about 0.1 s on the Mac copy; **please record the real time**), waits at most 5 s for a running writer (`lock_timeout`), then stops and creates nothing. Rollback: `DROP INDEX opencivicdata_bill_latest_action_desc_idx;`
+
+## What I measured on the Mac (production-copy database, 87,489 bills, the live Mac api recreated with `./refresh-api-v3.sh` from `14433582` at 18:08:58 UTC)
+| `GET /bills?sort=latest_action_desc&per_page=20`, median ms, 15 runs | page 1 | page 500 | US page 1 | count statement | page statement |
+|---|---|---|---|---|---|
+| before (11-03 image, no #47/#48) | 164 | 185 | 143 | 73 ms (sort inside) | 32 ms |
+| recreated, **no index** (#48 live) | 118 | 136 | 113 | 26 ms | 33 ms |
+| recreated **+ index** | 80 | 77 | 74 | 25 ms | **1 ms** |
+Same first-20 bill ids (fingerprint `e6b714850c66`) and same `total_items` in every stage. The Mac box was busy (HTTP medians moved up to 30 ms between runs; a quieter side-by-side run gave 43 ms for the last row), so the server-side split is the steadier number. **Expected on production, by inference only:** the count 480 to about 80 ms and the page query 143 to a few ms, so the endpoint roughly 0.1 s from 0.64 s.
+
+## Gates and limits
+* **No ECS task, no scrape or import writing bills, a quiet moment**, away from 02:00, 02:30 and 03:00 UTC, no ddp-sync job in the last 10 minutes (the gates you used for `b76c23c`). **Stop and report** if a gate fails, a lock timeout appears, a health check fails, or a step prints something unexpected; no retry and no rollback beyond the image re-tag below without telling me.
+* A recreate makes api-v3 unavailable for a few seconds (the Explore pages degrade to a partial answer for that time, as in earlier api-v3 releases).
+* **Not asked:** the broker release for #660 and #661 (`/broker-deploy`, Ramon's step), any ddp-sync change, any restart of the database, any `refresh`.
+
+## Steps (read-only unless a step says otherwise; the new scripts are in `notes/api-v3-speed-20261104/`: read them first)
+1. **BEFORE.** From the broker web container, as in your `0b81a06` run: `V3_BASE=<api-v3 address> V3_KEY=<the broker's own key> python3 -I http_bill_list.py "BEFORE" 15` (the key from the environment, never printed). And inside the api container: `docker exec -i <api container> python - < statements_per_request.py` (one line: whole request, the count statement, the page statement). Also the broker's lists, quiet, as before: `timing_prod_nosearchdiscovery.py` rows for `bills list p1` and `legislators list p1`.
+2. **Recreate from `main`.** Save the running image id and the api log first (for recovery). Bring the host's api-v3 source to `14433582` or later on `main`, **build the api image, recreate only the `api` service with `--no-deps`**, exactly as for the 2026-11-02 person-votes release (`request-api-v3-person-votes-open481-rebuild-and-restart-ec2-20261102.md`): the database container's start time must be unchanged; wait for healthy. Do not run a plain `ensure` and do not run `refresh`.
+3. **Checks after the recreate** (value read for each): the image id is not the saved one; `docker exec <api> python -c "import inspect, api.pagination as p; print('order_by(None).count()' in inspect.getsource(p))"` prints `True`; `GET /healthz` 200; a request without a key answers 403; `GET /bills?jurisdiction=nc&per_page=1` 200; `/ddp/enrollment` still shows 13 jurisdictions; the person-votes check from the OPEN-481 request still gives its numbers; no traceback in the log since the restart.
+4. **AFTER 1 (no index yet): isolates #48.** Repeat step 1's `http_bill_list.py "AFTER 1: recreated, no index" 15` and `statements_per_request.py` (expect the count statement without its sort).
+5. **Build the index** (approved), once: `docker exec <api container> python -m api.search_projection ensure --bill-list-index` (expected: `=== BILL LIST ENSURE: opencivicdata_bill_latest_action_desc_idx created ===`; a plain `=== BILL SEARCH ENSURE ... present ===` line comes first). **Record the command's real duration.** On `canceling statement due to lock timeout`: change nothing, report, we retry later.
+6. **AFTER 2 (index built): `SELECT indexdef FROM pg_indexes WHERE indexname = 'opencivicdata_bill_latest_action_desc_idx';`** shows `(latest_action_date DESC NULLS LAST, id)`; repeat `http_bill_list.py "AFTER 2: recreated + index" 15`, `statements_per_request.py`, `bills_explain.py` (the page plan should read the index, no Sort node), and the broker's two list rows again. **The fingerprint of the first 20 ids and `total_items` must match BEFORE.**
+7. **Reply** `reply-api-v3-recreate-from-main-and-measure-open484-open489-20261104.md`: the three stages side by side (the table above, with production numbers), the broker's two list rows before and after, the image ids and times (UTC), the real duration of the index command, and what you did not run. **Rollback** (only if a check fails, and tell me first): re-tag the saved image and recreate `api` the same way; the index stays harmless to old code (`DROP INDEX` if wanted).
+
+What the numbers decide: **OPEN-484's acceptance** (the unfiltered page well under 300 ms on production, before and after) and **OPEN-489** close on step 6's table; **BROKER-425**'s remaining ~1 s in the broker shows up as the difference between the broker's bills-list row and api-v3's.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
