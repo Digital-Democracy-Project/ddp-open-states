@@ -1,0 +1,22 @@
+######## step1 run A (cold) 16:06:49
+build query                  median     0.3 ms   max     0.4
+count (round trip)           median   480.7 ms   max   514.1
+options                      median     0.5 ms   max     0.5
+page query + load rows       median   143.1 ms   max   164.9
+rows to response objects     median     2.3 ms   max     2.6
+encode as JSON               median     2.8 ms   max     3.2
+TOTAL of these steps         median   627.5 ms   max   685.1
+######## step1 run B (warm, after 60 s) 16:07:58
+build query                  median     0.3 ms   max     0.4
+count (round trip)           median   474.5 ms   max   482.4
+options                      median     0.4 ms   max     0.8
+page query + load rows       median   142.2 ms   max   148.7
+rows to response objects     median     2.4 ms   max     3.0
+encode as JSON               median     2.8 ms   max     3.2
+TOTAL of these steps         median   625.7 ms   max   634.2
+######## step2: first connection plus select 1, x3
+2088 ms: first connection plus select 1
+2179 ms: first connection plus select 1
+2131 ms: first connection plus select 1
+-- select 1 on one open session, 20 in a loop
+select 1 on an open session: median 0.58 ms, max 0.73 ms, min 0.52 ms
