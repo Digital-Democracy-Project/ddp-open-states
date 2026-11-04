@@ -1,0 +1,189 @@
+######## bills_explain start 04:01:38
+bills: 87489
+
+--- PAGE 1 (offset 0): plan of run 1 (node types and buffers only)
+    Limit  (cost=9199.81..9202.14 rows=20 width=933) (actual time=152.202..152.320 rows=20 loops=1)
+    Buffers: shared hit=6840
+    ->  Gather Merge  (cost=9199.81..17705.87 rows=72904 width=933) (actual time=152.201..152.316 rows=20 loops=1)
+    Workers Planned: 2
+    Workers Launched: 2
+    Buffers: shared hit=6840
+    ->  Sort  (cost=8199.79..8290.92 rows=36452 width=933) (actual time=108.425..108.431 rows=17 loops=3)
+    Sort Key: opencivicdata_bill.latest_action_date DESC NULLS LAST, opencivicdata_bill.id
+    Sort Method: top-N heapsort  Memory: 65kB
+    Buffers: shared hit=6840
+    Worker 0:  Sort Method: top-N heapsort  Memory: 64kB
+    Worker 1:  Sort Method: top-N heapsort  Memory: 66kB
+    ->  Hash Join  (cost=71.34..7229.81 rows=36452 width=933) (actual time=0.918..60.483 rows=29163 loops=3)
+    Buffers: shared hit=6714
+    ->  Hash Join  (cost=37.88..7100.02 rows=36452 width=724) (actual time=0.480..46.136 rows=29163 loops=3)
+    Buffers: shared hit=6589
+    ->  Hash Join  (cost=13.71..6979.27 rows=36452 width=587) (actual time=0.204..31.270 rows=29163 loops=3)
+    Buffers: shared hit=6547
+    ->  Parallel Seq Scan on opencivicdata_bill  (cost=0.00..6868.52 rows=36452 width=461) (actual time=0.002..4.294 rows=29163 loops=3)
+    Buffers: shared hit=6504
+    Buffers: shared hit=21
+    ->  Seq Scan on opencivicdata_legislativesession  (cost=0.00..9.98 rows=298 width=126) (actual time=0.010..0.078 rows=298 loops=3)
+    Buffers: shared hit=21
+    Buffers: shared hit=42
+    ->  Seq Scan on opencivicdata_jurisdiction  (cost=0.00..18.52 rows=452 width=137) (actual time=0.011..0.121 rows=452 loops=3)
+    Buffers: shared hit=42
+    Buffers: shared hit=57
+    ->  Seq Scan on opencivicdata_organization  (cost=0.00..25.43 rows=643 width=209) (actual time=0.017..0.176 rows=643 loops=3)
+    Buffers: shared hit=57
+    Buffers: shared hit=663
+    Planning Time: 2.239 ms
+    Execution Time: 152.457 ms
+PAGE 1 (offset 0): Execution Time ms, 3 runs: [152.457, 157.552, 166.375]  median 157.6
+
+--- PAGE MIDDLE (offset 43744): plan of run 1 (node types and buffers only)
+    Limit  (cost=17053.20..17056.03 rows=20 width=933) (actual time=486.606..491.232 rows=20 loops=1)
+    Buffers: shared hit=6854 read=4, temp read=1992 written=3897
+    Buffers: shared hit=6854 read=4, temp read=1992 written=3897
+    ->  Gather Merge  (cost=10861.96..21050.92 rows=87484 width=724) (actual time=399.530..453.335 rows=43764 loops=1)
+    Workers Planned: 2
+    Workers Launched: 2
+    Buffers: shared hit=6783, temp read=1992 written=3897
+    ->  Sort  (cost=9861.94..9953.07 rows=36452 width=724) (actual time=286.393..290.517 rows=14644 loops=3)
+    Sort Key: opencivicdata_bill.latest_action_date DESC NULLS LAST, opencivicdata_bill.id
+    Sort Method: external merge  Disk: 31168kB
+    Buffers: shared hit=6783, temp read=1992 written=3897
+    Worker 0:  Sort Method: quicksort  Memory: 16438kB
+    Worker 1:  Sort Method: quicksort  Memory: 15996kB
+    ->  Hash Join  (cost=37.88..7100.02 rows=36452 width=724) (actual time=3.883..51.126 rows=29163 loops=3)
+    Buffers: shared hit=6657
+    ->  Hash Join  (cost=13.71..6979.27 rows=36452 width=587) (actual time=3.575..29.688 rows=29163 loops=3)
+    Buffers: shared hit=6585
+    ->  Parallel Seq Scan on opencivicdata_bill  (cost=0.00..6868.52 rows=36452 width=461) (actual time=0.003..3.973 rows=29163 loops=3)
+    Buffers: shared hit=6504
+    Buffers: shared hit=21
+    ->  Seq Scan on opencivicdata_legislativesession  (cost=0.00..9.98 rows=298 width=126) (actual time=0.014..0.080 rows=298 loops=3)
+    Buffers: shared hit=21
+    Buffers: shared hit=42
+    ->  Seq Scan on opencivicdata_jurisdiction  (cost=0.00..18.52 rows=452 width=137) (actual time=0.019..0.125 rows=452 loops=3)
+    Buffers: shared hit=42
+    Buffers: shared hit=71 read=4
+    ->  Index Scan using opencivicdata_organization_id_18cfc97b_like on opencivicdata_organization  (cost=0.28..0.29 rows=1 width=209) (actual time=0.126.
+    Buffers: shared hit=71 read=4
+    Buffers: shared hit=13
+    Planning Time: 0.931 ms
+    Execution Time: 499.648 ms
+PAGE MIDDLE (offset 43744): Execution Time ms, 3 runs: [499.648, 466.231, 513.821]  median 499.6
+
+--- COUNT (the page's total): plan of run 1 (node types and buffers only)
+    Finalize Aggregate  (cost=3650.89..3650.90 rows=1 width=8) (actual time=76.801..76.960 rows=1 loops=1)
+    Buffers: shared hit=3723 dirtied=74
+    ->  Gather  (cost=3650.68..3650.89 rows=2 width=8) (actual time=75.239..76.950 rows=3 loops=1)
+    Workers Planned: 2
+    Workers Launched: 2
+    Buffers: shared hit=3723 dirtied=74
+    ->  Partial Aggregate  (cost=2650.68..2650.69 rows=1 width=8) (actual time=35.033..35.038 rows=1 loops=3)
+    Buffers: shared hit=3723 dirtied=74
+    ->  Hash Join  (cost=71.76..2559.55 rows=36452 width=0) (actual time=0.736..32.936 rows=29163 loops=3)
+    Buffers: shared hit=3723 dirtied=74
+    ->  Hash Join  (cost=38.29..2429.76 rows=36452 width=54) (actual time=0.383..25.042 rows=29163 loops=3)
+    Buffers: shared hit=3538 dirtied=74
+    ->  Hash Join  (cost=14.12..2309.00 rows=36452 width=101) (actual time=0.172..17.509 rows=29163 loops=3)
+    Buffers: shared hit=3496 dirtied=74
+    ->  Parallel Index Only Scan using opencivicdata_bill_from_organization_id_leg_19e983a6_idx on opencivicdata_bill  (cost=0.42..2198.25 rows=36452 widt
+    Buffers: shared hit=3453 dirtied=74
+    Buffers: shared hit=21
+    ->  Seq Scan on opencivicdata_legislativesession  (cost=0.00..9.98 rows=298 width=63) (actual time=0.010..0.072 rows=298 loops=3)
+    Buffers: shared hit=21
+    Buffers: shared hit=42
+    ->  Seq Scan on opencivicdata_jurisdiction  (cost=0.00..18.52 rows=452 width=62) (actual time=0.010..0.091 rows=452 loops=3)
+    Buffers: shared hit=42
+    Buffers: shared hit=57
+    ->  Seq Scan on opencivicdata_organization  (cost=0.00..25.43 rows=643 width=54) (actual time=0.019..0.136 rows=643 loops=3)
+    Buffers: shared hit=57
+    Buffers: shared hit=13
+    Planning Time: 0.741 ms
+    Execution Time: 77.019 ms
+COUNT (the page's total): Execution Time ms, 3 runs: [77.019, 82.739, 79.907]  median 79.9
+page 1 wall ms from this process (5 runs): [180, 219, 142, 146, 145]
+
+--- facts
+owner of opencivicdata_bill / current_user: [('openstates_admin', 'openstates_admin')]
+indexes on opencivicdata_bill: ['opencivicdata_bill_pkey', 'opencivicdata_bill_from_organization_id_e96ed21d', 'opencivicdata_bill_from_organization_id_e96ed21d_like', 'opencivicdata_bill_from_organization_id_leg_19e983a6_idx', 'opencivicdata_bill_id_2d3f3e7c_like', 'opencivicdata_bill_latest_action_idx', 'opencivicdata_bill_legislative_session_id_ef50ac55', 'opencivicdata_bill_updated_at_idx']
+sizes (heap, total): [('51 MB', '87 MB')]
+shared_buffers: 1950336kB
+max_parallel_workers_per_gather: 2
+work_mem: 32MB
+random_page_cost: 1.1
+effective_cache_size: 3900680kB
+server_version: 16.15
+cache hit counters (this database): [(4076131660, 121109060)]
+######## bills_explain end 04:01:45
+######## search_legs start 04:01:45
+ddp_bill_search rows: 77719  jurisdictions: 10
+sizes (heap, total, indexes): [('103 MB', '738 MB', '216 MB')]
+== 'health care' (phrase=True)
+  full-text leg                      first     329  median     320 ms  rows=100
+  fuzzy-title leg                    first     312  median     297 ms  rows=100
+  people leg                         one run      53 ms
+  candidates matching the full-text query: 12650
+== 'tax' (phrase=False)
+  full-text leg                      first    2258  median     152 ms  rows=100
+  fuzzy-title leg                    first     172  median     129 ms  rows=100
+  people leg                         one run      38 ms
+  candidates matching the full-text query: 10562
+== 'pelosi' (phrase=False)
+  full-text leg                      first       2  median       2 ms  rows=19
+  fuzzy-title leg                    first       5  median       5 ms  rows=3
+  people leg                         one run      74 ms
+  candidates matching the full-text query: 19
+
+--- EXPLAIN (ANALYZE, BUFFERS) of the 'health care' full-text leg, run 1
+    Buffers: shared hit=67749
+    Buffers: shared hit=67396
+    Sort Key: ((SubPlan 1)), ((ts_rank_cd(s.fts, '''health'' & ''care'''::tsquery))::double precision) DESC, s.latest_action_date DESC NULLS LAST
+    Sort Method: top-N heapsort  Memory: 75kB
+    Buffers: shared hit=67396
+    ->  Bitmap Heap Scan on ddp_bill_search s  (cost=683.57..4439.17 rows=3400 width=248) (actual time=7.212..320.021 rows=12650 loops=1)
+    Buffers: shared hit=67396
+    Buffers: shared hit=369
+    ->  Bitmap Index Scan on ddp_bill_search_fts_idx  (cost=0.00..120.12 rows=4817 width=0) (actual time=2.804..2.804 rows=13212 loops=1)
+    Buffers: shared hit=105
+    ->  Bitmap Index Scan on ddp_bill_search_juris_idx  (cost=0.00..561.47 rows=54801 width=0) (actual time=3.421..3.421 rows=79588 loops=1)
+    Buffers: shared hit=264
+    Buffers: shared hit=353
+    Sort Key: a.id
+    Sort Method: quicksort  Memory: 25kB
+    Buffers: shared hit=353
+    ->  Index Scan using opencivicdata_billabstract_bill_id_ae9ce636_like on opencivicdata_billabstract a  (cost=0.41..2.63 rows=1 width=48) (actual time=
+    Buffers: shared hit=353
+    Buffers: shared hit=1
+    Planning Time: 0.301 ms
+    Execution Time: 326.186 ms
+
+--- EXPLAIN (ANALYZE, BUFFERS) of the 'health care' full-text leg, run 2
+    Buffers: shared hit=67749
+    Buffers: shared hit=67396
+    Sort Key: ((SubPlan 1)), ((ts_rank_cd(s.fts, '''health'' & ''care'''::tsquery))::double precision) DESC, s.latest_action_date DESC NULLS LAST
+    Sort Method: top-N heapsort  Memory: 75kB
+    Buffers: shared hit=67396
+    ->  Bitmap Heap Scan on ddp_bill_search s  (cost=683.57..4439.17 rows=3400 width=248) (actual time=7.601..322.182 rows=12650 loops=1)
+    Buffers: shared hit=67396
+    Buffers: shared hit=369
+    ->  Bitmap Index Scan on ddp_bill_search_fts_idx  (cost=0.00..120.12 rows=4817 width=0) (actual time=3.117..3.117 rows=13212 loops=1)
+    Buffers: shared hit=105
+    ->  Bitmap Index Scan on ddp_bill_search_juris_idx  (cost=0.00..561.47 rows=54801 width=0) (actual time=3.497..3.497 rows=79588 loops=1)
+    Buffers: shared hit=264
+    Buffers: shared hit=353
+    Sort Key: a.id
+    Sort Method: quicksort  Memory: 25kB
+    Buffers: shared hit=353
+    ->  Index Scan using opencivicdata_billabstract_bill_id_ae9ce636_like on opencivicdata_billabstract a  (cost=0.41..2.63 rows=1 width=48) (actual time=
+    Buffers: shared hit=353
+    Buffers: shared hit=1
+    Planning Time: 0.338 ms
+    Execution Time: 328.312 ms
+
+--- facts
+shared_buffers: 1950336kB
+work_mem: 32MB
+random_page_cost: 1.1
+effective_cache_size: 3900680kB
+max_parallel_workers_per_gather: 2
+cache hit counters (this database): [(4076238570, 121109525)]
+######## search_legs end 04:01:56
