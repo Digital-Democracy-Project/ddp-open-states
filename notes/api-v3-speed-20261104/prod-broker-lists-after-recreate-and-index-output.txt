@@ -1,0 +1,31 @@
+discovered: legislator=1077 us_bill=11857 jurisdiction=US&session=119&gov_id=HR8347 scorecard_bill=865
+
+call (spaced 1.5 s apart)          code    1st median    max     KB
+jurisdictions                       200     44     45     47    0.3
+topics                              200    145    148    157   15.4
+search q=pelosi                     403      6      6      9    0.1
+search q=health care                403      6      6      6    0.1
+search suggest q=pel                403      6      6      8    0.1
+bills list p1                       200    432    297    432   31.6
+bills list US                       200    146    150    181   30.7
+legislators list p1                 200   1504    177   1504   19.9
+legislators list US                 200    150    126    235   20.0
+organizations list                  200     61     65    116   10.0
+openstates-jurisdictions            200     32     33     52   29.5
+bills resolve                       200     34     34     57    0.1
+bills tally                         200     37     37     38    0.0
+bill-versions history               200     39     39     40    7.5
+bill-artifacts current              200     55     57     62    0.8
+bill-org-positions                  200     41     40     42    0.1
+openstates-bills US list            200     80     79     87    8.5
+bill scorecard                      200     36     37     57  126.6
+legislator profile                  200     45     44     51    1.3
+legislator scorecard                200     40     41     72  144.8
+legislator votes p1                 200     37     39     39    9.4
+legislator votes p20                200     39     39     45   13.2
+legislator bills                    200     48     50     51   11.2
+
+openstates-bills back-to-back x4 (a leftover 0.8 s pause shows as ~800 ms from the 2nd on): [77, 76, 73, 70]
+ONE burst of 3 at once, openstates-bills: [84, 84, 110]
+ONE burst of 3 at once, legislators list: [198, 227, 231]
+exit 0
