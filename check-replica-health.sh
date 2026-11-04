@@ -16,7 +16,7 @@
 #     bash /Users/agentsmith/Developer/repos/ddp-open-states/check-replica-health.sh >/dev/null 2>&1 || true
 # Always exits 0, so a bug here can never break the monitor it runs under.
 #
-# TWO STAGES, DIFFERENT PRICE:
+# THREE STAGES, DIFFERENT PRICE (stage 3, OPEN-314, is described after stage 2):
 #   1. replica-status.sh every run. Credential-free locally: catches "no apply worker" and "no message
 #      from the publisher for RECEIPT_STALE_S" (the 2026-09-27 outage, and the crash loop a schema
 #      mismatch causes). If RDS_MONITORING_DATABASE_URL is in the environment it also checks lag and
@@ -49,6 +49,8 @@ DRY_RUN="${REPLICA_DRY_RUN:-0}"
 NOW_EPOCH="${REPLICA_NOW_EPOCH:-$(date +%s)}"
 STATUS_CMD="${REPLICA_STATUS_CMD:-$REPO_DIR/ops/postgres-replica/local/replica-status.sh}"
 COMPARE_CMD="${REPLICA_COMPARE_CMD:-$REPO_DIR/ops/postgres-replica/local/compare-schema.sh}"
+SYNC_CMD="${REPLICA_SYNC_CMD:-$REPO_DIR/ops/postgres-replica/local/sync-structure.sh}"
+SYNC_ENV_FILE="${STRUCTURE_SYNC_ENV_FILE:-/Users/agentsmith/.config/ddp/replica-structure-sync.env}"
 PG_CONTAINER="${PG_CONTAINER:-ddp-openstates-postgres-1}"
 PG_USER="${PG_USER:-openstates}"
 SUBSCRIPTION="${SUBSCRIPTION:-ddp_legbot_subscription}"
@@ -192,6 +194,25 @@ if [ -n "${RDS_HOST:-}" ] && [ -n "${RDS_REPLICATION_PASSWORD:-}" ]; then
             track schema bad "$(printf '%s\n' "$schema_out" | grep -E '^FAIL' | head -3 | tr '\n' ' ')" 1 86400
         fi
     fi
+fi
+
+# --- Stage 3 (OPEN-314): sync-structure.sh, every run, only when its credential file exists -----------------
+# Keeps the Mac's table STRUCTURE in step with RDS (new columns, new published tables); see that script's header
+# and the README. Runs whatever stage 1 said: a replica stalled on a missing column (BROKEN) is exactly when it
+# has to run. Exit 0 = nothing wrong (it may have applied changes, logged below), 3 = not enabled (skipped, not
+# a failure), anything else = a change was refused or failed and a person must look: that is one Slack message
+# after CONSECUTIVE bad runs, like the other checks. REPLICA_SYNC_FORCE=1 is the test seam for "enabled".
+if [ -r "$SYNC_ENV_FILE" ] || [ "${REPLICA_SYNC_FORCE:-0}" = 1 ]; then
+    sync_out="$(bash "$SYNC_CMD" "$db" 2>&1)"
+    sync_rc=$?
+    printf '%s\n' "$sync_out" | grep -E '^APPLIED' | while IFS= read -r line; do log "structure sync: $line"; done
+    case "$sync_rc" in
+        0) track structure ok "" ;;
+        3) : ;;
+        *) sync_msg="$(printf '%s\n' "$sync_out" | grep -E '^FAIL' | head -3 | tr '\n' ' ')"
+           [ -n "$sync_msg" ] || sync_msg="sync-structure.sh exited $sync_rc: $(printf '%s\n' "$sync_out" | tail -1)"
+           track structure bad "$sync_msg" ;;
+    esac
 fi
 
 exit 0

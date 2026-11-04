@@ -62,6 +62,7 @@ run_glue() {  # <now_offset_s> [extra env assignments via env(1) args...]
     env REPLICA_LAST_RUN_DIR="$G/last-run" REPLICA_LOG_FILE="$G/test.log" REPLICA_DRY_RUN=1 \
         REPLICA_NOW_EPOCH=$(( NOW + off )) REPLICA_DB=fixture_db \
         REPLICA_STATUS_CMD="$G/status.sh" REPLICA_COMPARE_CMD="$G/compare.sh" \
+        STRUCTURE_SYNC_ENV_FILE="$G/no-such.env" REPLICA_SYNC_CMD="$G/sync.sh" GLUE_SYNC_FILE="$G/sync.out" GLUE_SYNC_RC="$G/sync.rc" \
         GLUE_STATUS_FILE="$G/status.out" GLUE_COMPARE_FILE="$G/compare.out" GLUE_COMPARE_RC="$G/compare.rc" \
         "$@" bash "$GLUE" 2>&1
 }
@@ -135,6 +136,38 @@ assert_not_contains "still-bad schema is not re-posted before the daily reminder
 printf 'PASS: all 47 published tables match\n' > "$G/compare.out"; echo 0 > "$G/compare.rc"
 out=$(run_glue $(( 12 * 3600 + 120 )) env RDS_HOST=rds.example RDS_REPLICATION_PASSWORD=pw)
 assert_contains "schema recovery posts" "$out" "schema recovered"
+
+echo "--- glue: structure stage (OPEN-314)"
+cat > "$G/sync.sh" <<'EOF'
+#!/usr/bin/env bash
+cat "$GLUE_SYNC_FILE"; exit "$(cat "$GLUE_SYNC_RC")"
+EOF
+set_status HEALTHY "ok"
+printf 'APPLIED: added column x.y (text)\n== Structure sync: OK (1 change(s)) ==\n' > "$G/sync.out"; echo 0 > "$G/sync.rc"
+rm -f "$G/last-run/replica-health.structure.state" "$G/test.log"
+out=$(run_glue 0)
+assert_eq "enabled only when the credential file exists (or forced): not run, nothing printed" "$out" ""
+out=$(run_glue 0 env REPLICA_SYNC_FORCE=1)
+assert_contains "applied changes are logged" "$out" "structure sync: APPLIED: added column x.y (text)"
+assert_file "a clean run leaves no state file" "$G/last-run/replica-health.structure.state" absent
+printf 'SKIPPED: no RDS credential configured\n== Structure sync: SKIPPED (not enabled) ==\n' > "$G/sync.out"; echo 3 > "$G/sync.rc"
+out=$(run_glue 300 env REPLICA_SYNC_FORCE=1); run_glue 600 env REPLICA_SYNC_FORCE=1 >/dev/null
+assert_file "exit 3 (not enabled) is skipped, never a failure" "$G/last-run/replica-health.structure.state" absent
+printf 'FAIL: opencivicdata_bill.title: differs (RDS varchar(40), local text)\n== Structure sync: NEEDS ATTENTION (1 problem(s), 0 change(s)) ==\n' > "$G/sync.out"; echo 1 > "$G/sync.rc"
+out=$(run_glue 900 env REPLICA_SYNC_FORCE=1)
+assert_not_contains "a first refused change does not alert (one blip never pages)" "$out" "DRY_RUN slack"
+out=$(run_glue 1200 env REPLICA_SYNC_FORCE=1)
+assert_contains "the second consecutive refusal alerts once" "$out" "structure is bad"
+assert_contains "the alert carries the FAIL text" "$out" "opencivicdata_bill.title: differs"
+out=$(run_glue 1500 env REPLICA_SYNC_FORCE=1)
+assert_not_contains "no repeat inside the reminder window" "$out" "DRY_RUN slack"
+printf '== Structure sync: OK (0 change(s)) ==\n' > "$G/sync.out"; echo 0 > "$G/sync.rc"
+out=$(run_glue 1800 env REPLICA_SYNC_FORCE=1)
+assert_contains "recovery posts once" "$out" "structure recovered"
+printf 'garbage with no FAIL line\n' > "$G/sync.out"; echo 7 > "$G/sync.rc"
+run_glue 2100 env REPLICA_SYNC_FORCE=1 >/dev/null; out=$(run_glue 2400 env REPLICA_SYNC_FORCE=1)
+assert_contains "a crash with no FAIL line still alerts, with the exit code" "$out" "sync-structure.sh exited 7"
+printf '== Structure sync: OK (0 change(s)) ==\n' > "$G/sync.out"; echo 0 > "$G/sync.rc"; run_glue 2700 env REPLICA_SYNC_FORCE=1 >/dev/null
 
 echo "--- glue: a message Slack did not accept must not count as delivered (pm-review)"
 CB="$T/bin-curl"; mkdir -p "$CB"
