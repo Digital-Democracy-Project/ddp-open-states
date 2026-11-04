@@ -101,7 +101,7 @@ recreate until ddp-broker has been switched to the EC2 api-v3); read that commen
 **Rolling out a merged change of the state list on a host (OPEN-483): one command.** `bash deploy/rollout-manifest.sh --host
 mac|ec2 --ddp-sync-root <ddp-sync checkout> [--dry-run] [--state XX]` (the gates, the pull, the checks on the pulled file, then the
 copy for api-v3, then the container checks and the values read back; see PRIMITIVES.md). Run it with `--dry-run` first and
-paste both outputs into the evidence comment. It restarts nothing. **If a check fails after the pull, the pulled checkout stays but
+paste both outputs into the evidence comment. It restarts nothing. Its "is a scrape running?" gate also sees a job started by hand behind `nohup`, `caffeinate`, `time`, `sudo` and the like (OPEN-488). **If a check fails after the pull, the pulled checkout stays but
 api-v3 keeps serving the previous list** (its copy is made only after the checks pass): fix the list on `main`, pull, rerun.
 
 **`com.ddp.openstates-api` and `com.ddp.openstates-db-backup` are system LaunchDaemons**

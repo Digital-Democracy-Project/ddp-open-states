@@ -1176,8 +1176,9 @@ failed gate or check and prints a value for every step; `--dry-run` changes noth
 - **Gates:** the branch is `main` and no tracked file is modified; **no commit that is not on `origin/main`**; **no real
   `run-scrape.sh`, `run-scrape-retrying.sh`, `run-archive.sh` or `run-people-refresh.sh` process** (all of them read this
   checkout, and `run-scrape-retrying.sh` stays alive while it sleeps up to 900 s between attempts with no `run-scrape.sh` running;
-  the listing is parsed by field, so a shell that only contains the text, a grep or this script never counts; a plain
-  `ps | grep run-scrape` matched its own shell on 2026-11-03); no cloud scrape tasks (`aws ecs list-tasks`; if it cannot be listed
+  the listing is parsed by field: the job itself, a shell whose first non-option argument is the job (`bash -o pipefail run-scrape.sh`), or a
+  known wrapper (`nohup`, `caffeinate`, `time`, `sudo`, `env`, `nice`, `ionice`, `timeout`, `setsid`, `stdbuf`, `arch`, `doas`) whose command (after its options and their values, e.g. `sudo -u git`) is the job or a shell on it counts (OPEN-488); a shell that only contains the text (`bash -c`), a grep, an editor or an echo (also behind a wrapper) or this script never counts; a plain
+  `ps | grep run-scrape` matched its own shell on 2026-11-03; tests: `test_rollout_manifest.py`); no cloud scrape tasks (`aws ecs list-tasks`; if it cannot be listed
   the gate stops unless you say `--skip-ecs-check`); not within 10 minutes of the 02:00, 02:30 and 03:00 UTC jobs.
 - **Order, so a bad list is never served:** fast-forward pull (`--ff-only`, never a merge or a reset) -> `validate_jurisdictions.py`
   and the combined drift check on the pulled file -> only then `deploy/sync-manifest.sh` (the copy api-v3 reads) -> the api

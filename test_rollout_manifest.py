@@ -210,6 +210,14 @@ def test_a_real_scrape_process_stops_it_before_anything_changes(world):
     "  62 bash -lc cd /x && ./run-scrape.sh nc",
     "  63 /usr/bin/env FOO=1 grep run-scrape.sh",
     "  64 bash -x /opt/some-other-script.sh run-scrape.sh",      # the script is not the first non-option argument
+    "  66 vim run-scrape.sh",                                    # an editor is not a job, even behind a wrapper
+    "  67 sudo vim /opt/ddp-open-states/run-scrape.sh",
+    "  68 nohup grep run-archive.sh logs.txt",
+    "  69 sudo -u u bash -c /opt/ddp-open-states/run-scrape.sh nc",   # -c carries text; the child shows on its own line
+    "  70 caffeinate -i sleep 900",
+    "  71 nohup echo run-scrape.sh",                             # the wrapper runs echo; the job name is data
+    "  72 sudo -u u printf run-scrape.sh",
+    "  73 timeout 60 grep run-archive.sh x",
     "  65 sleep 900",                                            # a sleep alone (no wrapper alive) is not a job
 ])
 def test_a_process_that_only_mentions_a_job_is_not_a_job(world, line):
@@ -233,6 +241,16 @@ def test_a_process_that_only_mentions_a_job_is_not_a_job(world, line):
     # the archive and the people refresh read this checkout too
     "  83 bash /opt/ddp-open-states/run-archive.sh va",
     "  84 /opt/ddp-open-states/run-people-refresh.sh",
+    # OPEN-488: a wrapper the gate used not to know, and an option whose value is not the script
+    "  91 nohup bash /opt/ddp-open-states/run-scrape.sh nc",
+    "  92 caffeinate -i /opt/ddp-open-states/run-scrape.sh nc",
+    "  93 /usr/bin/time -p /opt/ddp-open-states/run-archive.sh va",
+    "  94 sudo -u u /opt/ddp-open-states/run-people-refresh.sh",
+    "  95 bash -o pipefail /opt/ddp-open-states/run-scrape.sh nc",
+    "  96 nohup caffeinate -i bash -x /opt/ddp-open-states/run-scrape-retrying.sh nc",
+    "  97 sudo -u u bash -eo pipefail run-scrape.sh nc",
+    "  98 sudo -u git bash /opt/ddp-open-states/run-scrape.sh nc",   # the user name is an option value, not the command
+    "  99 timeout 3600 env FOO=1 /opt/ddp-open-states/run-archive.sh va",
 ])
 def test_every_wrapper_that_reads_the_checkout_is_a_job(world, line):
     _set_ps(world, line)
