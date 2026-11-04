@@ -543,9 +543,9 @@ step matters — a newer pip breaks one of the pinned deps' build.
   reads and sorts every bill for each page (`EXPLAIN ANALYZE` on the production-copy database: page query 39 ms, 43 ms more for the
   page's total count). An index that matches the order (`latest_action_date DESC NULLS LAST, id`) takes the page query to
   0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **merged 2026-11-04 as
-  `16c5168b`, not deployed, flag not run in production**; runbook `docs/runbook/ddp-bill-search.md` section 9, which needs a
-  production baseline and Ramon's go first). **Production baseline (prod agent, 2026-11-04 04:01 UTC):** the endpoint answers in
-  642 ms (page 1) but its page query takes 158 ms and the count 80 ms, so about 400 ms is outside both queries and unexplained; the
+  `16c5168b`, not deployed, flag not run in production; Ramon approved building it there on 2026-11-04 and the prod request is posted
+  (`notes/ops-handoff` `6c59836`), not yet done**; runbook `docs/runbook/ddp-bill-search.md` section 9). **Production baseline (prod agent, 2026-11-04 04:01 UTC):** the endpoint answers in
+  642 ms (page 1) but its page query takes 158 ms and the count 80 ms, so about 400 ms is outside both queries and unexplained (OPEN-489); the
   index alone will not reach 300 ms. Separately the shared pagination counted with `ORDER BY` inside the subquery, sorting every
   row to count it (80 ms against 30 ms on the Mac; api-v3 PR #48, open). The endpoint itself needed no schema change, so no `ensure`
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
