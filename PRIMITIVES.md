@@ -720,6 +720,18 @@ functions, layered on top of the ordering work above rather than changing it.
   runs; then the image, then the recompute per state (each with Ramon's go), then api-v3. Built 2026-11-04 (openstates-core
   PR #80, not merged, not deployed; measured on the replica: Nebraska 790, Louisiana 3,328, Virginia 1,828, Utah 3,170,
   Arizona 16, North Carolina 54, Alabama 45 flagged "not a version", every state without rules 0).
+- **OPEN-422 — api-v3 reads that flag and never offers a procedural paper as a bill's latest or previous version.**
+  `api-v3/api/bill_version_flag.py` (`flag_column_present()`: does the database have `is_bill_version` yet, re-asked every five
+  minutes) and the `unplaced()` test in `BillPagination.postprocess_includes`: a version whose saved documents include one flagged
+  False is handled exactly like a version `note_stage()` cannot place (returned and labelled `version_stage: "unknown"`, listed first,
+  never `versions[-1]`/`[-2]`, no link `raw_text` or diff; `archived_document_id` and `archived_raw_text` stay, so ddp-sync's
+  knowledge-base hook indexes it as "unknown"). `search_projection._refresh_one` skips the same documents when picking the indexed
+  text. Empty ("not decided yet") or no column at all behaves as before; the model column is `deferred` so no ordinary query selects
+  it. **Do not** add a list or a rule to api-v3 (the rule lives in core's `is_bill_version()`), and do not give a flagged version a new
+  label: ddp-sync treats any label other than `"unknown"` as part of the lineage. One constant extra query per single-bill detail with
+  versions. Built 2026-11-04 (api-v3 PR #49, not merged, not deployed; the test workflow was also red on every PR until #50 pins
+  `ubuntu-24.04`). **Deploy after OPEN-492's column exists and a state has been recomputed**, on the Mac and EC2 (prod agent); after a
+  recompute the bill search index may need a `--full` refresh, because the flag change does not touch `updated_at`.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
