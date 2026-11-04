@@ -1082,6 +1082,10 @@ scope line was deliberate, not an oversight.
   yet extended** to the procedural-document stage table in `utils/version_ordering.py` (also keyed
   on the jurisdiction's display name, with a second copy in api-v3) — survey row B6, a related but
   separate gap, left for a follow-up decision rather than folded in here.
+  **Nebraska (OPEN-486, 2026-11-04):** `clean_ne_text` (header lines dropped, one sentence per line);
+  its amendment papers (`AM<N>`, `FA<N>`, `ER<N>`) are excluded in that same procedural-document table
+  (a separate openstates-core change). The cleaner has to be in openstates-core's `main` before this
+  value can pass the drift check.
 
 ## `verify-jurisdiction <state>` — the onboarding probe (repo root, OPEN-222, 2026-08-31)
 

@@ -538,7 +538,7 @@ ne:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
   api_keys: []
   onboarding:
     epic: OPEN-479
