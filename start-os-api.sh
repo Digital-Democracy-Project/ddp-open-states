@@ -66,7 +66,7 @@ if ! bash "$COMPOSE_DIR/sync-manifest.sh" >>"$LOG" 2>&1; then
     log "ERROR: deploy/sync-manifest.sh failed, so api-v3 would start without its copy of jurisdictions.yaml; not running docker-compose up (details in $LOG)"
     # launchd relaunches this one-shot every ~30 s while it keeps failing: alert ONCE per failure streak, not every time.
     if [ ! -e "$SYNC_ALERTED_FLAG" ]; then
-        post_slack_alert ":red_circle: openstates api-v3 not started at boot: deploy/sync-manifest.sh failed (the copy of jurisdictions.yaml api-v3 reads could not be made). Recovery: RUNBOOK.md, 'The jurisdiction manifest inside api-v3'. Further retries stay silent until it works once." --direct || true
+        post_slack_alert ":red_circle: openstates api-v3 not started at boot: deploy/sync-manifest.sh failed (the copy of jurisdictions.yaml api-v3 reads could not be made, or the list failed validation). Recovery: RUNBOOK.md, 'The jurisdiction manifest inside api-v3'. Further retries stay silent until it works once." --direct || true
         : > "$SYNC_ALERTED_FLAG" 2>/dev/null || true
     fi
     exit 1
