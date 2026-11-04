@@ -679,6 +679,29 @@ functions, layered on top of the ordering work above rather than changing it.
   still the same `if jurisdiction_name == "Washington": ...` conditional chain, just
   consolidated into one function instead of duplicated across two; see that section's note.
 
+- **OPEN-487 — an archive file name is capped at 200 bytes, and every document the run could not save is named.**
+  `_archive_path()` builds `<date>-<note>-<url hash>.<ext>`; the readable note part is the only thing trimmed, and only when
+  the whole name would pass `_MAX_ARCHIVE_FILE_NAME_BYTES` (200, under the common 255-byte file-name limit), so every name that
+  fit before is unchanged and the full URL hash always stays (names stay unique). It was Nebraska's amendment AM2748: the note
+  was long enough to give `[Errno 36] File name too long`, the document was fetched and silently not saved, and the run exited
+  0 with `persist_errors=1`. `archive_bill_versions(bill, unsaved_documents=None)` now collects `(url, reason)` for each
+  persist failure and `archive` prints `<state>: not saved: <address> (<reason>)` after the summary line. **Do not** shorten the
+  hash or the date to fit, and do not make a persist failure exit non-zero without Ramon's decision: it exits 0 on purpose
+  (OPEN-263: retried next run; blocked and extract errors do not alert either). Merged 2026-11-04 (openstates-core #75
+  `f0a34de5`, lint fix #78 `4c88d2bd`); **not deployed** (needs a scrapers image, then one Nebraska archive task).
+- **OPEN-486 — Nebraska's amendment papers are left out of the comparisons, and its text is cleaned before comparing.**
+  Two pieces in openstates-core, both Nebraska-only: the procedural-document table in `utils/version_ordering.py` gets a
+  `"Nebraska"` pattern for `<name> AM<N>`, `<name> FA<N>` and `Enrollment and Review ER<N>` (the number is required; the real
+  versions Introduced, Final Reading and Slip Law never match), and `_clean_ne_text()` in `cli/text_extract.py` (the
+  `apply_prediff_cleaning` chain; manifest `quality.diff_cleaner: clean_ne_text`) drops whole header lines (running
+  `LB### LB###` header, the year line, `LEGISLATIVE BILL N`, Became law, Approved by the Governor, Introduced by, `-N-`) and puts
+  one sentence on each line. **Do not** rewrap to a fixed width (168 pairs got worse) and do not add a header shape without
+  checking it against real text; a line is dropped only if the whole line is the shape. Merged 2026-11-04 (openstates-core
+  #76 `da0236ff`, #77 `236a4e3f`; ddp-open-states #333 `ea266110`); **not deployed and not recomputed**: it needs a scrapers
+  image, then `recompute-diff-order ne` on RDS by the prod agent (dry run first, Ramon's go). The measured effect (Final
+  Reading to Slip Law whole-document comparisons 360 to 2) is the author's, from real Nebraska text; not re-measured by the
+  reviewer.
+
 ## Motion classification tooling
 
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
