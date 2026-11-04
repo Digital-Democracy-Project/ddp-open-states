@@ -542,15 +542,15 @@ step matters — a newer pip breaks one of the pinned deps' build.
   (`opencivicdata_bill_latest_action_idx`) serves this order. It does not: that index is ascending and has no `id`, so Postgres
   reads and sorts every bill for each page (`EXPLAIN ANALYZE` on the production-copy database: page query 39 ms, 43 ms more for the
   page's total count). An index that matches the order (`latest_action_date DESC NULLS LAST, id`) takes the page query to
-  0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **merged 2026-11-04 as
-  `16c5168b`, not deployed, flag not run in production; Ramon approved building it there on 2026-11-04 and the prod request is posted
-  (`notes/ops-handoff` `6c59836`), not yet done**; runbook `docs/runbook/ddp-bill-search.md` section 9). **Production baseline (prod agent, 2026-11-04 04:01 UTC):** the endpoint answers in
-  642 ms (page 1) but its page query takes 158 ms and the count 80 ms. **Phase timing (prod agent, 16:06 UTC, `notes/ops-handoff`
-  `0b81a06`, OPEN-489):** the "other 400 ms" is the count as the endpoint runs it: the shared pagination counted with `ORDER BY` inside
-  the subquery, sorting every row to count it, about **480 ms on production** (the 80 ms above was a count without the sort; 80 ms
-  against 30 ms on the Mac). The steps add up to 626 to 628 ms. api-v3 PR #48 removes the sort (**merged 2026-11-04 as `14433582`, not
-  deployed**; it goes live only when the api container is recreated from an image that contains it; the index request does not
-  recreate it). The index alone would not reach 300 ms; with #48 the endpoint should be roughly 0.1 s, **not yet measured**. The endpoint itself needed no schema change, so no `ensure`
+  0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, merged 2026-11-04 as `16c5168b`;
+  runbook `docs/runbook/ddp-bill-search.md` section 9). A second cost sat in the shared pagination: the page's total count kept its
+  `ORDER BY` inside the subquery, sorting every row to count it (about **480 ms on production**, 77 ms on the Mac; api-v3 PR #48,
+  merged 2026-11-04 as `14433582`; OPEN-489). **Both are live on production and measured (prod agent, `notes/ops-handoff` `9a4db24`,
+  2026-11-04 19:24 to 19:31 UTC; image `5247cecb337c`, index created 19:29 UTC):** page 1 **642 ms to 231 ms with the count fix alone to
+  87 ms with the index**, page 500 906 to 107 ms, US page 1 348 to 55 ms, the same first-20 bill ids and total at every stage; the
+  website's path through the broker 1,595 to 297 ms. The Mac api was recreated the same way (`./refresh-api-v3.sh`, same day) and
+  carries the index in its database copy. What is left inside the endpoint is the count (about 62 ms of 86). Rollback on the host:
+  image `ddp-openstates-api:pre-open484`, `DROP INDEX opencivicdata_bill_latest_action_desc_idx`. The endpoint itself needed no schema change, so no `ensure`
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
