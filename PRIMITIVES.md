@@ -545,9 +545,12 @@ step matters — a newer pip breaks one of the pinned deps' build.
   0.17 ms; it is made only by `python -m api.search_projection ensure --bill-list-index` (api-v3 PR #47, **merged 2026-11-04 as
   `16c5168b`, not deployed, flag not run in production; Ramon approved building it there on 2026-11-04 and the prod request is posted
   (`notes/ops-handoff` `6c59836`), not yet done**; runbook `docs/runbook/ddp-bill-search.md` section 9). **Production baseline (prod agent, 2026-11-04 04:01 UTC):** the endpoint answers in
-  642 ms (page 1) but its page query takes 158 ms and the count 80 ms, so about 400 ms is outside both queries and unexplained (OPEN-489); the
-  index alone will not reach 300 ms. Separately the shared pagination counted with `ORDER BY` inside the subquery, sorting every
-  row to count it (80 ms against 30 ms on the Mac; api-v3 PR #48, **merged 2026-11-04 as `14433582`, not deployed**). The endpoint itself needed no schema change, so no `ensure`
+  642 ms (page 1) but its page query takes 158 ms and the count 80 ms. **Phase timing (prod agent, 16:06 UTC, `notes/ops-handoff`
+  `0b81a06`, OPEN-489):** the "other 400 ms" is the count as the endpoint runs it: the shared pagination counted with `ORDER BY` inside
+  the subquery, sorting every row to count it, about **480 ms on production** (the 80 ms above was a count without the sort; 80 ms
+  against 30 ms on the Mac). The steps add up to 626 to 628 ms. api-v3 PR #48 removes the sort (**merged 2026-11-04 as `14433582`, not
+  deployed**; it goes live only when the api container is recreated from an image that contains it; the index request does not
+  recreate it). The index alone would not reach 300 ms; with #48 the endpoint should be roughly 0.1 s, **not yet measured**. The endpoint itself needed no schema change, so no `ensure`
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
