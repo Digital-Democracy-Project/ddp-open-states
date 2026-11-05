@@ -575,7 +575,7 @@ step matters — a newer pip breaks one of the pinned deps' build.
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
-- **The bill list's page size lives in api-v3's pagination, once (OPEN-493, 2026-11-04; api-v3 PR #51, open, not merged, not deployed).**
+- **The bill list's page size lives in api-v3's pagination, once (OPEN-493, 2026-11-04; api-v3 PR #51, merged 2026-11-05 as `b7adb9a3`; **live on production since 2026-11-05 00:58 UTC and measured** (prod agent, `notes/ops-handoff` `1f0e965`): one call of 50 is about 110 ms against about 263 ms for three of 20, the same 50 ids, total 87,489).**
   `GET /bills` (`api/bills.py`, `BillPagination`) allows up to **50 bills a page when the request has no `include=`** and keeps **20 with an
   `include=`** (the heavier answers stay bounded); the default `per_page` stays 10, and committees (20), events (20), people (50), person votes (50)
   and jurisdictions (52) keep their own limits. The limit is checked in one place, `Pagination.paginate` (`api/pagination.py`), through the
