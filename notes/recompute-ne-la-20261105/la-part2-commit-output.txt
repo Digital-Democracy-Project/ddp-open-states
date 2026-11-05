@@ -1,0 +1,3 @@
+la: [COMMITTED] 2599 bills checked | unchanged=6318 corrected=919 nulled=3231
+la: [COMMITTED] is_bill_version: set=10468 changed=0 not_a_version=3328
+03:31:01 DEBUG openstates.stats: Stat emission is not enabled.
