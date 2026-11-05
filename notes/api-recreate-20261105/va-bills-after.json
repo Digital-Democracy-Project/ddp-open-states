@@ -1,0 +1,100 @@
+
+{
+ "2026 HB 44": {
+  "fingerprint": "b26261a9ca49",
+  "id": "ocd-bill/91c31d9b-bb0d-45fb-83ed-b003dc9fa637",
+  "keys_of_a_version": [
+   "archived_document_id",
+   "archived_updated_at",
+   "classification",
+   "date",
+   "id",
+   "links",
+   "note",
+   "version_ordinal",
+   "version_stage"
+  ],
+  "n": 3,
+  "stages_in_order": [
+   "introduced",
+   "amendment",
+   "amendment"
+  ]
+ },
+ "2026 HB 447": {
+  "fingerprint": "2da6469ab5f2",
+  "id": "ocd-bill/37db1fdd-1f3b-4cb9-a3c5-7e7a4ded4e3d",
+  "keys_of_a_version": [
+   "archived_document_id",
+   "archived_updated_at",
+   "classification",
+   "date",
+   "id",
+   "links",
+   "note",
+   "version_ordinal",
+   "version_stage"
+  ],
+  "n": 4,
+  "stages_in_order": [
+   "introduced",
+   "amendment",
+   "amendment",
+   "amendment"
+  ]
+ },
+ "2026 HB 934": {
+  "fingerprint": "25451cf0bca1",
+  "id": "ocd-bill/005fffbc-c258-48a6-a17d-cacbefa57335",
+  "keys_of_a_version": [
+   "archived_document_id",
+   "archived_updated_at",
+   "classification",
+   "date",
+   "id",
+   "links",
+   "note",
+   "version_ordinal",
+   "version_stage"
+  ],
+  "n": 9,
+  "stages_in_order": [
+   "introduced",
+   "amendment",
+   "amendment",
+   "amendment",
+   "amendment",
+   "amendment",
+   "amendment",
+   "amendment",
+   "amendment"
+  ]
+ },
+ "2027 HB 447": {
+  "fingerprint": "fbc5e7f558c6",
+  "id": "ocd-bill/6f030b01-6038-4ecd-99e3-833a506e5f2a",
+  "keys_of_a_version": [
+   "archived_document_id",
+   "archived_updated_at",
+   "classification",
+   "date",
+   "id",
+   "links",
+   "note",
+   "version_ordinal",
+   "version_stage"
+  ],
+  "n": 2,
+  "stages_in_order": [
+   "introduced",
+   "amendment"
+  ]
+ },
+ "_hb447_detail_ms": {
+  "max": 1396.4,
+  "median": 28.7,
+  "min": 27.4,
+  "runs": 15,
+  "session": "2027"
+ }
+}
