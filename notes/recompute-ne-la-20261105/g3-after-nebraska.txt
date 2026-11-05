@@ -1,0 +1,3 @@
+{'name': 'Louisiana', 'docs': 10468, 'flag_null': 10468, 'flag_false': 0, 'with_diff': 7772}
+{'name': 'Nebraska', 'docs': 3382, 'flag_null': 0, 'flag_false': 790, 'with_diff': 745}
+table total: 224112 | flags set (not null) in the whole table: 3382
