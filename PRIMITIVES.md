@@ -575,6 +575,18 @@ step matters — a newer pip breaks one of the pinned deps' build.
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
 
+- **The bill list's page size lives in api-v3's pagination, once (OPEN-493, 2026-11-04; api-v3 PR #51, open, not merged, not deployed).**
+  `GET /bills` (`api/bills.py`, `BillPagination`) allows up to **50 bills a page when the request has no `include=`** and keeps **20 with an
+  `include=`** (the heavier answers stay bounded); the default `per_page` stays 10, and committees (20), events (20), people (50), person votes (50)
+  and jurisdictions (52) keep their own limits. The limit is checked in one place, `Pagination.paginate` (`api/pagination.py`), through the
+  optional class attribute `max_per_page_without_includes` (`None`: one limit with or without `include=`); a 400 shows the range that
+  applies (`must be in [1, 50]` or `[1, 20]`). **Why:** the broker's website page is 50 rows and api-v3 refused more than 20, so one page was
+  three calls at once, each also counting all matching bills (production: three at once 247 ms against 90 ms for one, prod agent,
+  `notes/ops-handoff` `a4b65f52`); on the Mac copy one call of 50 is 62 ms against 105 ms for three of 20. **Do not** make a caller loop over
+  20-bill chunks to build a page, and do not add a second per-list rule: set the attribute. Callers read in the code: ddp-sync hard-codes
+  20, `quality_check` sends 20, VoteBot's roster reads use `/people`; the broker sends 20 until BROKER-431 changes it **after** this is live (a
+  request for 50 before then is a 400). No schema change, no `ensure`; it needs a new api image on each host (the prod agent recreates api-v3).
+
 - **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
   live on the EC2 api-v3 per the prod agent's note of 2026-11-02 20:40 UTC).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
   cast, newest `start_date` first (ties by vote event id, so paging is stable), paged (max 50), with the person's own option, the
