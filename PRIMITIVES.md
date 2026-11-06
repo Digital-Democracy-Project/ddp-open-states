@@ -790,6 +790,20 @@ functions, layered on top of the ordering work above rather than changing it.
   versions. Built 2026-11-04 (api-v3 PR #49, not merged, not deployed; the test workflow was also red on every PR until #50 pins
   `ubuntu-24.04`). **Deploy after OPEN-492's column exists and a state has been recomputed**, on the Mac and EC2 (prod agent); after a
   recompute the bill search index may need a `--full` refresh, because the flag change does not touch `updated_at`.
+- **OPEN-498 — Massachusetts: the bill's title decides whether a document is a real bill version, because the note cannot.**
+  Massachusetts files agency reports and letters (HD/SD numbers), study, extension and "Order relative to ..." orders, amendment
+  papers, messages and rules under the same kind of bill number as real bills, and every one has the note "Bill Text", so the
+  (jurisdiction, note) rule cannot see them (2,936 of 11,872 in the 194th session by title, 3,267 with the orders). openstates-core
+  `utils/version_ordering.py`: `_REAL_MEASURE_TITLE_PATTERNS` (one entry, "Massachusetts": a title must open with An Act, Resolve(s),
+  A Resolve, Resolutions, Joint Resolution or Proposal) and `is_bill_version(jurisdiction_name, note, bill_title=None)`. The archiver
+  and `recompute-diff-order` pass `bill.title`; a missing or blank title never excludes a document; `is_procedural_document` and the
+  diff lineage are untouched. **Do not** add a title list to api-v3, ddp-sync or LegBot: add a state with the same problem to that
+  table and recompute it. A flagged document gets no `raw_text` from api-v3 (OPEN-422), so ddp-sync's archived-text lookup skips the
+  bill and LegBot never sees it; the knowledge-base hook still indexes it as "unknown". Built 2026-11-06 (openstates-core PR #84, not
+  merged, not deployed). **Release:** merge, scrapers image, then `recompute-diff-order ma` (dry run first: expect
+  `not_a_version=3267` on the Mac copy; review the true-to-false titles before the commit; rollback is reverting the rule and
+  recomputing); after the recompute the bill search index may need a `--full` refresh, as for OPEN-422. Decision and sample:
+  OPEN-498.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
