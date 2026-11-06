@@ -480,7 +480,7 @@ al:
 pa:
   name: Pennsylvania
   status: scraping
-  tier: secondary  # NEEDS HUMAN REVIEW
+  tier: primary  # OPEN-494 (Ramon, 2026-11-06): nightly, own start 04:00 UTC in ddp-sync's openstates_scrape.primary
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
