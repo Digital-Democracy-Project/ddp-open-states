@@ -745,6 +745,12 @@ functions, layered on top of the ordering work above rather than changing it.
   stored comparison becomes lower-case. Measured on the replica over all 921 Pennsylvania comparisons: changed lines 201,965 to
   148,828, comparisons with `<--` 909 to 0, worse 0 (openstates-core PR for OPEN-495). **Changes nothing until** a scrapers
   image carries it and `recompute-diff-order pa` is run on RDS (dry run first, Ramon's go).
+- **OPEN-496 — Louisiana's "Page N of M" footer lines are dropped before comparing.** `_clean_louisiana_text()` in openstates-core
+  `cli/text_extract.py` (the `apply_prediff_cleaning` chain; manifest `quality.diff_cleaner: clean_louisiana_text`) drops a line only
+  when the whole line is `Page N of M`. It calls the one shared footer routine `_drop_page_footer_lines()` that Massachusetts'
+  cleaner also uses (OPEN-400): **do not write a second footer routine**; a new state with a footer shape adds a pattern and
+  calls that helper. Not deployed and not recomputed: it needs a scrapers image, then `recompute-diff-order la` on RDS (dry run
+  first, Ramon's go).
 
 ## Motion classification tooling
 
