@@ -1,0 +1,3 @@
+ut: [DRY RUN] 1021 bills checked | unchanged=9371 corrected=0 nulled=0
+ut: [DRY RUN] is_bill_version: set=0 changed=0 not_a_version=3170
+16:33:07 DEBUG openstates.stats: Stat emission is not enabled.
