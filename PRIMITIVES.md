@@ -737,6 +737,14 @@ functions, layered on top of the ordering work above rather than changing it.
   image, then `recompute-diff-order ne` on RDS by the prod agent (dry run first, Ramon's go). The measured effect (Final
   Reading to Slip Law whole-document comparisons 360 to 2) is the author's, from real Nebraska text; not re-measured by the
   reviewer.
+- **OPEN-495 — Pennsylvania's text is cleaned before comparing versions.** `_clean_pa_text()` in openstates-core's
+  `cli/text_extract.py` (the `apply_prediff_cleaning` chain; manifest `quality.diff_cleaner: clean_pa_text`) drops the
+  `PRINTER'S NO. N` line, removes the trailing `<--` change bar, collapses runs of spaces and lower-cases each line, so a
+  case-only or spacing-only difference is no change. Line structure is kept (no reflow). Struck-out words cannot be told from
+  text and are left alone; do not add a shape without checking it against real text. The stored text is untouched, but the
+  stored comparison becomes lower-case. Measured on the replica over all 921 Pennsylvania comparisons: changed lines 201,965 to
+  148,828, comparisons with `<--` 909 to 0, worse 0 (openstates-core PR for OPEN-495). **Changes nothing until** a scrapers
+  image carries it and `recompute-diff-order pa` is run on RDS (dry run first, Ramon's go).
 
 ## Motion classification tooling
 
