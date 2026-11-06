@@ -751,6 +751,17 @@ functions, layered on top of the ordering work above rather than changing it.
   cleaner also uses (OPEN-400): **do not write a second footer routine**; a new state with a footer shape adds a pattern and
   calls that helper. Not deployed and not recomputed: it needs a scrapers image, then `recompute-diff-order la` on RDS (dry run
   first, Ramon's go).
+- **OPEN-497 — Nebraska's stored comparisons were already cleaned; the cleaner itself left one kind of re-wrapping behind.**
+  `recompute-diff-order` does re-diff the text, not only the order and flags: `recomputed_diffs_for_documents()` runs
+  `apply_prediff_cleaning()` on every pair and `--commit` saves the new `diff_from_previous_version`. Read on the Mac replica
+  (2026-11-06), all 745 Nebraska pairs recomputed with the real cleaner equal what is stored, so the data is not stale. What
+  was left: a line wrap right after a hyphen or slash ("non-" / "Participating") or between two bracketed labels
+  ("(3)(c)" / "(i)") joins to "non- Participating" in one printing and "non-Participating" in the other; 158 of the 494
+  stored Nebraska comparisons (21% of a random 300) were only that. `_clean_ne_text()` now drops that one space on both
+  sides, wherever it sits (comparison text only). Same replica pairs: 158 to 0 whitespace-only, no pair worse, 52,739 to 49,417 changed lines.
+  **Do not** add a case-folding or other rule here without measuring it the same way. **Production step (not done, Ramon's go):**
+  a scrapers image carrying the cleaner, then `os-text-extract recompute-diff-order ne` (dry run first; expect about 376 of
+  the stored comparisons rewritten, 158 of them to empty) and then `--commit`. Nothing changes until then.
 
 ## Motion classification tooling
 
