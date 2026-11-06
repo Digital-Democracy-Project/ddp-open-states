@@ -1,0 +1,6 @@
+{'name': 'Alabama', 'docs': 2923, 'flag_null': 0, 'flag_false': 45, 'with_diff': 918}
+{'name': 'Arizona', 'docs': 8935, 'flag_null': 8935, 'flag_false': 0, 'with_diff': 4328}
+{'name': 'North Carolina', 'docs': 6207, 'flag_null': 0, 'flag_false': 54, 'with_diff': 3557}
+{'name': 'Utah', 'docs': 9371, 'flag_null': 9371, 'flag_false': 0, 'with_diff': 4158}
+{'name': 'Virginia', 'docs': 25591, 'flag_null': 25591, 'flag_false': 0, 'with_diff': 14927}
+table total: 224167 | flags set (not null) in the whole table: 23035
