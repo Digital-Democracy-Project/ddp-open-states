@@ -30,6 +30,6 @@ Dry run first, printing what Part 1 printed (if anything changed, report and wai
 ## 4. What I do on the Mac side (not yours)
 Ramon reads the list of the 3,267 bills the rule would hide before he gives the GO. After the commit I check the Mac replica applied it (lag, no errors), one known report end to end (SD 4329: mark false, api-v3 shows no `raw_text`, ddp-sync logs "No archived bill text"), and that H 3188 and SD 3237 are still readable as real bills.
 
-**One more thing from the Mac, unrelated to this request:** the Docker disk on this host reached 100% around 04:35 UTC (three scrapers-image builds in two hours) and is at 95% after a prune. If you see Colima or Docker errors on the Mac, that is why.
+**One more thing from the Mac, unrelated to this request:** the Docker disk on this host reached 100% around 04:35 UTC (three scrapers-image builds in two hours) and was at 95% after something (not the repo's prune script, which has not run; I do not know what) freed space; it is still at the critical line. If you see Colima or Docker errors on the Mac, that is why.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
