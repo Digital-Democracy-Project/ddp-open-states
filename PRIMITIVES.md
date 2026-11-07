@@ -793,17 +793,25 @@ functions, layered on top of the ordering work above rather than changing it.
 - **OPEN-498 — Massachusetts: the bill's title decides whether a document is a real bill version, because the note cannot.**
   Massachusetts files agency reports and letters (HD/SD numbers), study, extension and "Order relative to ..." orders, amendment
   papers, messages and rules under the same kind of bill number as real bills, and every one has the note "Bill Text", so the
-  (jurisdiction, note) rule cannot see them (2,936 of 11,872 in the 194th session by title, 3,267 with the orders). openstates-core
+  (jurisdiction, note) rule cannot see them (about 25 to 28% of the 194th session's documents: 3,267 of 11,872 in the ticket, 2,880 of 11,674 on the Mac copy on 2026-11-07, 3,200 on RDS by the prod agent's dry run of 2026-11-07; the archive grows, so the counts differ by snapshot). openstates-core
   `utils/version_ordering.py`: `_REAL_MEASURE_TITLE_PATTERNS` (one entry, "Massachusetts": a title must open with An Act, Resolve(s),
   A Resolve, Resolutions, Joint Resolution or Proposal) and `is_bill_version(jurisdiction_name, note, bill_title=None)`. The archiver
   and `recompute-diff-order` pass `bill.title`; a missing or blank title never excludes a document; `is_procedural_document` and the
   diff lineage are untouched. **Do not** add a title list to api-v3, ddp-sync or LegBot: add a state with the same problem to that
   table and recompute it. A flagged document gets no `raw_text` from api-v3 (OPEN-422), so ddp-sync's archived-text lookup skips the
-  bill and LegBot never sees it; the knowledge-base hook still indexes it as "unknown". Built 2026-11-06 (openstates-core PR #84, not
-  merged, not deployed). **Release:** merge, scrapers image, then `recompute-diff-order ma` (dry run first: expect
-  `not_a_version=3267` on the Mac copy; review the true-to-false titles before the commit; rollback is reverting the rule and
-  recomputing); after the recompute the bill search index may need a `--full` refresh, as for OPEN-422. Decision and sample:
-  OPEN-498.
+  bill and LegBot never sees it; the knowledge-base hook still indexes it as "unknown". Merged: the title rule is openstates-core PR #84 (`250de777`, scrapers image v46); a `--flags-only` switch on
+  `recompute-diff-order` is PR #85 (`138fa3df`, image v48, task-definition revision 50). **Always run the Massachusetts recompute
+  with `--flags-only`:** without it the command also recomputes diffs, and because the diff code compares only documents of the
+  same file type, every Massachusetts bill with a PDF ("Bill Text") plus an HTML page ("Chapter Law Text (Enacted)") would have
+  its stored diff nulled (`nulled=291` on the prod agent's dry run of 2026-11-07); those stored diffs are the only record of which
+  bill became which law (OPEN-370, Ramon 2026-10-15; OPEN-396 hold). `--flags-only` sets and corrects only `is_bill_version`,
+  prints `diffs untouched (--flags-only)` instead of the `unchanged= corrected= nulled=` counts, and never names the diff column in
+  an UPDATE (a test checks the SQL). **Do not** add a second way to mark a document. **Release state (2026-11-07):** the prod
+  agent's read-only dry run on RDS (note `ed0908a`) was clean (`set=12113 changed=20 not_a_version=3200`, the 291 stored diffs
+  identical before and after); Ramon's GO for `ma --commit --flags-only` is posted; **the commit is not reported yet**, and its
+  verification (SD 4329 hidden end to end; H 3188 and SD 3237 still real) and a Massachusetts LegBot sweep are still open. After the
+  recompute the bill search index may need a `--full` refresh, as for OPEN-422; rollback is reverting the rule and rerunning with
+  the switch. Decision and sample: OPEN-498.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
