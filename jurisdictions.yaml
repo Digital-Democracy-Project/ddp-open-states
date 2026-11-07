@@ -498,8 +498,8 @@ pa:
     cloud_path: true
     api_smoke_test: false
     qa_sweep: false
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-478, Ramon 2026-11-07)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-478, Ramon 2026-11-07)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
