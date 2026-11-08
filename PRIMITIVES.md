@@ -751,6 +751,15 @@ functions, layered on top of the ordering work above rather than changing it.
   cleaner also uses (OPEN-400): **do not write a second footer routine**; a new state with a footer shape adds a pattern and
   calls that helper. Not deployed and not recomputed: it needs a scrapers image, then `recompute-diff-order la` on RDS (dry run
   first, Ramon's go).
+- **OPEN-510 — Louisiana's Engrossed, Reengrossed and Re-Reengrossed versions are ordered by name.** `note_stage()` in
+  openstates-core `utils/version_ordering.py` gives the exact shapes `<bill> Engrossed` / `<bill> Reengrossed` /
+  `<bill> Re-Reengrossed` (e.g. `SB217 Reengrossed`) ordinals 0, 1, 2 in the chamber-passage stage; the generic "engross" rule
+  gave all three 0, and Louisiana versions have no date, so they kept storage order (often reversed). Louisiana's full order is
+  Original < Engrossed < Reengrossed < Re-Reengrossed < Enrolled < Act. Only Louisiana's notes match (checked over every distinct
+  stored note, 2026-11-08; Virginia's bare "Reengrossed" does not). Measured on the Mac replica: 505 of the 2,908 non-empty
+  Louisiana comparisons ran backwards and 1,405 change predecessor; every other state 0. Same change in api-v3's copy. **Not
+  deployed and not recomputed** (openstates-core #87, api-v3 #52): a scrapers image, then `recompute-diff-order la` on RDS (dry
+  run first, Ramon's go); this blocks Louisiana's switch-on (OPEN-480).
 - **OPEN-497 — Nebraska's stored comparisons were already cleaned; the cleaner itself left one kind of re-wrapping behind.**
   `recompute-diff-order` does re-diff the text, not only the order and flags: `recomputed_diffs_for_documents()` runs
   `apply_prediff_cleaning()` on every pair and `--commit` saves the new `diff_from_previous_version`. Read on the Mac replica
