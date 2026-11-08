@@ -812,6 +812,16 @@ functions, layered on top of the ordering work above rather than changing it.
   verification (SD 4329 hidden end to end; H 3188 and SD 3237 still real) and a Massachusetts LegBot sweep are still open. After the
   recompute the bill search index may need a `--full` refresh, as for OPEN-422; rollback is reverting the rule and rerunning with
   the switch. Decision and sample: OPEN-498.
+- **OPEN-511 — Louisiana: Conference Committee Reports are not bill versions either.** Louisiana's entry in
+  `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS` (openstates-core `utils/version_ordering.py`, the table OPEN-491 used for its amendment
+  papers) also matches `Conference Committee Report, #<N>, House <Adopted|Proposed|Rejected|Withdrawn>, Senate <same>`. The
+  report is the conferees' letter listing amendments, not a reprinted bill, so it gets `is_bill_version` False, no diff,
+  and is no longer a baseline; the Enrolled bill diffs against the last real version. Measured on the Mac replica (2026-11-08):
+  55 documents, Louisiana only; on the 51 affected bills the real recompute changes 103 comparisons (55 report diffs dropped,
+  48 Enrolled diffs rebaselined, all smaller). Stage and version order are untouched (that is OPEN-510). **Do not** add a
+  conference-report list anywhere else. Not merged, not deployed (openstates-core PR #86): it needs a scrapers image and
+  `recompute-diff-order la` (dry run first, Ramon's go), which can be the same Louisiana recompute as OPEN-496 and OPEN-510;
+  it blocks Louisiana's switch-on (OPEN-480).
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
