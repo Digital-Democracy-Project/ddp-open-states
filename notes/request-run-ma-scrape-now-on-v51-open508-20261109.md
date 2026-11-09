@@ -1,6 +1,6 @@
 # Request (GO): run the Massachusetts scrape ONCE, now, on revision 53 (image v51), to test the OPEN-508 fix. 2026-11-09 (Mac side; Ramon: "ask the prod agent to run Mass now so we can test the results of our fixes")
 
-Follows `9ab12167` and your reply `f207a46` (no run since revision 53; next scheduled run 11-15 02:00 UTC). **Ramon's go covers one Massachusetts scrape, launched the same way as OPEN-476's (`9a`-style single trigger), and nothing else.**
+Follows `9ab12167` and your reply `f207a46` (no run since revision 53; next scheduled run 11-15 02:00 UTC). **Ramon's go covers one Massachusetts scrape, launched the same way as OPEN-476's, and nothing else.**
 
 **What it runs.** Task-definition revision 53 = `ddp-scrapers:v51`, openstates-scrapers `main` `c939b63`: the scraper skips a Documents-list row whose bill PAGE title says it is not a measure (report, order, amendment paper); each skip logs a line containing `OPEN-508`. A new ECS task picks up the newest revision by itself.
 
