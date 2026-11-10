@@ -1032,7 +1032,7 @@ so nothing covered it. The rule now:
   `{enabled, jurisdictions}` block read by a small `_*_eligible()` helper in the relevant pipeline
   module. Which jurisdictions are enrolled in a rollout, which are opted out of retries, which get
   a fallback — all of these. `ddp-sync` is what actually invokes `run-scrape.sh`, it already
-  resolves per-jurisdiction opt-ins this way (`secondary.scrapebot_fallback`, and now
+  resolves per-jurisdiction opt-ins this way (`scrapebot_fallback`, under `secondary` until SYNC-152, and now
   `openstates_scrape.sweep_import`), and keeping the decision there leaves the shell scripts free
   of new conditionals. **Do not add a new `$STATE` test in bash for this.**
 - **Only genuine wrapper-local flags stay in the shell script** — a flag the scheduler has no
@@ -1049,6 +1049,13 @@ not the test. Ask instead what the setting *is*: orchestration, eligibility and 
 enrolled, who is opted out, when — belong to the scheduler. A jurisdiction data-behaviour flag
 that must hold **every time the wrapper runs, regardless of schedule** is wrapper-local. A setting
 can arrive as a shell argument and still be scheduler-owned policy, and vice versa.
+
+*Still true after OPEN-521 (2026-11-10, plan "One pipeline per state"):* **who** is enrolled is now the
+manifest's (`jurisdictions.yaml` `status`: scraped unless `probing` or `paused`; `archive.enabled`: the archive
+follows the scrape), and ddp-sync reads it instead of keeping its own list. **When** (nightly or weekly, day,
+start time) stays the scheduler's: ddp-sync's `openstates_scrape.timing`, timing only, never membership. That is
+why the manifest has no `tier` and no `archive.scheduled` any more, and why the drift check only checks that the
+timing map names no state the manifest does not scrape.
 
 Why the split rather than consolidating everything: the two categories fail differently, and need
 different visibility. A rollout gate set wrong changes *when* data lands for a live jurisdiction,
@@ -1224,7 +1231,7 @@ first credentialed onboarding DDP actually does is more likely Indiana than DC.
 
 An **eighth** mechanism, added after the six-mechanisms survey above — deliberately not folded
 into it, because it isn't a replacement for any of the seven: it's a new, narrowly-scoped
-per-jurisdiction manifest (name/status/tier/scrape/archive/waf/quality/api_keys/onboarding
+per-jurisdiction manifest (name/status/scrape/archive/waf/quality/api_keys/onboarding
 fields, schema in `ddp-infra/PLAN-push-button-onboarding.md` §4.1) consumed **only** by this
 repo's own scripts (`activate.sh`, `run-scrape.sh`, `run-people-refresh.sh`, `start-os-api.sh`,
 `quality_check.py`) and the onboarding probe below. `ddp-sync`/`ddp-broker-py`/`ddp-next`/votebot
@@ -1256,7 +1263,14 @@ scope line was deliberate, not an oversight.
   exit 4, never a silent skip. Use it instead of typing a list: `states=$(jurisdiction_codes
   enrollment.people_refresh) || exit 1`. Source it only after `OS_VENV` is set (activate.sh does) so
   PyYAML is available, and test `-r` before sourcing under `set -e` (bash 3.2).
-- **`archive.enabled` vs `archive.scheduled` (OPEN-418, 2026-10-22).** Until then one flag, `archive.enabled`, was both
+- **No `tier`, no `archive.scheduled` (OPEN-521, 2026-11-10).** Both were removed with ddp-sync's "one pipeline per
+  state" (SYNC-152/153): ddp-sync reads only `status` (scraped = not `probing`/`paused`) and `archive.enabled` (the
+  archive runs after each of that state's scrapes, then LegBot, search refresh and embedding). Scrape timing is
+  ddp-sync's `openstates_scrape.timing` (OPEN-124 above). `validate_jurisdictions.py` rejects either field as unknown
+  and says it was removed (`REMOVED_FIELDS`); `new-jurisdiction` no longer writes them and `advance-jurisdiction live`
+  sets only the status. **Do not add a scheduling field back to the manifest**: timing belongs to ddp-sync. The
+  history below (OPEN-418) is kept for what it explains.
+- **`archive.enabled` vs `archive.scheduled` (OPEN-418, 2026-10-22; superseded by OPEN-521).** Until then one flag, `archive.enabled`, was both
   the Stage 4 gate for a manual validation run and (once the drift check made it equal to ddp-sync's list) the
   recurring schedule, so a state could not be validated without being scheduled. Now `enabled` = may be archived
   (feeds `ARCHIVE_ENABLED_STATES`; the manual run), `scheduled` = on ddp-sync's recurring `openstates_archive` list
@@ -1266,14 +1280,15 @@ scope line was deliberate, not an oversight.
   for the same list. (The api-v3 `/ddp/enrollment` route still serves `archive` = `archive.enabled`; nothing reads it.)
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
-  `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`
-  and `tier`), seeded from the lists' real values, and **`check-jurisdiction-drift.py` compares every list
+  `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),
+  seeded from the lists' real values, and **`check-jurisdiction-drift.py` compares every list
   it knows about to the manifest and fails on any disagreement**: `activate.sh`, `run-people-refresh.sh`,
   `start-os-api.sh`, `quality_check.py`, `run-scrape.sh` (derivation checked, see below), and (with `--ddp-sync-root`) ddp-sync's
-  `sync_schedule.yaml` lists and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables. **A `paused` or `probing` state is on no scrape
-  schedule whatever its (required) `tier` says** (`UNSCHEDULED_STATUSES`; a state joins ddp-sync's scrape list when its status moves to
-  `scraping`, Stage 2), so a Stage 0 entry from `new-jurisdiction` is not drift (OPEN-478/479/480); ddp-sync's `jurisdiction_enrollment.py`
-  mirrors this rule and must be released first. Run in CI against
+  `sync_schedule.yaml` lists (embedding, search refresh, cloud path) and its `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S` tables.
+  **Since OPEN-521 there is no scrape or archive list to compare**: ddp-sync derives both from the manifest (`status` not
+  `probing`/`paused`, `UNSCHEDULED_STATUSES`, the same rule as its `jurisdiction_enrollment.py`; and `archive.enabled`). What is
+  left is `openstates_scrape.timing`, which must name only states the manifest scrapes (a timing entry for a paused,
+  probing or unknown state is drift); a ddp-sync with no `timing` map is an error (exit 2), not a pass. Run in CI against
   ddp-sync's `main`. A source it cannot parse is an error (exit 2), never a pass. `--matrix` prints
   who is enrolled in what. **OPEN-331 (2026-10-21) resolved the gaps it first showed:** NC now refreshes its people, is in the boot smoke test and the QA sweep (it had been missing from all three because the hand-kept lists predated it); MA joined the smoke test. What is still off is **deliberate and written beside the flag in `jurisdictions.yaml`**: NC `embedding` (waits for its knowledge-base backfill), MA `search_refresh` and `embedding` (MA is not routed to the replica yet, BROKER-16), and AL's search, embedding, cloud path and smoke test (paused).
   For this repo's own scripts that is no longer a comparison (OPEN-327): `activate.sh`,
@@ -1450,10 +1465,11 @@ new-jurisdiction co --from-probe notes/probe-co-20261030/result.json --dry-run  
   `check-jurisdiction-drift.py`'s required default for a code with no ddp-sync-specific entry).
   **Never** inferred from gate D's dry-scrape wall-clock/per-bill latency, which measures something
   else entirely (an open question for a future, explicitly-named measured-timeout probe field).
-- **Never guesses `tier`, `waf.profile` or `quality.diff_cleaner`** — these are always written as
-  safe placeholders (`secondary` / `none` / `none`) and printed as needing a human, exactly because
+- **Never guesses `waf.profile` or `quality.diff_cleaner`** — these are always written as
+  safe placeholders (`none` / `none`) and printed as needing a human, exactly because
   a probe-derived guess here is the mistake the diff_cleaner survey already found wrong for MA, NC
-  and AL. Fill them in by hand after reviewing the probe's own report.
+  and AL. Fill them in by hand after reviewing the probe's own report. (It wrote a `tier: secondary`
+  placeholder too until OPEN-521 removed the field; there is no scheduling decision to make in the manifest.)
 - **Fails closed on gate B:** verify-jurisdiction's gate B has no structured output, only fixed
   detail strings (`"votes scraper registered: ..."`, `"bills scraper accepts start=: ..."`,
   `"credential env-var references found in source: ..."` / `"no credential env-var references
@@ -1465,7 +1481,7 @@ new-jurisdiction co --from-probe notes/probe-co-20261030/result.json --dry-run  
   reflow every hand-written comment in the file (see the file's own header). This only ever appends
   text for a brand-new state, so it can never touch another state's bytes.
 - **Idempotent, never a silent overwrite:** an already-present state that matches is a no-op; one
-  that differs (including a human's own edit to `quality.diff_cleaner`/`waf.profile`/`tier`) prints
+  that differs (including a human's own edit to `quality.diff_cleaner`/`waf.profile`) prints
   the exact field-level differences and still writes nothing.
 - Does **not** enroll a jurisdiction anywhere, touch ddp-sync, or run any gate itself — it only
   reads a probe's already-produced `result.json`. Wired into
@@ -1478,14 +1494,15 @@ state went to `scraping`: the rule was in the runbook, nobody owned it, and the 
 without it. Two pieces make that impossible now:
 
 - **`validate_jurisdictions.py` refuses** a state at `scraping`, `validating`, `archived` or `live` whose
-  `enrollment.people_refresh` or `archive.enabled` is false, and a `live` state whose `archive.scheduled` is false.
+  `enrollment.people_refresh` or `archive.enabled` is false. (A `live` state also needed `archive.scheduled` until
+  OPEN-521 removed it: the archive now follows every scrape.)
   `probing` and `paused` are exempt. It runs in CI (`.github/workflows/validate-jurisdictions.yml`), so the miss is caught
   in review instead of three days later.
 - **`advance-jurisdiction`** sets them, in one step: `scraping` (from `probing`) sets `status`, `people_refresh`,
   `archive.enabled` and `enrollment.cloud_path` (left alone with a warning when `waf.fargate_safe` is false); `live`
-  (from `scraping`, `validating`, `archived` or `paused`) sets all of those plus `archive.scheduled`. `--dry-run` prints the
+  (from `scraping`, `validating`, `archived` or `paused`) sets the status and the same flags (nothing more since OPEN-521). `--dry-run` prints the
   lines it would change.
-- **Never touches** `tier`, `legbot_replica`, `embedding`, `replica_routing`, `search_refresh`, `qa_sweep`,
+- **Never touches** `legbot_replica`, `embedding`, `replica_routing`, `search_refresh`, `qa_sweep`,
   `api_smoke_test`, `waf` or `quality.diff_cleaner`. LegBot stays the one switch a human flips (Ramon, 2026-11-03: it
   depends on the data being good); embedding and routing stay behind their own gates (backfill, parity check).
 - Same safety shape as `new-jurisdiction`: line-for-line edits of one state's block (comments and every other state's bytes

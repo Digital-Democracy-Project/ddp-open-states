@@ -14,14 +14,15 @@ import pytest
 _HERE = os.path.dirname(os.path.abspath(__file__))
 DEPLOY = os.path.join(_HERE, "deploy")
 
+# OPEN-521: the manifest has no tier and no archive.scheduled; the summary must print a state without them.
 FULL_STATE = (
-    "  name: {name}\n  status: {status}\n  tier: secondary\n"
-    "  archive:\n    enabled: true\n    scheduled: {sched}\n"
+    "  name: {name}\n  status: {status}\n"
+    "  archive:\n    enabled: true\n"
     "  enrollment:\n    people_refresh: true\n    legbot_replica: false\n"
 )
-VALID_YAML = "pa:\n" + FULL_STATE.format(name="Pennsylvania", status="scraping", sched="false") + \
-             "nc:\n" + FULL_STATE.format(name="North Carolina", status="live", sched="true")
-CHANGED_YAML = VALID_YAML.replace("status: scraping", "status: live").replace("scheduled: false", "scheduled: true")
+VALID_YAML = "pa:\n" + FULL_STATE.format(name="Pennsylvania", status="scraping") + \
+             "nc:\n" + FULL_STATE.format(name="North Carolina", status="live")
+CHANGED_YAML = VALID_YAML.replace("status: scraping", "status: live")
 
 STUB_DOCKER = """#!/usr/bin/env bash
 echo "docker $*" >> "$STUB_LOG"
@@ -157,7 +158,8 @@ def test_a_real_rollout_pulls_checks_then_syncs_and_prints_the_values(world):
     assert (world["clone"] / "deploy" / "manifest" / "jurisdictions.yaml").read_text() == CHANGED_YAML
     assert "drift stub args=--manifest" in r.stdout and "--ddp-sync-root /opt/ddp-sync" in r.stdout
     assert "live: nc pa" in r.stdout and "jurisdictions in the list: 2" in r.stdout
-    assert "state pa: status=live" in r.stdout and "archive.scheduled=True" in r.stdout and "legbot_replica=False" in r.stdout
+    assert "state pa: status=live archive.enabled=True people_refresh=True legbot_replica=False" in r.stdout
+    assert "tier=" not in r.stdout and "scheduled" not in r.stdout
     assert "container health: healthy" in r.stdout and "no ddp-sync restart" in r.stdout
 
 

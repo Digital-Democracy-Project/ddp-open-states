@@ -8,6 +8,7 @@ import copy
 import subprocess
 import sys
 
+import pytest
 import yaml
 
 from validate_jurisdictions import validate, load_and_validate, DEFAULT_MANIFEST_PATH
@@ -18,7 +19,6 @@ def _valid_entry():
     return {
         "name": "Test State",
         "status": "live",
-        "tier": "secondary",
         "scrape": {
             "allow_duplicates": False,
             "timeout_s": 21600,
@@ -28,7 +28,6 @@ def _valid_entry():
         },
         "archive": {
             "enabled": True,
-            "scheduled": True,
             "timeout_s": 14400,
         },
         "enrollment": {
@@ -126,11 +125,23 @@ def test_bad_status_enum_reported():
     assert any(e.startswith("ts.status:") for e in errors)
 
 
-def test_bad_tier_enum_reported():
+@pytest.mark.parametrize("block, field, value", [(None, "tier", "primary"), (None, "tier", "secondary"),
+                                                  ("archive", "scheduled", True), ("archive", "scheduled", False)])
+def test_the_fields_open_521_removed_are_rejected_and_the_error_says_why(block, field, value):
+    """OPEN-521: tier and archive.scheduled no longer exist (ddp-sync reads only status and archive.enabled; WHEN is
+    its openstates_scrape.timing). Any value is an error, and the message names the ticket so nobody adds them back."""
     entry = _valid_entry()
-    entry["tier"] = "tertiary"
+    (entry if block is None else entry[block])[field] = value
+    path = f"ts.{field}" if block is None else f"ts.{block}.{field}"
     errors = validate({"ts": entry})
-    assert any(e.startswith("ts.tier:") for e in errors)
+    assert len(errors) == 1, errors
+    assert errors[0].startswith(f"{path}: unknown field") and "removed by OPEN-521" in errors[0]
+
+
+def test_an_ordinary_unknown_field_gets_no_removed_by_note():
+    entry = _valid_entry()
+    entry["archive"]["cadence"] = "weekly"
+    assert validate({"ts": entry}) == ["ts.archive.cadence: unknown field (not in the §4.1 schema)"]
 
 
 def test_bad_waf_profile_enum_reported():
@@ -214,12 +225,12 @@ def test_uppercase_jurisdiction_key_reported():
 def test_multiple_problems_all_reported_in_one_pass():
     entry = _valid_entry()
     entry["status"] = "bogus"
-    entry["tier"] = "bogus"
+    entry["waf"]["profile"] = "bogus"
     del entry["quality"]
     errors = validate({"ts": entry})
     # all three independent problems should show up, not just the first one found
     assert any(e.startswith("ts.status:") for e in errors)
-    assert any(e.startswith("ts.tier:") for e in errors)
+    assert any(e.startswith("ts.waf.profile:") for e in errors)
     assert any("ts.quality: missing required field" == e for e in errors)
 
 
@@ -298,11 +309,9 @@ def test_real_manifest_matches_known_live_config_values():
     for code in ("wa", "ut", "az", "us"):
         assert data[code]["scrape"]["allow_duplicates"] is False
 
-    # ddp-sync sync_schedule.yaml primary/secondary
-    for code in ("fl", "wa", "us"):
-        assert data[code]["tier"] == "primary"
-    for code in ("va", "mi", "ut", "az", "ma"):
-        assert data[code]["tier"] == "secondary"
+    # OPEN-521: no tier and no archive.scheduled anywhere (when a state is scraped is ddp-sync's timing map)
+    for code, e in data.items():
+        assert "tier" not in e and "scheduled" not in e["archive"], code
 
     # resilience_profiles.py RESILIENCE_PROFILES
     assert data["mi"]["waf"]["profile"] == "cookie_provider"
@@ -435,65 +444,30 @@ def test_the_two_env_list_fields_are_required_booleans():
 
 
 # ---------------------------------------------------------------------------------------------------
-# OPEN-418: archive.enabled (may be archived: Stage 4 manual validation run) vs archive.scheduled (on the
-# recurring schedule: requires a human-promoted status)
+# OPEN-521: archive.enabled is the one archive flag ("this state's scrape is followed by its archive"); the
+# pilot #2 rule that every state past probing has it is unchanged, and `live` asks for nothing more.
 # ---------------------------------------------------------------------------------------------------
 
-import pytest
 
-
-def _with(status="live", enabled=True, scheduled=True):
+def _with(status="live", enabled=True):
     entry = _valid_entry()
     entry["status"] = status
     entry["archive"]["enabled"] = enabled
-    entry["archive"]["scheduled"] = scheduled
     return {"ts": entry}
 
 
-@pytest.mark.parametrize("status", ["probing", "scraping", "validating", "archived"])
-def test_a_state_before_live_cannot_be_on_the_recurring_archive_schedule(status):
-    errors = validate(_with(status=status))
-    assert len(errors) == 1
-    assert "ts.archive.scheduled" in errors[0] and repr(status) in errors[0] and "['live', 'paused']" in errors[0]
+@pytest.mark.parametrize("status", ["scraping", "validating", "archived", "live"])
+def test_a_scraped_state_must_have_archive_enabled(status):
+    errors = validate(_with(status=status, enabled=False))
+    assert len(errors) == 1 and errors[0].startswith("ts.archive.enabled: must be true") and repr(status) in errors[0]
 
 
-@pytest.mark.parametrize("status", ["live", "paused"])
-def test_live_and_paused_states_may_be_scheduled(status):
-    assert validate(_with(status=status)) == []
+@pytest.mark.parametrize("status", ["probing", "paused"])
+def test_a_probing_or_paused_state_may_have_archive_off(status):
+    assert validate(_with(status=status, enabled=False)) == []
 
 
-@pytest.mark.parametrize("status", ["probing", "scraping", "validating", "archived"])
-def test_the_stage_4_case_is_enabled_but_not_scheduled_and_is_valid_before_live(status):
-    """The manual, timed validation run needs archive.enabled; the recurring schedule waits for `live`."""
-    assert validate(_with(status=status, enabled=True, scheduled=False)) == []
-
-
-def test_scheduled_requires_enabled():
-    errors = validate(_with(enabled=False, scheduled=True))
-    # (a live state also has to be archive.enabled: that is its own, second message)
-    assert "ts.archive.scheduled: true requires archive.enabled: true" in errors
-
-
-def test_not_enabled_and_not_scheduled_is_valid_for_any_status():
-    assert validate(_with(status="probing", enabled=False, scheduled=False)) == []
-
-
-def test_scheduled_is_a_required_boolean():
-    entry = _valid_entry()
-    del entry["archive"]["scheduled"]
-    assert any("ts.archive.scheduled" in e and "missing" in e.lower() for e in validate({"ts": entry}))
-    entry = _valid_entry()
-    entry["archive"]["scheduled"] = "yes"
-    assert any("ts.archive.scheduled: expected bool" in e for e in validate({"ts": entry}))
-
-
-def test_in_the_real_manifest_every_scheduled_state_is_live_or_paused_and_enabled():
-    data, errors = load_and_validate(DEFAULT_MANIFEST_PATH)
-    assert errors == []
-    scheduled = {code for code, e in data.items() if e["archive"]["scheduled"]}
-    # Not pinned to today's exact code set (OPEN-465) -- adding a state to the manifest must not
-    # break this -- but the original eight (OPEN-318) must still be on ddp-sync's recurring
-    # archive schedule.
-    assert {"us", "fl", "wa", "va", "mi", "ut", "az", "ma"} <= scheduled
-    for code in scheduled:
-        assert data[code]["status"] in ("live", "paused") and data[code]["archive"]["enabled"] is True
+@pytest.mark.parametrize("status", ["probing", "scraping", "validating", "archived", "live", "paused"])
+def test_archive_enabled_alone_is_valid_at_every_status(status):
+    """There is no second archive flag for `live` to need (the old archive.scheduled)."""
+    assert validate(_with(status=status, enabled=True)) == []

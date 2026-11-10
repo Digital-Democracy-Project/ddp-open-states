@@ -1,7 +1,7 @@
 # ddp-open-states/jurisdictions.yaml — single source of truth for tracked jurisdictions.
 #
 # OPEN-318 (2026-10-05): this file also says which per-feature lists each jurisdiction is on (the
-# `enrollment:` block, plus archive.enabled and tier), populated from the lists' real values that day, and
+# `enrollment:` block, plus archive.enabled), populated from the lists' real values that day, and
 # check-jurisdiction-drift.py (run in CI, see .github/workflows/validate-jurisdictions.yml) fails when any
 # hard-coded list -- this repo's, or ddp-sync's sync_schedule.yaml and timeout tables -- disagrees with it.
 # Since OPEN-327 (2026-10-21) this repo's own scripts READ it instead of keeping a list: activate.sh
@@ -15,7 +15,7 @@
 # archive, people-refresh and QA lists, so it belongs here (status paused: its bills are not scraped).
 #
 # Moving a state forward (2026-11-03): do not hand-edit the status and its flags. `advance-jurisdiction <st> scraping|live`
-# sets status plus the flags that status needs (people_refresh, archive.enabled, cloud_path, and at live archive.scheduled),
+# sets status plus the flags that status needs (people_refresh, archive.enabled, cloud_path),
 # and validate_jurisdictions.py refuses a state past `probing` that lacks them. LegBot (legbot_replica), embedding and
 # routing are never set by it: they stay human decisions.
 #
@@ -45,15 +45,24 @@
 # override. Per this repo's own per-jurisdiction-config convention (PRIMITIVES.md, OPEN-124),
 # "who is enrolled in a rollout, on what schedule" is scheduler-owned, not wrapper/manifest-owned
 # -- so this field stays reserved for a genuine single-session override and unused for fl/us.
-# For secondary-tier jurisdictions this null is also OPEN-24's resolution: ddp-sync deliberately
-# passes no session arg to secondaries so every active session gets scraped.
+# For every other jurisdiction this null is also OPEN-24's resolution: ddp-sync deliberately
+# passes no session arg, so every active session gets scraped.
+#
+# OPEN-521 (PLAN-push-button-onboarding.md "One pipeline per state", 2026-11-10): there is no `tier`
+# and no `archive.scheduled` any more, and the validator rejects both. ddp-sync reads two things from
+# this file to run its one pipeline per state (scrape, then archive, then LegBot):
+#   - WHO is scraped: every state whose status is not probing or paused;
+#   - whether the archive follows that scrape: archive.enabled.
+# WHEN a state is scraped (nightly or weekly, which day, what time) is ddp-sync's own
+# openstates_scrape.timing, timing only, never a list of who (OPEN-124: timing belongs to the
+# scheduler). check-jurisdiction-drift.py fails if that timing map names a state this file does not
+# scrape.
 #
 # Every value below was pulled from the real running config on 2026-08-30, not guessed:
 #   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
 #     (src/ddp_sync/pipelines/openstates_scrape.py, openstates_archive.py)
-#   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES (may be archived: the Stage 4 manual validation run)
-#   - archive.scheduled (OPEN-418): ddp-sync's recurring openstates_archive.jurisdictions and .schedule; the validator
-#     requires status live or paused for it, and archive.enabled to be true
+#   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES; since OPEN-521 also "this state's scrape is
+#     followed by its archive" in ddp-sync's pipeline (required from `scraping` on)
 #   - scrape.allow_duplicates: run-scrape.sh's --allow_duplicates states (mi, fl, va)
 #   - scrape.votes_scraper: whether the jurisdiction's own openstates-scrapers `__init__.py`
 #     registers a live (non-commented) "votes" entry in its `scrapers = {...}` dict -- only `ma`
@@ -86,13 +95,10 @@
 #     manifest said `none` for ma/nc/al while the code already cleaned all three and corrected it.
 #   - api_keys: PRIMITIVES.md's "per-jurisdiction credentials" table (va requires VA_API_KEY; usa
 #     optionally reads CONGRESS_GOV_API_KEY)
-#   - tier: ddp-sync's sync_schedule.yaml `openstates_scrape.primary` (fl, wa, usa) vs
-#     `.secondary` (va, mi, ma, ut, az) blocks
 
 us:
   name: United States (Congress)
   status: live
-  tier: primary            # ddp-sync openstates_scrape.primary.usa
   scrape:
     allow_duplicates: false
     timeout_s: 14400        # SCRAPE_TIMEOUT_S["usa"], 4h
@@ -103,7 +109,6 @@ us:
     start_filter: true        # GovInfo sitemap lastmod -- clean server-side filter, no caveat
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
   enrollment:
     people_refresh: true
@@ -127,7 +132,6 @@ us:
 fl:
   name: Florida
   status: live
-  tier: primary             # ddp-sync openstates_scrape.primary.fl
   scrape:
     allow_duplicates: true    # pagination overlap produces duplicate bill JSON (upstream #5697)
     timeout_s: 57600           # SCRAPE_TIMEOUT_S["fl"], 16h -- FL is the longest-running job
@@ -140,7 +144,6 @@ fl:
                                   # changes layout
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
   enrollment:
     people_refresh: true
@@ -166,7 +169,6 @@ fl:
 wa:
   name: Washington
   status: live
-  tier: primary              # ddp-sync openstates_scrape.primary.wa
   scrape:
     allow_duplicates: false
     timeout_s: 28800            # SCRAPE_TIMEOUT_S["wa"], 8h
@@ -176,7 +178,6 @@ wa:
                                    # GetLegislation calls, only downstream calls are skipped
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
   enrollment:
     people_refresh: true
@@ -200,7 +201,6 @@ wa:
 va:
   name: Virginia
   status: live
-  tier: secondary               # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
     allow_duplicates: true        # pagination overlap (upstream #5697); scraper-side dedup also
                                    # added (65363ef)
@@ -211,7 +211,6 @@ va:
                                        # saves 3 of 4 per-bill calls
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
   enrollment:
     people_refresh: true
@@ -237,7 +236,6 @@ va:
 mi:
   name: Michigan
   status: live
-  tier: secondary                # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
     allow_duplicates: true         # pagination overlap (upstream #5697)
     timeout_s: 36000                 # SCRAPE_TIMEOUT_S["mi"], 10h -- MI also gets a periodic
@@ -249,7 +247,6 @@ mi:
                                         # by intro date, not last-action date (RUNBOOK.md caveat)
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 86400                   # ARCHIVE_TIMEOUT_S["mi"], 24h (ddp-sync; this said the 4h default, which MI's
                                         # archive outgrew)
   enrollment:
@@ -276,7 +273,6 @@ mi:
 ut:
   name: Utah
   status: live
-  tier: secondary                 # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no UT-specific entry)
@@ -286,7 +282,6 @@ ut:
                                          # time only, still one HTTP call per bill
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
   enrollment:
     people_refresh: true
@@ -310,7 +305,6 @@ ut:
 az:
   name: Arizona
   status: live
-  tier: secondary                 # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no AZ-specific entry)
@@ -320,7 +314,6 @@ az:
                                          # calls, only sub-calls skipped
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
   enrollment:
     people_refresh: true
@@ -349,7 +342,6 @@ ma:
                                      # scraped/archived/served on /explore today; OPEN-68/
                                      # OPEN-169/176/177 track its remaining data-quality gaps,
                                      # not an onboarding-stage regression
-  tier: secondary                    # ddp-sync openstates_scrape.secondary (Sunday weekly batch)
   scrape:
     allow_duplicates: true             # run-scrape.sh ALLOW_DUPLICATES_STATES has had ma since OPEN-55 (a completed
                                         # 9,496-bill MA scrape lost its whole import without it); this manifest said false
@@ -363,7 +355,6 @@ ma:
                                           # every bill" and full-walks on every run
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
   enrollment:
     people_refresh: true
@@ -394,8 +385,6 @@ nc:
                                        # (the first that could count was 2026-10-25). So `live` here means "decided",
                                        # not "soaked". Probed 2026-08-31 (OPEN-230), pilot #1 (OPEN-231). Routing to
                                        # the replica is a separate step (BROKER-302); see replica_routing below.
-  tier: secondary                      # per PLAN-push-button-onboarding.md §5 Stage 2, a new
-                                       # pilot state is added to secondary.jurisdictions
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h -- no NC-specific entry
@@ -410,10 +399,6 @@ nc:
                                         # archiving. This file isn't wired into activate.sh (see this file's own
                                         # header note) -- ARCHIVE_ENABLED_STATES there is derived from this flag, the
                                         # gate run-archive.sh actually checks.
-    scheduled: true                     # OPEN-418: on ddp-sync's recurring archive schedule (Thursday, openstates_archive
-                                        # .jurisdictions and .schedule). The validator allows this only for status live
-                                        # or paused; nc is live (OPEN-417). It joined the schedule in September, before
-                                        # status was live, which is the gap OPEN-418 closed.
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h -- no NC-specific entry
   enrollment:
     people_refresh: true    # OPEN-331: was false only because run-people-refresh.sh's hand-kept list predated NC, so NC's legislators never refreshed
@@ -445,7 +430,6 @@ al:
   name: Alabama
   status: paused                      # bills are NOT scraped: not on any ddp-sync scrape list, removed from the bill loop
                                        # (people-only since 2026-06). Its archive and people refresh still run.
-  tier: secondary                      # a required field; meaningless while paused (the drift check skips it)
   scrape:
     allow_duplicates: false
     timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry); never runs while paused
@@ -454,7 +438,6 @@ al:
     start_filter: false                   # scrapers/al/bills.py's scrape(self, session) takes no start= (cf. OPEN-321)
   archive:
     enabled: true
-    scheduled: true         # OPEN-418: on ddp-sync's recurring archive schedule (requires status live or paused)
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
   enrollment:
     people_refresh: true
@@ -480,7 +463,6 @@ al:
 pa:
   name: Pennsylvania
   status: scraping
-  tier: primary  # OPEN-494 (Ramon, 2026-11-06): nightly, own start 04:00 UTC in ddp-sync's openstates_scrape.primary
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
@@ -488,8 +470,7 @@ pa:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
-    scheduled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
@@ -514,7 +495,6 @@ pa:
 ne:
   name: Nebraska
   status: scraping
-  tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ne-specific entry in ddp-sync yet
@@ -522,8 +502,7 @@ ne:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
-    scheduled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
@@ -548,7 +527,6 @@ ne:
 la:
   name: Louisiana
   status: scraping
-  tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no la-specific entry in ddp-sync yet
@@ -556,8 +534,7 @@ la:
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
   archive:
-    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03): timed archive trial first; `scheduled` stays false until the state is live (OPEN-418)
-    scheduled: false
+    enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)

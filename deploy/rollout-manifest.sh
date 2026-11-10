@@ -288,8 +288,7 @@ if state:
         print(f"    state {state}: not in the list")
     else:
         flags = " ".join(f"{k}={v}" for k, v in e["enrollment"].items())
-        print(f"    state {state}: status={e['status']} tier={e['tier']} archive.enabled={e['archive']['enabled']} "
-              f"archive.scheduled={e['archive']['scheduled']} {flags}")
+        print(f"    state {state}: status={e['status']} archive.enabled={e['archive']['enabled']} {flags}")
 PYEOF
 say "Done. Not done by this script, on purpose: no ddp-sync restart, no broker or database change, no .env change."
 echo "    (ddp-sync reads the list by modification time; restart it only on a person's word when the drift check says its own lists changed.)"

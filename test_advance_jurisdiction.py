@@ -29,7 +29,6 @@ MANIFEST = """# header comment
 pa:
   name: Pennsylvania
   status: probing
-  tier: secondary  # NEEDS HUMAN REVIEW
   scrape:
     allow_duplicates: false
     timeout_s: 21600
@@ -38,7 +37,6 @@ pa:
     start_filter: false
   archive:
     enabled: false
-    scheduled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default
   enrollment:
     people_refresh: false
@@ -63,7 +61,6 @@ pa:
 ne:
   name: Nebraska
   status: probing
-  tier: secondary
   scrape:
     allow_duplicates: false
     timeout_s: 21600
@@ -72,7 +69,6 @@ ne:
     start_filter: false
   archive:
     enabled: false
-    scheduled: false
     timeout_s: 14400
   enrollment:
     people_refresh: false
@@ -110,26 +106,26 @@ def test_scraping_sets_status_and_the_three_flags_and_nothing_else():
     # Everything else is exactly as it was: the decisions that stay human, and the neighbour.
     for human in ("legbot_replica", "embedding", "replica_routing", "search_refresh", "qa_sweep", "api_smoke_test"):
         assert after["enrollment"][human] is False
-    assert after["archive"]["scheduled"] is False
-    assert after["tier"] == before["tier"] and after["quality"] == before["quality"] and after["waf"] == before["waf"]
+    assert after["quality"] == before["quality"] and after["waf"] == before["waf"]
     assert _load(new)["ne"] == _load(MANIFEST)["ne"]
     assert validate(_load(new)) == []
 
 
 def test_comments_and_layout_survive():
     new, *_ = aj.advance(MANIFEST, "pa", "scraping")
-    assert "tier: secondary  # NEEDS HUMAN REVIEW" in new
+    assert "diff_cleaner: none  # NEEDS HUMAN REVIEW" in new
     assert "timeout_s: 14400               # ARCHIVE_TIMEOUT_S default" in new
     assert new.startswith("# header comment\n") and "# a neighbour\nne:" in new
     assert len(new.split("\n")) == len(MANIFEST.split("\n"))  # line-for-line edits
 
 
-def test_live_also_schedules_the_archive():
+def test_live_changes_only_the_status_and_adds_no_archive_field():
+    """OPEN-521: the archive follows every scrape, so `live` records the human decision and sets nothing more."""
     scraping, *_ = aj.advance(MANIFEST, "pa", "scraping")
     live, changes, _, error = aj.advance(scraping, "pa", "live")
-    assert error is None
-    assert _load(live)["pa"]["status"] == "live" and _load(live)["pa"]["archive"]["scheduled"] is True
-    assert "status: scraping -> live" in changes and validate(_load(live)) == []
+    assert error is None and changes == ["status: scraping -> live"]
+    assert _load(live)["pa"] == dict(_load(scraping)["pa"], status="live")
+    assert "scheduled" not in _load(live)["pa"]["archive"] and validate(_load(live)) == []
 
 
 def test_rerun_changes_nothing():
@@ -186,11 +182,10 @@ def _entry(status, **overrides):
 
 @pytest.mark.parametrize("status", ["scraping", "validating", "archived", "live"])
 def test_a_state_past_probing_must_refresh_people_and_allow_archive(status):
-    base = dict(archive__scheduled=(status == "live"))
-    errors = validate(_entry(status, **base))
+    errors = validate(_entry(status))
     assert any("pa.enrollment.people_refresh" in e and repr(status) in e for e in errors)
     assert any("pa.archive.enabled" in e for e in errors)
-    ok = validate(_entry(status, enrollment__people_refresh=True, archive__enabled=True, **base))
+    ok = validate(_entry(status, enrollment__people_refresh=True, archive__enabled=True))
     assert ok == []
 
 
@@ -199,26 +194,19 @@ def test_a_probing_or_paused_state_may_leave_them_off():
     assert validate(_entry("paused")) == []
 
 
-def test_a_live_state_must_be_on_the_recurring_archive_schedule():
-    errors = validate(_entry("live", enrollment__people_refresh=True, archive__enabled=True))
-    assert errors and "pa.archive.scheduled" in errors[0] and "'live'" in errors[0]
-
-
 def test_legbot_embedding_and_routing_are_never_required():
-    only_the_required = _entry(
-        "live", enrollment__people_refresh=True, archive__enabled=True, archive__scheduled=True
-    )
+    only_the_required = _entry("live", enrollment__people_refresh=True, archive__enabled=True)
     for human in ("legbot_replica", "embedding", "replica_routing"):
         assert only_the_required["pa"]["enrollment"][human] is False
     assert validate(only_the_required) == []
 
 
-@pytest.mark.parametrize("flag", ["enrollment__people_refresh", "archive__enabled", "archive__scheduled"])
+@pytest.mark.parametrize("flag", ["enrollment__people_refresh", "archive__enabled"])
 @pytest.mark.parametrize("bad", ["missing", None, "yes", 1])
 def test_a_live_state_cannot_get_past_the_validator_with_a_missing_null_or_mistyped_required_flag(flag, bad):
     """The new lifecycle rules reject an explicit false; the existing block check rejects a missing, null or
-    non-boolean value. Together a live state cannot carry anything but a real true in these three places."""
-    data = _entry("live", enrollment__people_refresh=True, archive__enabled=True, archive__scheduled=True)
+    non-boolean value. Together a live state cannot carry anything but a real true in these two places."""
+    data = _entry("live", enrollment__people_refresh=True, archive__enabled=True)
     section, key = flag.split("__")
     if bad == "missing":
         del data["pa"][section][key]
