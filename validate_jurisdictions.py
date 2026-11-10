@@ -92,6 +92,7 @@ REMOVED_FIELDS = {
     "tier": "removed by OPEN-521: when a state is scraped is ddp-sync's openstates_scrape.timing; who is its status",
     "archive.scheduled": "removed by OPEN-521: the archive follows every scrape of a state with archive.enabled",
 }
+
 # 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
 # has to remember to flip them. Pilot #2's first scrapes loaded with 0 legislators because people_refresh was
 # still false when the state went to `scraping`. `paused` is left out on purpose (a paused state keeps whatever

@@ -121,6 +121,9 @@ state (`openstates_scrape_<state>`), and that job runs the pipeline: the scrape,
 archive with a bounded retry, then LegBot, search refresh and embedding. There are no weekly archive days. **When** each
 state runs (nightly or weekly, day, start time) is ddp-sync's `openstates_scrape.timing` (a state with no entry gets
 its `defaults`), not the manifest. The history below describes the layout before that change.
+**Rolling back** (plan §3): an older ddp-sync image reads `tier` and `archive.scheduled`, and an api-v3 without OPEN-520
+reads `tier`, so restore the old `jurisdictions.yaml` on both hosts FIRST (revert the OPEN-521 PR, then
+`deploy/rollout-manifest.sh` on each host), and only then redeploy an older ddp-sync or api-v3.
 
 Scrape scheduling moved to ddp-sync on 2026-06-22. The old `com.ddp.openstates-scraper`
 launchd job has been removed (plist deleted 2026-06-24). Jobs are now independent per jurisdiction — FL, WA, and USA run
