@@ -838,6 +838,12 @@ functions, layered on top of the ordering work above rather than changing it.
   verification (SD 4329 hidden end to end; H 3188 and SD 3237 still real) and a Massachusetts LegBot sweep are still open. After the
   recompute the bill search index may need a `--full` refresh, as for OPEN-422; rollback is reverting the rule and rerunning with
   the switch. Decision and sample: OPEN-498.
+- **OPEN-525: Alabama's floor-motion papers are not bill versions.**
+  * **What they are:** the Alabama scraper adds the amendment or substitute paper behind each floor motion as a version named after the action ("Orr motion to Table - Adopted Voice Vote", "Motion to Adopt - Adopted Roll Call 407").
+  * **The rule:** one Alabama-only pattern, `_AL_FLOOR_MOTION_PAPER` in `utils/version_ordering.py`. It is part of Alabama's entry in `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS`, so `is_bill_version` is false for these papers, and `note_stage` ranks them as amendment papers.
+  * **Substitutes are taken out too.** 197 of the 453 papers are full substitute texts, and the note cannot tell them from amendments. 181 of the 185 adopted substitutes have at least 90% of their phrases in one of the bill's real versions; HB 306's is the one real loss. The documents stay archived.
+  * **Released:** openstates-core PR #92 (`a7a2a861`), scrapers image v54 (task-definition revision 57). `recompute-diff-order al --commit --flags-only` committed on RDS 2026-11-10 17:15 UTC (45 → 498 not a version; comparisons unchanged at 918). Alabama's Stage 3 version-stage gate now passes: 0 of 2,922 without a stage.
+  * **Do not** add a second Alabama list anywhere else. A new Alabama paper shape goes in the same pattern, then a recompute.
 - **OPEN-511 — Louisiana: Conference Committee Reports are not bill versions either.** Louisiana's entry in
   `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS` (openstates-core `utils/version_ordering.py`, the table OPEN-491 used for its amendment
   papers) also matches `Conference Committee Report, #<N>, House <Adopted|Proposed|Rejected|Withdrawn>, Senate <same>`. The
