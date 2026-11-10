@@ -428,26 +428,26 @@ nc:
 
 al:
   name: Alabama
-  status: paused                      # bills are NOT scraped: not on any ddp-sync scrape list, removed from the bill loop
-                                       # (people-only since 2026-06). Its archive and people refresh still run.
+  status: scraping                    # OPEN-523 (2026-11-10, Ramon ran /onboard-state Alabama): bill scraping resumes after the
+                                       # 2026-06 pause (people-only since then); ddp-sync's default timing (weekly).
   scrape:
     allow_duplicates: false
-    timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry); never runs while paused
+    timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry)
     session_arg: null
-    votes_scraper: false
+    votes_scraper: false                  # OPEN-524: the scraper's roll-call code is disabled (0 vote events)
     start_filter: false                   # scrapers/al/bills.py's scrape(self, session) takes no start= (cf. OPEN-321)
   archive:
     enabled: true
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
   enrollment:
     people_refresh: true
-    search_refresh: false    # INTENTIONAL (OPEN-331): paused, its bills are not scraped
-    embedding: false    # INTENTIONAL (OPEN-331): paused, its bills are not scraped
-    cloud_path: false    # AL bills are not scraped
-    api_smoke_test: false    # INTENTIONAL (OPEN-331): paused (its endpoint does answer 200; enroll if it is ever un-paused)
+    search_refresh: false    # OPEN-523: switched on at Stage 5 with routing
+    embedding: false    # OPEN-523: switched on at Stage 5 with routing
+    cloud_path: true    # OPEN-523: scrapes run on Fargate (every scraped state does)
+    api_smoke_test: false    # OPEN-331: its endpoint answers 200; enroll at Stage 5 with routing
     qa_sweep: true
-    replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; paused
-    legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; paused
+    replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; Stage 5
+    legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; Stage 5
   waf:
     profile: none
     fargate_safe: true
@@ -456,8 +456,8 @@ al:
                                     # OPEN-462 found this said none while the code already cleaned AL
   api_keys: []
   onboarding:
-    epic: null
-    evidence: null
+    epic: OPEN-146
+    evidence: notes/probe-all-20261031/al/report.md
 
 # written by new-jurisdiction from notes/probe-pa-20261031/result.json on 2026-11-02 (OPEN-461)
 pa:
