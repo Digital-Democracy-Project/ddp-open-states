@@ -17,7 +17,7 @@ gate B actually recorded (scrape.votes_scraper, scrape.start_filter, api_keys), 
 documented no-override timeouts (scrape.timeout_s 21600, archive.timeout_s 14400 -- the values
 check-jurisdiction-drift.py requires for a code with no ddp-sync-specific entry; NOT inferred from
 the probe's dry-scrape wall-clock or per-bill latency, which measure something else entirely).
-tier, waf.profile and quality.diff_cleaner are never guessed from probe output (the exact mistake
+waf.profile and quality.diff_cleaner are never guessed from probe output (the exact mistake
 behind MA/NC/AL's wrong survey values) -- they are written as safe placeholders and printed as
 needing a human.
 
@@ -201,7 +201,6 @@ def compose_entry(data, gate_b_facts):
     entry = {
         "name": data["name"] if isinstance(data.get("name"), str) and data["name"] else data["state"],
         "status": "probing",
-        "tier": "secondary",
         "scrape": {
             "allow_duplicates": False,
             "timeout_s": DEFAULT_SCRAPE_TIMEOUT_S,
@@ -211,7 +210,6 @@ def compose_entry(data, gate_b_facts):
         },
         "archive": {
             "enabled": False,
-            "scheduled": False,
             "timeout_s": DEFAULT_ARCHIVE_TIMEOUT_S,
         },
         "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
@@ -224,7 +222,6 @@ def compose_entry(data, gate_b_facts):
         },
     }
     needs_human = [
-        ("tier", "no tier decision made yet (Stage 2 picks primary/secondary)"),
         ("waf.profile", "probe gate B's heuristic cannot see a brand-new state's real WAF shape"),
         ("waf.fargate_safe", "defaults to true (the probe produced a usable result, so the site was reachable); "
                              "set false only for a state whose cookie must be minted on the Mac, as mi's is"),
@@ -264,7 +261,6 @@ def render_block(code, entry, needs_human, source_desc):
         f"{code}:",
         f"  name: {_scalar(entry['name'])}",
         f"  status: {_scalar(entry['status'])}",
-        f"  tier: {_scalar(entry['tier'])}{note('tier')}",
         "  scrape:",
         f"    allow_duplicates: {_scalar(entry['scrape']['allow_duplicates'])}",
         f"    timeout_s: {_scalar(entry['scrape']['timeout_s'])}"
@@ -277,7 +273,6 @@ def render_block(code, entry, needs_human, source_desc):
         f"            # probe gate B: \"bills scraper accepts start=\"",
         "  archive:",
         f"    enabled: {_scalar(entry['archive']['enabled'])}",
-        f"    scheduled: {_scalar(entry['archive']['scheduled'])}",
         f"    timeout_s: {_scalar(entry['archive']['timeout_s'])}"
         f"               # ARCHIVE_TIMEOUT_S default, 4h -- no {code}-specific entry in ddp-sync yet",
         "  enrollment:",

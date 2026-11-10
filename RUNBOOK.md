@@ -115,6 +115,13 @@ this creates: as a system daemon, it can start **before** CAMS creates `ddp-agen
 bounded-waits (5s × 60 = 300s) for the network and Redis instead of fail-fast-exiting;
 `KeepAlive={SuccessfulExit:false}` + `ThrottleInterval=30` relaunches it until CAMS is up.
 
+**Since SYNC-152/153 and OPEN-521 (plan "One pipeline per state", 2026-11-10) there are no primary and secondary
+states.** ddp-sync scrapes every state whose `jurisdictions.yaml` `status` is not `probing` or `paused`, one job per
+state (`openstates_scrape_<state>`), and that job runs the pipeline: the scrape, then (when `archive.enabled`) one
+archive with a bounded retry, then LegBot, search refresh and embedding. There are no weekly archive days. **When** each
+state runs (nightly or weekly, day, start time) is ddp-sync's `openstates_scrape.timing` (a state with no entry gets
+its `defaults`), not the manifest. The history below describes the layout before that change.
+
 Scrape scheduling moved to ddp-sync on 2026-06-22. The old `com.ddp.openstates-scraper`
 launchd job has been removed (plist deleted 2026-06-24). Jobs are now independent per jurisdiction — FL, WA, and USA run
 in parallel; secondary states fan out concurrently on Sundays. See `ddp-sync/config/sync_schedule.yaml`
@@ -152,7 +159,8 @@ cd deploy && docker-compose -f docker-compose.stopgap.yml up -d
 curl -X POST http://localhost:8001/ddp-sync/v1/trigger/openstates-scrape/wa \
   -H "X-API-Key: <ddp-sync-api-key>"
 
-# Trigger targets: patches | fl | wa | usa | secondary | people | va | mi | ma | ut | az
+# Trigger targets: patches | people | any state the manifest scrapes (status not probing/paused), e.g. pa
+# (before SYNC-152: fl | wa | usa | secondary | va | mi | ma | ut | az, and PA answered 404)
 
 # Run a scrape directly (bypasses ddp-sync scheduling, patches applied normally)
 ./run-scrape.sh wa
@@ -264,14 +272,15 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
 0. **A brand-new state (Stage 0):** run `new-jurisdiction <st> --from-probe <probe result.json or folder>
    --dry-run` to generate the initial `status: probing` entry from the probe's own result (OPEN-461) instead
    of hand-typing it. Review the printed block and the fields it lists as needing a human
-   (`quality.diff_cleaner`, `waf.profile`, `tier`), then run it again without `--dry-run`. It refuses to write
+   (`quality.diff_cleaner`, `waf.profile`), then run it again without `--dry-run`. It refuses to write
    anything `validate_jurisdictions.py` rejects and never touches another state's block; rerun it any time
    against a newer probe result to see exactly what changed. Finish with step 2 below (the validator and drift
    check) before committing. See PRIMITIVES.md for exactly what it writes and what it deliberately never
    guesses.
 1. **Moving a state to `scraping` or `live` (2026-11-03): run `advance-jurisdiction <st> scraping|live [--dry-run]`.** It sets the status and
-   the flags that status needs (`people_refresh`, `archive.enabled`, `cloud_path`, and at `live` `archive.scheduled`); the validator
-   refuses a state past `probing` without them. It never sets LegBot, embedding or routing.
+   the flags that status needs (`people_refresh`, `archive.enabled`, `cloud_path`; `live` adds nothing since OPEN-521); the validator
+   refuses a state past `probing` without them. It never sets LegBot, embedding or routing. Moving a state to `scraping`
+   is what makes ddp-sync scrape it, and its archive follow each scrape: there is no ddp-sync list to edit.
 1. For everything past the initial entry: edit `jurisdictions.yaml` directly — the flag (`archive.enabled`,
    `enrollment.*`), or filling in a field step 0 left as a human-review placeholder. **This repo's own
    scripts need nothing else** (OPEN-327): `activate.sh`'s archive gate, the people refresh, the API boot smoke
@@ -279,16 +288,16 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
    entries below in ddp-sync.
 2. `python3 check-jurisdiction-drift.py --ddp-sync-root ~/Developer/repos/ddp-sync` names every list that now
    disagrees, with both sides. (`--matrix` shows who is enrolled in what.)
-   **Two archive flags (OPEN-418), set at different stages:** `archive.enabled` means the state *may* be archived (the
-   Stage 4 manual, timed `run-archive.sh <state>` validation run, and `ARCHIVE_ENABLED_STATES`); set it when the
-   state's extractors are verified, while its `status` is still `validating` or earlier. `archive.scheduled` means
-   it is on ddp-sync's **recurring** archive schedule and its post-scrape archive hook; the validator **refuses** it
-   unless `status` is `live` (or `paused`) and `archive.enabled` is true, so the schedule cannot be switched on
-   before a human promotes the state (plan 4.6). Order for a new state: `enabled` at Stage 4, run the validation,
-   promote to `live`, then `scheduled` here and the state in ddp-sync's `openstates_archive` list (merge ddp-sync
-   first, per step 3).
+   **One archive flag (OPEN-521):** `archive.enabled` means the state's scrape is followed by its archive (and
+   `ARCHIVE_ENABLED_STATES` for the manual `run-archive.sh <state>`); the validator requires it from `scraping` on.
+   There is no `tier` and no `archive.scheduled` any more (the validator rejects both): who is scraped is `status`,
+   and **when** is ddp-sync's `openstates_scrape.timing`. The drift check fails if that timing map names a state the
+   manifest does not scrape (paused, probing, or not in the manifest), so **pausing a state that has a timing entry
+   needs the ddp-sync change too**.
 3. Bring each list into agreement. **ddp-sync's lists live in the ddp-sync repo: merge that change first**,
-   because CI compares the manifest with ddp-sync's `main`; then the manifest change goes green.
+   because CI compares the manifest with ddp-sync's `main`; then the manifest change goes green. (Since OPEN-521 the
+   ddp-sync lists left are embedding, search refresh, cloud path and the timing map; scraping and archiving follow
+   the manifest by themselves.)
 4. The two env lists live on each host, not in git: `DDP_OPENSTATES_JURISDICTIONS` (broker and ddp-sync,
    `enrollment.replica_routing`) and `LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST` (ddp-sync,
    `enrollment.legbot_replica`). Change them on each host's env and restart, then check the real value:

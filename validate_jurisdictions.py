@@ -56,14 +56,12 @@ class _DuplicateKeyCheckingLoader(yaml.SafeLoader):
 DEFAULT_MANIFEST_PATH = "jurisdictions.yaml"
 
 STATUS_VALUES = {"probing", "scraping", "validating", "archived", "live", "paused"}
-TIER_VALUES = {"primary", "secondary"}
 WAF_PROFILE_VALUES = {"none", "cookie_provider", "custom"}
 
 # top-level required fields, each with an expected Python type
 TOP_LEVEL_FIELDS = {
     "name": str,
     "status": str,
-    "tier": str,
     "scrape": dict,
     "archive": dict,
     "enrollment": dict,
@@ -82,14 +80,18 @@ SCRAPE_FIELDS = {
 }
 
 ARCHIVE_FIELDS = {
-    "enabled": bool,    # the state MAY be archived: a manual, timed validation run (Stage 4) and activate.sh's ARCHIVE_ENABLED_STATES
-    "scheduled": bool,  # OPEN-418: the state is on ddp-sync's RECURRING archive schedule and its post-scrape archive hook
+    "enabled": bool,    # the state's scrape is followed by its archive (ddp-sync's one pipeline per state, SYNC-152/153)
     "timeout_s": int,
 }
 
-# OPEN-418: a state may be on the recurring archive schedule only once a human has promoted it (plan 4.6, Stage 6),
-# or while it is paused. `enabled` without `scheduled` is how Stage 4's manual validation run works before `live`.
-SCHEDULABLE_STATUSES = {"live", "paused"}
+# OPEN-521 (plan "One pipeline per state", 2026-11-10): two fields that no longer exist. Who is scraped is the
+# status rule (not probing or paused), the archive follows each scrape when archive.enabled, and WHEN a state is
+# scraped is ddp-sync's openstates_scrape.timing (OPEN-124: timing belongs to the scheduler). They stay rejected
+# like any unknown field; this only says why, so nobody adds them back.
+REMOVED_FIELDS = {
+    "tier": "removed by OPEN-521: when a state is scraped is ddp-sync's openstates_scrape.timing; who is its status",
+    "archive.scheduled": "removed by OPEN-521: the archive follows every scrape of a state with archive.enabled",
+}
 # 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
 # has to remember to flip them. Pilot #2's first scrapes loaded with 0 legislators because people_refresh was
 # still false when the state went to `scraping`. `paused` is left out on purpose (a paused state keeps whatever
@@ -166,7 +168,13 @@ def _check_block(node, fields, path, errors):
         _check_type(node[field], expected, f"{path}.{field}", errors)
     for field in node:
         if field not in fields:
-            errors.append(f"{path}.{field}: unknown field (not in the §4.1 schema)")
+            errors.append(_unknown(f"{path}.{field}"))
+
+
+def _unknown(path):
+    """`code.field` or `code.block.field` -> the unknown-field error, saying why when the field was removed."""
+    why = REMOVED_FIELDS.get(path.split(".", 1)[1])
+    return f"{path}: unknown field (not in the §4.1 schema)" + (f"; {why}" if why else "")
 
 
 def validate(data):
@@ -202,15 +210,12 @@ def validate(data):
 
         for field in entry:
             if field not in TOP_LEVEL_FIELDS:
-                errors.append(f"{code}.{field}: unknown field (not in the §4.1 schema)")
+                errors.append(_unknown(f"{code}.{field}"))
 
         if isinstance(entry.get("status"), str) and entry["status"] not in STATUS_VALUES:
             errors.append(
                 f"{code}.status: {entry['status']!r} is not one of {sorted(STATUS_VALUES)}"
             )
-        if isinstance(entry.get("tier"), str) and entry["tier"] not in TIER_VALUES:
-            errors.append(f"{code}.tier: {entry['tier']!r} is not one of {sorted(TIER_VALUES)}")
-
         if isinstance(entry.get("scrape"), dict):
             _check_block(entry["scrape"], SCRAPE_FIELDS, f"{code}.scrape", errors)
             timeout = entry["scrape"].get("timeout_s")
@@ -222,16 +227,6 @@ def validate(data):
             timeout = entry["archive"].get("timeout_s")
             if isinstance(timeout, int) and not isinstance(timeout, bool) and timeout <= 0:
                 errors.append(f"{code}.archive.timeout_s: must be positive, got {timeout}")
-            if entry["archive"].get("scheduled") is True:
-                if entry["archive"].get("enabled") is False:
-                    errors.append(f"{code}.archive.scheduled: true requires archive.enabled: true")
-                status = entry.get("status")
-                if isinstance(status, str) and status in STATUS_VALUES and status not in SCHEDULABLE_STATUSES:
-                    errors.append(
-                        f"{code}.archive.scheduled: true, but status is {status!r}; a state may be on the recurring "
-                        f"archive schedule only when status is one of {sorted(SCHEDULABLE_STATUSES)} "
-                        f"(use archive.enabled alone for the Stage 4 validation run)"
-                    )
 
         if isinstance(entry.get("enrollment"), dict):
             _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors)
@@ -246,14 +241,9 @@ def validate(data):
                 )
             if isinstance(entry.get("archive"), dict) and entry["archive"].get("enabled") is False:
                 errors.append(
-                    f"{code}.archive.enabled: must be true when status is {status!r}: it only means the state MAY be "
-                    f"archived by hand (the recurring schedule is archive.scheduled). `advance-jurisdiction` sets it."
+                    f"{code}.archive.enabled: must be true when status is {status!r}: a scraped state's scrape is "
+                    f"followed by its archive. `advance-jurisdiction` sets it."
                 )
-        if status == "live" and isinstance(entry.get("archive"), dict) and entry["archive"].get("scheduled") is False:
-            errors.append(
-                f"{code}.archive.scheduled: must be true when status is 'live' (runbook Stage 6: going live puts the "
-                f"state on the recurring archive schedule). `advance-jurisdiction` sets it."
-            )
 
         if isinstance(entry.get("waf"), dict):
             _check_block(entry["waf"], WAF_FIELDS, f"{code}.waf", errors)

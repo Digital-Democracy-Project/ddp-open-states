@@ -4,7 +4,7 @@ advance-jurisdiction -- move a state to its next status in jurisdictions.yaml an
 status needs, in one step (PLAN-push-button-onboarding.md section 5.3 and the Stage 2/4/6 text).
 
 Why it exists: advancing a state used to mean editing four to seven separate lines by hand
-(status, enrollment.cloud_path, enrollment.people_refresh, archive.enabled, archive.scheduled ...), and
+(status, enrollment.cloud_path, enrollment.people_refresh, archive.enabled ...), and
 forgetting one is how pilot #2's first scrapes loaded with 0 legislators (2026-11-03). Now the
 validator (validate_jurisdictions.py) REFUSES a state at `scraping` or `live` that lacks them, and this
 command sets them.
@@ -15,11 +15,14 @@ Usage:
 
   scraping  (from probing)              status; people_refresh true; archive.enabled true; cloud_path true
                                         (left alone, with a warning, when waf.fargate_safe is false)
-  live      (from scraping/validating/  everything `scraping` sets, plus archive.scheduled true.
-             archived/paused)           `live` is a human decision (plan section 4.6): this command is how
-                                        you record it, it does not decide it.
+  live      (from scraping/validating/  status, and everything `scraping` sets (the same flags; nothing
+             archived/paused)           archive-related is added at `live` since OPEN-521: the archive
+                                        follows every scrape). `live` is a human decision (plan section
+                                        4.6): this command is how you record it, it does not decide it.
 
-What it NEVER touches: tier, enrollment.legbot_replica, embedding, replica_routing, search_refresh,
+When a state is scraped is not here at all: it is ddp-sync's openstates_scrape.timing (OPEN-521).
+
+What it NEVER touches: enrollment.legbot_replica, embedding, replica_routing, search_refresh,
 qa_sweep, api_smoke_test, waf, quality.diff_cleaner. LegBot in particular stays the one switch a human
 flips, because it depends on the data being good.
 
@@ -51,7 +54,7 @@ _FOR_SCRAPING = [
 ]
 SETS = {
     "scraping": _FOR_SCRAPING,
-    "live": _FOR_SCRAPING + [("archive", "scheduled", True)],
+    "live": _FOR_SCRAPING,
 }
 ALLOWED_FROM = {
     "scraping": {"probing", "scraping"},

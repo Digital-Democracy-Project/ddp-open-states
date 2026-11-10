@@ -174,14 +174,25 @@ def test_scrape_and_archive_timeouts_use_platform_defaults_not_measured_latency(
     assert entry["archive"]["timeout_s"] == nj.DEFAULT_ARCHIVE_TIMEOUT_S == 14400
 
 
-def test_tier_waf_profile_and_diff_cleaner_are_placeholders_flagged_needs_human():
+def test_waf_profile_and_diff_cleaner_are_placeholders_flagged_needs_human():
     facts = nj.extract_gate_b_facts(CO_RESULT)
     entry, needs_human = nj.compose_entry(CO_RESULT, facts)
-    assert entry["tier"] == "secondary"
     assert entry["waf"]["profile"] == "none"
     assert entry["quality"]["diff_cleaner"] == "none"
     flagged = {path for path, _reason in needs_human}
-    assert {"tier", "waf.profile", "quality.diff_cleaner"} <= flagged
+    assert {"waf.profile", "quality.diff_cleaner"} <= flagged
+
+
+def test_no_tier_and_no_archive_scheduled_are_written_or_asked_for(tmp_path, real_manifest_copy):
+    """OPEN-521: the validator rejects both fields (when a state is scraped is ddp-sync's timing map), so
+    new-jurisdiction neither writes them nor lists them as a human decision."""
+    facts = nj.extract_gate_b_facts(CO_RESULT)
+    entry, needs_human = nj.compose_entry(CO_RESULT, facts)
+    assert "tier" not in entry and "scheduled" not in entry["archive"]
+    assert not any("tier" in path or "scheduled" in path for path, _ in needs_human)
+    block = nj.render_block("co", entry, needs_human, "test")
+    assert "tier:" not in block and "scheduled:" not in block
+    assert _run(real_manifest_copy, "co", _write_json(tmp_path / "result.json", CO_RESULT)) == 0
 
 
 def test_onboarding_epic_always_null_and_evidence_derived_from_run_id():
@@ -285,7 +296,7 @@ def test_refuses_candidate_that_the_validator_rejects(tmp_path, real_manifest_co
 
     def bad_compose_entry(data, gate_b_facts):
         entry, needs_human = real_compose_entry(data, gate_b_facts)
-        entry["tier"] = "not-a-real-tier"  # violates validate_jurisdictions.py's TIER_VALUES enum
+        entry["waf"]["profile"] = "not-a-real-profile"  # violates validate_jurisdictions.py's WAF_PROFILE_VALUES enum
         return entry, needs_human
 
     monkeypatch.setattr(nj, "compose_entry", bad_compose_entry)

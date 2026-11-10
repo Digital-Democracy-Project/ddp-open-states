@@ -15,10 +15,14 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       boot smoke test), quality_check.py JURISDICTIONS and run-scrape.sh ALLOW_DUPLICATES_STATES
                       now DERIVE their lists from this manifest, so the check here is that each still does (the
                       call is present and the old hand-typed list has not come back), not a set comparison
-  ddp-sync (optional) config/sync_schedule.yaml: openstates_archive (jurisdictions + schedule, against
-                      archive.scheduled since OPEN-418; archive.enabled is the shell gate only),
-                      knowledge_base_embedding, bill_search_refresh, openstates_scrape (primary, secondary,
-                      cloud_path); and the SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S tables in its Python source
+  ddp-sync (optional) config/sync_schedule.yaml: knowledge_base_embedding, bill_search_refresh,
+                      openstates_scrape.cloud_path (+ its memory_backend floor), and openstates_scrape.timing,
+                      which may name only states the manifest scrapes; and the SCRAPE_TIMEOUT_S /
+                      ARCHIVE_TIMEOUT_S tables in its Python source. Since OPEN-521 (SYNC-152/153) ddp-sync keeps
+                      NO list of who is scraped or archived: it reads the manifest's status (scraped = not probing
+                      or paused) and archive.enabled itself, so there is nothing of that left to compare here.
+                      Its openstates_scrape.timing says only WHEN (OPEN-124), and a timing entry for a state the
+                      manifest does not scrape is drift.
 
   openstates-core (optional, OPEN-462) openstates/cli/text_extract.py's apply_prediff_cleaning(): its
                       `if jurisdiction_name == "<name>":` dispatch is parsed directly (an AST walk, not a
@@ -93,9 +97,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # ddp-sync names the US scraper "usa" in its scrape tables and lists; everything else uses "us".
 SYNC_SCRAPE_CODE = {"us": "usa"}
 
-# A paused state is on no scrape schedule, and neither is one still being probed (PLAN-push-button-onboarding.md
-# Stage 0): it joins ddp-sync's scrape list at Stage 2, when its status moves to `scraping`. Without this a brand-new
-# `new-jurisdiction` entry (a tier is required) is reported as drift on every daily run until Stage 2 (OPEN-478/479/480).
+# A paused state is not scraped, and neither is one still being probed (PLAN-push-button-onboarding.md Stage 0): it is
+# scraped from Stage 2, when its status moves to `scraping`. The same rule as ddp-sync's jurisdiction_enrollment.py
+# (`_UNSCHEDULED_STATUSES`), which since OPEN-521 / SYNC-152 is how ddp-sync decides who it scrapes.
 UNSCHEDULED_STATUSES = ("paused", "probing")
 
 
@@ -273,7 +277,6 @@ def where(manifest, predicate):
 def project(manifest):
     return {
         "archive": where(manifest, lambda e: e["archive"]["enabled"]),
-        "archive_scheduled": where(manifest, lambda e: e["archive"]["scheduled"]),
         "people_refresh": where(manifest, lambda e: e["enrollment"]["people_refresh"]),
         "search_refresh": where(manifest, lambda e: e["enrollment"]["search_refresh"]),
         "embedding": where(manifest, lambda e: e["enrollment"]["embedding"]),
@@ -284,9 +287,7 @@ def project(manifest):
         "legbot_replica": where(manifest, lambda e: e["enrollment"]["legbot_replica"]),
         "allow_duplicates": where(manifest, lambda e: e["scrape"]["allow_duplicates"]),
         "cookie_provider": where(manifest, lambda e: e["waf"]["profile"] != "none"),
-        # A paused or probing jurisdiction is on no scrape schedule whatever its (required) tier field says.
-        "primary": where(manifest, lambda e: e["tier"] == "primary" and e["status"] not in UNSCHEDULED_STATUSES),
-        "secondary": where(manifest, lambda e: e["tier"] == "secondary" and e["status"] not in UNSCHEDULED_STATUSES),
+        "scraped": where(manifest, lambda e: e["status"] not in UNSCHEDULED_STATUSES),
     }
 
 
@@ -334,25 +335,11 @@ def sync_checks(sync_root, manifest, expect):
     archive = lambda *k, d: set(_sync_list(data, "openstates_archive", *k, path_desc=d))
     scrape = lambda *k, d: _sync_list(data, "openstates_scrape", *k, path_desc=d)
 
-    def primary():
-        block = scrape("primary", d="openstates_scrape.primary")
-        for k, v in block.items():
-            if not isinstance(v, dict) or not isinstance(v.get("enabled"), bool):
-                raise SourceError(f"ddp-sync openstates_scrape.primary.{k}: expected a mapping with a boolean `enabled`")
-        return {_from_sync_code(k) for k, v in block.items() if v["enabled"]}
-
     sets = [
-        ("archive.scheduled", "ddp-sync openstates_archive.jurisdictions", expect["archive_scheduled"],
-         lambda: archive("jurisdictions", d="openstates_archive.jurisdictions")),
-        ("archive.scheduled", "ddp-sync openstates_archive.schedule (keys)", expect["archive_scheduled"],
-         lambda: set(_sync_list(data, "openstates_archive", "schedule", path_desc="openstates_archive.schedule"))),
         ("enrollment.embedding", "ddp-sync ...knowledge_base_embedding.jurisdictions", expect["embedding"],
          lambda: archive("knowledge_base_embedding", "jurisdictions", d="knowledge_base_embedding.jurisdictions")),
         ("enrollment.search_refresh", "ddp-sync ...bill_search_refresh.jurisdictions", expect["search_refresh"],
          lambda: archive("bill_search_refresh", "jurisdictions", d="bill_search_refresh.jurisdictions")),
-        ("tier: primary", "ddp-sync openstates_scrape.primary (enabled)", expect["primary"], primary),
-        ("tier: secondary", "ddp-sync openstates_scrape.secondary.jurisdictions", expect["secondary"],
-         lambda: set(scrape("secondary", "jurisdictions", d="openstates_scrape.secondary.jurisdictions"))),
         ("enrollment.cloud_path", "ddp-sync openstates_scrape.cloud_path.jurisdictions", expect["cloud_path"],
          lambda: {_from_sync_code(c) for c in scrape("cloud_path", "jurisdictions", d="cloud_path.jurisdictions")}),
     ]
@@ -378,6 +365,16 @@ def memory_backend_floor(data, expect):
     if not isinstance(cp.get("memory_backend_jurisdictions"), list):
         raise SourceError("ddp-sync sync_schedule.yaml: no openstates_scrape.cloud_path.memory_backend_jurisdictions list")
     return {_from_sync_code(c) for c in cp["memory_backend_jurisdictions"]}
+
+
+def scrape_timing(data):
+    """OPEN-521: the states openstates_scrape.timing names. It is timing only (a state the manifest scrapes with no
+    entry gets ddp-sync's defaults), so it must be a SUBSET of the scraped set, never a second list of who. A missing
+    map is an ERROR, not an empty pass: it means ddp-sync is not on the one-pipeline-per-state layout (SYNC-152)."""
+    timing = _sync_list(data, "openstates_scrape", "timing", path_desc="openstates_scrape.timing (SYNC-152)")
+    if not isinstance(timing, dict):
+        raise SourceError("ddp-sync sync_schedule.yaml: openstates_scrape.timing is not a mapping of state -> timing")
+    return {_from_sync_code(c) for c in timing}
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -439,6 +436,14 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
                     drift.append(("enrollment.cloud_path", "ddp-sync cloud_path.memory_backend_jurisdictions",
                                   f"cloud_path is enrolled in the manifest but missing from the memory_backend floor: "
                                   f"{_fmt(expect['cloud_path'] - floor)}"))
+            except SourceError as exc:
+                errors.append(str(exc))
+            try:
+                extra = scrape_timing(data) - expect["scraped"]
+                if extra:
+                    drift.append(("status", "ddp-sync openstates_scrape.timing",
+                                  f"timing for states the manifest does not scrape (status probing or paused, or "
+                                  f"not in the manifest): {_fmt(extra)}"))
             except SourceError as exc:
                 errors.append(str(exc))
             for field, source, getter in tables:
@@ -503,18 +508,16 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
     return 0
 
 
-MATRIX_COLUMNS = ["status", "tier", "archive", "scheduled", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
+MATRIX_COLUMNS = ["status", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
                   "qa_sweep", "replica_routing", "legbot_replica"]
 
 
 def matrix(manifest, out):
     def cell(entry, column):
-        if column in ("status", "tier"):
+        if column == "status":
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
-        if column == "scheduled":
-            return "yes" if entry["archive"]["scheduled"] else "-"
         return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}

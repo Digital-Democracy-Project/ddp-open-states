@@ -24,14 +24,14 @@ _spec.loader.exec_module(drift)
 
 
 # ---------------------------------------------------------------------------------------------------
-# the fixture world: fl (primary), us (primary, "usa" in ddp-sync), nc (secondary), al (paused)
+# the fixture world: fl and us ("usa" in ddp-sync) with their own ddp-sync timing, nc scraped on the defaults
+# (no timing entry), al paused (not scraped)
 # ---------------------------------------------------------------------------------------------------
 
-def _entry(tier="secondary", status="live", archive=True, scheduled=None, waf_profile="none", waf_fargate_safe=True, **enrollment):
+def _entry(status="live", archive=True, waf_profile="none", waf_fargate_safe=True, **enrollment):
     e = _valid_entry()
-    e["tier"], e["status"] = tier, status
+    e["status"] = status
     e["archive"]["enabled"] = archive
-    e["archive"]["scheduled"] = archive if scheduled is None else scheduled
     e["enrollment"].update({k: v for k, v in enrollment.items()})
     e["waf"]["profile"] = waf_profile
     e["waf"]["fargate_safe"] = waf_fargate_safe
@@ -39,20 +39,20 @@ def _entry(tier="secondary", status="live", archive=True, scheduled=None, waf_pr
 
 
 def _manifest():
-    fl = _entry("primary", waf_profile="cookie_provider", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=True)
+    fl = _entry(waf_profile="cookie_provider", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=True)
     fl["scrape"]["allow_duplicates"] = True
     fl["scrape"]["timeout_s"] = 16 * 3600
     fl["archive"]["timeout_s"] = 16 * 3600
-    us = _entry("primary", people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=False)
+    us = _entry(people_refresh=True, search_refresh=True, embedding=True, cloud_path=True, api_smoke_test=True, qa_sweep=False)
     us["scrape"]["timeout_s"] = 4 * 3600
     us["archive"]["timeout_s"] = 24 * 3600
-    nc = _entry("secondary", people_refresh=True, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
+    nc = _entry(people_refresh=True, search_refresh=True, embedding=False, cloud_path=True, api_smoke_test=False, qa_sweep=False, replica_routing=True)
     # OPEN-462: fl/us keep the default "Test State" name (no branch in CORE_TEXT_EXTRACT_PY below, so
     # their expected diff_cleaner is "none"); nc/al get real display names so the fixture dispatch
     # below (keyed on those exact strings, like the real one) has something to match against.
     nc["name"] = "North Carolina"
     nc["quality"]["diff_cleaner"] = "clean_nc_text"
-    al = _entry("secondary", status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
+    al = _entry(status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
     al["name"] = "Alabama"
     al["quality"]["diff_cleaner"] = "clean_al_text"
     return {"fl": fl, "us": us, "nc": nc, "al": al}
@@ -67,16 +67,18 @@ REPO_FILES = {
     "run-scrape.sh": 'ALLOW_DUPLICATES_STATES="$(jurisdiction_codes scrape.allow_duplicates)"\n',
 }
 
+# OPEN-521 (SYNC-152/153): ddp-sync's shape after "one pipeline per state". No list of who is scraped or archived
+# (it reads the manifest's status and archive.enabled); openstates_scrape.timing says only WHEN, for some states.
 SYNC_YAML = {
     "openstates_archive": {
-        "jurisdictions": ["fl", "us", "nc", "al"],
-        "schedule": {"fl": "monday", "us": "sunday", "nc": "thursday", "al": "saturday"},
         "knowledge_base_embedding": {"jurisdictions": ["fl", "us"]},
         "bill_search_refresh": {"jurisdictions": ["us", "fl", "nc"]},
     },
     "openstates_scrape": {
-        "primary": {"fl": {"enabled": True}, "usa": {"enabled": True}},
-        "secondary": {"jurisdictions": ["nc"]},
+        "defaults": {"floor": "weekly", "day": "sunday", "start_utc": "02:00"},
+        "timing": {"fl": {"floor": "weekly", "day": "sunday", "start_utc": "02:00"},
+                   "usa": {"floor": "nightly", "start_utc": "03:00",
+                           "sessions": ["119 chamber=lower", "119 chamber=upper"]}},
         "cloud_path": {"jurisdictions": ["fl", "usa", "nc"], "memory_backend_jurisdictions": ["fl", "usa", "nc"]},
     },
 }
@@ -228,7 +230,7 @@ def test_a_commented_out_old_list_is_not_a_list(world):
 
 
 def test_several_disagreements_are_all_reported_in_one_pass(world):
-    _set_sync_yaml(world, lambda d: d["openstates_archive"]["jurisdictions"].remove("nc"))
+    _set_sync_yaml(world, lambda d: d["openstates_archive"]["bill_search_refresh"]["jurisdictions"].remove("nc"))
     _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"]["jurisdictions"].remove("nc"))
     code, out = _run(world)
     assert code == 1
@@ -261,10 +263,18 @@ def test_a_duplicate_key_in_the_manifest_is_an_error(world):
     assert code == 2 and "does not validate" in out
 
 
-def test_a_primary_entry_that_is_not_a_mapping_with_enabled_is_an_error(world):
-    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["primary"].update({"usa": True}))
+def test_a_missing_timing_map_is_an_error_not_an_empty_pass(world):
+    """OPEN-521: ddp-sync before SYNC-152 has no openstates_scrape.timing. That must fail loudly (it is what CI
+    does against ddp-sync main until the SYNC-152/153 release merges), never pass as 'no timing, nothing extra'."""
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"].pop("timing"))
     code, out = _run(world)
-    assert code == 2 and "openstates_scrape.primary.usa" in out
+    assert code == 2 and "openstates_scrape.timing (SYNC-152)" in out
+
+
+def test_a_timing_map_that_is_a_list_is_an_error(world):
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"].update({"timing": ["fl", "usa"]}))
+    code, out = _run(world)
+    assert code == 2 and "openstates_scrape.timing is not a mapping" in out
 
 
 def test_a_missing_memory_backend_list_is_an_error_not_an_empty_floor(world):
@@ -465,7 +475,7 @@ def test_matrix_lists_every_jurisdiction_and_feature(world):
     assert lines[0].split()[0] == "code" and "embedding" in lines[0]
     rows = {l.split()[0]: l.split() for l in lines[1:]}  # by code: yaml.safe_dump sorts the fixture's keys
     assert set(rows) == {"fl", "us", "nc", "al"}
-    assert rows["nc"][:3] == ["nc", "live", "secondary"]
+    assert rows["nc"][:3] == ["nc", "live", "yes"]  # code, status, archive
     assert rows["al"][1] == "paused"
 
 
@@ -557,58 +567,76 @@ def test_an_empty_live_value_is_a_real_empty_list_and_drifts(world):
 
 
 # ---------------------------------------------------------------------------------------------------
-# OPEN-418: ddp-sync's recurring archive list is compared with archive.scheduled, not archive.enabled
+# OPEN-521: ddp-sync keeps no list of who is scraped; its openstates_scrape.timing may only name scraped states
 # ---------------------------------------------------------------------------------------------------
 
-def _make_nc_stage_4(world):
-    """nc is mid-pilot: enabled for the manual validation run, validating, NOT on the recurring schedule."""
-    manifest_path = world[2]
-    data = yaml.safe_load(open(manifest_path))
-    data["nc"]["status"] = "validating"
-    data["nc"]["archive"]["scheduled"] = False
-    _write(manifest_path, yaml.safe_dump(data))
+def _set_status(world, code, status):
+    data = yaml.safe_load(open(world[2]))
+    data[code]["status"] = status
+    _write(world[2], yaml.safe_dump(data))
 
 
-def test_a_stage_4_state_enabled_but_not_scheduled_passes_when_it_is_off_the_ddp_sync_list(world):
-    _make_nc_stage_4(world)
-    _set_sync_yaml(world, lambda d: (d["openstates_archive"]["jurisdictions"].remove("nc"),
-                                     d["openstates_archive"]["schedule"].pop("nc")))
+def _add_timing(world, sync_code):
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["timing"].update({sync_code: {"floor": "nightly", "start_utc": "04:00"}}))
+
+
+def test_timing_for_a_paused_state_is_drift(world):
+    _add_timing(world, "al")
+    code, out = _run(world)
+    assert code == 1, out
+    assert "DRIFT status: ddp-sync openstates_scrape.timing" in out and "does not scrape" in out and ": al" in out
+
+
+@pytest.mark.parametrize("status", ["probing", "paused"])
+def test_pausing_a_state_that_still_has_timing_is_drift(world, status):
+    """The manifest change that stops a state being scraped must remove its timing in ddp-sync too: fl has an entry."""
+    _set_status(world, "fl", status)
+    code, out = _run(world)
+    assert code == 1, out
+    assert "does not scrape" in out and ": fl" in out
+
+
+def test_timing_for_a_state_not_in_the_manifest_is_drift(world):
+    _add_timing(world, "ca")
+    code, out = _run(world)
+    assert code == 1 and ": ca" in out
+
+
+def test_ddp_sync_usa_timing_is_the_manifests_us(world):
+    """The fixture's timing names "usa"; it must match the manifest's "us", not be reported as an unknown state."""
+    code, out = _run(world)
+    assert code == 0, out
+    _set_status(world, "us", "paused")
+    code, out = _run(world)
+    assert code == 1 and ": us" in out
+
+
+@pytest.mark.parametrize("status", ["scraping", "validating", "archived", "live"])
+def test_a_scraped_state_with_no_timing_entry_needs_no_ddp_sync_edit(world, status):
+    """nc has no timing entry (ddp-sync's defaults apply); moving it through every scraped status is no drift."""
+    _set_status(world, "nc", status)
     code, out = _run(world)
     assert code == 0, out
 
 
-def test_a_stage_4_state_that_is_on_the_ddp_sync_archive_list_is_drift(world):
-    """The whole point of OPEN-418: being on the recurring schedule before `live` is now reported."""
-    _make_nc_stage_4(world)
-    code, out = _run(world)
-    assert code == 1, out
-    assert "DRIFT archive.scheduled: ddp-sync openstates_archive.jurisdictions" in out
-    assert "in ddp-sync openstates_archive.jurisdictions but not in the manifest: nc" in out
-    assert "DRIFT archive.scheduled: ddp-sync openstates_archive.schedule (keys)" in out
-
-
-def test_the_shell_gate_still_follows_archive_enabled_not_scheduled(world):
-    """activate.sh's list derives from archive.enabled, so the Stage 4 state is still in it."""
-    _make_nc_stage_4(world)
-    _set_sync_yaml(world, lambda d: (d["openstates_archive"]["jurisdictions"].remove("nc"),
-                                     d["openstates_archive"]["schedule"].pop("nc")))
-    manifest = yaml.safe_load(open(world[2]))
-    assert manifest["nc"]["archive"]["enabled"] is True
-    assert drift.project(manifest)["archive"] >= {"nc"} and "nc" not in drift.project(manifest)["archive_scheduled"]
+def test_the_projection_scrapes_every_status_but_probing_and_paused():
+    manifest = {code: _entry(status=status) for code, status in
+                [("a", "probing"), ("b", "scraping"), ("c", "validating"), ("d", "archived"), ("e", "live"), ("f", "paused")]}
+    assert drift.project(manifest)["scraped"] == {"b", "c", "d", "e"}
 
 
 # ---------------------------------------------------------------------------------------------------
-# OPEN-478/479/480: a probing state (Stage 0) is on no scrape schedule yet; it joins at Stage 2 (`scraping`)
+# OPEN-478/479/480: a probing state (Stage 0) is not scraped yet; from Stage 2 (`scraping`) it is, with no ddp-sync edit
 # ---------------------------------------------------------------------------------------------------
 
-def _add_pilot_state(world, tier, status):
+def _add_pilot_state(world, status):
     """A brand-new state as `new-jurisdiction` writes it: every enrollment flag off, archive off."""
     manifest_path = world[2]
     data = yaml.safe_load(open(manifest_path))
-    # Past probing the validator requires people_refresh and archive.enabled (and, at live, archive.scheduled):
-    # advance-jurisdiction sets them. Everything else is still off, as `new-jurisdiction` writes it.
+    # Past probing the validator requires people_refresh and archive.enabled: advance-jurisdiction sets them.
+    # Everything else is still off, as `new-jurisdiction` writes it.
     past_probing = status != "probing"
-    e = _entry(tier, status=status, archive=past_probing, scheduled=(status == "live"), people_refresh=past_probing,
+    e = _entry(status=status, archive=past_probing, people_refresh=past_probing,
                search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=False,
                replica_routing=False, legbot_replica=False)
     e["name"] = "Pennsylvania"
@@ -616,32 +644,24 @@ def _add_pilot_state(world, tier, status):
     _write(manifest_path, yaml.safe_dump(data))
 
 
-@pytest.mark.parametrize("tier", ["primary", "secondary"])
-def test_a_probing_state_is_on_no_schedule_so_it_need_not_be_on_the_ddp_sync_list(world, tier):
-    _add_pilot_state(world, tier, "probing")
+@pytest.mark.parametrize("status", ["probing", "scraping", "live"])
+def test_a_new_state_needs_no_ddp_sync_list_at_any_status(world, status):
+    _add_pilot_state(world, status)
     code, out = _run(world)
     assert code == 0, out
 
 
-@pytest.mark.parametrize("status", ["scraping", "validating", "archived", "live"])
-def test_a_state_past_probing_must_be_on_the_ddp_sync_scrape_list(world, status):
-    """Stage 2 moves a state to `scraping` and adds it to ddp-sync's list in the same change: a state that is
-    past probing but not on the list is still drift."""
-    _add_pilot_state(world, "secondary", status)
+def test_a_new_state_with_its_own_timing_passes_once_scraped_and_drifts_while_probing(world):
+    _add_pilot_state(world, "scraping")
+    _add_timing(world, "pa")
+    assert _run(world)[0] == 0
+    _set_status(world, "pa", "probing")
     code, out = _run(world)
-    assert code == 1, out
-    assert "in the manifest but not in ddp-sync openstates_scrape.secondary.jurisdictions: pa" in out
+    assert code == 1 and ": pa" in out
 
 
-def test_the_projection_leaves_a_probing_state_off_both_scrape_lists(world):
-    _add_pilot_state(world, "secondary", "probing")
-    manifest = yaml.safe_load(open(world[2]))
-    expected = drift.project(manifest)
-    assert "pa" not in expected["primary"] and "pa" not in expected["secondary"]
-
-
-def test_the_matrix_shows_the_scheduled_column(world):
+def test_the_matrix_has_no_tier_or_scheduled_column(world):
     code, out = _run(world, with_sync=False, extra=["--matrix"])
     assert code == 0
     header = out.strip().splitlines()[0].split()
-    assert "archive" in header and "scheduled" in header
+    assert "archive" in header and "tier" not in header and "scheduled" not in header
