@@ -873,7 +873,22 @@ functions, layered on top of the ordering work above rather than changing it.
     filter for these labels is NEXT-182.
   * **Measured on the Mac replica (194th, 2026-11-10):** 3,132 to relabel (report 1,538, communication 998, study request
     332, order 264), 157 amendment papers and 8 voted items left alone.
-  * **Status:** not merged (openstates-core #90). The run on RDS is a prod-agent step after a scrapers image, on Ramon's go.
+  * **Status:** merged (openstates-core #90, dab94675), not run. The run on RDS is a prod-agent step after a scrapers
+    image, on Ramon's go.
+- **OPEN-518: the Massachusetts scraper saves those papers, labelled, instead of skipping them** (replaces OPEN-508's
+  skip; Ramon 2026-11-09: "i don't want anything removed from our data").
+  * **The scraper:** `MABillScraper.label_non_bill` (openstates-scrapers `scrapers/ma/bills.py`) calls `non_bill_kind`
+    above, with the page's own title and the scraped actions, and sets the classification. It has no title list of
+    its own. A blank or missing title, an amendment paper, or a core without `non_bill_kind` gives an ordinary bill;
+    nothing is skipped. Voted papers are labelled too (Ramon 2026-11-10: the eight voted items are rules and orders,
+    not bills).
+  * **The import keeps the saved label:** `BaseImporter.keep_extras_keys` (openstates-core `importers/base.py`) names
+    extras keys a re-import copies over from the stored row when the scraper did not send them. `BillImporter` keeps
+    only `ORIGINAL_CLASSIFICATION_KEY` (now defined in `utils/version_ordering.py`). Without it, a re-scrape replaces
+    extras wholesale and `relabel-non-bills --undo` loses its saved label. **Do not** write a DDP value into a scraped
+    row's extras without adding its key here.
+  * **Status:** not merged (openstates-scrapers #85, openstates-core #91). Same image as OPEN-517, after its relabel
+    run.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
