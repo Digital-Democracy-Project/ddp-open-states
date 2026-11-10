@@ -587,6 +587,21 @@ step matters — a newer pip breaks one of the pinned deps' build.
   20, `quality_check` sends 20, VoteBot's roster reads use `/people`; the broker sends 20 until BROKER-431 changes it **after** this is live (a
   request for 50 before then is a 400). No schema change, no `ensure`; it needs a new api image on each host (the prod agent recreates api-v3).
 
+- **Which bill labels are real bill types lives in api-v3, once (OPEN-519, 2026-11-10; api-v3 PR #55, not merged).**
+  `api-v3/api/bill_types.py` holds `BILL_TYPES` (bill, proposed bill, resolution, joint/concurrent resolution, memorial,
+  joint/concurrent memorial, constitutional amendment) and `NOT_BILL_TYPES` (report, communication, order, study
+  request). Ramon (2026-11-10, NEXT-182): only bill types are listed and counted as bills. An item is a bill type when
+  any of its labels is on the list, or it has none (fail open).
+  * **The option:** `bill_types_only=true` on `GET /bills`, `/ddp/search`, `/ddp/search/suggest` and
+    `/ddp/search/hydrate`. Off by default, so LegBot, VoteBot, ddp-sync and scripts see no change. Hydrate also returns
+    each bill's `classification`.
+  * **The label is read live** from `opencivicdata_bill`, never copied into `ddp_bill_search`. The OPEN-517 relabel
+    does not move `updated_at`, so a copied label would never be refreshed.
+  * **Unknown labels:** `python -m api.bill_types check` (read-only) exits 1 and names any label on neither list. Run it
+    after a state's first scrape or a new labelling rule.
+  * **Do not** copy the list into the broker or the website: they pass the option (BROKER-460).
+  * **Release:** no schema change, so no `ensure` or refresh; it needs a new api image on each host.
+
 - **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
   live on the EC2 api-v3 per the prod agent's note of 2026-11-02 20:40 UTC).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
   cast, newest `start_date` first (ties by vote event id, so paging is stable), paged (max 50), with the person's own option, the
