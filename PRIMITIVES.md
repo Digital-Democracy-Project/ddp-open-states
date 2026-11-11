@@ -844,6 +844,17 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Substitutes are taken out too.** 197 of the 453 papers are full substitute texts, and the note cannot tell them from amendments. 181 of the 185 adopted substitutes have at least 90% of their phrases in one of the bill's real versions; HB 306's is the one real loss. The documents stay archived.
   * **Released:** openstates-core PR #92 (`a7a2a861`), scrapers image v54 (task-definition revision 57). `recompute-diff-order al --commit --flags-only` committed on RDS 2026-11-10 17:15 UTC (45 → 498 not a version; comparisons unchanged at 918). Alabama's Stage 3 version-stage gate now passes: 0 of 2,922 without a stage.
   * **Do not** add a second Alabama list anywhere else. A new Alabama paper shape goes in the same pattern, then a recompute.
+- **OPEN-529: Alabama's pre-diff cleaner also drops the Enrolled signature and certification block, the front header (bill number, tracking code, sponsor, "RFD:", "First Read:") and spacing inside a line.**
+  * **Where:** the same `_clean_al_text` (OPEN-372) in openstates-core `cli/text_extract.py`, through the one `apply_prediff_cleaning` chain. The cut points are found on the text as printed, before the older rules.
+  * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
+  * **Released:** core PR #93 (`a7d3a8fe`). It needs an image and `recompute-diff-order al` **without** `--flags-only`, because the comparisons change.
+  * **Do not** add a second Alabama cleaner.
+- **OPEN-530: Alabama PDFs are read without their struck-out words.**
+  * **Where:** `openstates/fulltext/al.py` (`handle_alabama_pdf`, the `"al"` PDF entry). It finds thin drawn rules at mid-line height over a character, removes those characters from a copy of the PDF, and reads the copy through the unchanged pdftotext path.
+  * A PDF with no strike reads exactly as before. A PDF PyMuPDF cannot open is an extraction error, with no fallback that would bring the struck words back.
+  * **Scope:** 984 of 2,923 documents (514 bills). SB 292 now reads "Class D felony".
+  * **Released:** core PR #94 (`a89dd31c`); `pymupdf` is declared in core's pyproject. It needs an image and `os-text-extract refresh-extraction al` (dry run first).
+  * **Do not** add a text-level "struck words" cleaner for Alabama: the strike is only in the drawing.
 - **OPEN-511 — Louisiana: Conference Committee Reports are not bill versions either.** Louisiana's entry in
   `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS` (openstates-core `utils/version_ordering.py`, the table OPEN-491 used for its amendment
   papers) also matches `Conference Committee Report, #<N>, House <Adopted|Proposed|Rejected|Withdrawn>, Senate <same>`. The
