@@ -5,6 +5,7 @@ dicts plus the actual checked-in manifest.
 """
 
 import copy
+import os
 import subprocess
 import sys
 
@@ -51,6 +52,13 @@ def _valid_entry():
         "onboarding": {
             "epic": None,
             "evidence": None,
+        },
+        "actions": {
+            "newest_first": False,
+        },
+        "voatz": {
+            "creator_id": None,
+            "test_precinct": None,
         },
     }
 
@@ -471,3 +479,60 @@ def test_a_probing_or_paused_state_may_have_archive_off(status):
 def test_archive_enabled_alone_is_valid_at_every_status(status):
     """There is no second archive flag for `live` to need (the old archive.scheduled)."""
     assert validate(_with(status=status, enabled=True)) == []
+
+
+# --- BROKER-368: actions.newest_first and the voatz block -------------------------------------------------------
+
+def test_actions_and_voatz_are_required_blocks():
+    for block in ("actions", "voatz"):
+        entry = _valid_entry()
+        del entry[block]
+        assert validate({"ts": entry}) == [f"ts.{block}: missing required field"]
+
+
+def test_newest_first_must_be_a_bool():
+    entry = _valid_entry()
+    entry["actions"]["newest_first"] = "yes"
+    assert any("ts.actions.newest_first: expected bool" in e for e in validate({"ts": entry}))
+    entry["actions"] = {}
+    assert validate({"ts": entry}) == ["ts.actions.newest_first: missing required field"]
+
+
+def test_voatz_values_take_an_id_and_a_name_or_null():
+    entry = _valid_entry()
+    entry["voatz"] = {"creator_id": 900000837, "test_precinct": "FLORIDA-TEST"}
+    assert validate({"ts": entry}) == []
+
+
+@pytest.mark.parametrize("field,bad,why", [
+    ("creator_id", "900000837", "expected int or NoneType"),
+    ("creator_id", True, "expected int or null, got bool"),
+    ("creator_id", 0, "must be a positive id"),
+    ("creator_id", -5, "must be a positive id"),
+    ("test_precinct", 7, "expected str or NoneType"),
+    ("test_precinct", "  ", "must be null or a non-empty name"),
+])
+def test_a_wrong_voatz_value_is_rejected(field, bad, why):
+    entry = _valid_entry()
+    entry["voatz"][field] = bad
+    errors = validate({"ts": entry})
+    assert any(f"ts.voatz.{field}" in e and why in e for e in errors), errors
+
+
+def test_an_unknown_field_in_the_new_blocks_is_rejected():
+    entry = _valid_entry()
+    entry["voatz"]["organization_id"] = "800000075"
+    assert any("ts.voatz.organization_id: unknown field" in e for e in validate({"ts": entry}))
+
+
+def test_the_real_manifest_keeps_the_broker_values_it_replaces():
+    """The values the broker kept in code until BROKER-368, copied exactly: newest-first us and nc; creator ids fl, us,
+    va (CREATOR_IDS was keyed by Voatz organization id: 800000075 fl, 800000097 us, 800000115 va); test precincts fl, us."""
+    import yaml
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")) as fh:
+        data = yaml.safe_load(fh)
+    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["nc", "us"]
+    assert {c: e["voatz"]["creator_id"] for c, e in data.items() if e["voatz"]["creator_id"] is not None} == {
+        "fl": 900000837, "us": 900000912, "va": 900000977}
+    assert {c: e["voatz"]["test_precinct"] for c, e in data.items() if e["voatz"]["test_precinct"] is not None} == {
+        "fl": "FLORIDA-TEST", "us": "FEDERAL-TEST"}

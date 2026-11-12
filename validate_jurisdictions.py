@@ -69,6 +69,8 @@ TOP_LEVEL_FIELDS = {
     "quality": dict,
     "api_keys": list,
     "onboarding": dict,
+    "actions": dict,
+    "voatz": dict,
 }
 
 SCRAPE_FIELDS = {
@@ -127,6 +129,16 @@ WAF_FIELDS = {
 
 QUALITY_FIELDS = {
     "diff_cleaner": str,
+}
+
+# BROKER-368: per-state facts the broker reads through api-v3's /ddp/enrollment instead of keeping its own table.
+ACTIONS_FIELDS = {
+    "newest_first": bool,  # OpenStates lists the state's bill actions newest first (was the broker's NEWEST_FIRST_JURISDICTIONS)
+}
+
+VOATZ_FIELDS = {
+    "creator_id": (int, type(None)),     # the Voatz poll creatorId; null = unknown, a poll is refused (was CREATOR_IDS)
+    "test_precinct": (str, type(None)),  # the Voatz test precinct; null = unknown, a test poll is refused (was TEST_PRECINCTS)
 }
 
 ONBOARDING_FIELDS = {
@@ -257,6 +269,20 @@ def validate(data):
 
         if isinstance(entry.get("onboarding"), dict):
             _check_block(entry["onboarding"], ONBOARDING_FIELDS, f"{code}.onboarding", errors)
+
+        if isinstance(entry.get("actions"), dict):
+            _check_block(entry["actions"], ACTIONS_FIELDS, f"{code}.actions", errors)
+
+        if isinstance(entry.get("voatz"), dict):
+            _check_block(entry["voatz"], VOATZ_FIELDS, f"{code}.voatz", errors)
+            creator = entry["voatz"].get("creator_id")
+            if isinstance(creator, bool):  # bool is an int subclass: `creator_id: true` must not pass as an id
+                errors.append(f"{code}.voatz.creator_id: expected int or null, got bool ({creator!r})")
+            elif isinstance(creator, int) and creator <= 0:
+                errors.append(f"{code}.voatz.creator_id: must be a positive id, got {creator}")
+            precinct = entry["voatz"].get("test_precinct")
+            if isinstance(precinct, str) and not precinct.strip():
+                errors.append(f"{code}.voatz.test_precinct: must be null or a non-empty name, got {precinct!r}")
 
         api_keys = entry.get("api_keys")
         if isinstance(api_keys, list):

@@ -112,6 +112,18 @@ def test_real_colorado_probe_produces_a_valid_probing_entry(tmp_path, real_manif
     assert data["co"]["status"] == "probing"
 
 
+def test_a_new_state_gets_oldest_first_and_no_voatz_ids(tmp_path, real_manifest_copy):
+    # BROKER-368: nothing is guessed. Oldest-first (flagged: the broker's validate_bill_stages checks it later) and no
+    # Voatz creator id or test precinct, so the broker refuses a poll until Ramon supplies them.
+    probe_path = _write_json(tmp_path / "result.json", CO_RESULT)
+    assert _run(real_manifest_copy, "co", probe_path) == 0
+    text = real_manifest_copy.read_text()
+    co = yaml.safe_load(text)["co"]
+    assert co["actions"] == {"newest_first": False}
+    assert co["voatz"] == {"creator_id": None, "test_precinct": None}
+    assert "newest_first: false  # NEEDS HUMAN REVIEW" in text
+
+
 def test_fargate_safe_is_written_true_and_flagged_for_human_review(tmp_path, real_manifest_copy):
     # OPEN-464 made waf.fargate_safe required; a block without it is refused by the validator.
     probe_path = _write_json(tmp_path / "result.json", CO_RESULT)

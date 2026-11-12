@@ -58,6 +58,16 @@
 # scheduler). check-jurisdiction-drift.py fails if that timing map names a state this file does not
 # scrape.
 #
+# BROKER-368 (2026-11-12): two per-state facts the broker kept in its own code move here, and the broker
+# reads them from api-v3's GET /ddp/enrollment (its one reader of this file, ddpbroker/enrollment.py), so no
+# service keeps a copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
+#   - actions.newest_first: OpenStates lists this state's bill actions newest first (us, nc; checked by the
+#     broker's validate_bill_stages command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
+#   - voatz.creator_id / voatz.test_precinct: the Voatz poll creatorId and the test precinct, null when
+#     unknown (a poll, or a test poll, is then refused). Not secret. Was the broker's CREATOR_IDS (keyed by
+#     Voatz organization id: 800000075 = fl, 800000097 = us, 800000115 = va) and TEST_PRECINCTS. Ramon
+#     supplies new ids; none is guessed.
+#
 # Every value below was pulled from the real running config on 2026-08-30, not guessed:
 #   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
 #     (src/ddp_sync/pipelines/openstates_scrape.py, openstates_archive.py)
@@ -124,6 +134,11 @@ us:
     fargate_safe: true
   quality:
     diff_cleaner: none
+  actions:
+    newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
+  voatz:
+    creator_id: 900000912    # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
+    test_precinct: FEDERAL-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
@@ -161,6 +176,11 @@ fl:
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: 900000837    # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
+    test_precinct: FLORIDA-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: []
   onboarding:
     epic: null
@@ -193,6 +213,11 @@ wa:
     fargate_safe: true
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -226,6 +251,11 @@ va:
     fargate_safe: true
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: 900000977    # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
+    test_precinct: null
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
                                          # pattern -- see PRIMITIVES.md)
@@ -265,6 +295,11 @@ mi:
                                          # cold Fargate scrape risks the block (OPEN-458/OPEN-464)
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -297,6 +332,11 @@ ut:
     fargate_safe: true
   quality:
     diff_cleaner: none
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -330,6 +370,11 @@ az:
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -372,6 +417,11 @@ ma:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
                                                # code already cleaned MA
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -417,6 +467,11 @@ nc:
                                          # OPEN-371); OPEN-462 found this said none while the code
                                          # already cleaned NC (gate C passed is about the extractor,
                                          # not about this cleaner)
+  actions:
+    newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -454,6 +509,11 @@ al:
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-146
@@ -486,6 +546,11 @@ pa:
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
   quality:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -518,6 +583,11 @@ ne:
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -550,6 +620,11 @@ la:
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
+  actions:
+    newest_first: false
+  voatz:
+    creator_id: null
+    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-480
