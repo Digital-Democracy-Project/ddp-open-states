@@ -26,6 +26,11 @@ def _valid_entry():
             "session_arg": None,
             "votes_scraper": False,
             "start_filter": True,
+            "sweep_import": False,
+            "full_walk": False,
+            "retry": False,
+            "cadence_escalation": True,
+            "fargate_max_wait_s": None,
         },
         "archive": {
             "enabled": True,
@@ -40,10 +45,12 @@ def _valid_entry():
             "qa_sweep": True,
             "replica_routing": True,
             "legbot_replica": True,
+            "broker_bill_event_signal": False,
         },
         "waf": {
             "profile": "none",
             "fargate_safe": True,
+            "scrapebot_fallback": False,
         },
         "quality": {
             "diff_cleaner": "none",
@@ -536,3 +543,59 @@ def test_the_real_manifest_keeps_the_broker_values_it_replaces():
         "fl": 900000837, "us": 900000912, "va": 900000977}
     assert {c: e["voatz"]["test_precinct"] for c, e in data.items() if e["voatz"]["test_precinct"] is not None} == {
         "fl": "FLORIDA-TEST", "us": "FEDERAL-TEST"}
+
+
+# --- SYNC-157: ddp-sync's per-state behaviour fields ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize("dotted,value", [
+    ("scrape.sweep_import", "yes"), ("scrape.full_walk", 1), ("scrape.retry", None), ("scrape.cadence_escalation", "true"),
+    ("scrape.fargate_max_wait_s", "86400"), ("enrollment.broker_bill_event_signal", None), ("waf.scrapebot_fallback", "mi"),
+])
+def test_sync_157_fields_reject_a_wrong_type(dotted, value):
+    entry = _valid_entry()
+    section, key = dotted.split(".")
+    entry[section][key] = value
+    assert any(f"xx.{dotted}" in e for e in validate({"xx": entry}))
+
+
+@pytest.mark.parametrize("dotted", ["scrape.sweep_import", "scrape.retry", "scrape.fargate_max_wait_s",
+                                    "enrollment.broker_bill_event_signal", "waf.scrapebot_fallback"])
+def test_sync_157_fields_are_required(dotted):
+    entry = _valid_entry()
+    section, key = dotted.split(".")
+    del entry[section][key]
+    assert any(f"xx.{dotted}: missing required field" in e for e in validate({"xx": entry}))
+
+
+@pytest.mark.parametrize("value", [0, -1, True])
+def test_fargate_max_wait_must_be_positive_seconds_or_null(value):
+    entry = _valid_entry()
+    entry["scrape"]["fargate_max_wait_s"] = value
+    assert any("xx.scrape.fargate_max_wait_s" in e for e in validate({"xx": entry}))
+    entry["scrape"]["fargate_max_wait_s"] = 86400
+    assert validate({"xx": entry}) == []
+
+
+def test_retry_is_refused_for_a_state_with_a_waf():
+    """Was ddp-sync's scrape_retry.jurisdictions_excluded: ["mi"] (OPEN-53): retrying against a WAF worsens a block."""
+    entry = _valid_entry()
+    entry["scrape"]["retry"] = True
+    assert validate({"xx": entry}) == []          # no WAF: fine
+    entry["waf"]["profile"] = "cookie_provider"
+    assert any("xx.scrape.retry" in e and "OPEN-53" in e for e in validate({"xx": entry}))
+
+
+def test_the_real_manifest_keeps_the_values_ddp_sync_had():
+    """SYNC-157: the values copied from ddp-sync's sync_schedule.yaml on 2026-11-12."""
+    import yaml as _yaml
+    with open(DEFAULT_MANIFEST_PATH) as fh:
+        data = _yaml.safe_load(fh)
+    on = lambda path: sorted(c for c, e in data.items() if e[path[0]][path[1]])  # noqa: E731
+    assert on(("scrape", "sweep_import")) == ["fl", "ma", "mi", "va"]
+    assert on(("scrape", "full_walk")) == ["mi"]
+    assert on(("scrape", "retry")) == ["ma"]
+    assert on(("waf", "scrapebot_fallback")) == ["mi"]
+    assert on(("enrollment", "broker_bill_event_signal")) == []
+    assert all(e["scrape"]["cadence_escalation"] for e in data.values())
+    assert {c: e["scrape"]["fargate_max_wait_s"] for c, e in data.items() if e["scrape"]["fargate_max_wait_s"]} == {"ma": 86400}

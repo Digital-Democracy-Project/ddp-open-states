@@ -1289,6 +1289,18 @@ scope line was deliberate, not an oversight.
   requires `enabled: true` and a `status` of `live` or `paused`. A state mid-pilot is therefore `enabled: true,
   scheduled: false` until a human sets `live`. ddp-sync's dual-read and daily host check read `archive.scheduled`
   for the same list. (The api-v3 `/ddp/enrollment` route still serves `archive` = `archive.enabled`; nothing reads it.)
+- **ddp-sync's per-state behaviour (SYNC-157, 2026-11-12).** Seven fields ddp-sync kept as per-state lists in its own
+  `sync_schedule.yaml` live here, required on every entry, with the values ddp-sync had: `scrape.sweep_import` (va, mi, fl,
+  ma), `scrape.full_walk` (mi; still off by ddp-sync's global switch), `scrape.retry` (ma; **the validator refuses `retry:
+  true` for a state whose `waf.profile` is not `none`**, which replaces ddp-sync's `jurisdictions_excluded: [mi]`, OPEN-53),
+  `scrape.cadence_escalation` (true everywhere), `scrape.fargate_max_wait_s` (ma 86400, else null = ddp-sync's shared 12 h),
+  `waf.scrapebot_fallback` (mi; ddp-sync's scrape and archive both read it) and `enrollment.broker_bill_event_signal` (none).
+  ddp-sync also reads `scrape.timeout_s` / `archive.timeout_s` here now (it deleted `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S`),
+  and the `cloud_path`, `embedding`, `search_refresh` and `legbot_replica` enrollments with no copy of its own.
+  `new-jurisdiction` writes the opt-ins false, `cadence_escalation: true` and a null wait. The drift check compares these
+  with ddp-sync's old lists while ddp-sync main still has them and skips each once deleted. **Release order: this file
+  first (on both hosts' checkouts), then ddp-sync**: a ddp-sync whose manifest lacks the fields treats every state as not
+  enrolled (MI loses its ScrapeBot fallback, MA its retry and 24 h wait) and its daily drift check alerts "unverifiable".
 - **`actions.newest_first` and `voatz.creator_id` / `voatz.test_precinct` (BROKER-368, 2026-11-12).** Two per-state facts the
   broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`, `CREATOR_IDS`, `TEST_PRECINCTS`) live here, required on every
   entry: `newest_first` is a bool (us and nc are true: OpenStates lists their bill actions newest first, checked by the

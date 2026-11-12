@@ -35,6 +35,11 @@ pa:
     session_arg: null
     votes_scraper: false
     start_filter: false
+    sweep_import: false
+    full_walk: false
+    retry: false
+    cadence_escalation: true
+    fargate_max_wait_s: null
   archive:
     enabled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default
@@ -47,9 +52,11 @@ pa:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    broker_bill_event_signal: false
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   actions:
@@ -72,6 +79,11 @@ ne:
     session_arg: null
     votes_scraper: false
     start_filter: false
+    sweep_import: false
+    full_walk: false
+    retry: false
+    cadence_escalation: true
+    fargate_max_wait_s: null
   archive:
     enabled: false
     timeout_s: 14400
@@ -84,9 +96,11 @@ ne:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    broker_bill_event_signal: false
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false
   quality:
     diff_cleaner: none
   actions:

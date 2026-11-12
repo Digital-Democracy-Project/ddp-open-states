@@ -277,10 +277,41 @@ def test_a_timing_map_that_is_a_list_is_an_error(world):
     assert code == 2 and "openstates_scrape.timing is not a mapping" in out
 
 
-def test_a_missing_memory_backend_list_is_an_error_not_an_empty_floor(world):
+def test_a_deleted_memory_backend_list_is_skipped_not_an_error(world):
+    """SYNC-157: ddp-sync deletes the floor list (its memory backend follows the manifest's cloud_path)."""
     _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"].pop("memory_backend_jurisdictions"))
     code, out = _run(world)
-    assert code == 2 and "memory_backend_jurisdictions" in out
+    assert code == 0, out
+
+
+def test_a_memory_backend_floor_still_present_must_contain_the_cloud_path_states(world):
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"]["cloud_path"].update(memory_backend_jurisdictions=["fl"]))
+    code, out = _run(world)
+    assert code == 1 and "memory_backend" in out
+
+
+def _after_sync_157(d):
+    """ddp-sync's shape after SYNC-157: no per-state list anywhere, only timing."""
+    d["openstates_archive"]["knowledge_base_embedding"].pop("jurisdictions")
+    d["openstates_archive"]["bill_search_refresh"].pop("jurisdictions")
+    d["openstates_scrape"]["cloud_path"].pop("jurisdictions")
+    d["openstates_scrape"]["cloud_path"].pop("memory_backend_jurisdictions")
+
+
+def test_after_sync_157_ddp_sync_has_no_list_and_nothing_is_compared_but_timing(world):
+    _set_sync_yaml(world, _after_sync_157)
+    code, out = _run(world)
+    assert code == 0, out
+
+
+def test_while_ddp_sync_still_lists_a_behaviour_it_must_equal_the_manifest(world):
+    """SYNC-157: the values were copied from ddp-sync's lists; until ddp-sync deletes them, they must agree."""
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"].update(sweep_import={"enabled": True, "jurisdictions": ["fl"]}))
+    code, out = _run(world)
+    assert code == 1 and "scrape.sweep_import" in out
+    _set_sync_yaml(world, lambda d: d["openstates_scrape"].update(sweep_import={"enabled": True, "jurisdictions": []}))
+    code, out = _run(world)
+    assert code == 0, out
 
 
 def test_a_missing_file_is_an_error(world):
@@ -673,3 +704,13 @@ def test_the_matrix_shows_newest_first_and_voatz_creator(world):
     assert code == 0
     header = out.strip().splitlines()[0].split()
     assert header[-2:] == ["newest_first", "voatz_creator"]
+
+
+def test_after_sync_157_the_deleted_timeout_tables_are_skipped(world):
+    """SYNC-157: ddp-sync reads scrape/archive.timeout_s from the manifest and deletes SCRAPE_/ARCHIVE_TIMEOUT_S."""
+    _set_sync_yaml(world, _after_sync_157)
+    for rel in ("scrape", "archive"):
+        _write(os.path.join(world[1], "src", "ddp_sync", "pipelines", f"openstates_{rel}.py"),
+               "DEFAULT_TIMEOUT_S = 6 * 3600  # the per-state ceilings are the manifest's\n")
+    code, out = _run(world)
+    assert code == 0, out
