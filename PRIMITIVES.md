@@ -1289,6 +1289,15 @@ scope line was deliberate, not an oversight.
   requires `enabled: true` and a `status` of `live` or `paused`. A state mid-pilot is therefore `enabled: true,
   scheduled: false` until a human sets `live`. ddp-sync's dual-read and daily host check read `archive.scheduled`
   for the same list. (The api-v3 `/ddp/enrollment` route still serves `archive` = `archive.enabled`; nothing reads it.)
+- **`actions.newest_first` and `voatz.creator_id` / `voatz.test_precinct` (BROKER-368, 2026-11-12).** Two per-state facts the
+  broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`, `CREATOR_IDS`, `TEST_PRECINCTS`) live here, required on every
+  entry: `newest_first` is a bool (us and nc are true: OpenStates lists their bill actions newest first, checked by the
+  broker's `validate_bill_stages`); `creator_id` is a positive int or null and `test_precinct` a non-empty name or null
+  (null = unknown: the broker refuses a poll, or a test poll; ids are never guessed, Ramon supplies them). api-v3's
+  `GET /ddp/enrollment` serves both blocks and the broker reads them there (`ddpbroker/enrollment.py`, its one reader of this
+  file) and keeps no copy; a broker guard test fails if a per-state table comes back. `new-jurisdiction` writes
+  `newest_first: false` (flagged for review) and nulls. **Do not add these values to any other repo's code.** Release
+  order: this file and api-v3 first, then the broker (the broker refuses, rather than guesses, while they are missing).
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),

@@ -665,3 +665,11 @@ def test_the_matrix_has_no_tier_or_scheduled_column(world):
     assert code == 0
     header = out.strip().splitlines()[0].split()
     assert "archive" in header and "tier" not in header and "scheduled" not in header
+
+
+def test_the_matrix_shows_newest_first_and_voatz_creator(world):
+    # BROKER-368: the two per-state facts the broker now reads from the manifest are visible in the matrix.
+    code, out = _run(world, with_sync=False, extra=["--matrix"])
+    assert code == 0
+    header = out.strip().splitlines()[0].split()
+    assert header[-2:] == ["newest_first", "voatz_creator"]
