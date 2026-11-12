@@ -68,6 +68,12 @@
 #     Voatz organization id: 800000075 = fl, 800000097 = us, 800000115 = va) and TEST_PRECINCTS. Ramon
 #     supplies new ids; none is guessed.
 #
+# SYNC-157 (2026-11-12): ddp-sync keeps no list of states of its own any more; it reads these (values copied from its
+# sync_schedule.yaml that day): scrape.sweep_import, scrape.full_walk, scrape.retry (never with a WAF profile, OPEN-53),
+# scrape.cadence_escalation, scrape.fargate_max_wait_s (null = ddp-sync's shared Fargate wait), waf.scrapebot_fallback and
+# enrollment.broker_bill_event_signal, plus scrape.timeout_s / archive.timeout_s and the cloud_path, embedding,
+# search_refresh and legbot_replica enrollments. ddp-sync's global switches (`enabled`) and numbers stay in its own file.
+#
 # Every value below was pulled from the real running config on 2026-08-30, not guessed:
 #   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
 #     (src/ddp_sync/pipelines/openstates_scrape.py, openstates_archive.py)
@@ -117,6 +123,11 @@ us:
     votes_scraper: false      # "votes": USVoteScraper is registered but commented out in
                               # scrapers/usa/__init__.py -- not actually invoked today
     start_filter: true        # GovInfo sitemap lastmod -- clean server-side filter, no caveat
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
@@ -129,9 +140,11 @@ us:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
   actions:
@@ -157,6 +170,11 @@ fl:
     votes_scraper: false
     start_filter: true           # last-action date in HTML td[3]; re-verify if flsenate.gov
                                   # changes layout
+    sweep_import: true              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
@@ -169,10 +187,12 @@ fl:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
     fargate_safe: true           # the warm-up runs in-process wherever the scraper runs -- no
                                   # Mac-only mint step, unlike mi (OPEN-464)
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
@@ -196,6 +216,11 @@ wa:
     votes_scraper: false
     start_filter: true            # CurrentStatus/ActionDate from GetLegislation; still O(n)
                                    # GetLegislation calls, only downstream calls are skipped
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
@@ -208,9 +233,11 @@ wa:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
   actions:
@@ -234,6 +261,11 @@ va:
     votes_scraper: false
     start_filter: true                # max(EventDate) from events call; events call unavoidable,
                                        # saves 3 of 4 per-bill calls
+    sweep_import: true              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
@@ -246,9 +278,11 @@ va:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
   actions:
@@ -275,6 +309,11 @@ mi:
     votes_scraper: false
     start_filter: true                 # dateFrom= URL param in search -- UNVERIFIED: may filter
                                         # by intro date, not last-action date (RUNBOOK.md caveat)
+    sweep_import: true              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: true                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 86400                   # ARCHIVE_TIMEOUT_S["mi"], 24h (ddp-sync; this said the 4h default, which MI's
@@ -288,11 +327,13 @@ mi:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
                                          # WAF (OPEN-19/21/22/23), 10 req/min hard cap
     fargate_safe: false                 # the cookie can only be reliably minted by the Mac; a
                                          # cold Fargate scrape risks the block (OPEN-458/OPEN-464)
+    scrapebot_fallback: true    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
   actions:
@@ -315,6 +356,11 @@ ut:
     votes_scraper: false
     start_filter: true                  # actionHistoryList[0].actionDate -- saves processing
                                          # time only, still one HTTP call per bill
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
@@ -327,9 +373,11 @@ ut:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
   actions:
@@ -352,6 +400,11 @@ az:
     votes_scraper: false
     start_filter: true                  # max(BillStatusAction.ReportDate) -- still O(n) API
                                          # calls, only sub-calls skipped
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
@@ -364,9 +417,11 @@ az:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
@@ -398,6 +453,11 @@ ma:
     start_filter: false                   # OPEN-128 (2026-08-25): MA's incremental filter was
                                           # deleted -- it now logs "ignoring start= and listing
                                           # every bill" and full-walks on every run
+    sweep_import: true              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: true                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: 86400           # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds (OPEN-476: 24 h, Ramon 2026-11-01)
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
@@ -410,9 +470,11 @@ ma:
     qa_sweep: true
     replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; BROKER-16 has not flipped MA (the dev broker's list has no MA)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
@@ -444,6 +506,11 @@ nc:
                                         # only "bills" and "events" -- no "votes" entry
     start_filter: false                  # scrapers/nc/bills.py's scrape() takes no start=
                                          # argument -- the scraper does not support one yet
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true                       # OPEN-231 Stage 4: probe gate C passed, so nc clears the gate to enable
                                         # archiving. This file isn't wired into activate.sh (see this file's own
@@ -459,9 +526,11 @@ nc:
     qa_sweep: true    # OPEN-331: the pilot's QA was run by hand with quality_check.py; the default sweep now includes NC
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_nc_text         # header/footer/signature-block stripping (_clean_nc_text,
                                          # OPEN-371); OPEN-462 found this said none while the code
@@ -491,6 +560,11 @@ al:
     session_arg: null
     votes_scraper: false                  # OPEN-524: the scraper's roll-call code is disabled (0 vote events)
     start_filter: false                   # scrapers/al/bills.py's scrape(self, session) takes no start= (cf. OPEN-321)
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
@@ -503,9 +577,11 @@ al:
     qa_sweep: true
     replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; Stage 5
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; Stage 5
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
     fargate_safe: true
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL
@@ -529,6 +605,11 @@ pa:
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
@@ -541,9 +622,11 @@ pa:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-478, Ramon 2026-11-07)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-478, Ramon 2026-11-07)
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
   actions:
@@ -566,6 +649,11 @@ ne:
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
@@ -578,9 +666,11 @@ ne:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
   actions:
@@ -603,6 +693,11 @@ la:
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
     votes_scraper: false           # probe gate B: "votes scraper registered"
     start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
+    full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
+    retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
+    cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
+    fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
@@ -615,9 +710,11 @@ la:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
+    broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
   actions:
