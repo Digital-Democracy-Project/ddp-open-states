@@ -48,6 +48,10 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       openstates-core is gitignored here like ddp-sync. CI checks out its public fork's main
                       (OPEN-462) and passes --require-openstates-core, so this comparison runs in CI too.
 
+actions.newest_first and voatz.* (BROKER-368) need no comparison: their only reader, ddp-broker-py, takes them from
+api-v3's GET /ddp/enrollment and keeps no copy (its guard test, common/tests/test_no_state_tables.py, fails if a
+per-state table comes back), so there is nothing to drift. --matrix shows them.
+
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
 votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk),
@@ -509,7 +513,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
 
 
 MATRIX_COLUMNS = ["status", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
-                  "qa_sweep", "replica_routing", "legbot_replica"]
+                  "qa_sweep", "replica_routing", "legbot_replica", "newest_first", "voatz_creator"]
 
 
 def matrix(manifest, out):
@@ -518,6 +522,10 @@ def matrix(manifest, out):
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
+        if column == "newest_first":  # BROKER-368
+            return "yes" if entry["actions"]["newest_first"] else "-"
+        if column == "voatz_creator":
+            return "yes" if entry["voatz"]["creator_id"] is not None else "-"
         return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}
