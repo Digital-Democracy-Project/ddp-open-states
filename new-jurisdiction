@@ -73,7 +73,7 @@ DEFAULT_ARCHIVE_TIMEOUT_S = 14400
 
 ENROLLMENT_FIELD_ORDER = [
     "people_refresh", "search_refresh", "embedding", "cloud_path",
-    "api_smoke_test", "qa_sweep", "replica_routing", "legbot_replica",
+    "api_smoke_test", "qa_sweep", "replica_routing", "legbot_replica", "broker_bill_event_signal",
 ]
 
 _GATE_B_VOTES_RE = re.compile(r"^votes scraper registered: (True|False)$")
@@ -207,13 +207,19 @@ def compose_entry(data, gate_b_facts):
             "session_arg": None,
             "votes_scraper": gate_b_facts["votes_scraper"],
             "start_filter": gate_b_facts["start_filter"],
+            # SYNC-157: ddp-sync's per-state behaviour; a new state starts with none of the opt-ins
+            "sweep_import": False,
+            "full_walk": False,
+            "retry": False,
+            "cadence_escalation": True,
+            "fargate_max_wait_s": None,
         },
         "archive": {
             "enabled": False,
             "timeout_s": DEFAULT_ARCHIVE_TIMEOUT_S,
         },
         "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
-        "waf": {"profile": "none", "fargate_safe": True},
+        "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False},
         "quality": {"diff_cleaner": "none"},
         "api_keys": gate_b_facts["api_keys"],
         # BROKER-368: oldest-first unless the broker's validate_bill_stages says otherwise; no Voatz ids are guessed
@@ -276,6 +282,11 @@ def render_block(code, entry, needs_human, source_desc):
         f"           # probe gate B: \"votes scraper registered\"",
         f"    start_filter: {_scalar(entry['scrape']['start_filter'])}"
         f"            # probe gate B: \"bills scraper accepts start=\"",
+        f"    sweep_import: {_scalar(entry['scrape']['sweep_import'])}            # SYNC-157: ddp-sync's import-as-you-go sweep",
+        f"    full_walk: {_scalar(entry['scrape']['full_walk'])}               # SYNC-157: periodic forced full walk",
+        f"    retry: {_scalar(entry['scrape']['retry'])}                   # SYNC-157: bounded retry (never with a WAF)",
+        f"    cadence_escalation: {_scalar(entry['scrape']['cadence_escalation'])}       # SYNC-157: dynamic cadence may raise it",
+        f"    fargate_max_wait_s: {_scalar(entry['scrape']['fargate_max_wait_s'])}       # SYNC-157: null = ddp-sync's shared ceiling",
         "  archive:",
         f"    enabled: {_scalar(entry['archive']['enabled'])}",
         f"    timeout_s: {_scalar(entry['archive']['timeout_s'])}"
@@ -288,6 +299,7 @@ def render_block(code, entry, needs_human, source_desc):
         "  waf:",
         f"    profile: {_scalar(entry['waf']['profile'])}{note('waf.profile')}",
         f"    fargate_safe: {_scalar(entry['waf']['fargate_safe'])}{note('waf.fargate_safe')}",
+        f"    scrapebot_fallback: {_scalar(entry['waf']['scrapebot_fallback'])}    # SYNC-157: ScrapeBot cookie mint before scrape and archive",
         "  quality:",
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
         "  actions:",

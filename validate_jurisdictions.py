@@ -79,6 +79,13 @@ SCRAPE_FIELDS = {
     "session_arg": (str, type(None)),
     "votes_scraper": bool,
     "start_filter": bool,
+    # SYNC-157: ddp-sync's per-state scrape behaviour, read from here (its sync_schedule.yaml keeps only the global
+    # switches and numbers, and refuses a per-state list at load).
+    "sweep_import": bool,                      # import-as-you-go sweep (OPEN-86)
+    "full_walk": bool,                         # periodic forced full walk (OPEN-162)
+    "retry": bool,                             # bounded whole-run retry (OPEN-87); refused with a WAF below (OPEN-53)
+    "cadence_escalation": bool,                # dynamic cadence may raise the state to nightly (OPEN-140)
+    "fargate_max_wait_s": (int, type(None)),   # this state's own Fargate ceiling; null = the shared one (OPEN-476)
 }
 
 ARCHIVE_FIELDS = {
@@ -114,7 +121,8 @@ ENROLLMENT_FIELDS = {
     # OPEN-330: the two lists that live in an env var on each host, not in git. Compared with the live values
     # by `check-jurisdiction-drift.py --live NAME=VALUE` (and by ddp-sync's daily check for its own env).
     "replica_routing": bool,  # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads from the replica
-    "legbot_replica": bool,   # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot reads text from the replica
+    "legbot_replica": bool,   # LegBot reads text from the replica (ddp-sync reads it here; its env list is deleted, SYNC-157)
+    "broker_bill_event_signal": bool,  # SYNC-157: ddp-sync asks the broker to check bill events after a scrape (SYNC-128)
 }
 
 WAF_FIELDS = {
@@ -125,6 +133,8 @@ WAF_FIELDS = {
     # own header comment). Read by verify-jurisdiction's fargate_refusal() and probe-on-fargate
     # instead of either one keeping its own hard-coded refused-states set.
     "fargate_safe": bool,
+    # SYNC-157: ddp-sync mints WAF cookies with ScrapeBot before this state's scrape and archive (PLAN-scrapebot.md 3.7).
+    "scrapebot_fallback": bool,
 }
 
 QUALITY_FIELDS = {
@@ -234,6 +244,15 @@ def validate(data):
             timeout = entry["scrape"].get("timeout_s")
             if isinstance(timeout, int) and not isinstance(timeout, bool) and timeout <= 0:
                 errors.append(f"{code}.scrape.timeout_s: must be positive, got {timeout}")
+            wait = entry["scrape"].get("fargate_max_wait_s")
+            if isinstance(wait, bool) or (isinstance(wait, int) and wait <= 0):  # bool is an int subclass
+                errors.append(f"{code}.scrape.fargate_max_wait_s: must be null or a positive whole number of seconds, got {wait!r}")
+            # SYNC-157 (was ddp-sync's scrape_retry.jurisdictions_excluded: ["mi"]): a blind retry against a WAF worsens a
+            # block instead of recovering from it (OPEN-53), so a state with a WAF profile can never be enrolled in retry.
+            waf = entry.get("waf")
+            if entry["scrape"].get("retry") is True and isinstance(waf, dict) and waf.get("profile") not in (None, "none"):
+                errors.append(f"{code}.scrape.retry: must be false for a state with a WAF profile ({waf.get('profile')!r}): "
+                              f"retrying against a WAF worsens a block (OPEN-53)")
 
         if isinstance(entry.get("archive"), dict):
             _check_block(entry["archive"], ARCHIVE_FIELDS, f"{code}.archive", errors)

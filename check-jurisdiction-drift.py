@@ -48,14 +48,19 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       openstates-core is gitignored here like ddp-sync. CI checks out its public fork's main
                       (OPEN-462) and passes --require-openstates-core, so this comparison runs in CI too.
 
+SYNC-157: ddp-sync deletes its per-state lists and tables and reads this file (scrape.sweep_import/full_walk/retry/
+cadence_escalation/fargate_max_wait_s, waf.scrapebot_fallback, enrollment.broker_bill_event_signal, the cloud_path,
+embedding and search_refresh lists, the memory floor and the SCRAPE_/ARCHIVE_TIMEOUT_S tables). While ddp-sync main still
+has one, it is compared (the values were copied from it); once it is gone it is skipped, and ddp-sync's own tests and
+start-up refuse it coming back.
+
 actions.newest_first and voatz.* (BROKER-368) need no comparison: their only reader, ddp-broker-py, takes them from
 api-v3's GET /ddp/enrollment and keeps no copy (its guard test, common/tests/test_no_state_tables.py, fails if a
 per-state table comes back), so there is nothing to drift. --matrix shows them.
 
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
-votebot, ddp-agents, the per-feature opt-in lists (sweep_import, scrape_retry, full_walk),
-and the version_ordering.py procedural-document table (survey row B6, OPEN-462's own PR). Each is a
+votebot, ddp-agents, and the version_ordering.py procedural-document table (survey row B6, OPEN-462's own PR). Each is a
 follow-up under OPEN-318 (or, for B6, a question for Ramon).
 Also deliberately not compared, by design (OPEN-419/OPEN-464 -- see PRIMITIVES.md's WAF-decision
 catalog): cloud_collector.py's and cloud_archiver.py's own `if state == "mi"` published-cookie gates
@@ -266,6 +271,16 @@ def _sync_list(data, *keys, path_desc):
     return node
 
 
+def _sync_optional(data, *keys):
+    """A ddp-sync sync_schedule.yaml node, or None when it is absent (SYNC-157 deleted the per-state lists)."""
+    node = data
+    for key in keys:
+        if not isinstance(node, dict) or key not in node:
+            return None
+        node = node[key]
+    return node
+
+
 def _from_sync_code(code):
     return {v: k for k, v in SYNC_SCRAPE_CODE.items()}.get(code, code)
 
@@ -292,6 +307,15 @@ def project(manifest):
         "allow_duplicates": where(manifest, lambda e: e["scrape"]["allow_duplicates"]),
         "cookie_provider": where(manifest, lambda e: e["waf"]["profile"] != "none"),
         "scraped": where(manifest, lambda e: e["status"] not in UNSCHEDULED_STATUSES),
+        # SYNC-157: ddp-sync's per-state behaviour, now read from here
+        "sweep_import": where(manifest, lambda e: e["scrape"]["sweep_import"]),
+        "full_walk": where(manifest, lambda e: e["scrape"]["full_walk"]),
+        "retry": where(manifest, lambda e: e["scrape"]["retry"]),
+        "no_cadence_escalation": where(manifest, lambda e: not e["scrape"]["cadence_escalation"]),
+        "scrapebot_fallback": where(manifest, lambda e: e["waf"]["scrapebot_fallback"]),
+        "broker_bill_event_signal": where(manifest, lambda e: e["enrollment"]["broker_bill_event_signal"]),
+        "fargate_max_wait_s": {f"{c}={e['scrape']['fargate_max_wait_s']}" for c, e in manifest.items()
+                               if e["scrape"]["fargate_max_wait_s"] is not None},
     }
 
 
@@ -336,8 +360,15 @@ def sync_checks(sync_root, manifest, expect):
     data = sync_yaml(sync_root)
     scrape_py = os.path.join(sync_root, "src", "ddp_sync", "pipelines", "openstates_scrape.py")
     archive_py = os.path.join(sync_root, "src", "ddp_sync", "pipelines", "openstates_archive.py")
-    archive = lambda *k, d: set(_sync_list(data, "openstates_archive", *k, path_desc=d))
-    scrape = lambda *k, d: _sync_list(data, "openstates_scrape", *k, path_desc=d)
+    # SYNC-157: ddp-sync deletes these lists and reads the manifest itself (its scheduler refuses a config that still has
+    # one). Until that ddp-sync release is on main, its lists are still compared; once a list is gone, it is skipped
+    # (None), because there is nothing left to drift.
+    def archive(*k, d):
+        node = _sync_optional(data, "openstates_archive", *k)
+        return None if node is None else set(node)
+
+    def scrape(*k, d):
+        return _sync_optional(data, "openstates_scrape", *k)
 
     sets = [
         ("enrollment.embedding", "ddp-sync ...knowledge_base_embedding.jurisdictions", expect["embedding"],
@@ -345,10 +376,48 @@ def sync_checks(sync_root, manifest, expect):
         ("enrollment.search_refresh", "ddp-sync ...bill_search_refresh.jurisdictions", expect["search_refresh"],
          lambda: archive("bill_search_refresh", "jurisdictions", d="bill_search_refresh.jurisdictions")),
         ("enrollment.cloud_path", "ddp-sync openstates_scrape.cloud_path.jurisdictions", expect["cloud_path"],
-         lambda: {_from_sync_code(c) for c in scrape("cloud_path", "jurisdictions", d="cloud_path.jurisdictions")}),
+         lambda: (lambda listed: None if listed is None else {_from_sync_code(c) for c in listed})(
+             scrape("cloud_path", "jurisdictions", d="cloud_path.jurisdictions"))),
+    ]
+
+    # SYNC-157: while ddp-sync main still carries its per-state behaviour lists, they must equal the manifest's new fields
+    # (the values were copied from them). Each is skipped once ddp-sync has deleted it.
+    def codes(node):
+        return None if node is None else {_from_sync_code(str(c).lower()) for c in node}
+
+    def retry_set():
+        listed = scrape("scrape_retry", "jurisdictions", d="")
+        if listed is None:
+            return None
+        return codes(listed) - (codes(scrape("scrape_retry", "jurisdictions_excluded", d="")) or set())
+
+    def fargate_map():  # compared as a set of (state, seconds) pairs, like the other comparisons
+        by_state = scrape("cloud_path", "fargate", "max_wait_seconds_by_jurisdiction", d="")
+        return None if by_state is None else {f"{_from_sync_code(str(c).lower())}={v}" for c, v in by_state.items()}
+
+    sets += [
+        ("scrape.sweep_import", "ddp-sync openstates_scrape.sweep_import.jurisdictions", expect["sweep_import"],
+         lambda: codes(scrape("sweep_import", "jurisdictions", d=""))),
+        ("scrape.full_walk", "ddp-sync openstates_scrape.full_walk.jurisdictions", expect["full_walk"],
+         lambda: codes(scrape("full_walk", "jurisdictions", d=""))),
+        ("scrape.retry", "ddp-sync openstates_scrape.scrape_retry (jurisdictions minus jurisdictions_excluded)",
+         expect["retry"], retry_set),
+        ("scrape.cadence_escalation", "ddp-sync openstates_scrape.dynamic_cadence.jurisdictions_excluded",
+         expect["no_cadence_escalation"], lambda: codes(scrape("dynamic_cadence", "jurisdictions_excluded", d=""))),
+        ("waf.scrapebot_fallback", "ddp-sync openstates_scrape.scrapebot_fallback.jurisdictions",
+         expect["scrapebot_fallback"], lambda: codes(scrape("scrapebot_fallback", "jurisdictions", d=""))),
+        ("waf.scrapebot_fallback", "ddp-sync openstates_archive.scrapebot_fallback.jurisdictions",
+         expect["scrapebot_fallback"], lambda: codes(_sync_optional(data, "openstates_archive", "scrapebot_fallback", "jurisdictions"))),
+        ("enrollment.broker_bill_event_signal", "ddp-sync openstates_scrape.broker_bill_event_signal.jurisdictions",
+         expect["broker_bill_event_signal"], lambda: codes(scrape("broker_bill_event_signal", "jurisdictions", d=""))),
+        ("scrape.fargate_max_wait_s", "ddp-sync cloud_path.fargate.max_wait_seconds_by_jurisdiction",
+         expect["fargate_max_wait_s"], fargate_map),
     ]
 
     def timeouts(table_name, source, manifest_key, key_for):
+        # SYNC-157: ddp-sync deletes these copies and reads scrape/archive.timeout_s from here; skipped once gone.
+        if re.search(rf"^{table_name}\b", _read(source), re.M) is None:
+            return None
         table = python_int_table(source, table_name)
         if "default" not in table:
             raise SourceError(f"{source}: {table_name} has no \"default\" entry")
@@ -364,11 +433,14 @@ def sync_checks(sync_root, manifest, expect):
 
 def memory_backend_floor(data, expect):
     """memory_backend_jurisdictions is a FLOOR: everyone who has ever been split to the cloud path, never
-    removed on rollback (sync_schedule.yaml's own comment). So it must CONTAIN the cloud_path set."""
-    cp = _sync_list(data, "openstates_scrape", "cloud_path", path_desc="cloud_path")
-    if not isinstance(cp.get("memory_backend_jurisdictions"), list):
-        raise SourceError("ddp-sync sync_schedule.yaml: no openstates_scrape.cloud_path.memory_backend_jurisdictions list")
-    return {_from_sync_code(c) for c in cp["memory_backend_jurisdictions"]}
+    removed on rollback (sync_schedule.yaml's own comment). So it must CONTAIN the cloud_path set. None once ddp-sync has
+    deleted the list (SYNC-157: its memory backend follows the manifest's cloud_path)."""
+    listed = _sync_optional(data, "openstates_scrape", "cloud_path", "memory_backend_jurisdictions")
+    if listed is None:
+        return None
+    if not isinstance(listed, list):
+        raise SourceError("ddp-sync sync_schedule.yaml: openstates_scrape.cloud_path.memory_backend_jurisdictions is not a list")
+    return {_from_sync_code(c) for c in listed}
 
 
 def scrape_timing(data):
@@ -419,6 +491,8 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
         except SourceError as exc:
             errors.append(str(exc))
             return
+        if have is None:  # SYNC-157: the consumer deleted its list and reads the manifest; nothing to compare
+            return
         if want != have:
             drift.append((field, source, f"in the manifest but not in {source}: {_fmt(want - have)}\n"
                                          f"    in {source} but not in the manifest: {_fmt(have - want)}"))
@@ -436,7 +510,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
                 compare_sets(field, source, want, getter)
             try:
                 floor = memory_backend_floor(data, expect)
-                if not expect["cloud_path"] <= floor:
+                if floor is not None and not expect["cloud_path"] <= floor:
                     drift.append(("enrollment.cloud_path", "ddp-sync cloud_path.memory_backend_jurisdictions",
                                   f"cloud_path is enrolled in the manifest but missing from the memory_backend floor: "
                                   f"{_fmt(expect['cloud_path'] - floor)}"))
@@ -452,10 +526,13 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
                 errors.append(str(exc))
             for field, source, getter in tables:
                 try:
-                    have, want = getter()
+                    pair = getter()
                 except SourceError as exc:
                     errors.append(str(exc))
                     continue
+                if pair is None:  # SYNC-157: ddp-sync reads the manifest; nothing left to compare
+                    continue
+                have, want = pair
                 bad = {c: (want[c], have[c]) for c in want if want[c] != have[c]}
                 if bad:
                     drift.append((field, source, "\n".join(
