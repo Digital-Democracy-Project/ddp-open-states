@@ -222,9 +222,8 @@ def compose_entry(data, gate_b_facts):
         "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False},
         "quality": {"diff_cleaner": "none"},
         "api_keys": gate_b_facts["api_keys"],
-        # BROKER-368: oldest-first unless the broker's validate_bill_stages says otherwise; no Voatz ids are guessed
+        # BROKER-368: oldest-first unless the broker's validate_bill_stages says otherwise (no voatz block: BROKER-494)
         "actions": {"newest_first": False},
-        "voatz": {"test_precinct": None},  # no creator id: it is private (BROKER-482)
         "onboarding": {
             "epic": None,
             "evidence": f"notes/{run_id}/report.md" if run_id else None,
@@ -304,8 +303,6 @@ def render_block(code, entry, needs_human, source_desc):
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
         "  actions:",
         f"    newest_first: {_scalar(entry['actions']['newest_first'])}{note('actions.newest_first')}",
-        "  voatz:",
-        f"    test_precinct: {_scalar(entry['voatz']['test_precinct'])}         # null refuses a test poll",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
         "  onboarding:",
         f"    epic: {_scalar(entry['onboarding']['epic'])}",

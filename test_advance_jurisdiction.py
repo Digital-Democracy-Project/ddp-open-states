@@ -61,8 +61,6 @@ pa:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   actions:
     newest_first: false  # NEEDS HUMAN REVIEW
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -104,8 +102,6 @@ ne:
     diff_cleaner: none
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
