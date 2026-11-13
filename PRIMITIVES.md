@@ -465,7 +465,7 @@ user site-packages with other services — a stray `pip install` of something py
 `os-update`/`os-people`/`os-initdb` must `source activate.sh` first** (or otherwise land on
 `.venv/bin`) — don't call the system Python's copies.
 
-Rebuild recipe (also in `RUNBOOK.md`): `/usr/bin/python3 -m venv .venv && .venv/bin/pip install
+Rebuild recipe (also in `RUNBOOK.md`; Python 3.13 since OPEN-515): `"$(uv python find 3.13)" -m venv .venv && .venv/bin/pip install
 'pip<24.1' && .venv/bin/pip install --no-deps -r requirements-openstates.txt`. The `pip<24.1`
 step matters — a newer pip breaks one of the pinned deps' build.
 

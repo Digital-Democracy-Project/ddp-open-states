@@ -4,7 +4,7 @@
 # pin ... not a standalone program."
 #
 # Mirrors activate.sh's documented rebuild recipe for the toolchain venv exactly:
-#   /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
+#   "$(uv python find 3.13)" -m venv .venv && .venv/bin/pip install 'pip<24.1' \
 #     && .venv/bin/pip install --no-deps -r requirements-openstates.txt
 # plus an editable install of openstates-core from DDP's fork (requirements-openstates.txt's
 # own header explains why openstates itself is never pinned in that file) and openstates-
@@ -25,16 +25,15 @@
 # repo's own runner, per the fargate draft's "no local filesystem assumptions" / small-image
 # requirements.
 #
-# python:3.10-slim-bookworm, not 3.9: found 2026-09-10 that python:3.9-slim (Debian 11
-# "bullseye") freezes every apt-installed package (poppler-utils here) at whatever bullseye had
-# in 2021 plus security-only backports -- poppler-utils 20.09.0-3.1, five years stale, silently
-# mis-extracting text from otherwise-valid PDFs (xref/trailer edge cases newer poppler handles
-# correctly). 3.10 is the ceiling: Django 3.2.14 (pinned in openstates-core/pyproject.toml) is
-# only officially supported through Python 3.10 -- Django 4.1 is the first release to support
-# 3.11 -- so going further requires a separate Django major-version upgrade, out of scope here.
-# Bookworm (Debian 12) gets the same six apt packages onto a current freeze instead.
+# python:3.13 (OPEN-515, 2026-11-13): the version upstream openstates-core and both DDP forks now
+# require. History: 3.9-slim (Debian 11 "bullseye") was dropped 2026-09-10 because it froze
+# poppler-utils at a five-year-old release that mis-extracted text from valid PDFs; 3.10 was then
+# chosen as the ceiling on the belief that Django 3.2.14 (still pinned upstream) could not go past
+# it. Upstream itself now runs Django 3.2.14 on 3.13, with `legacy-cgi` standing in for the `cgi`
+# module 3.13 removed (Django 3.2 imports it) -- requirements-openstates.txt carries the same pin.
+# Bookworm (Debian 12) is kept, so the apt packages below stay on the same release as before.
 
-FROM python:3.10-slim-bookworm AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 # git: clones the two forks below. build-essential/libxml2-dev/libxslt-dev/libssl-dev: in case
 # a package in requirements-openstates.txt (lxml, cryptography) has no prebuilt wheel for this
@@ -93,7 +92,7 @@ RUN --mount=type=secret,id=github_token \
 RUN /opt/venv/bin/pip install --no-cache-dir --no-deps -e /opt/openstates-core
 
 
-FROM python:3.10-slim-bookworm
+FROM python:3.13-slim-bookworm
 
 # poppler-utils: provides `pdftotext`, invoked as a subprocess at RUNTIME by spatula (fl/bills.py's
 # SubjectPDF page, openstates-scrapers) -- not a build-time dependency, so it belongs in this final
@@ -125,7 +124,7 @@ COPY --from=builder /opt/openstates-scrapers /opt/openstates-scrapers
 # because this install runs as root, before USER scraper below switches to the uid the browser
 # actually launches under later -- the default path would install into /root's cache, which
 # the non-root runtime user can't read. --with-deps pulls Chromium's own OS-level shared
-# libraries (fonts, NSS, etc.) that python:3.9-slim does not carry, so the binary can actually
+# libraries (fonts, NSS, etc.) that the slim base image does not carry, so the binary can actually
 # start rather than fail on a missing .so a moment after this step reports success.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
 RUN /opt/venv/bin/playwright install --with-deps chromium \

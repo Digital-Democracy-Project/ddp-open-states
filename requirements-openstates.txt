@@ -12,6 +12,14 @@
 # Because the install is --no-deps, anything missing from this file is simply absent, and the
 # scraper that needs it raises ModuleNotFoundError the first time someone runs that state --
 # how ga/gu/mp/nh/oh were found broken (OPEN-125). ./check-scraper-imports.sh catches that.
+#
+# Python 3.13 (OPEN-515, 2026-11-13). Three pins changed and nothing else: numpy 2.0.2 -> 2.2.6
+# (2.0.2 has no 3.13 wheel and fails to compile), six 1.12.0 -> 1.17.0 (1.12 has no `six.moves`
+# on 3.13, which breaks openstates-core and scraper imports; 1.17 is upstream's lock), and
+# legacy-cgi 2.6.4 added (Django 3.2.14 imports the `cgi` module, which 3.13 removed; upstream
+# adds the same package). Everything else installs and imports on 3.13 as pinned. numpy 2.2.6
+# needs Python 3.10+, so every venv built from this file (the Mac's, the scrapers image's,
+# ddp-sync's /opt/venv-openstates) must be on 3.13 together.
 altgraph==0.17.2
 annotated-doc==0.0.4
 annotated-types==0.7.0
@@ -79,13 +87,14 @@ jellyfish==1.2.1
 Jinja2==3.1.6
 jmespath==1.1.0
 jsonschema==3.2.0
+legacy-cgi==2.6.4
 lxml==5.4.0
 macholib==1.15.2
 MarkupSafe==3.0.3
 matplotlib-inline==0.2.2
 mypy_extensions==1.1.0
 nodeenv==1.10.0
-numpy==2.0.2
+numpy==2.2.6
 olefile==0.47
 opencv-python-headless==4.13.0.92
 openpyxl==3.1.5
@@ -137,7 +146,7 @@ s3transfer==0.16.1
 scrapelib==2.4.1
 sentry-sdk==1.45.1
 sgmllib3k==1.0.0
-six==1.12.0
+six==1.17.0
 smmap==5.0.3
 sortedcontainers==2.4.0
 soupsieve==2.8.4
