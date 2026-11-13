@@ -19,8 +19,9 @@ git pull --ff-only >> "$LOG_DIR/scraper.log" 2>&1
 source "$SCRIPT_DIR/activate.sh"
 
 # OPEN-285: activate.sh's OS_PEOPLE always resolves to $SCRIPT_DIR/.venv, which is built
-# directly on the bare EC2 host for host-level execution -- its own python3.9 is a symlink to
-# /usr/bin/python3.9, present on the host but not inside ddp-sync's own container. That venv is
+# directly on the bare EC2 host for host-level execution -- its own python is a symlink to the
+# host's interpreter (python3.9 when written), present on the host but not inside ddp-sync's own
+# container. That venv is
 # still visible in the container (this whole directory is bind-mounted), just not executable
 # there. ddp-sync's container already bundles a separate, working copy of the same toolchain at
 # /opt/venv-openstates (OPEN-248, built for os-update inside this exact container) -- os-people

@@ -346,7 +346,8 @@ Always `source activate.sh` before running scrapers or CLI commands manually. It
 
 ### OpenStates toolchain venv (isolated 2026-07-15)
 
-The `os-*` CLIs run from a **dedicated virtualenv** at `.venv/` (Python 3.9.6), not the shared
+The `os-*` CLIs run from a **dedicated virtualenv** at `.venv/` (Python 3.13 since OPEN-515; Python
+3.9.6 before), not the shared
 user site-packages. This isolates `openstates-core`'s hard `pydantic<2` pin from other services:
 the toolchain previously shared `~/Library/Python/3.9`, and a FastAPI install for another service
 (Jun 2026) pulled pydantic 2.x, which crashed `os-people`/`os-update` at import time
@@ -372,7 +373,7 @@ old `~/Library/Python/3.9/bin/os-*` copy still runs as a fallback, but nothing s
 then install `openstates` itself in editable mode from the local checkout:
 
 ```bash
-/usr/bin/python3 -m venv .venv                       # Xcode Python 3.9.6
+"$(uv python find 3.13)" -m venv .venv              # Python 3.13 (uv-managed; `uv python install 3.13` if missing)
 .venv/bin/pip install 'pip<24.1'                     # newer pip rejects textract 1.6.5's metadata
 .venv/bin/pip install --no-deps -r requirements-openstates.txt
 .venv/bin/pip install --no-deps -e openstates-core   # editable — local-patches takes effect immediately,
@@ -390,6 +391,26 @@ source activate.sh && $OS_PEOPLE to-database az       # end-to-end
   (installed separately, editable, so it stays live).
 - Because it's editable, `apply-local-patches.sh` pulling a fresh `main` (git-only, no pip step)
   is sufficient going forward — no need to re-run `pip install` after every patch change.
+
+**Switching an existing checkout from the 3.9 venv to 3.13 (OPEN-515).** Every script in a venv
+names the venv's own absolute path on its first line, so a venv cannot be built under another name
+and renamed into place. Move the old one aside, build the new one as `.venv`, and keep the old one as
+the way back (moving it back restores it exactly, since its scripts name `.venv`). No scrapes run on
+the Mac, but the tools here (and ddp-sync jobs that call them) cannot run during the few minutes of
+the build. In the **production** checkout do this only with Ramon's go and with nothing running
+(`pgrep -fl 'run-scrape|run-people-refresh|os-update|os-people'` prints nothing); do the dev checkout first.
+
+```bash
+mv .venv .venv-py39
+"$(uv python find 3.13)" -m venv .venv
+.venv/bin/pip install 'pip<24.1'
+.venv/bin/pip install --no-deps -r requirements-openstates.txt
+.venv/bin/pip install --no-deps -e openstates-core
+.venv/bin/playwright install chromium
+./check-scraper-imports.sh                     # every scraper imports (dc: credential only)
+source activate.sh && python validate_jurisdictions.py && $OS_PEOPLE --help >/dev/null
+# way back: rm -rf .venv && mv .venv-py39 .venv
+```
 
 > **Do NOT `pip install` FastAPI or any pydantic-v2 package into this venv** — that reintroduces the
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
@@ -710,15 +731,16 @@ in each nested repo before assuming what's checked out; don't rely on this doc n
 branch, since whatever's here will drift again the moment someone switches it for other work.
 
 **Rebuilding the dev venv from scratch:** follow the same recipe as the production venv above
-(`python3 -m venv .venv && pip install 'pip<24.1' && pip install --no-deps -r requirements-openstates.txt`),
-but expect `pip install --no-deps -e openstates-core` to fail on this pip/setuptools combination —
+(`"$(uv python find 3.13)" -m venv .venv && pip install 'pip<24.1' && pip install --no-deps -r requirements-openstates.txt`).
+On Python 3.13 `pip install --no-deps -e openstates-core` works normally (checked 2026-11-13, OPEN-515).
+The workaround below is history from the old Python 3.9 venv, where that install failed on its pip/setuptools combination —
 the build subprocess can't see `setuptools` even though it's installed (`--no-build-isolation` just
 trades it for a missing-`poetry` error instead). Worked around 2026-07-24 by hand-creating what a
 successful editable install would have produced:
 
 ```bash
 # Editable-install marker (adds openstates-core/ to the venv's import path):
-echo "$PWD/openstates-core" > .venv/lib/python3.9/site-packages/openstates.pth
+echo "$PWD/openstates-core" > .venv/lib/python3.13/site-packages/openstates.pth
 
 # Console-script wrappers -- one per [tool.poetry.scripts] entry in openstates-core/pyproject.toml
 # (os-update, os-initdb, os-text-extract, os-people, os-committees, os-scrape, os-validate,
@@ -1878,7 +1900,7 @@ docker exec -it ddp-agents-postgres-1 psql -U cams -c "
   GRANT ALL PRIVILEGES ON DATABASE openstates TO openstates;"
 
 # 2. Build the OpenStates toolchain venv (see "OpenStates toolchain venv" above)
-/usr/bin/python3 -m venv .venv
+"$(uv python find 3.13)" -m venv .venv
 .venv/bin/pip install 'pip<24.1'
 .venv/bin/pip install --no-deps -r requirements-openstates.txt
 

@@ -20,7 +20,7 @@ independence.
 ## Quick start
 
 ```bash
-source activate.sh                  # env vars + the dedicated OpenStates toolchain venv
+source activate.sh                  # env vars + the dedicated OpenStates toolchain venv (Python 3.13)
 ./run-scrape.sh fl "session=2026"   # scrape + import one jurisdiction/session
 ```
 

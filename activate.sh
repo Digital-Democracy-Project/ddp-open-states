@@ -134,7 +134,8 @@ export ARCHIVE_ROOT_DIR="/Volumes/DDP-HOT"
 # explains why each state was turned on.
 # Dedicated venv for the OpenStates toolchain (isolates its pydantic<2 pin from
 # other services' shared installs — see notes/scraper-status-and-pydantic-break).
-# Rebuild with: /usr/bin/python3 -m venv .venv && .venv/bin/pip install 'pip<24.1' \
+# Python 3.13 since OPEN-515 (2026-11-13). Rebuild with:
+#   "$(uv python find 3.13)" -m venv .venv && .venv/bin/pip install 'pip<24.1' \
 #   && .venv/bin/pip install --no-deps -r requirements-openstates.txt
 # OPEN-159: prefer this checkout's own venv, and fall back to the production one when the
 # checkout has none. The production checkout and ddp-open-states-dev each have their own; a git
