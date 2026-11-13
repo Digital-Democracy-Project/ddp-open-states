@@ -54,9 +54,9 @@ embedding and search_refresh lists, the memory floor and the SCRAPE_/ARCHIVE_TIM
 has one, it is compared (the values were copied from it); once it is gone it is skipped, and ddp-sync's own tests and
 start-up refuse it coming back.
 
-actions.newest_first and voatz.* (BROKER-368) need no comparison: their only reader, ddp-broker-py, takes them from
+actions.newest_first (BROKER-368) needs no comparison: its only reader, ddp-broker-py, takes it from
 api-v3's GET /ddp/enrollment and keeps no copy (its guard test, common/tests/test_no_state_tables.py, fails if a
-per-state table comes back), so there is nothing to drift. --matrix shows them.
+per-state table comes back), so there is nothing to drift. --matrix shows it.
 
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,

@@ -63,9 +63,6 @@ def _valid_entry():
         "actions": {
             "newest_first": False,
         },
-        "voatz": {
-            "test_precinct": None,
-        },
     }
 
 
@@ -487,13 +484,12 @@ def test_archive_enabled_alone_is_valid_at_every_status(status):
     assert validate(_with(status=status, enabled=True)) == []
 
 
-# --- BROKER-368: actions.newest_first and the voatz block -------------------------------------------------------
+# --- BROKER-368: actions.newest_first; BROKER-482/494: no voatz block ------------------------------------------------
 
-def test_actions_and_voatz_are_required_blocks():
-    for block in ("actions", "voatz"):
-        entry = _valid_entry()
-        del entry[block]
-        assert validate({"ts": entry}) == [f"ts.{block}: missing required field"]
+def test_actions_is_a_required_block():
+    entry = _valid_entry()
+    del entry["actions"]
+    assert validate({"ts": entry}) == ["ts.actions: missing required field"]
 
 
 def test_newest_first_must_be_a_bool():
@@ -504,42 +500,30 @@ def test_newest_first_must_be_a_bool():
     assert validate({"ts": entry}) == ["ts.actions.newest_first: missing required field"]
 
 
-def test_voatz_test_precinct_takes_a_name_or_null():
-    entry = _valid_entry()
-    entry["voatz"] = {"test_precinct": "FLORIDA-TEST"}
-    assert validate({"ts": entry}) == []
-
-
-@pytest.mark.parametrize("bad,why", [
-    (7, "expected str or NoneType"),
-    ("  ", "must be null or a non-empty name"),
+@pytest.mark.parametrize("voatz", [
+    {"test_precinct": "FLORIDA-TEST"}, {"test_precinct": None}, {"creator_id": 999000001}, {"creator_id": None}, {}, None,
 ])
-def test_a_wrong_test_precinct_is_rejected(bad, why):
+def test_a_voatz_block_is_rejected_whatever_it_holds(voatz):
+    """BROKER-494 (Ramon, 2026-11-13: api-v3 serves only OpenStates data): Voatz's test precinct and its private poll
+    creator id (BROKER-482) live in each state's Voatz entry in AWS Secrets Manager, read by the broker. The public
+    manifest never carries a voatz block, not even an empty one, so nothing Voatz can be added back by accident."""
     entry = _valid_entry()
-    entry["voatz"]["test_precinct"] = bad
+    entry["voatz"] = voatz
     errors = validate({"ts": entry})
-    assert any("ts.voatz.test_precinct" in e and why in e for e in errors), errors
+    assert errors == [errors[0]] and errors[0].startswith("ts.voatz: unknown field"), errors
+    assert "BROKER-494" in errors[0] and "Secrets Manager" in errors[0], errors
 
 
-@pytest.mark.parametrize("value", [None, 999000001, "999000001"])
-def test_a_creator_id_is_rejected_whatever_its_value(value):
-    """BROKER-482: Voatz poll creator ids are private (AWS Secrets Manager); the public manifest never carries the key,
-    not even as null, so one can't be added back by accident."""
+def test_an_unknown_field_in_the_actions_block_is_rejected():
     entry = _valid_entry()
-    entry["voatz"]["creator_id"] = value
-    errors = validate({"ts": entry})
-    assert any("ts.voatz.creator_id: unknown field" in e and "BROKER-482" in e and "private" in e for e in errors), errors
+    entry["actions"]["organization_id"] = "800000075"
+    assert any("ts.actions.organization_id: unknown field" in e for e in validate({"ts": entry}))
 
 
-def test_an_unknown_field_in_the_new_blocks_is_rejected():
-    entry = _valid_entry()
-    entry["voatz"]["organization_id"] = "800000075"
-    assert any("ts.voatz.organization_id: unknown field" in e for e in validate({"ts": entry}))
-
-
-def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_no_creator_id():
-    """The values the broker kept in code until BROKER-368: newest-first us and nc; test precincts fl, us. No Voatz creator
-    id anywhere in the file (BROKER-482: private), not even a number that looks like one."""
+def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_nothing_voatz():
+    """The values the broker kept in code until BROKER-368: newest-first us and nc. No voatz block (BROKER-494: the test
+    precincts moved to Secrets Manager) and no Voatz creator id anywhere in the file (BROKER-482: private), not even a
+    number that looks like one."""
     import re
     import yaml
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
@@ -547,9 +531,8 @@ def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_no_creator_id
         text = fh.read()
     data = yaml.safe_load(text)
     assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["nc", "us"]
-    assert all("creator_id" not in e["voatz"] for e in data.values())
-    assert {c: e["voatz"]["test_precinct"] for c, e in data.items() if e["voatz"]["test_precinct"] is not None} == {
-        "fl": "FLORIDA-TEST", "us": "FEDERAL-TEST"}
+    assert [c for c, e in data.items() if "voatz" in e] == []
+    assert "test_precinct" not in text and "creator_id" not in text
     # Voatz ids are nine digits starting 9 (creator) or 8 (organization, not secret); no 9-prefixed one may appear
     assert not re.search(r"(?<!\d)9\d{8}(?!\d)", text)
 

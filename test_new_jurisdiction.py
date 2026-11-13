@@ -112,15 +112,15 @@ def test_real_colorado_probe_produces_a_valid_probing_entry(tmp_path, real_manif
     assert data["co"]["status"] == "probing"
 
 
-def test_a_new_state_gets_oldest_first_and_no_voatz_ids(tmp_path, real_manifest_copy):
-    # BROKER-368: nothing is guessed. Oldest-first (flagged: the broker's validate_bill_stages checks it later) and no
-    # Voatz creator id or test precinct, so the broker refuses a poll until Ramon supplies them.
+def test_a_new_state_gets_oldest_first_and_no_voatz_block(tmp_path, real_manifest_copy):
+    # BROKER-368: nothing is guessed. Oldest-first (flagged: the broker's validate_bill_stages checks it later). No voatz
+    # block (BROKER-494: Voatz values live in Secrets Manager, read by the broker).
     probe_path = _write_json(tmp_path / "result.json", CO_RESULT)
     assert _run(real_manifest_copy, "co", probe_path) == 0
     text = real_manifest_copy.read_text()
     co = yaml.safe_load(text)["co"]
     assert co["actions"] == {"newest_first": False}
-    assert co["voatz"] == {"test_precinct": None}  # no creator id: private (BROKER-482)
+    assert "voatz" not in co
     assert "newest_first: false  # NEEDS HUMAN REVIEW" in text
 
 

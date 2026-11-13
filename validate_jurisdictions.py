@@ -70,7 +70,6 @@ TOP_LEVEL_FIELDS = {
     "api_keys": list,
     "onboarding": dict,
     "actions": dict,
-    "voatz": dict,
 }
 
 SCRAPE_FIELDS = {
@@ -100,8 +99,9 @@ ARCHIVE_FIELDS = {
 REMOVED_FIELDS = {
     "tier": "removed by OPEN-521: when a state is scraped is ddp-sync's openstates_scrape.timing; who is its status",
     "archive.scheduled": "removed by OPEN-521: the archive follows every scrape of a state with archive.enabled",
-    "voatz.creator_id": "removed by BROKER-482: a Voatz poll creator id is private (AWS Secrets Manager, read by the "
-                        "broker); never put one in this public file",
+    "voatz": "removed by BROKER-494: this file is OpenStates data; a state's Voatz test precinct and its private poll "
+             "creator id (BROKER-482) live in its Voatz entry in AWS Secrets Manager, read by the broker; never add a "
+             "voatz block back",
 }
 
 # 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
@@ -146,10 +146,6 @@ QUALITY_FIELDS = {
 # BROKER-368: per-state facts the broker reads through api-v3's /ddp/enrollment instead of keeping its own table.
 ACTIONS_FIELDS = {
     "newest_first": bool,  # OpenStates lists the state's bill actions newest first (was the broker's NEWEST_FIRST_JURISDICTIONS)
-}
-
-VOATZ_FIELDS = {
-    "test_precinct": (str, type(None)),  # the Voatz test precinct; null = unknown, a test poll is refused (was TEST_PRECINCTS)
 }
 
 ONBOARDING_FIELDS = {
@@ -292,12 +288,6 @@ def validate(data):
 
         if isinstance(entry.get("actions"), dict):
             _check_block(entry["actions"], ACTIONS_FIELDS, f"{code}.actions", errors)
-
-        if isinstance(entry.get("voatz"), dict):
-            _check_block(entry["voatz"], VOATZ_FIELDS, f"{code}.voatz", errors)
-            precinct = entry["voatz"].get("test_precinct")
-            if isinstance(precinct, str) and not precinct.strip():
-                errors.append(f"{code}.voatz.test_precinct: must be null or a non-empty name, got {precinct!r}")
 
         api_keys = entry.get("api_keys")
         if isinstance(api_keys, list):

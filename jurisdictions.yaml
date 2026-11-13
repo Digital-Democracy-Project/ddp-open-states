@@ -58,15 +58,15 @@
 # scheduler). check-jurisdiction-drift.py fails if that timing map names a state this file does not
 # scrape.
 #
-# BROKER-368 (2026-11-12): two per-state facts the broker kept in its own code move here, and the broker
-# reads them from api-v3's GET /ddp/enrollment (its one reader of this file, ddpbroker/enrollment.py), so no
-# service keeps a copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
+# BROKER-368 (2026-11-12): a per-state fact the broker kept in its own code moves here, and the broker reads it
+# from api-v3's GET /ddp/enrollment (its one reader of this file, ddpbroker/enrollment.py), so no service keeps a
+# copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
 #   - actions.newest_first: OpenStates lists this state's bill actions newest first (us, nc; checked by the
 #     broker's validate_bill_stages command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
-#   - voatz.test_precinct: the Voatz test precinct, null when unknown (a test poll is then refused). Was the
-#     broker's TEST_PRECINCTS. A label, not secret.
-#   - NOT here: the Voatz poll creator id. It is private (Ramon, 2026-11-12, BROKER-482): it lives in AWS Secrets
-#     Manager and the broker reads it there. The validator rejects `voatz.creator_id`; never add it back.
+#   - NOT here: anything Voatz. This file is OpenStates data (Ramon, 2026-11-13, BROKER-494: "api-v3 should only be
+#     serving up the ddp-open-states data. it's the responsibility of the broker to bring together data from
+#     openstates, voatz, legbot, etc."). The Voatz test precinct and the private poll creator id (BROKER-482) live
+#     in each state's Voatz entry in AWS Secrets Manager, read by the broker. The validator rejects a `voatz` block.
 #
 # SYNC-157 (2026-11-12): ddp-sync keeps no list of states of its own any more; it reads these (values copied from its
 # sync_schedule.yaml that day): scrape.sweep_import, scrape.full_walk, scrape.retry (never with a WAF profile, OPEN-53),
@@ -149,8 +149,6 @@ us:
     diff_cleaner: none
   actions:
     newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
-  voatz:
-    test_precinct: FEDERAL-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
@@ -197,8 +195,6 @@ fl:
                                    # verified, not just untried (OPEN-8's actual finding)
   actions:
     newest_first: false
-  voatz:
-    test_precinct: FLORIDA-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: []
   onboarding:
     epic: null
@@ -240,8 +236,6 @@ wa:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -284,8 +278,6 @@ va:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
                                          # pattern -- see PRIMITIVES.md)
@@ -334,8 +326,6 @@ mi:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -377,8 +367,6 @@ ut:
     diff_cleaner: none
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -421,8 +409,6 @@ az:
                                          # boilerplate stripping (_reflow_paragraphs)
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -474,8 +460,6 @@ ma:
                                                # code already cleaned MA
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: null
@@ -530,8 +514,6 @@ nc:
                                          # not about this cleaner)
   actions:
     newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
-  voatz:
-    test_precinct: null
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -578,8 +560,6 @@ al:
                                     # OPEN-462 found this said none while the code already cleaned AL
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-146
@@ -621,8 +601,6 @@ pa:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -664,8 +642,6 @@ ne:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -707,8 +683,6 @@ la:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
   actions:
     newest_first: false
-  voatz:
-    test_precinct: null
   api_keys: []
   onboarding:
     epic: OPEN-480

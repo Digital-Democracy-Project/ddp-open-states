@@ -1301,16 +1301,19 @@ scope line was deliberate, not an oversight.
   with ddp-sync's old lists while ddp-sync main still has them and skips each once deleted. **Release order: this file
   first (on both hosts' checkouts), then ddp-sync**: a ddp-sync whose manifest lacks the fields treats every state as not
   enrolled (MI loses its ScrapeBot fallback, MA its retry and 24 h wait) and its daily drift check alerts "unverifiable".
-- **`actions.newest_first` and `voatz.test_precinct` (BROKER-368, 2026-11-12; creator id removed by BROKER-482).** Two
-  per-state facts the broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`, `TEST_PRECINCTS`) live here, required on
-  every entry: `newest_first` is a bool (us and nc are true: OpenStates lists their bill actions newest first, checked by
-  the broker's `validate_bill_stages`); `test_precinct` is a non-empty name or null (null = unknown: the broker refuses a
-  test poll). api-v3's `GET /ddp/enrollment` serves both blocks and the broker reads them there (`ddpbroker/enrollment.py`,
-  its one reader of this file) and keeps no copy. **The Voatz poll creator id is NOT here** (Ramon, 2026-11-12): it is
-  private, lives in AWS Secrets Manager and the broker reads it through `common/voatz_credentials.py`. The validator
-  rejects `voatz.creator_id` (any value, even null; `REMOVED_FIELDS` says why), `new-jurisdiction` doesn't write it, and a
-  test fails if a 9-prefixed nine-digit id appears anywhere in `jurisdictions.yaml`. **Never add a creator id to this
-  repo or api-v3.** Release order: this file and api-v3 first, then the broker.
+- **`actions.newest_first` (BROKER-368, 2026-11-12); no `voatz` block (BROKER-482, BROKER-494).** A per-state fact the
+  broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`) lives here, required on every entry: `newest_first` is a
+  bool (us and nc are true: OpenStates lists their bill actions newest first, checked by the broker's
+  `validate_bill_stages`). api-v3's `GET /ddp/enrollment` serves it and the broker reads it there
+  (`ddpbroker/enrollment.py`, its one reader of this file) and keeps no copy. **Nothing Voatz is here** (Ramon,
+  2026-11-13: "api-v3 should only be serving up the ddp-open-states data. it's the responsibility of the broker to bring
+  together data from openstates, voatz, legbot, etc."): a state's Voatz test precinct (BROKER-494) and its private poll
+  creator id (BROKER-482) live in its Voatz entry in AWS Secrets Manager, read by the broker through
+  `common/voatz_credentials.py`. The validator rejects a `voatz` block (any content, even empty; `REMOVED_FIELDS` says
+  why), `new-jurisdiction` doesn't write one, and a test fails if a 9-prefixed nine-digit id appears anywhere in
+  `jurisdictions.yaml`. **Never add Voatz data to this repo or api-v3.** Release order (BROKER-494): the broker first
+  (it stops reading `voatz` from api-v3), then this file and api-v3 in either order (api-v3 already serves an entry
+  without a `voatz` block).
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),
