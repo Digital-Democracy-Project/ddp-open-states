@@ -590,7 +590,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
 
 
 MATRIX_COLUMNS = ["status", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
-                  "qa_sweep", "replica_routing", "legbot_replica", "newest_first", "voatz_creator"]
+                  "qa_sweep", "replica_routing", "legbot_replica", "newest_first"]
 
 
 def matrix(manifest, out):
@@ -601,8 +601,6 @@ def matrix(manifest, out):
             return "yes" if entry["archive"]["enabled"] else "-"
         if column == "newest_first":  # BROKER-368
             return "yes" if entry["actions"]["newest_first"] else "-"
-        if column == "voatz_creator":
-            return "yes" if entry["voatz"]["creator_id"] is not None else "-"
         return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}

@@ -63,10 +63,10 @@
 # service keeps a copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
 #   - actions.newest_first: OpenStates lists this state's bill actions newest first (us, nc; checked by the
 #     broker's validate_bill_stages command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
-#   - voatz.creator_id / voatz.test_precinct: the Voatz poll creatorId and the test precinct, null when
-#     unknown (a poll, or a test poll, is then refused). Not secret. Was the broker's CREATOR_IDS (keyed by
-#     Voatz organization id: 800000075 = fl, 800000097 = us, 800000115 = va) and TEST_PRECINCTS. Ramon
-#     supplies new ids; none is guessed.
+#   - voatz.test_precinct: the Voatz test precinct, null when unknown (a test poll is then refused). Was the
+#     broker's TEST_PRECINCTS. A label, not secret.
+#   - NOT here: the Voatz poll creator id. It is private (Ramon, 2026-11-12, BROKER-482): it lives in AWS Secrets
+#     Manager and the broker reads it there. The validator rejects `voatz.creator_id`; never add it back.
 #
 # SYNC-157 (2026-11-12): ddp-sync keeps no list of states of its own any more; it reads these (values copied from its
 # sync_schedule.yaml that day): scrape.sweep_import, scrape.full_walk, scrape.retry (never with a WAF profile, OPEN-53),
@@ -150,7 +150,6 @@ us:
   actions:
     newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
   voatz:
-    creator_id: null         # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
     test_precinct: FEDERAL-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
@@ -199,7 +198,6 @@ fl:
   actions:
     newest_first: false
   voatz:
-    creator_id: null         # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
     test_precinct: FLORIDA-TEST    # Voatz test precinct (BROKER-368; was the broker's TEST_PRECINCTS)
   api_keys: []
   onboarding:
@@ -243,7 +241,6 @@ wa:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -288,7 +285,6 @@ va:
   actions:
     newest_first: false
   voatz:
-    creator_id: null         # Voatz poll creatorId (BROKER-368; was the broker's CREATOR_IDS)
     test_precinct: null
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
@@ -339,7 +335,6 @@ mi:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -383,7 +378,6 @@ ut:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -428,7 +422,6 @@ az:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -482,7 +475,6 @@ ma:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -539,7 +531,6 @@ nc:
   actions:
     newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
@@ -588,7 +579,6 @@ al:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -632,7 +622,6 @@ pa:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -676,7 +665,6 @@ ne:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -720,7 +708,6 @@ la:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:

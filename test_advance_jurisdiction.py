@@ -62,7 +62,6 @@ pa:
   actions:
     newest_first: false  # NEEDS HUMAN REVIEW
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
@@ -106,7 +105,6 @@ ne:
   actions:
     newest_first: false
   voatz:
-    creator_id: null
     test_precinct: null
   api_keys: []
   onboarding:
