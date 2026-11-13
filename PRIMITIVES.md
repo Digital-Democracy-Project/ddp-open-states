@@ -712,6 +712,8 @@ functions, layered on top of the ordering work above rather than changing it.
   `recomputed_diffs_for_documents()` already did since OPEN-211. Known, accepted side effect:
   Massachusetts pairs a PDF "Bill Text" with an HTML "Chapter Law Text" — genuinely different
   documents — so it now produces **no** changelog for that pair instead of a wrong one.
+  **Superseded for Massachusetts by OPEN-223** (below): that pair is the bill as filed against the
+  law as signed, and Massachusetts alone compares them again.
 - **OPEN-107 — a benign cross-archiver race no longer fails the whole run.** Two archivers racing
   on the same natural key used to have the loser's `IntegrityError` counted as a real conflict,
   `sys.exit(1)`-ing the entire run over a document that was, in fact, safely archived by the
@@ -849,6 +851,11 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
   * **Released:** core PR #93 (`a7d3a8fe`). It needs an image and `recompute-diff-order al` **without** `--flags-only`, because the comparisons change.
   * **Do not** add a second Alabama cleaner.
+- **OPEN-223: Massachusetts compares the law as signed with the bill as filed again, and cleans both first.**
+  * **Where:** openstates-core `cli/text_extract.py`. `_diff_baseline()` picks the text each document is compared with, for both diff paths: the previous version's document of the same media type (OPEN-217), except that a Massachusetts HTML document (the "Chapter Law Text (Enacted)") with no HTML before it is compared with the previous version's PDF ("Bill Text"). `_clean_massachusetts_text()` (OPEN-400's cleaner, extended) drops the page-footer tail (through the shared `_drop_page_footer_lines`) and puts one clause per line (breaks after `. ; : ,` and `:-`); across the two renderings only (`cross_media`, PDF against HTML) it also drops the title line, the enacting clause and the "Approved, <date>." line and removes double quotes, because each exists in one rendering only. Two documents of the same rendering keep all four.
+  * **Effect on the 291 stored comparisons (replica, 2026-11-13):** no unchanged line 193 → 7; changed words 1,221,228 → 591,483; none worse; the title, enacting clause and "Approved" lines no longer appear as additions; H 5555 and H 4240 are no longer larger than their documents. The 73 Massachusetts chapter laws archived after OPEN-217 get a comparison too. Every other state is unchanged (a 12-state sample of 2,620 documents compared byte for byte).
+  * **Released:** not yet (openstates-core PR #96). It needs a scrapers image, then `recompute-diff-order ma` **without** `--flags-only` (dry run first: expect 364 corrected, 0 nulled), Ramon's go; PLAN-state-specific-handling puts stored-data changes after launch, so the timing is his call.
+  * **Do not** add a second Massachusetts cleaner or a second cross-media rule: a new exception goes in `_diff_baseline`. Massachusetts' cross-bill lineage (a new bill number for each amended version) is OPEN-108/OPEN-109, not this.
 - **OPEN-530: Alabama PDFs are read without their struck-out words.**
   * **Where:** `openstates/fulltext/al.py` (`handle_alabama_pdf`, the `"al"` PDF entry). It finds thin drawn rules at mid-line height over a character, removes those characters from a copy of the PDF, and reads the copy through the unchanged pdftotext path.
   * A PDF with no strike reads exactly as before. A PDF PyMuPDF cannot open is an extraction error, with no fallback that would bring the struck words back.
