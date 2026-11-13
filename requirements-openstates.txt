@@ -14,11 +14,12 @@
 # how ga/gu/mp/nh/oh were found broken (OPEN-125). ./check-scraper-imports.sh catches that.
 #
 # Python 3.13 (OPEN-515, 2026-11-13). Three pins changed and nothing else: numpy 2.0.2 -> 2.2.6
-# (2.0.2 has no 3.13 wheel and fails to compile), six 1.12.0 -> 1.17.0 (the version upstream
-# openstates-core locks for 3.13), and legacy-cgi 2.6.4 added (Django 3.2.14 imports the `cgi`
-# module, which 3.13 removed; upstream adds the same package). Everything else installs and
-# imports on 3.13 as pinned. numpy 2.2.6 needs Python 3.10+, so every venv built from this file
-# (the Mac's, the scrapers image's, ddp-sync's /opt/venv-openstates) must be on 3.13 together.
+# (2.0.2 has no 3.13 wheel and fails to compile), six 1.12.0 -> 1.17.0 (1.12 has no `six.moves`
+# on 3.13, which breaks openstates-core and scraper imports; 1.17 is upstream's lock), and
+# legacy-cgi 2.6.4 added (Django 3.2.14 imports the `cgi` module, which 3.13 removed; upstream
+# adds the same package). Everything else installs and imports on 3.13 as pinned. numpy 2.2.6
+# needs Python 3.10+, so every venv built from this file (the Mac's, the scrapers image's,
+# ddp-sync's /opt/venv-openstates) must be on 3.13 together.
 altgraph==0.17.2
 annotated-doc==0.0.4
 annotated-types==0.7.0
