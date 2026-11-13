@@ -698,12 +698,12 @@ def test_the_matrix_has_no_tier_or_scheduled_column(world):
     assert "archive" in header and "tier" not in header and "scheduled" not in header
 
 
-def test_the_matrix_shows_newest_first_and_voatz_creator(world):
-    # BROKER-368: the two per-state facts the broker now reads from the manifest are visible in the matrix.
+def test_the_matrix_shows_newest_first_and_no_creator_id(world):
+    # BROKER-368: newest_first is visible in the matrix; BROKER-482: the Voatz creator id is private, not in the manifest.
     code, out = _run(world, with_sync=False, extra=["--matrix"])
     assert code == 0
     header = out.strip().splitlines()[0].split()
-    assert header[-2:] == ["newest_first", "voatz_creator"]
+    assert header[-1] == "newest_first" and "voatz_creator" not in header
 
 
 def test_after_sync_157_the_deleted_timeout_tables_are_skipped(world):

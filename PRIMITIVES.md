@@ -1301,15 +1301,16 @@ scope line was deliberate, not an oversight.
   with ddp-sync's old lists while ddp-sync main still has them and skips each once deleted. **Release order: this file
   first (on both hosts' checkouts), then ddp-sync**: a ddp-sync whose manifest lacks the fields treats every state as not
   enrolled (MI loses its ScrapeBot fallback, MA its retry and 24 h wait) and its daily drift check alerts "unverifiable".
-- **`actions.newest_first` and `voatz.creator_id` / `voatz.test_precinct` (BROKER-368, 2026-11-12).** Two per-state facts the
-  broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`, `CREATOR_IDS`, `TEST_PRECINCTS`) live here, required on every
-  entry: `newest_first` is a bool (us and nc are true: OpenStates lists their bill actions newest first, checked by the
-  broker's `validate_bill_stages`); `creator_id` is a positive int or null and `test_precinct` a non-empty name or null
-  (null = unknown: the broker refuses a poll, or a test poll; ids are never guessed, Ramon supplies them). api-v3's
-  `GET /ddp/enrollment` serves both blocks and the broker reads them there (`ddpbroker/enrollment.py`, its one reader of this
-  file) and keeps no copy; a broker guard test fails if a per-state table comes back. `new-jurisdiction` writes
-  `newest_first: false` (flagged for review) and nulls. **Do not add these values to any other repo's code.** Release
-  order: this file and api-v3 first, then the broker (the broker refuses, rather than guesses, while they are missing).
+- **`actions.newest_first` and `voatz.test_precinct` (BROKER-368, 2026-11-12; creator id removed by BROKER-482).** Two
+  per-state facts the broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`, `TEST_PRECINCTS`) live here, required on
+  every entry: `newest_first` is a bool (us and nc are true: OpenStates lists their bill actions newest first, checked by
+  the broker's `validate_bill_stages`); `test_precinct` is a non-empty name or null (null = unknown: the broker refuses a
+  test poll). api-v3's `GET /ddp/enrollment` serves both blocks and the broker reads them there (`ddpbroker/enrollment.py`,
+  its one reader of this file) and keeps no copy. **The Voatz poll creator id is NOT here** (Ramon, 2026-11-12): it is
+  private, lives in AWS Secrets Manager and the broker reads it through `common/voatz_credentials.py`. The validator
+  rejects `voatz.creator_id` (any value, even null; `REMOVED_FIELDS` says why), `new-jurisdiction` doesn't write it, and a
+  test fails if a 9-prefixed nine-digit id appears anywhere in `jurisdictions.yaml`. **Never add a creator id to this
+  repo or api-v3.** Release order: this file and api-v3 first, then the broker.
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),

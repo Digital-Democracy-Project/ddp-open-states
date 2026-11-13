@@ -120,7 +120,7 @@ def test_a_new_state_gets_oldest_first_and_no_voatz_ids(tmp_path, real_manifest_
     text = real_manifest_copy.read_text()
     co = yaml.safe_load(text)["co"]
     assert co["actions"] == {"newest_first": False}
-    assert co["voatz"] == {"creator_id": None, "test_precinct": None}
+    assert co["voatz"] == {"test_precinct": None}  # no creator id: private (BROKER-482)
     assert "newest_first: false  # NEEDS HUMAN REVIEW" in text
 
 

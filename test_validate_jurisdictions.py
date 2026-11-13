@@ -64,7 +64,6 @@ def _valid_entry():
             "newest_first": False,
         },
         "voatz": {
-            "creator_id": None,
             "test_precinct": None,
         },
     }
@@ -505,25 +504,31 @@ def test_newest_first_must_be_a_bool():
     assert validate({"ts": entry}) == ["ts.actions.newest_first: missing required field"]
 
 
-def test_voatz_values_take_an_id_and_a_name_or_null():
+def test_voatz_test_precinct_takes_a_name_or_null():
     entry = _valid_entry()
-    entry["voatz"] = {"creator_id": 100000001, "test_precinct": "FLORIDA-TEST"}
+    entry["voatz"] = {"test_precinct": "FLORIDA-TEST"}
     assert validate({"ts": entry}) == []
 
 
-@pytest.mark.parametrize("field,bad,why", [
-    ("creator_id", "100000001", "expected int or NoneType"),
-    ("creator_id", True, "expected int or null, got bool"),
-    ("creator_id", 0, "must be a positive id"),
-    ("creator_id", -5, "must be a positive id"),
-    ("test_precinct", 7, "expected str or NoneType"),
-    ("test_precinct", "  ", "must be null or a non-empty name"),
+@pytest.mark.parametrize("bad,why", [
+    (7, "expected str or NoneType"),
+    ("  ", "must be null or a non-empty name"),
 ])
-def test_a_wrong_voatz_value_is_rejected(field, bad, why):
+def test_a_wrong_test_precinct_is_rejected(bad, why):
     entry = _valid_entry()
-    entry["voatz"][field] = bad
+    entry["voatz"]["test_precinct"] = bad
     errors = validate({"ts": entry})
-    assert any(f"ts.voatz.{field}" in e and why in e for e in errors), errors
+    assert any("ts.voatz.test_precinct" in e and why in e for e in errors), errors
+
+
+@pytest.mark.parametrize("value", [None, 999000001, "999000001"])
+def test_a_creator_id_is_rejected_whatever_its_value(value):
+    """BROKER-482: Voatz poll creator ids are private (AWS Secrets Manager); the public manifest never carries the key,
+    not even as null, so one can't be added back by accident."""
+    entry = _valid_entry()
+    entry["voatz"]["creator_id"] = value
+    errors = validate({"ts": entry})
+    assert any("ts.voatz.creator_id: unknown field" in e and "BROKER-482" in e and "private" in e for e in errors), errors
 
 
 def test_an_unknown_field_in_the_new_blocks_is_rejected():
@@ -532,17 +537,21 @@ def test_an_unknown_field_in_the_new_blocks_is_rejected():
     assert any("ts.voatz.organization_id: unknown field" in e for e in validate({"ts": entry}))
 
 
-def test_the_real_manifest_keeps_the_broker_values_it_replaces():
-    """The values the broker kept in code until BROKER-368, copied exactly: newest-first us and nc; creator ids fl, us,
-    va (CREATOR_IDS was keyed by Voatz organization id: 800000075 fl, 800000097 us, 800000115 va); test precincts fl, us."""
+def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_no_creator_id():
+    """The values the broker kept in code until BROKER-368: newest-first us and nc; test precincts fl, us. No Voatz creator
+    id anywhere in the file (BROKER-482: private), not even a number that looks like one."""
+    import re
     import yaml
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")) as fh:
-        data = yaml.safe_load(fh)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
+    with open(path) as fh:
+        text = fh.read()
+    data = yaml.safe_load(text)
     assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["nc", "us"]
-    assert {c: e["voatz"]["creator_id"] for c, e in data.items() if e["voatz"]["creator_id"] is not None} == {
-        }
+    assert all("creator_id" not in e["voatz"] for e in data.values())
     assert {c: e["voatz"]["test_precinct"] for c, e in data.items() if e["voatz"]["test_precinct"] is not None} == {
         "fl": "FLORIDA-TEST", "us": "FEDERAL-TEST"}
+    # Voatz ids are nine digits starting 9 (creator) or 8 (organization, not secret); no 9-prefixed one may appear
+    assert not re.search(r"(?<!\d)9\d{8}(?!\d)", text)
 
 
 # --- SYNC-157: ddp-sync's per-state behaviour fields ---------------------------------------------------------------

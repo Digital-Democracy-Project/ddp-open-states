@@ -100,6 +100,8 @@ ARCHIVE_FIELDS = {
 REMOVED_FIELDS = {
     "tier": "removed by OPEN-521: when a state is scraped is ddp-sync's openstates_scrape.timing; who is its status",
     "archive.scheduled": "removed by OPEN-521: the archive follows every scrape of a state with archive.enabled",
+    "voatz.creator_id": "removed by BROKER-482: a Voatz poll creator id is private (AWS Secrets Manager, read by the "
+                        "broker); never put one in this public file",
 }
 
 # 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
@@ -147,7 +149,6 @@ ACTIONS_FIELDS = {
 }
 
 VOATZ_FIELDS = {
-    "creator_id": (int, type(None)),     # the Voatz poll creatorId; null = unknown, a poll is refused (was CREATOR_IDS)
     "test_precinct": (str, type(None)),  # the Voatz test precinct; null = unknown, a test poll is refused (was TEST_PRECINCTS)
 }
 
@@ -294,11 +295,6 @@ def validate(data):
 
         if isinstance(entry.get("voatz"), dict):
             _check_block(entry["voatz"], VOATZ_FIELDS, f"{code}.voatz", errors)
-            creator = entry["voatz"].get("creator_id")
-            if isinstance(creator, bool):  # bool is an int subclass: `creator_id: true` must not pass as an id
-                errors.append(f"{code}.voatz.creator_id: expected int or null, got bool ({creator!r})")
-            elif isinstance(creator, int) and creator <= 0:
-                errors.append(f"{code}.voatz.creator_id: must be a positive id, got {creator}")
             precinct = entry["voatz"].get("test_precinct")
             if isinstance(precinct, str) and not precinct.strip():
                 errors.append(f"{code}.voatz.test_precinct: must be null or a non-empty name, got {precinct!r}")
