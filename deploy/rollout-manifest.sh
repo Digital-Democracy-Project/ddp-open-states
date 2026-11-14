@@ -11,7 +11,8 @@
 #                    repo-only check is not the combined check); a dry run without it prints the check as UNCHECKED.
 #   --dry-run        change NOTHING in the working tree, the copy or any container; print every step and value.
 #                    (It still runs `git fetch`, which moves only origin/main, never the checkout; and it validates the
-#                    INCOMING file, read from origin/main, so a bad list is caught before anyone pulls it.)
+#                    INCOMING file, read from origin/main, with the INCOMING validator and drift check (OPEN-532), so a
+#                    bad list is caught before anyone pulls it and a good one is not refused by the old checker.)
 #   --recreate       the ONE-TIME switch of an api container that still has the old single-file mount (see below)
 #   --skip-ecs-check proceed when the cloud scrape tasks cannot be listed here (that gate is then on you)
 #   --state XX       also print that state's status and flags from the list at the end
@@ -184,15 +185,21 @@ if [ "$INCOMING" != "0" ]; then
 fi
 
 say "3. Pull (fast-forward only)"
+# The checks in step 4 run the validator and drift check FROM CHECK_DIR on CHECK_FILE. A real run pulls first, so both
+# are the incoming ones. A dry run does not pull, so it unpacks origin/main into a temp folder and checks from there:
+# a merge that changes the list and its validator together (OPEN-521 dropped two fields) is then judged by the new
+# validator, as the real run will judge it, instead of being refused by the old one (OPEN-532).
+CHECK_DIR="$REPO"
 CHECK_FILE="$REPO/jurisdictions.yaml"
 if [ "$INCOMING" = "0" ]; then
     val "already up to date"
 elif [ "$DRY" = 1 ]; then
     val "(dry run) would: git merge --ff-only origin/main"
-    CHECK_FILE="$(mktemp "${TMPDIR:-/tmp}/rollout-incoming.XXXXXX")"
-    trap 'rm -f "$CHECK_FILE"' EXIT
-    git show origin/main:jurisdictions.yaml > "$CHECK_FILE"
-    val "(dry run) the checks below run on the INCOMING file (origin/main:jurisdictions.yaml), not the current one"
+    CHECK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/rollout-incoming.XXXXXX")"
+    trap 'rm -rf "$CHECK_DIR"' EXIT
+    git archive origin/main | tar -x -C "$CHECK_DIR"
+    CHECK_FILE="$CHECK_DIR/jurisdictions.yaml"
+    val "(dry run) the checks below run on the INCOMING file (origin/main:jurisdictions.yaml) with the INCOMING validator and drift check, not the current ones"
 else
     git merge --ff-only -q origin/main || die "not a fast-forward; nothing was changed"
     val "revision now: $(git rev-parse --short HEAD)"
@@ -203,9 +210,9 @@ AFTER="$(git rev-parse --short HEAD)"
 say "4. Checks that only read (BEFORE api-v3's copy is touched)"
 FAILURE_NOTE="the checkout is now at $AFTER (a fast-forward is not undone); api-v3's copy of the list was NOT changed and keeps serving the previous list"
 [ "$DRY" = 1 ] && FAILURE_NOTE="nothing was changed (dry run)"
-"$PY" validate_jurisdictions.py "$CHECK_FILE" | sed 's/^/    /' || die "jurisdictions.yaml does not validate; $FAILURE_NOTE"
+"$PY" "$CHECK_DIR/validate_jurisdictions.py" "$CHECK_FILE" | sed 's/^/    /' || die "jurisdictions.yaml does not validate; $FAILURE_NOTE"
 if [ -n "$SYNC_ROOT" ]; then
-    "$PY" check-jurisdiction-drift.py --manifest "$CHECK_FILE" --ddp-sync-root "$SYNC_ROOT" | sed 's/^/    /' \
+    "$PY" "$CHECK_DIR/check-jurisdiction-drift.py" --manifest "$CHECK_FILE" --ddp-sync-root "$SYNC_ROOT" | sed 's/^/    /' \
         || die "the combined drift check failed (ddp-sync's lists and this list disagree); $FAILURE_NOTE"
 else
     val "UNCHECKED: the combined drift check was NOT run (no --ddp-sync-root); this dry run says nothing about ddp-sync's lists"
