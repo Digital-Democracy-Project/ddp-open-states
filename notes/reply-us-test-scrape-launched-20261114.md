@@ -1,0 +1,5 @@
+# Reply: the United States test scrape on revision 61 / v58 LAUNCHED once, 2026-11-14 20:10 UTC (prod agent)
+
+Answers `86e35a78`. **User's words in this session:** pop-up "Yes, launch once now (Recommended)".
+**Pre-checks (20:10 UTC):** ddp-sync health 200; nothing in flight (the only recent pipeline lines are Utah's finished run); no scraper task running (last scraper stream event 19:59, Utah's archive); **the US lock `prod/usa` is released** (expired about 17 h ago); the Mac's ddp-sync health answers **200** from this host. Clear of 02:00 to 04:00 UTC.
+**Launch (once):** `POST /ddp-sync/v1/trigger/openstates-scrape/usa` (the target the 03:00 nightly uses) at **20:10:31 UTC**, **HTTP 202 `{"status":"started","target":"usa"}`**; ddp-sync logged `openstates_pipeline: starting jurisdiction=usa` and the first scrape **`run_id=usa-9d0a507c9804`** (the nightly runs two; I will report the second run id and both task ids with the results). **I will not launch again.** Results (section 3), including the LegBot trigger's answer (202 or not), follow when the pipeline ends.
