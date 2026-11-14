@@ -182,6 +182,61 @@ def test_dry_run_validates_the_incoming_file_not_the_current_one(world):
     assert _git(world["clone"], "rev-parse", "HEAD") == before
 
 
+# OPEN-532: a merge that changes the list AND its validator (OPEN-521 dropped two fields) must be judged by the new
+# validator in a dry run too. The stub "old" validator below refuses a field the "new" one accepts.
+OLD_VALIDATE = STUB_VALIDATE.replace('"BROKEN" in text', '("BROKEN" in text or "new_field" in text)')
+STRICT_VALIDATE = STUB_VALIDATE.replace('"BROKEN" in text', '("BROKEN" in text or "status: live" in text)')
+INCOMING_DRIFT = STUB_DRIFT.replace('print("OK: drift stub', 'print("OK: INCOMING drift stub')
+
+
+def _push_files(w, files, msg):
+    for name, text in files.items():
+        (w["seed"] / name).write_text(text)
+    _git(w["seed"], "add", "-A"); _git(w["seed"], "commit", "-q", "-m", msg)
+    _git(w["seed"], "push", "-q", "origin", "main")
+
+
+def _old_validator_in_place(w):
+    _push_files(w, {"validate_jurisdictions.py": OLD_VALIDATE}, "the old validator")
+    _git(w["clone"], "pull", "-q", "--ff-only")
+
+
+@pytest.mark.parametrize("dry", [True, False])
+def test_a_merge_that_changes_the_list_and_its_validator_passes(world, dry):
+    _old_validator_in_place(world)
+    _push_files(world, {"jurisdictions.yaml": VALID_YAML + "  new_field: 1\n", "validate_jurisdictions.py": STUB_VALIDATE},
+                "list and validator change together")
+    before = _git(world["clone"], "rev-parse", "HEAD")
+    args = ["--host", "ec2"] + (["--dry-run"] if dry else [])
+    r = _run(world, *args, env_extra=_same_md5(world))
+    assert r.returncode == 0, r.stdout + r.stderr
+    if dry:
+        assert _git(world["clone"], "rev-parse", "HEAD") == before        # still nothing changed
+        assert "INCOMING validator and drift check" in r.stdout
+
+
+def test_a_dry_run_stops_when_the_incoming_validator_rejects_the_incoming_list(world):
+    # The current validator would accept this list; the incoming one refuses it. The dry run must say no.
+    _push_files(world, {"jurisdictions.yaml": CHANGED_YAML, "validate_jurisdictions.py": STRICT_VALIDATE},
+                "stricter validator and a list it refuses")
+    before = _git(world["clone"], "rev-parse", "HEAD")
+    r = _run(world, "--host", "ec2", "--dry-run")
+    assert r.returncode == 1 and "does not validate" in r.stderr and "nothing was changed" in r.stderr
+    assert _git(world["clone"], "rev-parse", "HEAD") == before
+    assert not (world["clone"] / "deploy" / "manifest").exists() and _docker_calls(world) == []
+
+
+def test_a_dry_run_uses_the_incoming_drift_check_and_leaves_no_temp_folder(world):
+    _push_files(world, {"jurisdictions.yaml": CHANGED_YAML, "check-jurisdiction-drift.py": INCOMING_DRIFT},
+                "list and drift check change")
+    tmp = world["tmp"] / "t"
+    tmp.mkdir()
+    r = _run(world, "--host", "ec2", "--dry-run", "--ddp-sync-root", "/opt/ddp-sync", env_extra={"TMPDIR": str(tmp)})
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "OK: INCOMING drift stub" in r.stdout
+    assert list(tmp.iterdir()) == []
+
+
 def test_a_real_run_needs_the_ddp_sync_root_and_a_dry_run_says_unchecked(world):
     r = _run(world, "--host", "ec2", sync=False)
     assert r.returncode == 2 and "--ddp-sync-root" in r.stderr and "Nothing was changed" in r.stderr

@@ -1467,7 +1467,11 @@ do not go back to a single-file mount. One recreate switches a running container
 Replaces the hand steps every state needed on each host (each of them its own request note to the prod agent in pilot #2):
 gates, pull, record the revision, validate, drift check, refresh api-v3's copy, read the values back. It stops at the first
 failed gate or check and prints a value for every step; `--dry-run` changes nothing in the checkout, the copy or any container
-(it still runs `git fetch`, which moves only `origin/main`, and it validates the INCOMING file read from `origin/main`).
+(it still runs `git fetch`, which moves only `origin/main`, and it validates the INCOMING file read from `origin/main`
+**with the INCOMING validator and drift check**: it unpacks `origin/main` into a temp folder and runs them from there, then
+removes it. So a merge that changes the list and its validator together, such as OPEN-521 or BROKER-494, passes the dry run the
+way it passes the real one, which pulls first; until OPEN-532 the dry run judged it with the old validator and stopped, and the
+rollout had to be finished by hand with "pull first, then the script" on 11-10, 11-13 and 11-14).
 - **Gates:** the branch is `main` and no tracked file is modified; **no commit that is not on `origin/main`**; **no real
   `run-scrape.sh`, `run-scrape-retrying.sh`, `run-archive.sh` or `run-people-refresh.sh` process** (all of them read this
   checkout, and `run-scrape-retrying.sh` stays alive while it sleeps up to 900 s between attempts with no `run-scrape.sh` running;
