@@ -928,6 +928,36 @@ functions, layered on top of the ordering work above rather than changing it.
     row's extras without adding its key here.
   * **Status:** not merged (openstates-scrapers #85, openstates-core #91). Same image as OPEN-517, after its relabel
     run.
+- **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
+  PLAN-state-specific-handling §6 Phase 2). A scraper order fix (Alabama OPEN-528, LA OPEN-534, NE OPEN-535, US/NC
+  OPEN-542/543) changes only bills it re-scrapes. This pass reverses the stored history in the same **silent window**
+  as the `actions.newest_first` flip, so one state never holds both orders.
+  * **The command:** `os-text-extract reverse-action-order <state> [--session S] [--dry-run|--commit] [--undo]
+    [--expect N] [--list FILE] [--manifest PATH] [--even-if-manifest-says-oldest-first]`. It has the same shape as
+    `relabel-non-bills`.
+    * Dry run by default (`reversed=N actions=M skipped_...`, plus how the dates run: `newest_first`, `same_day`,
+      `mixed`).
+    * `--commit` needs `--list`. The CSV (bill, old and new order as action ids, old and new dates) is the audit
+      record. It only takes its name after the database commit; a refused or rolled-back run leaves none.
+    * It refuses unless the manifest (`--manifest`, default `$DDP_JURISDICTIONS_MANIFEST` or `./jurisdictions.yaml`)
+      says `actions.newest_first: true`, unless `--even-if-manifest-says-oldest-first` is passed.
+    * A reversed bill gets `extras["ddp_open541_actions_reversed"]`. A second run skips it, and the bill import keeps
+      the key (`keep_extras_keys`, as OPEN-518). Bills whose dates already run oldest first, and one-action bills,
+      are skipped.
+    * The first and latest action fields are recomputed with the importer's `update_bill_fields`, so a bill whose
+      latest action changes moves its `updated_at`.
+    * `--undo --commit` reverses the marked bills again. It is the rollback inside the same window (scrape paused),
+      not for use after a re-scrape.
+  * **Do not** reverse action order by hand or in a one-off script. A new order fix uses this pass in its silent
+    window.
+  * **Measured on the Mac replica (2026-11-14):**
+    * Would reverse: LA 2,609 of 2,616, NE 1,847, NC 2,343, US 39,263 (28,619 of them all on one day), and AL 1,431
+      (71 already oldest first are skipped).
+    * The manifest says newest first only for us and nc. LA, NE and AL need the override or a manifest correction
+      first (Ramon's call).
+  * **Status:** not merged (openstates-core #100), not run. The run is a prod-agent step on Ramon's go, per state,
+    after launch: the image with the scraper fix, then a dry run, then `--commit --expect N --list FILE`, then the
+    flag flip and the silent broker re-bootstrap.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
