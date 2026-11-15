@@ -61,8 +61,9 @@
 # BROKER-368 (2026-11-12): a per-state fact the broker kept in its own code moves here, and the broker reads it
 # from api-v3's GET /ddp/enrollment (its one reader of this file, ddpbroker/enrollment.py), so no service keeps a
 # copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
-#   - actions.newest_first: OpenStates lists this state's bill actions newest first (us, nc; checked by the
-#     broker's validate_bill_stages command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
+#   - actions.newest_first: this state's STORED bill actions are newest first (us, nc; la and ne until
+#     OPEN-534/535 and OPEN-541 store them oldest first, OPEN-562; checked by the broker's validate_bill_stages
+#     command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
 #   - NOT here: anything Voatz. This file is OpenStates data (Ramon, 2026-11-13, BROKER-494: "api-v3 should only be
 #     serving up the ddp-open-states data. it's the responsibility of the broker to bring together data from
 #     openstates, voatz, legbot, etc."). The Voatz test precinct and the private poll creator id (BROKER-482) live
@@ -641,7 +642,7 @@ ne:
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
   actions:
-    newest_first: false
+    newest_first: true     # OPEN-562 (Ramon 2026-11-15): Nebraska stores actions newest first (1,845 of 1,847); back to false when OPEN-535 + OPEN-541 ship
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -682,7 +683,7 @@ la:
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
   actions:
-    newest_first: false
+    newest_first: true     # OPEN-562 (Ramon 2026-11-15): Louisiana stores actions newest first (2,590 of 2,616); back to false when OPEN-534 + OPEN-541 ship
   api_keys: []
   onboarding:
     epic: OPEN-480
