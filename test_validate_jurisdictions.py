@@ -521,7 +521,8 @@ def test_an_unknown_field_in_the_actions_block_is_rejected():
 
 
 def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_nothing_voatz():
-    """The values the broker kept in code until BROKER-368: newest-first us and nc. No voatz block (BROKER-494: the test
+    """The values the broker kept in code until BROKER-368: newest-first us and nc; plus la and ne (OPEN-562, Ramon
+    2026-11-15: their stored actions are newest first until OPEN-534/535 and OPEN-541 ship). No voatz block (BROKER-494: the test
     precincts moved to Secrets Manager) and no Voatz creator id anywhere in the file (BROKER-482: private), not even a
     number that looks like one."""
     import re
@@ -530,7 +531,7 @@ def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_nothing_voatz
     with open(path) as fh:
         text = fh.read()
     data = yaml.safe_load(text)
-    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["nc", "us"]
+    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["la", "nc", "ne", "us"]
     assert [c for c, e in data.items() if "voatz" in e] == []
     assert "test_precinct" not in text and "creator_id" not in text
     # Voatz ids are nine digits starting 9 (creator) or 8 (organization, not secret); no 9-prefixed one may appear
