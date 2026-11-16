@@ -574,7 +574,9 @@ pa:
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
     votes_scraper: false           # probe gate B: "votes scraper registered"
-    start_filter: false            # probe gate B: "bills scraper accepts start="
+    start_filter: true             # OPEN-574: the legislature's daily Bill History export
+                                   # (palegis.us/data): lastUpdate + action dates, start minus
+                                   # 2 days; full walk if the export is unreadable or >1 day old
     sweep_import: false              # SYNC-157: ddp-sync's import-as-you-go sweep (was sync_schedule.yaml sweep_import.jurisdictions)
     full_walk: false                 # SYNC-157: periodic forced full walk, when ddp-sync's full_walk.enabled is on (was full_walk.jurisdictions)
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
