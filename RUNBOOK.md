@@ -557,6 +557,12 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
    the expected deletions in the request and the stop rule. Washington stores no vote `dedupe_key`, so its events
    are matched by date, chamber and motion text; compare on those.
 
+   **Massachusetts amendment papers (OPEN-568):** a real bill's votes also come from its amendment papers' histories
+   (S 3's budget-debate roll calls are stored on H 4001). The scraper therefore scrapes a paper and its real bill
+   together: `bill_no=S3` or `bill_no=H4001` also scrapes the rest of that group, and the run log names the extra
+   bills ("OPEN-568: also scraping ..."). Count those bills in the preview. If the real bill's page fails, the
+   paper's votes stay on the paper for that run.
+
 ### The same steps by hand (reference only: this is what the script runs)
 
 ```bash
