@@ -1,6 +1,6 @@
 """
-Tests for check-core-pin-drift.py (OPEN-579): api-v3's pinned openstates-core, the scrapers image's core and the core
-installed in each api-v3 container must be one commit.
+Tests for check-core-pin-drift.py (OPEN-579, OPEN-586): the scrapers image's openstates-core and the core installed in
+each api-v3 container must be one commit. Both builds take core's main; there is no pin file.
 
 Same discipline as test_check_jurisdiction_drift.py: a world in which everything agrees, then one planted
 disagreement per source, each of which must fail and name both commits. Docker is replaced by a stub (no daemon, no
@@ -26,15 +26,6 @@ _spec.loader.exec_module(drift)
 A = "96445eb26d7d4c59c592dadc0261c47d985e6d46"
 B = "eec94082" + "0" * 32
 URL = "https://github.com/Digital-Democracy-Project/openstates-core/archive/{}.tar.gz"
-PIN_HEADER = "# OPEN-538: api-v3 imports its bill-version rules ... (comment lines are ignored)\n#\n"
-
-
-def _pin(tmp_path, sha=A, body=None):
-    p = tmp_path / "ddp-openstates-core.txt"
-    p.write_text(PIN_HEADER + (body if body is not None else f"openstates @ {URL.format(sha)}\n"))
-    return str(p)
-
-
 def _direct_url(sha):
     return json.dumps({"archive_info": {}, "url": URL.format(sha)})
 
@@ -63,72 +54,76 @@ def docker(monkeypatch):
     return state
 
 
-def _check(pin, image="img:v61", image_core=None, containers=("ddp-openstates-api-1",)):
+def _check(image="img:v61", image_core=None, containers=("ddp-openstates-api-1",)):
     out = io.StringIO()
-    rc = drift.run(pin, image, image_core, list(containers), out)
+    rc = drift.run(image, image_core, list(containers), out)
     return rc, out.getvalue()
 
 
-# --- all three agree ---------------------------------------------------------------------------------
+# --- all agree ---------------------------------------------------------------------------------
 
-def test_passes_when_pin_image_and_container_agree(tmp_path, docker):
-    rc, out = _check(_pin(tmp_path))
+def test_passes_when_image_and_container_agree(docker):
+    rc, out = _check()
     assert rc == 0, out
-    assert f"OK: api-v3's pin, the scrapers image and 1 api-v3 container(s) all run core {A}" in out
+    assert f"OK: the scrapers image and 1 api-v3 container(s) all run core {A}" in out
 
 
-def test_passes_with_image_core_given_and_two_containers(tmp_path, docker):
+def test_passes_with_image_core_given_and_two_containers(docker):
     docker["installed"]["api-ec2"] = _direct_url(A)
-    rc, out = _check(_pin(tmp_path), image=None, image_core=A, containers=("ddp-openstates-api-1", "api-ec2"))
+    rc, out = _check(image=None, image_core=A, containers=("ddp-openstates-api-1", "api-ec2"))
     assert rc == 0, out
 
 
 # --- one planted mismatch per source: exit 1, both commits named -------------------------------------
 
-def test_image_mismatch_fails_naming_both_commits(tmp_path, docker):
+def test_image_mismatch_fails_naming_both_commits(docker):
     docker["image"]["img:v61"] = B
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 1, out
     drift_lines = [l for l in out.splitlines() if l.startswith("DRIFT")]
     assert len(drift_lines) == 1 and A in drift_lines[0] and B in drift_lines[0], out
 
 
-def test_image_core_mismatch_fails_naming_both_commits(tmp_path, docker):
-    rc, out = _check(_pin(tmp_path), image=None, image_core=B)
-    assert rc == 1 and re.search(rf"DRIFT .*{B}.*{A}", out), out
+def test_image_core_mismatch_fails_naming_both_commits(docker):
+    rc, out = _check(image=None, image_core=B)
+    assert rc == 1 and re.search(rf"DRIFT .*{A}.*{B}", out), out
 
 
-def test_installed_mismatch_fails_naming_both_commits(tmp_path, docker):
+def test_installed_mismatch_fails_naming_both_commits(docker):
+    """api-v3 rebuilt after a core merge without a new scrapers image (OPEN-586's one real risk)."""
     docker["installed"]["ddp-openstates-api-1"] = _direct_url(B)
-    rc, out = _check(_pin(tmp_path))
-    assert rc == 1 and re.search(rf"DRIFT installed in ddp-openstates-api-1 is {B}, but pin .* is {A}", out), out
+    rc, out = _check()
+    assert rc == 1 and re.search(rf"DRIFT installed in ddp-openstates-api-1 is {B}, but image img:v61 is {A}", out), out
+    assert "ship a scrapers image first" in out and "the image, then any stored recompute, then api-v3" in out, out
 
 
-def test_pin_mismatch_fails_when_image_and_container_agree(tmp_path, docker):
-    """A pulled-but-not-rebuilt api-v3 checkout: the pin moved, the image and the container did not."""
-    rc, out = _check(_pin(tmp_path, sha=B))
-    assert rc == 1, out
-    assert len([l for l in out.splitlines() if l.startswith("DRIFT")]) == 2  # image and container each differ from the pin
-    assert A in out and B in out
-
-
-def test_one_of_two_containers_drifting_fails(tmp_path, docker):
+def test_two_containers_agreeing_with_each_other_but_not_the_image_both_drift(docker):
+    """Both api-v3 copies rebuilt from a newer main than the image: each is compared with the image, not each other."""
+    docker["installed"]["ddp-openstates-api-1"] = _direct_url(B)
     docker["installed"]["api-ec2"] = _direct_url(B)
-    rc, out = _check(_pin(tmp_path), containers=("ddp-openstates-api-1", "api-ec2"))
+    rc, out = _check(containers=("ddp-openstates-api-1", "api-ec2"))
+    assert rc == 1, out
+    drift_lines = [l for l in out.splitlines() if l.startswith("DRIFT")]
+    assert len(drift_lines) == 2 and all(A in l and B in l for l in drift_lines), out
+
+
+def test_one_of_two_containers_drifting_fails(docker):
+    docker["installed"]["api-ec2"] = _direct_url(B)
+    rc, out = _check(containers=("ddp-openstates-api-1", "api-ec2"))
     assert rc == 1 and "DRIFT installed in api-ec2" in out and "ddp-openstates-api-1 is" not in out, out
 
 
-def test_pypi_openstates_in_the_container_is_drift(tmp_path, docker):
+def test_pypi_openstates_in_the_container_is_drift(docker):
     """PyPI's openstates says 6.26.5 too; no direct_url.json means it is not the fork at a commit."""
     docker["installed"]["ddp-openstates-api-1"] = ""
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 1 and "not an archive install of the fork" in out, out
 
 
-def test_a_non_fork_archive_url_is_drift(tmp_path, docker):
+def test_a_non_fork_archive_url_is_drift(docker):
     docker["installed"]["ddp-openstates-api-1"] = json.dumps(
         {"url": f"https://github.com/openstates/openstates-core/archive/{A}.tar.gz"})
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 1, out
 
 
@@ -138,59 +133,47 @@ def test_a_non_fork_archive_url_is_drift(tmp_path, docker):
     URL.format(A).replace("https://", "http://"),
     None, 123, ["x"],
 ])
-def test_an_installed_url_that_is_not_exactly_the_fork_archive_is_drift(tmp_path, docker, url):
+def test_an_installed_url_that_is_not_exactly_the_fork_archive_is_drift(docker, url):
     docker["installed"]["ddp-openstates-api-1"] = json.dumps({"url": url})
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 1 and "not an archive install of the fork" in out, out
 
 
 @pytest.mark.parametrize("payload", ["[]", "null", '"text"', "not json"])
-def test_installed_metadata_of_the_wrong_shape_is_an_error_not_a_crash(tmp_path, docker, payload):
+def test_installed_metadata_of_the_wrong_shape_is_an_error_not_a_crash(docker, payload):
     docker["installed"]["ddp-openstates-api-1"] = payload
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 2 and "ERROR installed:" in out, out
 
 
 # --- unreadable sources: exit 2, never a pass -------------------------------------------------------
 
-def test_image_without_a_record_is_an_error_not_a_pass(tmp_path, docker):
-    rc, out = _check(_pin(tmp_path), image="img:v60")
+def test_image_without_a_record_is_an_error_not_a_pass(docker):
+    rc, out = _check(image="img:v60")
     assert rc == 2 and "has no readable /opt/openstates-core/DDP_CORE_COMMIT" in out and "--image-core" in out, out
 
 
-def test_image_record_that_is_not_a_full_sha_is_an_error(tmp_path, docker):
+def test_image_record_that_is_not_a_full_sha_is_an_error(docker):
     docker["image"]["img:v61"] = A[:9]
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 2, out
 
 
 @pytest.mark.parametrize("image,image_core", [(None, None), ("img:v61", A), (None, A[:9])])
-def test_image_source_must_be_exactly_one_full_commit(tmp_path, docker, image, image_core):
-    rc, out = _check(_pin(tmp_path), image=image, image_core=image_core)
+def test_image_source_must_be_exactly_one_full_commit(docker, image, image_core):
+    rc, out = _check(image=image, image_core=image_core)
     assert rc == 2, out
 
 
-def test_container_not_running_is_an_error(tmp_path, docker):
-    rc, out = _check(_pin(tmp_path), containers=("ddp-openstates-api-1", "gone"))
+@pytest.mark.parametrize("image,image_core", [("img:v61", None), (None, A)])
+def test_an_image_with_no_container_to_compare_is_an_error_not_a_pass(docker, image, image_core):
+    rc, out = _check(image=image, image_core=image_core, containers=())
+    assert rc == 2 and "no api-v3 container given" in out, out
+
+
+def test_container_not_running_is_an_error(docker):
+    rc, out = _check(containers=("ddp-openstates-api-1", "gone"))
     assert rc == 2 and "No such container: gone" in out, out
-
-
-@pytest.mark.parametrize("body", [
-    "",                                                                   # no requirement line
-    f"openstates @ {URL.format(A)}\nopenstates @ {URL.format(B)}\n",      # two
-    f"openstates @ {URL.format(A[:9])}\n",                                # short SHA
-    "openstates==6.26.5\n",                                               # PyPI
-    f"openstates @ https://example.invalid/x?u={URL.format(A)}\n",       # the fork URL embedded in another
-    f"openstates @ {URL.format(A)}.bak\n",                               # trailing characters
-])
-def test_a_pin_without_one_full_fork_commit_is_an_error(tmp_path, docker, body):
-    rc, out = _check(_pin(tmp_path, body=body))
-    assert rc == 2 and "ERROR pin:" in out, out
-
-
-def test_missing_pin_file_is_an_error(tmp_path, docker):
-    rc, out = _check(str(tmp_path / "nope.txt"))
-    assert rc == 2 and "cannot read" in out, out
 
 
 # --- the real files ---------------------------------------------------------------------------------
@@ -202,16 +185,32 @@ def test_the_dockerfile_records_the_core_commit_where_the_checker_and_deploy_scr
     assert drift.IMAGE_RECORD in open(os.path.join(HERE, "deploy-scrapers-image.sh")).read()
 
 
-def test_the_real_api_v3_pin_shape_parses(tmp_path):
-    """The exact line api-v3's ddp-openstates-core.txt carries today (OPEN-538)."""
-    assert drift.pin_commit(_pin(tmp_path)) == A
+def test_the_api_v3_build_installs_core_main_at_a_commit_the_checker_can_read():
+    """deploy/Dockerfile.ddp (the build both api-v3 copies use) resolves main to a commit with a remote ADD (re-fetched
+    every build, so the cache never keeps an old core) and installs the fork archive at that commit, whose URL is what
+    pip records in direct_url.json. An install of `archive/main.tar.gz` would record no commit."""
+    dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()
+    add = re.search(r"^ADD https://api\.github\.com/repos/Digital-Democracy-Project/openstates-core/git/ref/heads/main "
+                    r"(/tmp/\S+)$", dockerfile, re.M)
+    assert add and f"json.load(open('{add.group(1)}'))['object']['sha']" in dockerfile, "main must be resolved by an ADD"
+    add = add.start()
+    m = re.search(r'"openstates @ (https://\S+/archive/)\$\{sha\}(\.tar\.gz)"', dockerfile)
+    assert m and add < m.start(), "the archive must be installed at the commit resolved from main"
+    assert drift._fork_sha(m.group(1) + A + m.group(2)) == A
+    assert "--no-deps --ignore-requires-python" in dockerfile
+    assert "ddp-openstates-core.txt" not in dockerfile
 
 
-def test_commits_sharing_a_short_prefix_still_differ(tmp_path, docker):
+def test_the_pin_option_is_gone():
+    with pytest.raises(SystemExit):
+        drift.main(["check-core-pin-drift.py", "--pin", "x", "--image-core", A], out=io.StringIO())
+
+
+def test_commits_sharing_a_short_prefix_still_differ(docker):
     """The whole SHA is compared, not the 9-character form the ops notes use."""
     near = A[:-1] + ("0" if A[-1] != "0" else "1")
     docker["image"]["img:v61"] = near
-    rc, out = _check(_pin(tmp_path))
+    rc, out = _check()
     assert rc == 1 and near in out and A in out, out
 
 
@@ -246,9 +245,9 @@ def refresh_host(tmp_path):
     subprocess.run(["git", "clone", "-q", str(origin), str(api_v3)], check=True, capture_output=True)
     for cmd in (["git", "config", "user.email", "t@t"], ["git", "config", "user.name", "t"]):
         subprocess.run(cmd, cwd=api_v3, check=True)
-    (api_v3 / "ddp-openstates-core.txt").write_text(f"openstates @ {URL.format(A)}\n")
+    (api_v3 / "README.md").write_text("api-v3 (no pin file since OPEN-586)\n")
     subprocess.run(["git", "add", "."], cwd=api_v3, check=True)
-    subprocess.run(["git", "commit", "-q", "-m", "pin"], cwd=api_v3, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=api_v3, check=True)
     subprocess.run(["git", "push", "-q", "origin", "main"], cwd=api_v3, check=True, capture_output=True)
     script = tmp_path / "refresh-api-v3.sh"
     shutil.copy(os.path.join(HERE, "refresh-api-v3.sh"), script)

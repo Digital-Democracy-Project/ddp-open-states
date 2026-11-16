@@ -73,7 +73,7 @@ RUN python3 -m venv /opt/venv \
 #      it never occupies a final-image layer) is what actually keeps the token out, not the
 #      secret mount alone.
 # OPEN-579: the core commit is written to /opt/openstates-core/DDP_CORE_COMMIT before .git is deleted, so the
-# image records which core it carries (check-core-pin-drift.py compares it with api-v3's pinned core).
+# image records which core it carries (check-core-pin-drift.py compares it with the core installed in api-v3).
 ARG OPENSTATES_CORE_REF=main
 ARG OPENSTATES_SCRAPERS_REF=main
 RUN --mount=type=secret,id=github_token \

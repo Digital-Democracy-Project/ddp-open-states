@@ -542,24 +542,32 @@ step matters — a newer pip breaks one of the pinned deps' build.
   the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
 - **`check-core-pin-drift.py`** (OPEN-579, repo root; test `test_check_core_pin_drift.py`) — the one check that api-v3
-  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). It compares, as
-  full 40-character SHAs: api-v3's pin (`api-v3/ddp-openstates-core.txt`, OPEN-538), the core the live scrapers image was
-  built from, and the core installed in each api-v3 container. Exit 0 agree, 1 drift (each line names both commits),
+  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). **api-v3 builds from
+  core's main, like the scrapers image; there is no pin file** (OPEN-586, Ramon 2026-11-16: core, scrapers and api-v3
+  ship together; `ddp-openstates-core.txt` is gone). The check confirms both builds took the same main: it compares, as
+  full 40-character SHAs, the core the live scrapers image was built from with the core installed in each api-v3
+  container. Exit 0 agree, 1 drift (each line names both commits),
   2 a source could not be read (never a pass), the same contract as `check-jurisdiction-drift.py`.
   * **The image's record:** the `Dockerfile` writes `git rev-parse HEAD` of the core clone to
     `/opt/openstates-core/DDP_CORE_COMMIT` before it deletes `.git`; `deploy-scrapers-image.sh` reads it back, stops if it
     is missing, and prints it. Images v60 and older have no record (their `.git` was deleted unrecorded): pass
     `--image-core <sha>`. `--image <ref>` reads the record with `docker run`, so the image must be on the host (the Mac).
-  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). The version
+  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). api-v3's build
+    (`deploy/Dockerfile.ddp` here, api-v3's own `Dockerfile` and CI, the same install in each) resolves main with a remote
+    `ADD` of the GitHub ref, which Docker re-fetches every build (a new main busts the cache; no `--no-cache` needed), and
+    installs the fork archive **at that commit**, so pip records it. Do not install `archive/main.tar.gz`: it records no
+    commit and the check would call it drift. The version
     string is useless here (fork and PyPI both say 6.26.5); a container with no fork archive URL is drift.
   * **Which image is live is the caller's to say** (`--image`/`--image-core`), like `check-jurisdiction-drift.py --live`;
     the script makes no AWS call and needs no new permission.
   * **Where it runs:** last step of `refresh-api-v3.sh` (`SCRAPERS_IMAGE` or `SCRAPERS_IMAGE_CORE`; neither is exit 2),
     by the prod agent after each EC2 api-v3 rebuild, and after each scrapers image release. **Do not** compare version
     strings or add a second copy of this comparison elsewhere. No schedule yet (follow-up).
-  * **First run (Mac, 2026-11-16):** pin and the Mac container both `96445eb26`; v60's `/opt/openstates-core` matches
-    core `e964183b` file for file (OPEN-539's `diff_baseline_id`, merged after `96445eb26`), not `96445eb26`, so the
-    check reports drift until api-v3's pin moves to `e964183b` (or later, with a matching image).
+  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts. Rebuilding
+    api-v3 alone after a core merge puts it ahead of the image, and the check flags it.
+  * **First run (Mac, 2026-11-16):** the Mac container ran `96445eb26` (the old pin) and v61 carries `bcde78e2c`, so the
+    check reports drift until both api-v3 copies are rebuilt from main (OPEN-586; a test build of api-v3 from main on
+    2026-11-16 installed `bcde78e2c` and passed the check against v61).
 
 - **The "current session" rule lives in api-v3, once (OPEN-467, 2026-10-31).** `api-v3/api/current_session.py`
   (`session_flags`) decides which legislative sessions are current and previous, and
@@ -720,14 +728,10 @@ DB row order is chronological for any bill-version work; use these instead**:
   re-fetching), mirroring `os-text-extract archive`'s dry-run-then-commit discipline. Use this
   any time the stage table changes, or to correct existing wrong diffs after finding a new
   jurisdiction-specific ordering issue — don't hand-write a one-off correction script.
-- **api-v3 has its own copy of this classifier** (`api-v3/api/version_ordering.py`, OPEN-92) —
-  api-v3's bill-detail endpoint (`include=versions`) used to resolve "latest"/"previous" via a
-  naive `(date, note)` sort and needed the same fix, but api-v3 installs `openstates` from PyPI
-  rather than this fork, so it can't import the module above directly yet. The copy's own
-  docstring says to keep it byte-for-byte identical to this one — if you're changing the stage
-  table here, port the change to api-v3's copy too, not the other way around. Re-pinning api-v3's
-  `openstates` dependency to this fork (so the copy can be deleted) is a known, larger follow-up,
-  not yet done.
+- **api-v3 imports this module; it keeps no copy** (OPEN-538 removed `api-v3/api/version_ordering.py`, OPEN-92's
+  copy). api-v3 installs this fork (`--no-deps --ignore-requires-python`) from core's **main at build time** (OPEN-586,
+  no pin file), so a stage-table change reaches api-v3 at its next rebuild; release it after the scrapers image and
+  confirm with `check-core-pin-drift.py`.
 
 **Updated 2026-08-31 (OPEN-217/OPEN-107/OPEN-219):** three further fixes to the same two
 functions, layered on top of the ordering work above rather than changing it.
