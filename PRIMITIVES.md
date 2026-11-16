@@ -12,6 +12,13 @@ type: reference
 > replacing code rather than adding to it, read that one first: the code is replaceable and the
 > incidents behind it are not.
 
+> **State rules (OPEN-537).** A state's data rules (action order, action and bill labels, vote names,
+> version stages, text clean-up) live in the openstates-scrapers and openstates-core forks, not in
+> this repo's scripts and not downstream: parsing and the motion YAML in the scrapers fork,
+> normalizing in core (today `version_ordering` and the `text_extract` cleaners and readers; later
+> one file per state in `openstates/ddp_states/`), and per-state values in `jurisdictions.yaml`. See
+> ddp-infra `PLAN-state-specific-handling.md` §4.2 (§4.1 is the contract the data must meet).
+
 Everything DDP-owned in this repo lives at the root (shell scripts + a few Python tools) plus
 `deploy/`. `openstates-scrapers/`, `openstates-core/`, `api-v3/`, `people/`, etc. are gitignored
 upstream/fork checkouts — code changes there go through their own repos/PRs, not this file.
