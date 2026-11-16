@@ -522,6 +522,21 @@ def _incremental_start_arg(ts_path):
 _MANIFEST_CODE_FOR_SOURCE = {"usa": "us"}
 
 
+def _manifest_scrape_entry(source, manifest_path=None):
+    """The source's `scrape:` block from the manifest, or None when the source has no entry (a
+    brand-new onboarding candidate). A manifest that does not load or validate raises -- never
+    guess, for any state. Shared by scraper_takes_start() and scraper_has_votes()."""
+    from validate_jurisdictions import load_and_validate
+
+    path = manifest_path or str(REPO_ROOT / "jurisdictions.yaml")
+    manifest, problems = load_and_validate(path)
+    if problems:
+        raise RuntimeError(f"the jurisdiction manifest ({path}) does not validate, so "
+                           f"its scrape settings cannot be read: {problems[0]}")
+    entry = manifest.get(_MANIFEST_CODE_FOR_SOURCE.get(source, source))
+    return None if entry is None else entry["scrape"]
+
+
 def scraper_takes_start(source, manifest_path=None):
     """OPEN-501: whether this source's bills scraper may be handed `start=`, read from the
     manifest's `scrape.start_filter` (probe gate B records it for every new state). A scraper
@@ -532,17 +547,22 @@ def scraper_takes_start(source, manifest_path=None):
     verify-jurisdiction's fargate_refusal(): a brand-new onboarding candidate has no entry yet.
     A manifest that does not load or validate raises -- never guess, for any state.
     """
-    from validate_jurisdictions import load_and_validate
+    scrape = _manifest_scrape_entry(source, manifest_path)
+    return True if scrape is None else scrape["start_filter"]
 
-    path = manifest_path or str(REPO_ROOT / "jurisdictions.yaml")
-    manifest, problems = load_and_validate(path)
-    if problems:
-        raise RuntimeError(f"the jurisdiction manifest ({path}) does not validate, so "
-                           f"scrape.start_filter cannot be read: {problems[0]}")
-    entry = manifest.get(_MANIFEST_CODE_FOR_SOURCE.get(source, source))
-    if entry is None:
-        return True
-    return entry["scrape"]["start_filter"]
+
+def scraper_has_votes(source, manifest_path=None):
+    """OPEN-592: whether to ask os-update for this source's SEPARATE `votes` scraper too, read
+    from the manifest's `scrape.votes_scraper` (probe gate B records it; Oregon's votes come
+    only from scrapers/or/votes.py). run-scrape.sh auto-detected this on the Mac (OPEN-50);
+    without it every cloud run of such a state collects no votes at all.
+
+    A source absent from the manifest keeps today's behaviour (False: bills only). Asking for
+    `votes` from a state that registers none fails the whole run ("no such scraper"), so this
+    never guesses True. A manifest that does not load or validate raises.
+    """
+    scrape = _manifest_scrape_entry(source, manifest_path)
+    return False if scrape is None else scrape["votes_scraper"]
 
 
 def derive_scrape_key(source, params):
@@ -713,8 +733,9 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # watermark is still written below, so nothing else about the run changes.
         try:
             takes_start = scraper_takes_start(source)
+            has_votes = scraper_has_votes(source)
         except RuntimeError as e:
-            print(f"ERROR: {e} -- not scraping {source} (OPEN-501)", file=sys.stderr)
+            print(f"ERROR: {e} -- not scraping {source} (OPEN-501/OPEN-592)", file=sys.stderr)
             emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
                                     session=session)
             return 1
@@ -747,6 +768,12 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
             cmd.append(f"{k}={v}")
         if start_arg:
             cmd.append(start_arg)
+        # OPEN-592: `votes` goes AFTER every k=v (session=, start=), exactly as run-scrape.sh
+        # places $VOTES_SCRAPER (OPEN-50): os-update attaches each k=v to the most recently
+        # named scraper (openstates-core cli/update.py), so `votes` earlier would hand `start=`
+        # to the votes scraper (which takes none) and strip it off `bills`.
+        if has_votes:
+            cmd.append("votes")
         # --cachedir is what makes Michigan's hydrated baseline reachable by mi/bills.py
         # itself (run-scrape.sh's own DIR_FLAGS, run-scrape.sh:512) -- without it the baseline
         # this function just fetched from S3 sits in a directory the scraper never looks in.

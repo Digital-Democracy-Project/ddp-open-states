@@ -179,6 +179,16 @@ should reuse rather than reimplement:
   the site still honours it (OPEN-232); `ddp-sync` now records `_meta.minted_at` and each Michigan run that gets past that
   check logs the cookie's age to stderr (a refused run prints its own ERROR instead) ("no minted_at recorded" for one published before that). Informational only:
   nothing refuses on age.
+  **Which scrapers it asks for is read from `jurisdictions.yaml`, never a list in this file:**
+  `scraper_takes_start()` (OPEN-501, `scrape.start_filter`: may `bills` be handed `start=`) and
+  `scraper_has_votes()` (OPEN-592, `scrape.votes_scraper`: also run the state's SEPARATE `votes`
+  scraper, the cloud twin of `run-scrape.sh`'s OPEN-50 auto-detect; Oregon's votes come only from
+  one). Both go through `_manifest_scrape_entry()`: `usa` reads `us`, a state with no entry keeps
+  the old behaviour (start allowed, no `votes`), and a manifest that does not validate stops the run
+  before scraping. `votes` is appended **after** every `k=v` (session, `start=`): os-update hands
+  each `k=v` to the scraper named just before it. Massachusetts registers a votes scraper but is
+  `false` on purpose (its votes come from `ma/bills.py`; turning it on is Ramon's decision). Add a
+  third per-state scrape fact the same way; do not hard-code a state list here.
 - **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
   **one** cloud collection run, identified by its manifest (never bare object presence): fetches
   every object the manifest names into a staging directory, refuses on an absent/unparsable/

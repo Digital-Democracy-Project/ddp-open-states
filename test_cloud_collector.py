@@ -324,6 +324,121 @@ def test_scraper_takes_start_maps_usa_to_us(tmp_path):
     assert cc.scraper_takes_start("usa", manifest_path=str(path)) is False
 
 
+# --- OPEN-592: a state's SEPARATE votes scraper (manifest scrape.votes_scraper) ------------------
+
+def _manifest_with_oregon(tmp_path, *, votes_scraper):
+    """The real manifest plus an "or" entry copied from Utah's (start_filter: true), with
+    votes_scraper set as asked -- Oregon's shape (probe gate B: votes scraper registered)."""
+    real = open(os.path.join(os.path.dirname(__file__), "jurisdictions.yaml")).read()
+    start, end = real.index("\nut:\n"), real.index("\naz:\n")
+    block = real[start:end].replace("\nut:\n", "\nor:\n", 1)
+    assert "    votes_scraper: false" in block
+    block = block.replace("    votes_scraper: false",
+                          f"    votes_scraper: {'true' if votes_scraper else 'false'}", 1)
+    path = tmp_path / "jurisdictions.yaml"
+    path.write_text(real + block)
+    return str(path)
+
+
+def _point_manifest_at(monkeypatch, path):
+    real = cc._manifest_scrape_entry
+    monkeypatch.setattr(cc, "_manifest_scrape_entry",
+                        lambda source, manifest_path=None: real(source, manifest_path=path))
+
+
+def _run_oregon(tmp_path, monkeypatch, capsys, *, manifest, watermark):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
+    if manifest is not None:
+        _point_manifest_at(monkeypatch, manifest)
+    client = FakeS3Client()
+    if watermark:
+        client.objects["dev-open201/or/or_2025R1/or_2025R1.ts"] = b"2026-08-28T00:00:00"
+    rc = cc.main(["or", "session=2025R1"], s3_client=client)
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    argv = argv_file.read_text().splitlines() if argv_file.exists() else None
+    return rc, record, argv
+
+
+def test_main_votes_scraper_true_appends_votes_after_bills_args(tmp_path, monkeypatch, capsys):
+    rc, record, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=True,
+                                   manifest=_manifest_with_oregon(tmp_path, votes_scraper=True))
+    assert rc == 0 and record["mode"] == "incremental"
+    assert argv == ["or", "--scrape", "bills", "session=2025R1", "start=2026-08-27T23:00:00",
+                    "votes", "--cachedir", argv[7], "--datadir", argv[9]], argv
+
+
+def test_main_votes_scraper_true_full_run(tmp_path, monkeypatch, capsys):
+    rc, record, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=False,
+                                   manifest=_manifest_with_oregon(tmp_path, votes_scraper=True))
+    assert rc == 0 and record["mode"] == "full"
+    assert argv[:5] == ["or", "--scrape", "bills", "session=2025R1", "votes"], argv
+    assert argv[5] == "--cachedir"
+
+
+def test_main_start_is_never_after_votes(tmp_path, monkeypatch, capsys):
+    """os-update hands each k=v to the scraper named just before it: `start=` after `votes`
+    would go to the votes scraper (which takes none) and come off `bills`."""
+    rc, _, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=True,
+                              manifest=_manifest_with_oregon(tmp_path, votes_scraper=True))
+    assert rc == 0
+    votes_at = argv.index("votes")
+    assert all("=" not in a for a in argv[votes_at + 1:]), argv
+    assert argv.index("bills") < [i for i, a in enumerate(argv) if a.startswith("start=")][0] < votes_at
+
+
+def test_main_votes_scraper_false_no_votes(tmp_path, monkeypatch, capsys):
+    rc, _, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=True,
+                              manifest=_manifest_with_oregon(tmp_path, votes_scraper=False))
+    assert rc == 0
+    assert "votes" not in argv, argv
+
+
+def test_main_state_absent_from_manifest_no_votes(tmp_path, monkeypatch, capsys):
+    """The real manifest has no "or" entry yet: bills only, exactly as today."""
+    rc, _, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=False, manifest=None)
+    assert rc == 0
+    assert "votes" not in argv, argv
+
+
+def test_main_invalid_manifest_stops_before_scraping_for_votes(tmp_path, monkeypatch, capsys):
+    """scraper_has_votes() on its own (scraper_takes_start stubbed to succeed) must still stop
+    the run when the manifest does not validate."""
+    bad = tmp_path / "jurisdictions.yaml"
+    bad.write_text("or: [not, a, mapping\n")
+    monkeypatch.setattr(cc, "scraper_takes_start", lambda source: True)
+    real = cc.scraper_has_votes
+    monkeypatch.setattr(cc, "scraper_has_votes", lambda source: real(source, manifest_path=str(bad)))
+    rc, record, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=False, manifest=None)
+    assert rc == 1
+    assert record["status"] == "failed"
+    assert argv is None, "the scraper must not run"
+
+
+def test_main_massachusetts_command_unchanged(tmp_path, monkeypatch, capsys):
+    """OPEN-592: MA's routine command stays bills-only (its votes come from ma/bills.py);
+    running MAVoteScraper on every run is Ramon's pending decision."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
+    client = FakeS3Client()
+    client.objects["dev-open201/ma/ma_194th/ma_194th.ts"] = b"2026-08-28T00:00:00"
+    rc = cc.main(["ma", "session=194th"], s3_client=client)
+    assert rc == 0
+    argv = argv_file.read_text().splitlines()
+    assert argv == ["ma", "--scrape", "bills", "session=194th",
+                    "--cachedir", argv[5], "--datadir", argv[7]], argv
+
+
+def test_scraper_has_votes_reads_the_real_manifest():
+    for code in ("usa", "fl", "wa", "va", "mi", "ut", "az", "ma", "nc", "al", "pa", "ne", "la"):
+        assert cc.scraper_has_votes(code) is False, code
+    assert cc.scraper_has_votes("zz") is False
+
+
 def test_main_same_session_different_chamber_does_not_share_a_watermark(tmp_path, monkeypatch, capsys):
     """The real OPEN-191 bug: a same-session second chamber run must be its own `full` run, not
     silently inherit the first chamber's watermark and go "incremental" against a cutoff from a

@@ -80,11 +80,14 @@
 #   - archive.enabled: activate.sh's ARCHIVE_ENABLED_STATES; since OPEN-521 also "this state's scrape is
 #     followed by its archive" in ddp-sync's pipeline (required from `scraping` on)
 #   - scrape.allow_duplicates: run-scrape.sh's --allow_duplicates states (mi, fl, va)
-#   - scrape.votes_scraper: whether the jurisdiction's own openstates-scrapers `__init__.py`
-#     registers a live (non-commented) "votes" entry in its `scrapers = {...}` dict -- only `ma`
-#     does (MAVoteScraper); `usa`'s is present but commented out. run-scrape.sh has auto-detected
-#     and invoked this at runtime since OPEN-50 shipped, so this field is documentation, not a
-#     read path (yet) -- see the "not wired in" note above.
+#   - scrape.votes_scraper: whether a cloud scrape also runs the jurisdiction's SEPARATE "votes"
+#     scraper (its openstates-scrapers `__init__.py` registers a live "votes" entry in `scrapers =
+#     {...}`; probe gate B records it, new-jurisdiction writes it). A READ PATH since OPEN-592
+#     (2026-11-16): cloud_collector.py's scraper_has_votes() appends `votes` after the bills
+#     arguments when this is true, as run-scrape.sh auto-detected on the Mac since OPEN-50. `true`
+#     for a state that registers no votes scraper fails its whole run ("no such scraper"). `ma`
+#     registers one but is `false` on purpose (its votes come from ma/bills.py -- see its entry);
+#     `usa`'s is present but commented out.
 #   - scrape.start_filter: RUNBOOK.md's "Per-jurisdiction caveats" table, corrected for OPEN-128
 #     (MA's incremental filter was deleted 2026-08-25 -- MA now ignores start= and full-walks
 #     every run, so it is `false` here despite the stale RUNBOOK table still listing a caveat)
@@ -426,9 +429,13 @@ ma:
                                         # 9,496-bill MA scrape lost its whole import without it); this manifest said false
     timeout_s: 57600                   # SCRAPE_TIMEOUT_S["ma"], 16h -- same ceiling as FL
     session_arg: null                   # ALWAYS null for secondaries (OPEN-24 resolution)
-    votes_scraper: true                  # "votes": MAVoteScraper IS registered and live in
-                                          # scrapers/ma/__init__.py (re-enabled inside ma/bills.py
-                                          # per the plan's §0 evidence table)
+    votes_scraper: false                 # OPEN-592: MAVoteScraper IS registered in scrapers/ma/__init__.py,
+                                          # but MA's routine votes come from ma/bills.py itself, and the
+                                          # separate scraper has not run since scrapes moved to Fargate
+                                          # (cloud_collector.py never asked for it). Since OPEN-592 this
+                                          # field is read, so `true` would start running it on every MA
+                                          # run; kept false so MA's command stays exactly as before.
+                                          # Turning it on is Ramon's pending decision.
     start_filter: false                   # OPEN-128 (2026-08-25): MA's incremental filter was
                                           # deleted -- it now logs "ignoring start= and listing
                                           # every bill" and full-walks on every run
