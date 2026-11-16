@@ -560,8 +560,13 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
    **Massachusetts amendment papers (OPEN-568):** a real bill's votes also come from its amendment papers' histories
    (S 3's budget-debate roll calls are stored on H 4001). The scraper therefore scrapes a paper and its real bill
    together: `bill_no=S3` or `bill_no=H4001` also scrapes the rest of that group, and the run log names the extra
-   bills ("OPEN-568: also scraping ..."). Count those bills in the preview. If the real bill's page fails, the
-   paper's votes stay on the paper for that run.
+   bills ("OPEN-568: also scraping ..."). Count those bills in the preview. If any bill of the group cannot be
+   read whole (its page or a page of its history fails), the run sends none of that group's votes and logs
+   "OPEN-568: ... not read whole", so nothing of the group is deleted; run it again. The exception: a paper whose
+   page fails both in the pre-pass and in the run is not recognised as a paper, and the votes moved from it are
+   deleted from its real bill until the next run (PRIMITIVES, OPEN-568). Its sign in the log is a "Server Error on
+   ..." line naming an amendment paper's URL (an "Amendment H./S." title on the site). To repair, rescrape it once its page loads
+   (`bill_no=<paper>`, which brings its real bill's group); the votes come back with new row ids.
 
 ### The same steps by hand (reference only: this is what the script runs)
 

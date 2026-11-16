@@ -1001,19 +1001,24 @@ functions, layered on top of the ordering work above rather than changing it.
     second amendment-title rule: core's `_NON_BILL_KIND_RULES` decides.
   * **OPEN-568: a paper's roll calls are recorded on its real bill.** `MABillScraper.paper_vote_event` (both the
     House and Senate branches build their vote through it) names the parent the pre-pass stored in
-    `self.paper_parents`, and keeps the paper's number in `extras["ddp_amendment_paper"]`. The H-or-S check is in
-    `paper_vote_event` itself (any other number leaves the vote on the paper). The **dedupe key still uses the
-    paper's number**, so the import moves the stored row instead of adding a second one: **do not** "fix" the key
+    `self.paper_parents`, only when this run scrapes both (`self.group_of`), and keeps the paper's number in
+    `extras["ddp_amendment_paper"]`. The H-or-S check is in `paper_vote_event` itself (any other number leaves the
+    vote on the paper). The **dedupe key still uses the paper's number**, so the import moves the stored row instead of adding a second one: **do not** "fix" the key
     to the parent's.
     * **The pair rule:** the import deletes a bill's stored votes that the run did not bring again (RUNBOOK,
       "A targeted `bill_no=` rescrape is not additive"), and a real bill's votes now come from its own history and
       its papers'. So `scrape()` always scrapes a paper and its real bill together (`with_paper_pairs`: a
-      `bill_no=`, one-chamber or chunk run adds the rest of the group). A paper's vote goes out on the real bill
-      only once that bill has been yielded in the same run with its whole history read; otherwise (its page or a
-      history page failed, or it is not in the list) the vote goes back on the paper (`unclaimed_paper_votes`). A
-      roll call the real bill's own history already cites is not added again from the paper (`claimed_paper_vote`).
-      Left as before: if a paper's own history page fails, its moved votes are not read again and the import
-      deletes them from the real bill until the next run, as it does for any bill's failed history page.
+      `bill_no=`, one-chamber or chunk run adds the rest of the group, and records the run's groups). Every bill
+      of a group holds its votes back until the whole group is scraped (`group_member_done`). If any member's page
+      or any page of its history failed, **none of the group's votes is sent** that run, so the import deletes
+      none of them (the bills themselves are still saved). Otherwise they all go out, and a roll call cited twice
+      (by the real bill and a paper, or by two papers) goes out once, the real bill's own first. A paper whose real
+      bill is not in the list is in no group: its votes stay on it, as before.
+    * **The one case it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
+      known to be a paper, so it is in no group; the real bill's votes go out, and the import deletes the votes
+      already moved from that paper until the next run brings them back (new row ids). If only the pre-pass fetch
+      failed, the paper is read in the run, is not linked, and its stored votes move back to it for that run
+      (nothing deleted).
     * 81 of the 87 paper votes of the 194th move (Mac replica, 2026-11-16); the other 6 (H 4271, H 5349, H 61) are
       2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
       too would duplicate them.
