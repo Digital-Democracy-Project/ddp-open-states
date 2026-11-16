@@ -1104,7 +1104,7 @@ functions, layered on top of the ordering work above rather than changing it.
     other state 0. All 774 va and the 343 az "same version, other document" rows of the OPEN-539 list are among them. List:
     `notes/open578-baseline-moves-20261116.csv`.
   * **Do not** pick a version's document by row id anywhere else; call this function.
-  * **Status:** openstates-core PR (OPEN-578), not merged, not deployed.
+  * **Status:** openstates-core #108, not merged, not deployed.
   * **Release:** a scrapers image, then per state (va, az) export first, `recompute-diff-order <state> --dry-run --list`
     (expect corrected=829 for va, 47 for az, plus whatever else is pending), `--commit --list <lasting path>` on Ramon's
     go, then the OPEN-539 `--baseline-only` pass (expect `not_stamped_comparison_would_change=0`).
