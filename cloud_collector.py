@@ -517,6 +517,34 @@ def _incremental_start_arg(ts_path):
         return None
 
 
+# OPEN-501: the scraper module is "usa", the manifest's short code is "us" (the same override
+# verify-jurisdiction's SCRAPER_MODULE_OVERRIDES and check-jurisdiction-drift.py's SYNC_SCRAPE_CODE carry).
+_MANIFEST_CODE_FOR_SOURCE = {"usa": "us"}
+
+
+def scraper_takes_start(source, manifest_path=None):
+    """OPEN-501: whether this source's bills scraper may be handed `start=`, read from the
+    manifest's `scrape.start_filter` (probe gate B records it for every new state). A scraper
+    without a start parameter crashes on the "unexpected keyword argument 'start'" that hit
+    Pennsylvania's second run (OPEN-500), so a `false` here makes every run an honest full one.
+
+    A source absent from the manifest keeps today's behaviour (True), the same rule as
+    verify-jurisdiction's fargate_refusal(): a brand-new onboarding candidate has no entry yet.
+    A manifest that does not load or validate raises -- never guess, for any state.
+    """
+    from validate_jurisdictions import load_and_validate
+
+    path = manifest_path or str(REPO_ROOT / "jurisdictions.yaml")
+    manifest, problems = load_and_validate(path)
+    if problems:
+        raise RuntimeError(f"the jurisdiction manifest ({path}) does not validate, so "
+                           f"scrape.start_filter cannot be read: {problems[0]}")
+    entry = manifest.get(_MANIFEST_CODE_FOR_SOURCE.get(source, source))
+    if entry is None:
+        return True
+    return entry["scrape"]["start_filter"]
+
+
 def derive_scrape_key(source, params):
     """Distinguishes different scrape targets that share one jurisdiction so their watermarks
     and OPEN-203 import locks never collide -- found missing during OPEN-191's Fargate
@@ -681,7 +709,16 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
                                     session=session)
             return 1
 
-        mode = "incremental" if found_watermark else "full"
+        # OPEN-501: a scraper that takes no `start=` always runs full, watermark or not. The
+        # watermark is still written below, so nothing else about the run changes.
+        try:
+            takes_start = scraper_takes_start(source)
+        except RuntimeError as e:
+            print(f"ERROR: {e} -- not scraping {source} (OPEN-501)", file=sys.stderr)
+            emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
+                                    session=session)
+            return 1
+        mode = "incremental" if found_watermark and takes_start else "full"
 
         # pm-review: a hydrated `.imported` describes what the LAST *import* did. This runner
         # never imports, so it has nothing new to say about it -- carrying the stale file
@@ -697,7 +734,8 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # run-scrape.sh's own derivation (run-scrape.sh:233-245) exactly -- one hour of
         # overlap, same format -- via the *hydrated* `.ts` this process just fetched, not a
         # local file left over from some other run.
-        start_arg = _incremental_start_arg(os.path.join(last_run_dir, f"{scrape_key}.ts"))
+        start_arg = (_incremental_start_arg(os.path.join(last_run_dir, f"{scrape_key}.ts"))
+                     if mode == "incremental" else None)
 
         os.makedirs(cache_dir, exist_ok=True)
         out_dir = os.path.join(staging, "scraped")

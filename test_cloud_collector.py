@@ -246,6 +246,84 @@ def test_main_second_run_is_incremental(tmp_path, monkeypatch, capsys):
     assert "--cachedir" in argv, argv
 
 
+# ── OPEN-501: scrape.start_filter from the manifest decides whether start= is passed ─────────
+
+def test_main_start_filter_false_runs_full_without_start(tmp_path, monkeypatch, capsys):
+    """nc's manifest entry says start_filter: false. A watermark is present, so before OPEN-501
+    this run would have handed the scraper start= (Pennsylvania's crash). It must run full,
+    pass no start=, and still publish its watermark."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
+    client = FakeS3Client()
+    client.objects["dev-open201/nc/nc_2025/nc_2025.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["nc", "session=2025"], s3_client=client)
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "ok"
+    assert record["mode"] == "full"
+    argv = argv_file.read_text().splitlines()
+    assert not any(a.startswith("start=") for a in argv), argv
+    assert any(k.endswith("nc_2025.ts") for k in client.put_calls), "the watermark is still written"
+
+
+def test_main_usa_reads_the_us_manifest_entry(tmp_path, monkeypatch, capsys):
+    """The scraper is "usa", the manifest code is "us" (start_filter: true): still incremental."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
+    client = FakeS3Client()
+    client.objects["dev-open201/usa/usa_119_lower/usa_119_lower.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["usa", "session=119", "chamber=lower"], s3_client=client)
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["mode"] == "incremental"
+    assert any(a.startswith("start=") for a in argv_file.read_text().splitlines())
+
+
+def test_main_unreadable_manifest_refuses_before_scraping(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=1, argv_file=argv_file))
+    bad = tmp_path / "jurisdictions.yaml"
+    bad.write_text("ut: [not, a, mapping\n")
+    real = cc.scraper_takes_start
+    monkeypatch.setattr(cc, "scraper_takes_start", lambda source: real(source, manifest_path=str(bad)))
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["ut", "session=2025S2"], s3_client=client)
+    assert rc == 1
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert record["status"] == "failed"
+    assert not argv_file.exists(), "the scraper must not run"
+    assert not any(k.endswith(".ts") for k in client.put_calls)
+
+
+def test_scraper_takes_start_reads_the_real_manifest():
+    assert cc.scraper_takes_start("ut") is True
+    assert cc.scraper_takes_start("nc") is False
+    assert cc.scraper_takes_start("ma") is False
+    assert cc.scraper_takes_start("usa") is True
+    # absent from the manifest (a brand-new probe candidate): today's behaviour
+    assert cc.scraper_takes_start("zz") is True
+
+
+def test_scraper_takes_start_maps_usa_to_us(tmp_path):
+    """"usa" must read the "us" entry, not fall through to the absent-state default."""
+    real = open(os.path.join(os.path.dirname(__file__), "jurisdictions.yaml")).read()
+    us_block = real.index("\nus:\n")
+    flipped = real[:us_block] + real[us_block:].replace("start_filter: true", "start_filter: false", 1)
+    path = tmp_path / "jurisdictions.yaml"
+    path.write_text(flipped)
+    assert cc.scraper_takes_start("usa", manifest_path=str(path)) is False
+
+
 def test_main_same_session_different_chamber_does_not_share_a_watermark(tmp_path, monkeypatch, capsys):
     """The real OPEN-191 bug: a same-session second chamber run must be its own `full` run, not
     silently inherit the first chamber's watermark and go "incremental" against a cutoff from a
