@@ -926,6 +926,18 @@ functions, layered on top of the ordering work above rather than changing it.
     kept_last_copy=56`), a final recompute dry run 0/0; api-v3 #62 before Alabama LegBot. Ramon's go for each.
   * **Do not** order Alabama versions by name again or add a second Alabama adoption rule; a new date-ordered state
     goes in `_DATE_ORDERED_JURISDICTIONS` (core and api-v3) once its scraper dates every version.
+- **OPEN-602: Georgia's version names have stages, its papers are not versions, and its versions are ordered by the site's document number.**
+  * **Stages** (`note_stage()` in openstates-core `utils/version_ordering.py`, exact shapes, last in the function): "LC n n/a"
+    introduced; House substitutes "LC n nS/hs", "/hcs", "/hss", "/hrcs", "/rcs" and Senate committee substitutes "Sen Ctee Sub LC ...",
+    "Committee Sub LC ..." amendment; "SCSFA to HB n", "SFA to HB n", "Adopted Senate", "Read and adopted LC ..." chamber passage;
+    "HB n/AP*" final passage. Spaces are collapsed first (Georgia types names by hand). 278 of 303 names had no stage, now 0.
+  * **Not versions** (Georgia's entry in `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS`, so `is_bill_version` is false): "Local Ad" (the
+    newspaper notice of intent to introduce a local bill), floor amendment papers ("Floor Amend 1 AM 47 0219", "Sen Floor Amend
+    1A"), fiscal notes, auditor's certifications.
+  * **Order:** `version_sort_key(..., "Georgia")` puts the site's document number (from the link URL, `document_number()`) first
+    (`_DOCUMENT_ORDERED_JURISDICTIONS`); the stage breaks a tie. Georgia's own `Version` field (`_version_id`) is not an order.
+  * **Where:** openstates-core PR #115. api-v3 imports these rules (OPEN-538), so it follows when its core pin moves.
+  * **Do not** order Georgia by stage or by `_version_id`, or add a second Georgia list; a new Georgia name goes in the same shapes.
 - **OPEN-529: Alabama's pre-diff cleaner also drops the Enrolled signature and certification block, the front header (bill number, tracking code, sponsor, "RFD:", "First Read:") and spacing inside a line.**
   * **Where:** the same `_clean_al_text` (OPEN-372) in openstates-core `cli/text_extract.py`, through the one `apply_prediff_cleaning` chain. The cut points are found on the text as printed, before the older rules.
   * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
