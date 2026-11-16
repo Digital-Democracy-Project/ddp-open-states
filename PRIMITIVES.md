@@ -1089,6 +1089,25 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Status:** openstates-core #105, not merged, not deployed.
   * **Release:** migration `0051` on RDS (the Mac replica's structure sync adds the column), then a scrapers image, then per
     state a `--baseline-only` dry run and, on Ramon's go, `--commit --expect N --list <lasting path>`.
+- **OPEN-578: one rule for which document of a version is the baseline (`_version_document_order`).** openstates-core
+  `cli/text_extract.py`.
+  * **The rule:** a version's documents are walked in (media type, source_url) order; the last of each media type is that
+    type's baseline for the next version. Within a type that is the last source_url, the rule api-v3's
+    `preferred_document` (`api/document_choice.py`) uses within a type.
+  * **Who calls it:** the archiver (its link walk) and `recomputed_diffs_for_documents` (so `recompute-diff-order`,
+    `--baseline-only` and `refresh-extraction`). The recompute used to walk stored rows by row id.
+  * **The change list:** `recompute-diff-order <state> --list FILE` now also works without `--baseline-only`: one row per
+    document whose stored comparison or `diff_baseline_id` would change, with the stored id, the document(s) whose text
+    reproduces the stored comparison (`old_comparison_made_against`) and the new baseline.
+  * **Measured on the Mac replica (2026-11-16, read-only):** va 1,742 baselines move (829 stored comparisons change,
+    913 keep the same text), az 355 (47 change, 308 same), mi 3 (same text), al 1 (the new rule reproduces it); every
+    other state 0. All 774 va and the 343 az "same version, other document" rows of the OPEN-539 list are among them. List:
+    `notes/open578-baseline-moves-20261116.csv`.
+  * **Do not** pick a version's document by row id anywhere else; call this function.
+  * **Status:** openstates-core PR (OPEN-578), not merged, not deployed.
+  * **Release:** a scrapers image, then per state (va, az) export first, `recompute-diff-order <state> --dry-run --list`
+    (expect corrected=829 for va, 47 for az, plus whatever else is pending), `--commit --list <lasting path>` on Ramon's
+    go, then the OPEN-539 `--baseline-only` pass (expect `not_stamped_comparison_would_change=0`).
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
