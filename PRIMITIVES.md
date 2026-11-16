@@ -1046,6 +1046,9 @@ functions, layered on top of the ordering work above rather than changing it.
       `--expect N` aborts before writing unless exactly N bills would change.
     * It refuses unless the manifest (`--manifest`, default `$DDP_JURISDICTIONS_MANIFEST` or `./jurisdictions.yaml`)
       says `actions.newest_first: true`, unless `--even-if-manifest-says-oldest-first` is passed.
+      **After OPEN-544** the manifest has no `actions` block, so the command reports the label `missing` and refuses
+      unless `--even-if-manifest-says-oldest-first` is passed: a later state's reversal passes the override, with the
+      dry run's date-direction counts as the evidence.
     * A reversed bill gets `extras["ddp_open541_actions_reversed"]`. A second run skips it, and the bill import keeps
       the key (`keep_extras_keys`, as OPEN-518). Bills whose dates already run oldest first, and one-action bills,
       are skipped.
@@ -1540,11 +1543,15 @@ scope line was deliberate, not an oversight.
   with ddp-sync's old lists while ddp-sync main still has them and skips each once deleted. **Release order: this file
   first (on both hosts' checkouts), then ddp-sync**: a ddp-sync whose manifest lacks the fields treats every state as not
   enrolled (MI loses its ScrapeBot fallback, MA its retry and 24 h wait) and its daily drift check alerts "unverifiable".
-- **`actions.newest_first` (BROKER-368, 2026-11-12); no `voatz` block (BROKER-482, BROKER-494).** A per-state fact the
-  broker kept in its own code (`NEWEST_FIRST_JURISDICTIONS`) lives here, required on every entry: `newest_first` is a
-  bool (us and nc are true: OpenStates lists their bill actions newest first, checked by the broker's
-  `validate_bill_stages`). api-v3's `GET /ddp/enrollment` serves it and the broker reads it there
-  (`ddpbroker/enrollment.py`, its one reader of this file) and keeps no copy. **Nothing Voatz is here** (Ramon,
+- **No `actions` block (OPEN-544; was `actions.newest_first`, BROKER-368); no `voatz` block (BROKER-482, BROKER-494).**
+  `actions.newest_first` said a state's stored bill actions were newest first. Every state now stores them oldest
+  first, fixed in its scraper (la and ne OPEN-534/535, nc OPEN-543, us OPEN-542), so the label was false everywhere
+  and is gone: the validator rejects an `actions` block with the reason (`REMOVED_FIELDS`), `new-jurisdiction` doesn't
+  write one, the drift `--matrix` has no column for it, api-v3's `GET /ddp/enrollment` ignores a stray one, and the
+  broker replays actions in stored order with no reversal. **A state found storing its actions newest first is fixed
+  in its scraper (and its stored history reversed with OPEN-541's command, above), never labelled here.**
+  Release order (OPEN-544): the broker first (it stops reading the field), then api-v3 and this file in either order.
+  **Nothing Voatz is here** (Ramon,
   2026-11-13: "api-v3 should only be serving up the ddp-open-states data. it's the responsibility of the broker to bring
   together data from openstates, voatz, legbot, etc."): a state's Voatz test precinct (BROKER-494) and its private poll
   creator id (BROKER-482) live in its Voatz entry in AWS Secrets Manager, read by the broker through

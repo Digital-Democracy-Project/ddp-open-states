@@ -59,8 +59,6 @@ pa:
     scrapebot_fallback: false
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  actions:
-    newest_first: false  # NEEDS HUMAN REVIEW
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -100,8 +98,6 @@ ne:
     scrapebot_fallback: false
   quality:
     diff_cleaner: none
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null

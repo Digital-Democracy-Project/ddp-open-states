@@ -69,7 +69,6 @@ TOP_LEVEL_FIELDS = {
     "quality": dict,
     "api_keys": list,
     "onboarding": dict,
-    "actions": dict,
 }
 
 SCRAPE_FIELDS = {
@@ -102,6 +101,9 @@ REMOVED_FIELDS = {
     "voatz": "removed by BROKER-494: this file is OpenStates data; a state's Voatz test precinct and its private poll "
              "creator id (BROKER-482) live in its Voatz entry in AWS Secrets Manager, read by the broker; never add a "
              "voatz block back",
+    "actions": "removed by OPEN-544: every state's bill actions are stored oldest first (fixed in the scrapers: LA, NE, "
+               "NC, US), so actions.newest_first was false everywhere and nothing reads it; a state found storing them "
+               "newest first is fixed in its scraper, not labelled here",
 }
 
 # 2026-11-03 (pilot #2): a state that has left `probing` must already carry the flags its stage needs, so nobody
@@ -141,11 +143,6 @@ WAF_FIELDS = {
 
 QUALITY_FIELDS = {
     "diff_cleaner": str,
-}
-
-# BROKER-368: per-state facts the broker reads through api-v3's /ddp/enrollment instead of keeping its own table.
-ACTIONS_FIELDS = {
-    "newest_first": bool,  # OpenStates lists the state's bill actions newest first (was the broker's NEWEST_FIRST_JURISDICTIONS)
 }
 
 ONBOARDING_FIELDS = {
@@ -285,9 +282,6 @@ def validate(data):
 
         if isinstance(entry.get("onboarding"), dict):
             _check_block(entry["onboarding"], ONBOARDING_FIELDS, f"{code}.onboarding", errors)
-
-        if isinstance(entry.get("actions"), dict):
-            _check_block(entry["actions"], ACTIONS_FIELDS, f"{code}.actions", errors)
 
         api_keys = entry.get("api_keys")
         if isinstance(api_keys, list):

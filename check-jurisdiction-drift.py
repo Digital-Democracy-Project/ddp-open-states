@@ -54,10 +54,6 @@ embedding and search_refresh lists, the memory floor and the SCRAPE_/ARCHIVE_TIM
 has one, it is compared (the values were copied from it); once it is gone it is skipped, and ddp-sync's own tests and
 start-up refuse it coming back.
 
-actions.newest_first (BROKER-368) needs no comparison: its only reader, ddp-broker-py, takes it from
-api-v3's GET /ddp/enrollment and keeps no copy (its guard test, common/tests/test_no_state_tables.py, fails if a
-per-state table comes back), so there is nothing to drift. --matrix shows it.
-
 Deliberately NOT compared (so nobody assumes they are covered): ddp-sync's in-code fallbacks and the
 manual-trigger allow-list (SYNC-57; ddp-sync dual-reads those since OPEN-328), ddp-broker-py's own code,
 votebot, ddp-agents, and the version_ordering.py procedural-document table (survey row B6, OPEN-462's own PR). Each is a
@@ -590,7 +586,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
 
 
 MATRIX_COLUMNS = ["status", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
-                  "qa_sweep", "replica_routing", "legbot_replica", "newest_first"]
+                  "qa_sweep", "replica_routing", "legbot_replica"]
 
 
 def matrix(manifest, out):
@@ -599,8 +595,6 @@ def matrix(manifest, out):
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
-        if column == "newest_first":  # BROKER-368
-            return "yes" if entry["actions"]["newest_first"] else "-"
         return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}

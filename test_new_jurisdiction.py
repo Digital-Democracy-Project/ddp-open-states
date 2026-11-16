@@ -112,16 +112,16 @@ def test_real_colorado_probe_produces_a_valid_probing_entry(tmp_path, real_manif
     assert data["co"]["status"] == "probing"
 
 
-def test_a_new_state_gets_oldest_first_and_no_voatz_block(tmp_path, real_manifest_copy):
-    # BROKER-368: nothing is guessed. Oldest-first (flagged: the broker's validate_bill_stages checks it later). No voatz
-    # block (BROKER-494: Voatz values live in Secrets Manager, read by the broker).
+def test_a_new_state_gets_no_actions_or_voatz_block(tmp_path, real_manifest_copy):
+    # OPEN-544: no actions block (actions.newest_first is gone; a state storing its actions newest first is fixed in its
+    # scraper). No voatz block (BROKER-494: Voatz values live in Secrets Manager, read by the broker).
     probe_path = _write_json(tmp_path / "result.json", CO_RESULT)
     assert _run(real_manifest_copy, "co", probe_path) == 0
     text = real_manifest_copy.read_text()
     co = yaml.safe_load(text)["co"]
-    assert co["actions"] == {"newest_first": False}
+    assert "actions" not in co
     assert "voatz" not in co
-    assert "newest_first: false  # NEEDS HUMAN REVIEW" in text
+    assert "newest_first:" not in text
 
 
 def test_fargate_safe_is_written_true_and_flagged_for_human_review(tmp_path, real_manifest_copy):
