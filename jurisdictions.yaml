@@ -266,7 +266,7 @@ va:
     embedding: true
     cloud_path: true
     api_smoke_test: true
-    qa_sweep: false
+    qa_sweep: true    # OPEN-51: VA was left off as "blocked"; unblocked since 2026-07-18 (OPEN-15/OPEN-33)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)

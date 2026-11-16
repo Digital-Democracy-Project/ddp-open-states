@@ -1100,7 +1100,7 @@ functions, layered on top of the ordering work above rather than changing it.
   re-runs `classify_motion()` against every existing `VoteEvent` row in Postgres (for votes
   scraped before a classifier fix shipped). `JURISDICTION_MAP` here is the OCD-string→short-key
   mapping for classification purposes specifically — a *different* mapping shape than
-  `quality_check.py`'s `OCD_TO_CODE` (this one also includes `va`, not present there) but the
+  `quality_check.py`'s `OCD_TO_CODE` (built from `jurisdictions.yaml` since OPEN-327) but the
   same idea; if you're about to write a third one of these OCD-jurisdiction maps, check whether
   one of the two existing ones can just be imported instead. `--dry-run` prints without writing.
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,
