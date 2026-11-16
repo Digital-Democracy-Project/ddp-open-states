@@ -78,9 +78,9 @@ on arm64), `deploy/docker-compose.stopgap.yml` (rollback). Pinned pydantic 1.10.
 > Fix then = `brew install docker-buildx` (honors the `deploy/` ignore) or just delete the stray dirs.
 
 **api-v3 and the scrapers image must run one openstates-core commit (OPEN-579).** api-v3 imports its bill-version rules
-from DDP's core fork, pinned by commit in `api-v3/ddp-openstates-core.txt` (OPEN-538); the archiver in the scrapers
-image stores values made by the same rules. **`check-core-pin-drift.py`** compares the pin, the core the live scrapers
-image was built from (`/opt/openstates-core/DDP_CORE_COMMIT`, written by the Dockerfile; images v60 and older have none),
+from DDP's core fork (OPEN-538) and builds from core's main, like the scrapers image (OPEN-586; no pin file); the
+archiver in the scrapers image stores values made by the same rules. **`check-core-pin-drift.py`** compares the core
+the live scrapers image was built from (`/opt/openstates-core/DDP_CORE_COMMIT`, written by the Dockerfile; images v60 and older have none),
 and the core installed in the api-v3 container (pip's `direct_url.json`; the version string, 6.26.5, cannot tell the fork
 from PyPI). Exit 0 agree, 1 drift (both commits named), 2 a source could not be read. It makes no AWS call: you say
 which image is live.
@@ -91,9 +91,12 @@ which image is live.
   On EC2 (no scrapers image there) the prod agent runs
   `python3 check-core-pin-drift.py --image-core <full sha> [--container <api-v3 container>]` from the checkout, with
   the sha from the deploy output or the ops-handoff note.
+* **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts (each
+  rebuild takes core's main; Docker re-fetches main's commit every build, so a plain rebuild is enough). Rebuilding
+  api-v3 alone after a core merge, without a new image, puts api-v3 ahead of the image, and the check flags it.
 * **Scrapers image release:** `deploy-scrapers-image.sh` prints the core commit it baked in (`core <sha>`); hand it to
-  the prod agent with the tag and revision. If it differs from api-v3's pin, the pin is changed (api-v3 PR) and both
-  api-v3 copies rebuilt, or the image is not registered. Which tag is live:
+  the prod agent with the tag and revision. If api-v3 runs a different core, rebuild both api-v3 copies (they take
+  main, which is what the image took unless core moved in between; then the check fails and names both commits). Which tag is live:
   `aws ecs describe-task-definition --task-definition ddp-scrapers --query 'taskDefinition.containerDefinitions[0].image'`
   on the Mac (read-only).
 * **Not scheduled yet:** run by hand at each release; a scheduled run is a follow-up (OPEN-579).
