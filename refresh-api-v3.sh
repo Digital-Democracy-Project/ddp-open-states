@@ -25,11 +25,12 @@
 # that changes, same call PLAN-fork-management.md §5.F made for drift visibility).
 set -euo pipefail
 
-# The four paths can be overridden (the tests do); the defaults are the production checkout.
+# The paths can be overridden (the tests do); the defaults are the production checkout.
 API_V3_DIR="${API_V3_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/api-v3}"
 COMPOSE_DIR="${COMPOSE_DIR:-/Users/agentsmith/Developer/repos/ddp-open-states/deploy}"
 COMPOSE_FILE="docker-compose.ddp.yml"
 LOG="${LOG:-/Users/agentsmith/Developer/repos/ddp-open-states/logs/os-api.log}"
+REPO_DIR="${REPO_DIR:-$(cd "$(dirname "$0")" && pwd)}"   # where check-core-pin-drift.py lives (OPEN-579)
 
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') [refresh-api-v3] $*" | tee -a "$LOG"; }
 
@@ -89,3 +90,19 @@ until [ "$(docker inspect --format '{{.State.Health.Status}}' "$API_CONTAINER" 2
 done
 
 log "api-v3 refresh complete -- $API_CONTAINER healthy, $POSTGRES_CONTAINER untouched"
+
+# OPEN-579: the rebuilt container must run the same openstates-core commit as api-v3's pin and the live scrapers
+# image. Say which image is live: SCRAPERS_IMAGE=<ref> (read on this host) or SCRAPERS_IMAGE_CORE=<full sha>. Without
+# either, the check fails (exit 2) rather than passing unchecked. The container is already up either way.
+image_arg=()
+if [ -n "${SCRAPERS_IMAGE:-}" ]; then image_arg=(--image "$SCRAPERS_IMAGE"); fi
+if [ -n "${SCRAPERS_IMAGE_CORE:-}" ]; then image_arg+=(--image-core "$SCRAPERS_IMAGE_CORE"); fi
+set +e
+python3 "$REPO_DIR/check-core-pin-drift.py" --pin "$API_V3_DIR/ddp-openstates-core.txt" \
+    --container "$API_CONTAINER" ${image_arg[@]+"${image_arg[@]}"} 2>&1 | tee -a "$LOG"
+drift_rc=${PIPESTATUS[0]}
+set -e
+if [ "$drift_rc" -ne 0 ]; then
+    log "FATAL: core pin drift check exited $drift_rc (see above): api-v3 and the scrapers image run different openstates-core commits, or one could not be read"
+    exit "$drift_rc"
+fi

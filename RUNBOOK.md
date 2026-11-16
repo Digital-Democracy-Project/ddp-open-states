@@ -77,6 +77,27 @@ on arm64), `deploy/docker-compose.stopgap.yml` (rollback). Pinned pydantic 1.10.
 > `activate.sh` points the scrapers at `openstates-scrapers/`), the context will bloat again.
 > Fix then = `brew install docker-buildx` (honors the `deploy/` ignore) or just delete the stray dirs.
 
+**api-v3 and the scrapers image must run one openstates-core commit (OPEN-579).** api-v3 imports its bill-version rules
+from DDP's core fork, pinned by commit in `api-v3/ddp-openstates-core.txt` (OPEN-538); the archiver in the scrapers
+image stores values made by the same rules. **`check-core-pin-drift.py`** compares the pin, the core the live scrapers
+image was built from (`/opt/openstates-core/DDP_CORE_COMMIT`, written by the Dockerfile; images v60 and older have none),
+and the core installed in the api-v3 container (pip's `direct_url.json`; the version string, 6.26.5, cannot tell the fork
+from PyPI). Exit 0 agree, 1 drift (both commits named), 2 a source could not be read. It makes no AWS call: you say
+which image is live.
+* **api-v3 release (either host):** after the new container is up, run the check for that host's container.
+  On the Mac `refresh-api-v3.sh` runs it last and needs the live image named:
+  `SCRAPERS_IMAGE=350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:vN ./refresh-api-v3.sh` (the image is on
+  the Mac, which builds every tag) or `SCRAPERS_IMAGE_CORE=<full sha>`; without either it exits 2 after the refresh.
+  On EC2 (no scrapers image there) the prod agent runs
+  `python3 check-core-pin-drift.py --image-core <full sha> [--container <api-v3 container>]` from the checkout, with
+  the sha from the deploy output or the ops-handoff note.
+* **Scrapers image release:** `deploy-scrapers-image.sh` prints the core commit it baked in (`core <sha>`); hand it to
+  the prod agent with the tag and revision. If it differs from api-v3's pin, the pin is changed (api-v3 PR) and both
+  api-v3 copies rebuilt, or the image is not registered. Which tag is live:
+  `aws ecs describe-task-definition --task-definition ddp-scrapers --query 'taskDefinition.containerDefinitions[0].image'`
+  on the Mac (read-only).
+* **Not scheduled yet:** run by hand at each release; a scheduled run is a follow-up (OPEN-579).
+
 **The jurisdiction manifest inside api-v3 (OPEN-329, OPEN-483).** `GET /ddp/enrollment` serves the shared state list
 (api-v3 PR #33) so the broker and other services can read the enrolled list at run time, and re-reads it when the
 file's modification time changes. The compose files mount the **directory `deploy/manifest/`** read-only at
@@ -484,7 +505,8 @@ The script does, in order, and stops at the first failure (nothing is live until
    packaging and import breakage that unit tests can't);
 6. pushes, lists the tasks currently running on the `ddp-scrapers` cluster, and registers a new
    task-definition revision identical to the live one except for the image tag;
-7. prints the new tag and revision, and the rollback command.
+7. prints the new tag and revision, the openstates-core commit the image carries (OPEN-579; step 5 stops if the
+   image has no record of it), the core pin drift check to run, and the rollback command.
 
 `CONFIRM=1 bash ...` asks before step 6. Re-running after a failed run is safe: it rebuilds, and if the
 push never happened it reuses the same tag.
@@ -499,7 +521,7 @@ jurisdiction uses the new image. Tasks already running keep the image they start
 `aws ecs deregister-task-definition --region us-east-1 --task-definition ddp-scrapers:<new-revision>`;
 the family then resolves to the previous revision again.
 
-When it finishes, tell the prod agent (via `notes/ops-handoff`) the **new tag and revision** and, if
+When it finishes, tell the prod agent (via `notes/ops-handoff`) the **new tag, revision and core commit** and, if
 you want a confirmation run, which jurisdiction to trigger. Never "please build this" -- building is
 the Mac's job.
 

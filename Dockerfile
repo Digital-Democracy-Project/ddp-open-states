@@ -72,6 +72,8 @@ RUN python3 -m venv /opt/venv \
 #      the final image. Removing .git right after the install (still in the builder stage, so
 #      it never occupies a final-image layer) is what actually keeps the token out, not the
 #      secret mount alone.
+# OPEN-579: the core commit is written to /opt/openstates-core/DDP_CORE_COMMIT before .git is deleted, so the
+# image records which core it carries (check-core-pin-drift.py compares it with api-v3's pinned core).
 ARG OPENSTATES_CORE_REF=main
 ARG OPENSTATES_SCRAPERS_REF=main
 RUN --mount=type=secret,id=github_token \
@@ -82,6 +84,7 @@ RUN --mount=type=secret,id=github_token \
     git clone --branch "$OPENSTATES_SCRAPERS_REF" --depth 1 \
         "https://x-access-token:${TOKEN}@github.com/Digital-Democracy-Project/openstates-scrapers.git" \
         /opt/openstates-scrapers && \
+    git -C /opt/openstates-core rev-parse HEAD > /opt/openstates-core/DDP_CORE_COMMIT && \
     rm -rf /opt/openstates-core/.git /opt/openstates-scrapers/.git
 
 # Editable install for openstates-core only (so DDP's patches take effect, exactly as this
