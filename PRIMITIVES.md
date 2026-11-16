@@ -670,7 +670,7 @@ Postgres happened to return for `diff_from_previous_version`'s lineage — `Bill
 jurisdiction and found that accident is inconsistent (forward for FL/MI/AZ mostly, backward for
 VA/UT/US, doesn't fit a binary model at all for WA/MI's substitute-heavy bills) — **don't assume
 DB row order is chronological for any bill-version work; use these instead**:
-- `note_stage(note)` / `version_sort_key(note, date, urls=(), origin=None)` — classify a
+- `note_stage(note)` / `version_sort_key(note, date, urls=(), origin=None, jurisdiction_name=None)` — classify a
   `version_note` into a content-based stage rank (never DB order), with `BillVersion.date` used
   as a same-stage tiebreaker when it's actually populated (only reliable for US federal, ~99.4%).
   **Updated 2026-10-16 (OPEN-368/379/382, Arizona only):** pass the version's link URLs and the
@@ -846,6 +846,23 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Substitutes are taken out too.** 197 of the 453 papers are full substitute texts, and the note cannot tell them from amendments. 181 of the 185 adopted substitutes have at least 90% of their phrases in one of the bill's real versions; HB 306's is the one real loss. The documents stay archived.
   * **Released:** openstates-core PR #92 (`a7a2a861`), scrapers image v54 (task-definition revision 57). `recompute-diff-order al --commit --flags-only` committed on RDS 2026-11-10 17:15 UTC (45 → 498 not a version; comparisons unchanged at 918). Alabama's Stage 3 version-stage gate now passes: 0 of 2,922 without a stage.
   * **Do not** add a second Alabama list anywhere else. A new Alabama paper shape goes in the same pattern, then a recompute.
+- **OPEN-569: Alabama's versions carry dates and are ordered by them; only adopted papers are versions.**
+  * **Scraper** (`scrapers/al/bills.py`): every version gets the date of the history row that carries it
+    (`version_dates()` for Introduced / Engrossed / Enrolled; a paper's first `amdSubFileUrl` row). An amendment or
+    substitute paper is a version only if it was adopted (`paper_is_version()`: a carrying row, or the adoption row right
+    after it, is "Motion to Adopt ... Adopted", read with OPEN-566's `AMENDMENT_ADOPTION` and OPEN-563's `VOTE_OUTCOME`);
+    offered on the floor and never adopted, it is a bill document; a paper only a committee acted on stays a version.
+  * **Core:** `version_sort_key(..., jurisdiction_name)` puts the date first for a state in
+    `_DATE_ORDERED_JURISDICTIONS` (Alabama only); the stage breaks a same-day tie (0 of 21 same-day pairs disagree with
+    the action order). `recompute-diff-order` keeps an Alabama stored document whose (note, date) is no longer a version
+    out of the lineage (`_current_version_keys`, parity with the archive). api-v3's copy has the same rule.
+  * **Measured offline (Mac replica, 2026-11-16):** 0 undated versions; 56 papers (13 substitutes) become documents;
+    300 stored comparisons change, 92 grow (each explained), 0 against a later version.
+  * **Release:** scrapers image with core #104 + scrapers #100, Alabama full scrape, archive, then
+    `recompute-diff-order al` (gate `corrected=0 nulled=1116`), `remove-stale-documents al` (gate `removed=2867
+    kept_last_copy=56`), a final recompute dry run 0/0; api-v3 #62 before Alabama LegBot. Ramon's go for each.
+  * **Do not** order Alabama versions by name again or add a second Alabama adoption rule; a new date-ordered state
+    goes in `_DATE_ORDERED_JURISDICTIONS` (core and api-v3) once its scraper dates every version.
 - **OPEN-529: Alabama's pre-diff cleaner also drops the Enrolled signature and certification block, the front header (bill number, tracking code, sponsor, "RFD:", "First Read:") and spacing inside a line.**
   * **Where:** the same `_clean_al_text` (OPEN-372) in openstates-core `cli/text_extract.py`, through the one `apply_prediff_cleaning` chain. The cut points are found on the text as printed, before the older rules.
   * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
@@ -1013,6 +1030,9 @@ functions, layered on top of the ordering work above rather than changing it.
     file names it). Louisiana and Nebraska do not: their notes are the document links' own text, so their action
     order flip (OPEN-541) does not rename versions. Louisiana's amendment notes do carry a status ("..., House
     Proposed, Senate Adopted"), so a status change would rename one the same way: this command is the clean-up then.
+  * **OPEN-569: the note and the date.** From OPEN-569 a row is stale when its (note, **date**) is not a version of
+    its bill: Alabama's scraper dates its versions, so the next archive saves each file again under its date and the
+    undated copy is stale (0 rows change in any other state on the replica, 2026-11-16).
   * **Also OPEN-564: Alabama line-edit amendments are not-a-version by their text.** `is_amendment_text()` in
     `utils/version_ordering.py` (per-state `_AMENDMENT_TEXT_OPENING`, Alabama only): text that opens with an edit
     instruction ("Replace line 54 on page 2 with the following:") and has no enacting clause. `is_bill_version()`
