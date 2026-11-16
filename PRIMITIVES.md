@@ -999,6 +999,14 @@ functions, layered on top of the ordering work above rather than changing it.
     reads the h1 as the title when there is no h2, except for the "Bill <number>" placeholder.
   * **Do not** read a paper's parent from the Documents list (its Title is not the page title), and do not add a
     second amendment-title rule: core's `_NON_BILL_KIND_RULES` decides.
+  * **OPEN-568: a paper's roll calls are recorded on its real bill.** `MABillScraper.paper_vote_event` (both the
+    House and Senate branches build their vote through it) names the parent from `self.paper_parents` (filled by the
+    pre-pass, only for a parent in the session's Documents list with an H or S number) and keeps the paper's number
+    in `extras["ddp_amendment_paper"]`. The **dedupe key still uses the paper's number**, so the import moves the
+    stored row instead of adding a second one: **do not** "fix" the key to the parent's. 81 of the 87 paper votes
+    of the 194th move (Mac replica, 2026-11-16); the other 6 (H 4271, H 5349, H 61) are 2026-08-23 `votes.py`
+    copies of roll calls already on the real bill. `votes.py` is not changed: mapping it too would duplicate them.
+    Status: openstates-scrapers #107, not merged; needs an image and a Massachusetts run.
   * **Status:** not merged (openstates-scrapers #99, openstates-core #103, api-v3 #61). Release: a scrapers image with
     both, api-v3 on both instances, then Massachusetts' next run (the import relabels and links; no separate step).
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
