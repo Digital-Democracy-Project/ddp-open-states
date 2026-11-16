@@ -531,7 +531,7 @@ def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_nothing_voatz
     with open(path) as fh:
         text = fh.read()
     data = yaml.safe_load(text)
-    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["nc", "us"]
+    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == ["us"]
     assert [c for c, e in data.items() if "voatz" in e] == []
     assert "test_precinct" not in text and "creator_id" not in text
     # Voatz ids are nine digits starting 9 (creator) or 8 (organization, not secret); no 9-prefixed one may appear
