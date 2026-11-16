@@ -396,20 +396,51 @@ agent tasks die on session teardown, this does not. If you add a backfill for an
 jurisdiction, copy this script's shape (marker-check loop + smallest-first ordering), don't
 build a new state-tracking mechanism.
 
-## `fix-open*.py` — one-off `personvote` repair scripts (repo root)
+## `fix-*.py` — one-off `personvote` repair scripts (`archive/person-matching-fixes/` and repo root)
 
-Seven of these now exist and they are a family, not seven unrelated scripts. All of them repair
-`opencivicdata_personvote` in the replica, and all share the same shape — **copy the nearest one
-rather than starting from psycopg2**:
+These are a family, not unrelated scripts. All of them repair `opencivicdata_personvote` in the
+replica, and all share the same shape — **copy the nearest one rather than starting from psycopg2**.
 
-- **Wrong person** (`voter_id` set, pointing at the wrong legislator): `fix-grijalva-*`,
-  `fix-open110-fl-smith-*`, `fix-open113-wa-cortes-valdez-*`, `fix-open114-mi-outman-*`,
-  `fix-open115-fl-smith-senate-*`. Completion record for the whole 2026-08-19 batch:
-  `vote-misattribution-backfills-completed-20260819.md`.
-- **No person** (`voter_id IS NULL`, resolved to nobody): `fix-open116-blank-voter-id-*` (bare
-  surnames that were ambiguous), `fix-open174-mi-myers-phillips-*` (a journal name the roster
-  spells differently). Completion record:
-  `OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`.
+**Six of the person-matching ones are archived (OPEN-553, 2026-11-16) in
+`archive/person-matching-fixes/`.** Each case was re-checked read-only against the production
+replica (`openstates_rds_repl_20260911`) on 2026-11-16: no stored row is still wrong or blank for
+these cases except the few listed below, and rows written by imports after each rule existed come
+out right, so none is a recurring chore any more. The rule that replaced each script lives at the
+source, not in a script:
+
+| Script (archived) | Case | Where the rule lives now |
+|---|---|---|
+| `fix-open110-fl-smith-*`, `fix-open115-fl-smith-senate-*` | FL "Smith", House/Senate crossed | core `resolve_person()` cache key includes the chamber (OPEN-112) |
+| `fix-open113-wa-cortes-valdez-*` | WA Senate "Cortes"/"Valdez" on House members | same OPEN-112 chamber cache key |
+| `fix-open114-mi-outman-*` | MI Senate "Outman" on Pat Outman | same OPEN-112 chamber cache key |
+| `fix-open116-blank-voter-id-*` | FL "Garcia", WA "Hunt", MI "Greene" left blank | chamber-scoped name match + current-role tie-break in `resolve_person()` |
+| `fix-open174-mi-myers-phillips-*` | MI House "Myers-Phillips" left blank | people fork `other_names: Myers-Phillips` (data/mi, 2026-08-26) |
+
+Archived means "not needed for new imports", not "no stored row is still wrong": on 2026-11-16, 9
+Michigan "Myers-Phillips" rows were still blank (vote events last imported before the name reached
+the database), and the choice between a re-import and a script run is Ramon's under the scorecard
+gate. Completion records of the real runs stay at the root:
+`vote-misattribution-backfills-completed-20260819.md`,
+`OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`. **A new person-matching case goes to
+the source first** — a people `other_names` entry or identifier (as OPEN-474 and OPEN-526 did), or a
+scraper name rule — and only the rows already stored get a script, copied from the archive.
+
+**`fix-grijalva-vote-misattribution.py` stays at the root: its case is not settled.** Core's
+`resolve_person()` matches the bioguide id first (OPEN-2) and today resolves G000551 to Raúl
+Grijalva, but when that lookup finds no one it falls back to the bare surname, and the
+current-role tie-break then picks Adelita Grijalva for any 119th-Congress "Grijalva" row. On
+2026-11-16, 52 Raúl votes (Jan–Mar 2025) were on Adelita, 5 of them from vote events created by a
+2026-09-16 import; why the id lookup missed then is not known.
+
+`open304-add-lis-identifiers.py` stays at the repo root although its case is also covered now
+(the people fork carries the 14 `lis` ids since 2026-09-22): the Fargate image copies it and
+ddp-sync's `/trigger/open304-lis-identifiers` launches it, so retiring it is a change in both repos.
+On 2026-11-16, 198 US Senate rows for those 14 senators were still blank (vote events last imported
+on or before 2026-10-07; later imports resolve them). `backfill-vote-person-resolution.py` (US, fills
+blank voters by bioguide/lis id) is the general tool for that, not a one-off, and stays.
+
+Still at the repo root:
+
 - **Stale rows the scraper no longer writes** (a different family: this one deletes whole vote events, not
   `personvote` fields): `fix-open433-az-stale-empty-vote-events.py` removes the empty Arizona events that the
   pre-2026-07-11 scraper stored for procedural motions (0 counts, no voters, azleg floor-action source). The
