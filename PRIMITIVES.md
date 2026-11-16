@@ -891,6 +891,20 @@ functions, layered on top of the ordering work above rather than changing it.
     kept_last_copy=56`), a final recompute dry run 0/0; api-v3 #62 before Alabama LegBot. Ramon's go for each.
   * **Do not** order Alabama versions by name again or add a second Alabama adoption rule; a new date-ordered state
     goes in `_DATE_ORDERED_JURISDICTIONS` (core and api-v3) once its scraper dates every version.
+- **OPEN-593: Virginia's substitutes are ordered by LIS file number** (openstates-core #113, not yet live).
+  * **Core:** `document_number()` in `utils/version_ordering.py` also reads Virginia's LIS file number
+    (`lis.blob.core.windows.net/files/<n>.PDF`, the **largest** of a version's files) as `version_sort_key`'s last
+    tiebreaker, the slot Arizona's number uses (OPEN-368); and for Virginia an amendment-stage version's ordinal is 0
+    ("Subcommittee #3" and "Secondary" were read as ordinals). The stage still leads.
+  * **Measured (Mac replica, 2026-11-16):** 565 Virginia bills change order (528 in 2026, 37 in 2027), 141 change their
+    latest version; a recompute would correct 4,763 stored comparisons in those 565 bills. Checked against the bills'
+    own action dates: 2026 pairs 462 agree, 1 contradicts; the 2027 carried-over session's re-published files only mostly
+    (23 / 7).
+  * **Release:** image, api-v3 rebuild on both hosts, `recompute-diff-order va` (dry run expects corrected=4,763), then
+    the broker's `refresh_bill_version_order --jurisdiction VA`.
+  * **Do not** add a second Virginia ordering rule or read an ordinal from a Virginia substitute's name. Other states'
+    remaining same-key ties (Florida `pb`/`Filed`, Michigan House/Senate pairs) come out right in today's walk order
+    and are not covered by a rule.
 - **OPEN-529: Alabama's pre-diff cleaner also drops the Enrolled signature and certification block, the front header (bill number, tracking code, sponsor, "RFD:", "First Read:") and spacing inside a line.**
   * **Where:** the same `_clean_al_text` (OPEN-372) in openstates-core `cli/text_extract.py`, through the one `apply_prediff_cleaning` chain. The cut points are found on the text as printed, before the older rules.
   * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
