@@ -934,6 +934,22 @@ functions, layered on top of the ordering work above rather than changing it.
     row's extras without adding its key here.
   * **Status:** not merged (openstates-scrapers #85, openstates-core #91). Same image as OPEN-517, after its relabel
     run.
+- **OPEN-509/OPEN-512: Massachusetts amendment papers are labelled `amendment` and listed on their real bill**
+  (Ramon 2026-11-15).
+  * **The pre-pass:** `MABillScraper.scrape_amendment_papers` (openstates-scrapers `scrapers/ma/bills.py`) runs before
+    any bill is scraped. It fetches the pages of list rows with no docket number (every amendment paper has none) and
+    keeps those that core's `non_bill_kind` calls an amendment paper. From each paper's history it reads the bills it
+    links to and any "Substituted ... for X" line. `resolve_paper_parents` then follows paper-to-paper links to the
+    real bill; a paper that reaches no bill, or two, is not linked. The fetched pages are reused by `scrape_bill`.
+  * **On the real bill:** a draft the chamber substituted becomes a version noted `Substituted text (S3178)` (core's
+    `note_stage` ranks it between `Bill Text` and the enacted law); every other paper becomes a `BillDocument`.
+  * **The label:** `amendment` (added to `BILL_CLASSIFICATION_CHOICES` in openstates-core and to api-v3's
+    `NOT_BILL_TYPES`). `label_non_bill` now saves `ORIGINAL_CLASSIFICATION_KEY` for every kind it sets. `page_titles`
+    reads the h1 as the title when there is no h2, except for the "Bill <number>" placeholder.
+  * **Do not** read a paper's parent from the Documents list (its Title is not the page title), and do not add a
+    second amendment-title rule: core's `_NON_BILL_KIND_RULES` decides.
+  * **Status:** not merged (openstates-scrapers #99, openstates-core #103, api-v3 #61). Release: a scrapers image with
+    both, api-v3 on both instances, then Massachusetts' next run (the import relabels and links; no separate step).
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
   re-scrapes. This pass reverses the stored history in one **silent window**, so one state never holds both orders.
