@@ -977,9 +977,13 @@ functions, layered on top of the ordering work above rather than changing it.
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
   re-scrapes. This pass reverses the stored history in one **silent window**, so one state never holds both orders.
-  * **Only la and ne** (Ramon, 2026-11-15, OPEN-562). Both are labelled `actions.newest_first: true` by
-    ddp-open-states #370, so the pass runs **without** `--even-if-manifest-says-oldest-first`. **Never al** (0
-    Alabama bills newest first after the 11-15 full scrape), **never us or nc**.
+  * **la and ne: done** (2026-11-16 02:47-02:48 UTC: LA 2,609 and NE 1,847 reversed; labels back to `false`).
+    **nc: next, before launch** (Ramon, 2026-11-16, OPEN-543 "Fix before launch"). Its label is still `true`, so the
+    pass runs **without** the override. Expected from the Mac replica: `reversed=2343 actions=20035` (2,338 bills in
+    2025 plus 5 in 2025E1). Run it after the image carrying scrapers #102 is registered and **before NC's first
+    scrape on that image** (weekly, Sunday 02:00 UTC). Then set nc `newest_first: false` and roll it out. Take
+    `--expect` from a fresh production dry run. **Never al** (0 Alabama bills newest first after the 11-15 full
+    scrape). **Never us** until OPEN-542 (after launch).
   * **The command:** `os-text-extract reverse-action-order <state> [--session S] [--dry-run|--commit] [--undo]
     [--expect N] [--list FILE] [--manifest PATH] [--even-if-manifest-says-oldest-first]`. It has the same shape as
     `relabel-non-bills`.
