@@ -973,6 +973,36 @@ functions, layered on top of the ordering work above rather than changing it.
     5. Set the state's label back to `actions.newest_first: false`.
     6. Silent broker re-bootstrap; confirm 0 events went out.
     7. Resume the scrape.
+- **OPEN-564: `os-text-extract remove-stale-documents <state>` removes saved documents whose version note is gone.**
+  The archiver keys a saved document on `(bill, version_note, version_date, source_url)`. When a scraper renames a
+  version, the next archive saves the same file again under the new note, and the old row stays behind, matching no
+  version. Alabama, 2026-11-15: OPEN-528 reversed Alabama's action order, and Alabama names each amendment or
+  substitute paper after the action that carries it, so 456 papers were saved a second time.
+  * **The rule:** a row is stale when its note is not a version note of its bill any more. It is removed only when a
+    row that is **not** stale keeps the same file (same bill, address and `sha256_hash`). The last saved copy of a
+    file is never removed: no copy, a different file at the same address, or two stale rows that only have each
+    other are kept and counted (`kept_last_copy`, `kept_no_file_hash`). The S3 archive copy is not touched.
+  * **The command:** `os-text-extract remove-stale-documents <state> [--session S] [--dry-run|--commit] [--expect N]
+    [--list FILE]`. Same shape as `reverse-action-order`: dry run by default; `--commit` needs `--list` (one CSV row
+    per removed row, with the row that stays), the list takes its name only after the commit, `--expect N` aborts
+    unless exactly N rows would go. The commit locks the state's documents and plans again inside the transaction;
+    any change since the read rolls everything back. No `--undo`: the file stays in the kept row and in S3.
+  * **Output:** `documents=N stale=N removed=N kept_last_copy=N kept_no_file_hash=N`, then
+    `after: documents=N distinct (bill, address)=N removed_versions=N`. Mac replica, 2026-11-15: al
+    `documents=3379 stale=456 removed=456 kept_last_copy=0`, after `2923 = 2923`; la and ne `stale=0`.
+  * **Afterwards** run `recompute-diff-order <state>` (dry run, then commit on a go), so the kept rows' diffs and flags
+    are recomputed against their real neighbours.
+  * **Which states can do this again:** a state whose version notes come from action text. Alabama does
+    (`add_version_link(row["matter"], ..., on_duplicate="ignore")` in the action loop, so the first action naming a
+    file names it). Louisiana and Nebraska do not: their notes are the document links' own text, so their action
+    order flip (OPEN-541) does not rename versions. Louisiana's amendment notes do carry a status ("..., House
+    Proposed, Senate Adopted"), so a status change would rename one the same way: this command is the clean-up then.
+  * **Also OPEN-564: Alabama line-edit amendments are not-a-version by their text.** `is_amendment_text()` in
+    `utils/version_ordering.py` (per-state `_AMENDMENT_TEXT_OPENING`, Alabama only): text that opens with an edit
+    instruction ("Replace line 54 on page 2 with the following:") and has no enacting clause. `is_bill_version()`
+    takes an optional `raw_text` and is false for such a text; the archiver and `recompute-diff-order` pass the text,
+    and both leave such a document out of the diff lineage (no diff, not a baseline). Full substitutes stay versions
+    (Ramon, 2026-11-15). **Do not** add a second flag for this; extend `_AMENDMENT_TEXT_OPENING` for another state.
   * **Check afterwards:** a second dry run with the override shows `reversed=0`; spot-check LA HB 1 and NE LB 1,
     LB 1105 and LR 384; run `validate_bill_stages`; keep the change-list file.
   * **Do not** reverse action order by hand or in a one-off script. A new order fix uses this pass in its silent
