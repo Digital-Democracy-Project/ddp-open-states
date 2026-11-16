@@ -513,7 +513,7 @@ nc:
                                          # already cleaned NC (gate C passed is about the extractor,
                                          # not about this cleaner)
   actions:
-    newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
+    newest_first: false    # OPEN-543 (2026-11-16): NC's stored actions flipped oldest first; the scraper stores them oldest first
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
