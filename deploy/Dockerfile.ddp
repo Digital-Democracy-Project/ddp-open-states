@@ -1,4 +1,4 @@
-# DDP build of api-v3 = upstream Dockerfile + one fix.
+# DDP build of api-v3 = upstream Dockerfile + two DDP steps (the core fork, OPEN-538; psycopg2, below).
 # The pinned psycopg2-binary links an old libpq (9.6) on arm64/Apple-Silicon, which
 # cannot do Postgres 16 SCRAM auth. Reinstall a wheel that bundles a modern libpq (16).
 FROM bmltenabled/uvicorn-gunicorn-fastapi:python3.9-slim
@@ -26,6 +26,12 @@ RUN poetry install --no-root --only main \
   && apt-get autoremove -yqq \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# DDP (OPEN-538): api-v3's bill-version rules come from DDP's openstates-core fork, pinned in
+# api-v3's ddp-openstates-core.txt (that file says why the flags are needed).
+COPY ddp-openstates-core.txt /app/
+RUN pip3 install --disable-pip-version-check --no-cache-dir --no-deps --ignore-requires-python \
+    -r ddp-openstates-core.txt
 
 # DDP fix: replace the SCRAM-incapable psycopg2 with a modern-libpq wheel.
 RUN pip3 install --force-reinstall --no-cache-dir 'psycopg2-binary==2.9.9'
