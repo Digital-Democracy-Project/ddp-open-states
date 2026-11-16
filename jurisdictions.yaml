@@ -435,7 +435,9 @@ ma:
                                           # (cloud_collector.py never asked for it). Since OPEN-592 this
                                           # field is read, so `true` would start running it on every MA
                                           # run; kept false so MA's command stays exactly as before.
-                                          # Turning it on is Ramon's pending decision.
+                                          # Ramon, 2026-11-16: stays off. Turning it on would also undo
+                                          # OPEN-568's paper-group hold-back (MAVoteScraper's journal
+                                          # votes would land beside ma/bills.py's).
     start_filter: false                   # OPEN-128 (2026-08-25): MA's incremental filter was
                                           # deleted -- it now logs "ignoring start= and listing
                                           # every bill" and full-walks on every run

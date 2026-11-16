@@ -341,7 +341,7 @@ def test_real_manifest_matches_known_live_config_values():
     assert data["us"]["api_keys"] == ["CONGRESS_GOV_API_KEY"]
 
     # OPEN-50/OPEN-592: MA registers a separate votes scraper but stays false on purpose (its votes
-    # come from ma/bills.py; running MAVoteScraper on every cloud run is Ramon's pending decision)
+    # come from ma/bills.py; Ramon, 2026-11-16: MAVoteScraper stays off)
     for code in ("us", "fl", "wa", "va", "mi", "ut", "az", "ma"):
         assert data[code]["scrape"]["votes_scraper"] is False
 

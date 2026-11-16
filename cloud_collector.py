@@ -461,6 +461,19 @@ def _scrape_output_shows_no_op(output_path):
         return "no objects returned from" in f.read()
 
 
+# What openstates-core's JurisdictionScraper writes on EVERY run before any named scraper
+# (cli/update.py do_scrape; scrape/jurisdiction.py): the jurisdiction and its organizations.
+# They are present even when the bills scraper returned nothing, so they are not "data".
+_ALWAYS_WRITTEN_PREFIXES = ("jurisdiction_", "organization_")
+
+
+def _scrape_wrote_data(out_dir):
+    """OPEN-592: whether this scrape wrote any object file beyond the jurisdiction/organization
+    files os-update always writes -- i.e. a named scraper (bills, votes) produced something."""
+    return any(p.is_file() and not p.name.startswith(_ALWAYS_WRITTEN_PREFIXES)
+               for p in Path(out_dir).rglob("*"))
+
+
 def parse_kv_args(argv):
     """`key=value` pairs, order-independent, per contract SS1. Anything without an "=" is a
     parse error -- this runner does not guess a caller's positional intent."""
@@ -771,9 +784,14 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # OPEN-592: `votes` goes AFTER every k=v (session=, start=), exactly as run-scrape.sh
         # places $VOTES_SCRAPER (OPEN-50): os-update attaches each k=v to the most recently
         # named scraper (openstates-core cli/update.py), so `votes` earlier would hand `start=`
-        # to the votes scraper (which takes none) and strip it off `bills`.
+        # to the votes scraper (which takes none) and strip it off `bills`. For the same reason
+        # the votes scraper gets its own `session=` (and only that: never `start=`, and no other
+        # bills argument such as usa's chamber=) -- without it, it falls back to every ACTIVE
+        # session, so a backfill of an older session would collect the current session's votes.
         if has_votes:
             cmd.append("votes")
+            if session:
+                cmd.append(f"session={session}")
         # --cachedir is what makes Michigan's hydrated baseline reachable by mi/bills.py
         # itself (run-scrape.sh's own DIR_FLAGS, run-scrape.sh:512) -- without it the baseline
         # this function just fetched from S3 sits in a directory the scraper never looks in.
@@ -832,7 +850,16 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # still advance and memory still persists, exactly as a successful found=0 run would,
         # so the next incremental run doesn't re-collect a window this one already covered
         # (OPEN-181's "memory advances on every successful run" requirement).
-        if proc.returncode != 0 and mode == "incremental" and _scrape_output_shows_no_op(scrape_output):
+        # OPEN-592: os-update runs `bills` before `votes` and stops at the first scraper that
+        # returns nothing, so "no objects returned from" alone does not say WHICH scraper was
+        # empty. If the run already wrote bill (or vote) files, the empty one was the votes
+        # scraper: that is not a no-op -- treating it as one would advance the watermark past
+        # bills this run collected and publish an empty manifest, losing them for good. It
+        # falls through to the failure branch below instead (watermark unchanged, so the next
+        # run collects the same bills again).
+        if (proc.returncode != 0 and mode == "incremental"
+                and _scrape_output_shows_no_op(scrape_output)
+                and not _scrape_wrote_data(out_dir)):
             print(f"{source}: no new objects since cutoff (no-op)", file=sys.stderr)
             with open(os.path.join(last_run_dir, f"{scrape_key}.ts"), "w") as f:
                 f.write(datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
@@ -862,6 +889,10 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
             return 0
 
         if proc.returncode != 0:
+            if _scrape_output_shows_no_op(scrape_output) and _scrape_wrote_data(out_dir):
+                print(f"ERROR: {source}: a scraper after bills returned no objects (os-update "
+                      f"stopped there), so the bills it collected are not published and the "
+                      f"watermark stays put (OPEN-592)", file=sys.stderr)
             print(f"ERROR: {source} scrape failed, exit {proc.returncode}", file=sys.stderr)
             emit_completion_record(status="failed", mode=mode, source=source, run_id=run_id,
                                     session=session, duration_s=duration_s)

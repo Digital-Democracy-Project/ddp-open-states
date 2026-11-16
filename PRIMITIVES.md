@@ -186,8 +186,13 @@ should reuse rather than reimplement:
   one). Both go through `_manifest_scrape_entry()`: `usa` reads `us`, a state with no entry keeps
   the old behaviour (start allowed, no `votes`), and a manifest that does not validate stops the run
   before scraping. `votes` is appended **after** every `k=v` (session, `start=`): os-update hands
-  each `k=v` to the scraper named just before it. Massachusetts registers a votes scraper but is
-  `false` on purpose (its votes come from `ma/bills.py`; turning it on is Ramon's decision). Add a
+  each `k=v` to the scraper named just before it, so `votes` then gets its own `session=<s>` when
+  the run has one (only that: never `start=`, never e.g. `chamber=`). os-update runs `bills` first
+  and stops at the first scraper that returns nothing, so the OPEN-244 no-op ("no objects returned
+  from") applies only when no bill/vote file was written (the jurisdiction/organization files
+  os-update always writes do not count); bills written and then an empty `votes` is a **failed**
+  run (watermark kept, bills re-collected next run). Massachusetts registers a votes scraper but is
+  `false` on purpose (its votes come from `ma/bills.py`; Ramon, 2026-11-16: stays off). Add a
   third per-state scrape fact the same way; do not hard-code a state list here.
 - **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
   **one** cloud collection run, identified by its manifest (never bare object presence): fetches
