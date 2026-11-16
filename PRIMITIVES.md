@@ -422,7 +422,9 @@ ticket lists the old rows written before the rule existed (on 2026-11-16: 52 US 
 choice between a re-import and a script run is Ramon's, per state, under the scorecard gate. One
 weak spot stays: when the bioguide lookup finds no one, `resolve_person()` falls back to the bare
 surname and the current-role tie-break picks Adelita Grijalva for any 119th-Congress "Grijalva"
-row (5 of the 52 rows came from a 2026-09-16 import; why the id lookup missed then is not known). **A new person-matching case goes to the source
+row (5 of the 52 rows came from a 2026-09-16 import; why the id lookup missed then is not known).
+Completion records of the real runs stay at the root: `vote-misattribution-backfills-completed-20260819.md`,
+`OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`. **A new person-matching case goes to the source
 first** — a people `other_names` entry or identifier (as OPEN-474 and OPEN-526 did), or a scraper
 name rule — and only the rows already stored get a script, copied from the archive.
 
