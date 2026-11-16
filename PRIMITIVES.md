@@ -1054,6 +1054,37 @@ functions, layered on top of the ordering work above rather than changing it.
     first in either.
   * **Status:** merged (openstates-core #100, `7ed499b9`), not run. The run is a prod-agent step on Ramon's go, per
     state, after launch.
+- **OPEN-539: each stored comparison names the document it was made against (`diff_baseline_id`).** PLAN-state-specific-handling
+  §4.4, "the one new stored value".
+  * **The column:** `ddp_bill_version_document.diff_baseline_id` in openstates-core (integer, nullable, migration `0051`, no
+    backfill; no foreign key, no index). It is the `id` of the row of the same bill whose text `diff_from_previous_version`
+    was computed against. Null = no stored comparison, or a comparison stored before the column existed and not stamped yet.
+  * **Who writes it:**
+    * The archiver writes it in the same `create()` as the comparison.
+    * `recompute-diff-order` (full mode) and `refresh-extraction --commit` write it with every comparison they leave stored.
+      `--flags-only` never touches it.
+    * The archiver's retry path and `remove-stale-documents` clear the ids that named a row they delete.
+  * **The stamping pass:** `os-text-extract recompute-diff-order <state> --baseline-only [--session S] [--dry-run|--commit]
+    [--expect N] [--list FILE]`.
+    * It has the shape of `remove-stale-documents`.
+    * It writes only the id, never the comparison or `updated_at`, and only where the recompute reproduces the stored
+      comparison.
+    * `--commit` refuses a state where any stored comparison would change (`not_stamped_comparison_would_change` above 0).
+      For such a state the full recompute is the step; it stamps as it writes.
+    * After a commit it prints `after: comparisons_without_baseline=N`. A state is stamped when N is 0.
+  * **Do not** compute "which version a comparison is against" again downstream (ddp-sync `_diff_baseline_index`, the
+    LegBot sample script, ddp-next `isFullText`). Read this column through api-v3 (OPEN-540) once the state's count is 0.
+  * **Measured on the Mac replica (2026-11-16):** 67,628 stored comparisons, 67,517 to stamp; Alabama has 111 that the
+    OPEN-569 recompute will rewrite.
+    * Against ddp-sync's rule (over the Mac api-v3), 1,266 comparisons differ: va 774, az 358, mi 19, al 115; every other
+      state 0. In each one the stamped document reproduces the stored comparison byte for byte.
+    * va and az: a version with two or more PDFs. The recompute keeps the last by row id; the archiver and api-v3 keep the
+      last by URL.
+    * List: `notes/open539-baseline-differences-20261116.csv`. Repeat with openstates-core
+      `scripts/open539_compare_baselines.py` (read-only).
+  * **Status:** openstates-core #105, not merged, not deployed.
+  * **Release:** migration `0051` on RDS (the Mac replica's structure sync adds the column), then a scrapers image, then per
+    state a `--baseline-only` dry run and, on Ramon's go, `--commit --expect N --list <lasting path>`.
 - **`classify_motion(jurisdiction, motion_text, bill_action=None)`**
   (`openstates-scrapers/scrapers/classify_motion.py`) — the actual classification logic, **YAML-
   driven** from `openstates-scrapers/scrapers/config/motion_classification.yaml` (one block per
