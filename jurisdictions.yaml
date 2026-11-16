@@ -698,3 +698,126 @@ la:
   onboarding:
     epic: OPEN-480
     evidence: notes/probe-la-20261031/report.md
+
+# written by new-jurisdiction from notes/probe-all-20261031/ga/result.json on 2026-11-16 (OPEN-461)
+ga:
+  name: Georgia
+  status: probing
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ga-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ga-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 30 vote events)
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  actions:
+    newest_first: false  # the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  api_keys: []
+  onboarding:
+    epic: OPEN-587
+    evidence: notes/probe-all-20261031/ga/report.md
+
+# written by new-jurisdiction from notes/probe-all-20261031/nv/result.json on 2026-11-16 (OPEN-461)
+nv:
+  name: Nevada
+  status: probing
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nv-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nv-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 13 vote events)
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  actions:
+    newest_first: false  # the scraper adds the bill page's history rows top to bottom (scrapers/nv/bills.py add_actions), oldest first; 2026-11-16 Mac-half import: 0 of 54 next-action pairs went back in time (OPEN-588); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  api_keys: []
+  onboarding:
+    epic: OPEN-588
+    evidence: notes/probe-all-20261031/nv/report.md
+
+# written by new-jurisdiction from notes/probe-all-20261031/or/result.json on 2026-11-16 (OPEN-461)
+or:
+  name: Oregon
+  status: probing
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no or-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: true           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no or-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills)
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  actions:
+    newest_first: false  # the scraper adds MeasureHistoryActions in the API's order (scrapers/or/bills.py), oldest first; 2026-11-16 Mac-half import: 0 of 86 next-action pairs went back in time (OPEN-589); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  api_keys: []
+  onboarding:
+    epic: OPEN-589
+    evidence: notes/probe-all-20261031/or/report.md
