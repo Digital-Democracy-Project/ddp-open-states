@@ -82,8 +82,8 @@ def _resolve_db_url() -> str:
 DB_URL = _resolve_db_url()
 
 # OPEN-327: both tables below are derived from jurisdictions.yaml, not typed here. JURISDICTIONS is the QA
-# sweep list (enrollment.qa_sweep; us is handled separately via US_JURISDICTION and is not on it, and va is
-# off it by choice); OCD_TO_CODE covers every manifest jurisdiction. A manifest that is missing or fails
+# sweep list (enrollment.qa_sweep; us is handled separately via US_JURISDICTION and is not on it);
+# OCD_TO_CODE covers every manifest jurisdiction. A manifest that is missing or fails
 # validation stops the tool with the validator's messages instead of sweeping a guessed list.
 from validate_jurisdictions import load_and_validate
 
