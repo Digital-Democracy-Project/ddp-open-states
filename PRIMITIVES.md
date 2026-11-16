@@ -965,6 +965,8 @@ functions, layered on top of the ordering work above rather than changing it.
       from api-v3.
   * **Left alone:** amendment papers (the scraper still yields them and would overwrite the label; OPEN-509) and any
     bill with a recorded vote (the 8 rules items, Ramon 2026-11-08).
+  * Its write and summary code is shared with `relabel` (OPEN-546), the general per-state re-label pass; use that for
+    any new label rule.
   * **Do not** add a second "is this a bill" list: extend the title table and `_NON_BILL_KIND_RULES`. The website's
     filter for these labels is NEXT-182.
   * **Measured on the Mac replica (194th, 2026-11-10):** 3,132 to relabel (report 1,538, communication 998, study request
@@ -1069,6 +1071,37 @@ functions, layered on top of the ordering work above rather than changing it.
     5. Set the state's label back to `actions.newest_first: false`.
     6. Silent broker re-bootstrap; confirm 0 events went out.
     7. Resume the scrape.
+- **OPEN-546: `os-text-extract relabel <state>` re-applies a state's label rules to its stored actions and bills**
+  (plan PLAN-state-specific-handling §6 Phase 3). When a state's action or bill rule moves from the broker into the
+  ETL, the scraper applies it only to bills it re-scrapes. This pass applies the same rule to the stored history, in
+  the state's **silent window**, before the broker reader is deleted.
+  * **The rule:** `classify_action(*, description, classification, chamber, date)` and
+    `classify_bill(*, identifier, title, classification)` in openstates-core `openstates/ddp_states/<state>.py`. Each
+    returns the whole label list and must give the same answer on its own output. The scraper calls the same
+    function; `state_rule(state, name)` in `openstates/ddp_states/__init__.py` finds it. **No state module exists yet**
+    (OPEN-545, OPEN-547 to 552 add them); a state without one is refused. **Do not** put a state's label rule anywhere
+    else (a second table, the broker, a script).
+  * **The command:** `os-text-extract relabel <state> [--session S] [--dry-run|--commit] [--expect N] [--list FILE]
+    [--undo LIST]`. Same shape as `reverse-action-order`.
+    * Dry run by default: `actions changed=N unchanged=M | bills changed=N unchanged=M`, then old -> new counts.
+    * `--list` writes one CSV row per changed action or bill (kind, id, bill, identifier, session, order, date,
+      chamber, text, old, new). `--commit` needs it, and the committed list is the audit record (no second label is
+      stored). It takes its name only after the database commit; an existing list is never overwritten. `--expect N`
+      counts bills and actions together.
+    * Only `classification` is written, never text, date, order or chamber. Each item is written only if its labels
+      and the rule's inputs are unchanged since the read; otherwise the whole run rolls back. A rule that would move
+      again on its own output is refused, so a second run changes 0.
+    * A bill whose action labels change has `latest_passage_date` recomputed and its `updated_at` moved (as a
+      re-import would); a bill-label-only change does not move `updated_at` (as `relabel-non-bills`).
+    * `--undo LIST --commit` puts back the old labels from a committed list (the window's rollback), only for items
+      that still hold the new labels.
+  * **Scorecards (Ramon, 2026-11-16):** a re-label never touches vote events, but the broker reads action labels for
+    which votes count (`motion_eligibility.py`, `openstates_service.py`), for stages and bill events (`bill_stage.py`,
+    `bill_events.py`), and stores `latest_passage_date`. So each state's run needs the silent window, the four
+    scorecard checks on its ticket (OPEN-546 comment), and Ramon's go per state.
+  * **`relabel-non-bills` (OPEN-517)** shares this command's guarded write and summary code and keeps its own
+    Massachusetts rule. A new label rule uses `relabel`, not a new command.
+  * **Status:** openstates-core #110, not merged, not run. Each run is a prod-agent step after a scrapers image.
 - **OPEN-564: `os-text-extract remove-stale-documents <state>` removes saved documents whose version note is gone.**
   The archiver keys a saved document on `(bill, version_note, version_date, source_url)`. When a scraper renames a
   version, the next archive saves the same file again under the new note, and the old row stays behind, matching no
