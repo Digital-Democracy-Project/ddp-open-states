@@ -999,8 +999,33 @@ functions, layered on top of the ordering work above rather than changing it.
     reads the h1 as the title when there is no h2, except for the "Bill <number>" placeholder.
   * **Do not** read a paper's parent from the Documents list (its Title is not the page title), and do not add a
     second amendment-title rule: core's `_NON_BILL_KIND_RULES` decides.
-  * **Status:** not merged (openstates-scrapers #99, openstates-core #103, api-v3 #61). Release: a scrapers image with
-    both, api-v3 on both instances, then Massachusetts' next run (the import relabels and links; no separate step).
+  * **OPEN-568: a paper's roll calls are recorded on its real bill.** `MABillScraper.paper_vote_event` (both the
+    House and Senate branches build their vote through it) names the parent the pre-pass stored in
+    `self.paper_parents`, only when this run scrapes both (`self.group_of`), and keeps the paper's number in
+    `extras["ddp_amendment_paper"]`. The H-or-S check is in `paper_vote_event` itself (any other number leaves the
+    vote on the paper). The **dedupe key still uses the paper's number**, so the import moves the stored row instead of adding a second one: **do not** "fix" the key
+    to the parent's.
+    * **The pair rule:** the import deletes a bill's stored votes that the run did not bring again (RUNBOOK,
+      "A targeted `bill_no=` rescrape is not additive"), and a real bill's votes now come from its own history and
+      its papers'. So `scrape()` always scrapes a paper and its real bill together (`with_paper_pairs`: a
+      `bill_no=`, one-chamber or chunk run adds the rest of the group, and records the run's groups). Every bill
+      of a group holds its votes back until the whole group is scraped (`group_member_done`). If any member's page
+      or any page of its history failed, **none of the group's votes is sent** that run, so the import deletes
+      none of them (the bills themselves are still saved). Otherwise they all go out, and a roll call cited twice
+      (by the real bill and a paper, or by two papers) goes out once, the real bill's own first. A paper whose real
+      bill is not in the list is in no group: its votes stay on it, as before.
+    * **The one case it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
+      known to be a paper, so it is in no group; the real bill's votes go out, and the import deletes the votes
+      already moved from that paper until the next run brings them back (new row ids). If only the pre-pass fetch
+      failed, the paper is read in the run, is not linked, and its stored votes move back to it for that run
+      (nothing deleted).
+    * 81 of the 87 paper votes of the 194th move (Mac replica, 2026-11-16); the other 6 (H 4271, H 5349, H 61) are
+      2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
+      too would duplicate them.
+    * **Status:** openstates-scrapers #107, not merged; needs an image and a Massachusetts run.
+  * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
+    Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
+    relabels and links; no separate step). Which image first carries them is not recorded here.
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
   re-scrapes. This pass reverses the stored history in one **silent window**, so one state never holds both orders.
