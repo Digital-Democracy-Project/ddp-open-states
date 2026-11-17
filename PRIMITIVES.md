@@ -1132,13 +1132,13 @@ functions, layered on top of the ordering work above rather than changing it.
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
   re-scrapes. This pass reverses the stored history in one **silent window**, so one state never holds both orders.
-  * **la and ne: done** (2026-11-16 02:47-02:48 UTC: LA 2,609 and NE 1,847 reversed; labels back to `false`).
-    **nc: next, before launch** (Ramon, 2026-11-16, OPEN-543 "Fix before launch"). Its label is still `true`, so the
-    pass runs **without** the override. Expected from the Mac replica: `reversed=2343 actions=20035` (2,338 bills in
-    2025 plus 5 in 2025E1). Run it after the image carrying scrapers #102 is registered and **before NC's first
-    scrape on that image** (weekly, Sunday 02:00 UTC). Then set nc `newest_first: false` and roll it out. Take
-    `--expect` from a fresh production dry run. **Never al** (0 Alabama bills newest first after the 11-15 full
-    scrape). **Never us** until OPEN-542 (after launch).
+  * **Done for every state that needed it:** la and ne (2026-11-16 02:47-02:48 UTC: LA 2,609 and NE 1,847), nc
+    (OPEN-543, 2026-11-16) and **us (OPEN-542, 2026-11-17 ~02:11 UTC: 39,263 bills; 31,441 latest actions changed;
+    the 03:00 run on v62 clean, prod agent `28de4d6`, `0c96e78`)**. `validate_bill_stages` on the Mac replica
+    (2025 onward, all 16 states, 2026-11-17) finds no state storing actions newest first. **Never al.** A state
+    onboarded later that stores newest first is fixed in its scraper first, then this pass.
+  * **Decided 2026-11-17 (Ramon, "Remove it"):** the manifest check below goes (OPEN-544); the per-bill mark already
+    stops a second reversal. Until that core change is in the live image, the override is needed for any state.
   * **The command:** `os-text-extract reverse-action-order <state> [--session S] [--dry-run|--commit] [--undo]
     [--expect N] [--list FILE] [--manifest PATH] [--even-if-manifest-says-oldest-first]`. It has the same shape as
     `relabel-non-bills`.
@@ -1172,7 +1172,7 @@ functions, layered on top of the ordering work above rather than changing it.
     2. Pause the state's scrape and the broker's bill-event task before the image's first run for that state.
     3. Dry run with `--manifest`.
     4. On Ramon's go: `--commit --expect N --list <lasting path>`.
-    5. Set the state's label back to `actions.newest_first: false`.
+    5. Set the state's label back to `actions.newest_first: false` (before OPEN-544; since 2026-11-17 there is no label to set).
     6. Silent broker re-bootstrap; confirm 0 events went out.
     7. Resume the scrape.
 - **OPEN-546: `os-text-extract relabel <state>` re-applies a state's label rules to its stored actions and bills**
