@@ -12,6 +12,7 @@ properties OPEN-201's acceptance criteria actually name.
 
 import json
 import os
+import re
 import stat
 import sys
 import time
@@ -329,10 +330,29 @@ def test_scraper_takes_start_maps_usa_to_us(tmp_path):
 
 # --- OPEN-592: a state's SEPARATE votes scraper (manifest scrape.votes_scraper) ------------------
 
-def _manifest_with_oregon(tmp_path, *, votes_scraper):
-    """The real manifest plus an "or" entry copied from Utah's (start_filter: true), with
-    votes_scraper set as asked -- Oregon's shape (probe gate B: votes scraper registered)."""
+def _real_manifest_without_oregon():
+    """The real manifest's text with its "or" entry taken out. Oregon got a real entry on
+    2026-11-16 (OPEN-589), so these tests build the Oregon they need instead of depending on the
+    real manifest having none (they began failing then; CI did not run this file until OPEN-501)."""
     real = open(os.path.join(os.path.dirname(__file__), "jurisdictions.yaml")).read()
+    if "\nor:\n" not in real:
+        return real
+    start = real.index("\nor:\n")
+    nxt = re.search(r"\n[a-z]{2,3}:\n", real[start + 1:])
+    return real[:start + 1] + (real[start + 1 + nxt.start() + 1:] if nxt else "")
+
+
+def _manifest_without_oregon(tmp_path):
+    path = tmp_path / "jurisdictions-no-or.yaml"
+    path.write_text(_real_manifest_without_oregon())
+    return str(path)
+
+
+def _manifest_with_oregon(tmp_path, *, votes_scraper):
+    """The real manifest (its own "or" entry taken out) plus an "or" entry copied from Utah's
+    (start_filter: true), with votes_scraper set as asked -- Oregon's shape (probe gate B: votes
+    scraper registered)."""
+    real = _real_manifest_without_oregon()
     start, end = real.index("\nut:\n"), real.index("\naz:\n")
     block = real[start:end].replace("\nut:\n", "\nor:\n", 1)
     assert "    votes_scraper: false" in block
@@ -472,8 +492,9 @@ def test_main_votes_scraper_false_no_votes(tmp_path, monkeypatch, capsys):
 
 
 def test_main_state_absent_from_manifest_no_votes(tmp_path, monkeypatch, capsys):
-    """The real manifest has no "or" entry yet: bills only, exactly as today."""
-    rc, _, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=False, manifest=None)
+    """A state with no manifest entry: bills only, exactly as before OPEN-592."""
+    rc, _, argv = _run_oregon(tmp_path, monkeypatch, capsys, watermark=False,
+                              manifest=_manifest_without_oregon(tmp_path))
     assert rc == 0
     assert "votes" not in argv, argv
 
