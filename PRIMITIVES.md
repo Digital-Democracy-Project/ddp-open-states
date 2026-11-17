@@ -650,11 +650,14 @@ step matters — a newer pip breaks one of the pinned deps' build.
   session (api-v3 PR #42). **Do not add a second rule** in ddp-sync, a scraper script, the broker or the website: read
   the flag. Rule: a session that has not started is never flagged; current = every active session (a special session
   counts, Ramon 2026-10-31) plus, when no regular session is active, the newest started regular one; previous = the
-  regular session before the current regular one. "Regular" is the stored `classification == "primary"` and nothing
-  else (OPEN-557, api-v3 PR #72, live once both api-v3 hosts are rebuilt after scrapers PR #124 and the stored corrections: the identifier guess is gone): each scraper's `legislative_sessions` entry sets
-  `classification` and the next import's session upsert stores it, so a wrong or blank value is fixed in the scrapers
-  fork's list, never in api-v3 (scrapers `tests/test_session_classification.py` pins GA/OR/VA/WA, which were blank,
-  against each legislature's own list). A blank classification is not regular. Consumers are their own tickets:
+  regular session before the current regular one. "Regular" is the stored `classification == "primary"`; a wrong or
+  blank value is fixed in the scrapers fork's `legislative_sessions` list (the next import's session upsert stores
+  it), never in api-v3. **Pending release (OPEN-557):** until api-v3 PR #72 is live on both hosts, api-v3 still reads
+  a blank classification as regular unless the identifier looks special (`2026S1`, `2018specialI`); after it, blank
+  is not regular. Order: scrapers PR #124 image, then the stored GA/OR/VA/WA (+6) rows checked non-blank, then #72 on
+  both hosts. All 16 live states' lists set classification after #124; scrapers
+  `tests/test_session_classification.py` pins GA/OR/VA/WA and the six corrected sessions against each legislature's
+  own list (no test covers the other states' lists). Consumers are their own tickets:
   SYNC-139, BROKER-369, NEXT-109. (OPEN-468 was a consumer too, for the hard-coded `194th` in `run-all-scrapes.sh`.
   OPEN-465 deleted that script, so its acceptance lines no longer apply; they were not met, they have no target.
   Today no scraper entry point in this repo names a current session: ddp-sync passes none for MA, and `os-update`
