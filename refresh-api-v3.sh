@@ -91,15 +91,15 @@ done
 
 log "api-v3 refresh complete -- $API_CONTAINER healthy, $POSTGRES_CONTAINER untouched"
 
-# OPEN-579: the rebuilt container must run the same openstates-core commit as api-v3's pin and the live scrapers
-# image. Say which image is live: SCRAPERS_IMAGE=<ref> (read on this host) or SCRAPERS_IMAGE_CORE=<full sha>. Without
-# either, the check fails (exit 2) rather than passing unchecked. The container is already up either way.
+# OPEN-579/OPEN-586: the rebuilt container installed openstates-core's main at build time (deploy/Dockerfile.ddp); it
+# must be the same commit as the live scrapers image's. Say which image is live: SCRAPERS_IMAGE=<ref> (read on this
+# host) or SCRAPERS_IMAGE_CORE=<full sha>. Without either, the check fails (exit 2)
+# rather than passing unchecked. The container is already up either way.
 image_arg=()
 if [ -n "${SCRAPERS_IMAGE:-}" ]; then image_arg=(--image "$SCRAPERS_IMAGE"); fi
 if [ -n "${SCRAPERS_IMAGE_CORE:-}" ]; then image_arg+=(--image-core "$SCRAPERS_IMAGE_CORE"); fi
 set +e
-python3 "$REPO_DIR/check-core-pin-drift.py" --pin "$API_V3_DIR/ddp-openstates-core.txt" \
-    --container "$API_CONTAINER" ${image_arg[@]+"${image_arg[@]}"} 2>&1 | tee -a "$LOG"
+python3 "$REPO_DIR/check-core-pin-drift.py" --container "$API_CONTAINER" ${image_arg[@]+"${image_arg[@]}"} 2>&1 | tee -a "$LOG"
 drift_rc=${PIPESTATUS[0]}
 set -e
 if [ "$drift_rc" -ne 0 ]; then

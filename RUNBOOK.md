@@ -78,9 +78,9 @@ on arm64), `deploy/docker-compose.stopgap.yml` (rollback). Pinned pydantic 1.10.
 > Fix then = `brew install docker-buildx` (honors the `deploy/` ignore) or just delete the stray dirs.
 
 **api-v3 and the scrapers image must run one openstates-core commit (OPEN-579).** api-v3 imports its bill-version rules
-from DDP's core fork, pinned by commit in `api-v3/ddp-openstates-core.txt` (OPEN-538); the archiver in the scrapers
-image stores values made by the same rules. **`check-core-pin-drift.py`** compares the pin, the core the live scrapers
-image was built from (`/opt/openstates-core/DDP_CORE_COMMIT`, written by the Dockerfile; images v60 and older have none),
+from DDP's core fork (OPEN-538) and builds from core's main, like the scrapers image (OPEN-586; no pin file); the
+archiver in the scrapers image stores values made by the same rules. **`check-core-pin-drift.py`** compares the core
+the live scrapers image was built from (`/opt/openstates-core/DDP_CORE_COMMIT`, written by the Dockerfile; images v60 and older have none),
 and the core installed in the api-v3 container (pip's `direct_url.json`; the version string, 6.26.5, cannot tell the fork
 from PyPI). Exit 0 agree, 1 drift (both commits named), 2 a source could not be read. It makes no AWS call: you say
 which image is live.
@@ -91,9 +91,12 @@ which image is live.
   On EC2 (no scrapers image there) the prod agent runs
   `python3 check-core-pin-drift.py --image-core <full sha> [--container <api-v3 container>]` from the checkout, with
   the sha from the deploy output or the ops-handoff note.
+* **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts (each
+  rebuild takes core's main; Docker re-fetches main's commit every build, so a plain rebuild is enough). Rebuilding
+  api-v3 alone after a core merge, without a new image, puts api-v3 ahead of the image, and the check flags it.
 * **Scrapers image release:** `deploy-scrapers-image.sh` prints the core commit it baked in (`core <sha>`); hand it to
-  the prod agent with the tag and revision. If it differs from api-v3's pin, the pin is changed (api-v3 PR) and both
-  api-v3 copies rebuilt, or the image is not registered. Which tag is live:
+  the prod agent with the tag and revision. If api-v3 runs a different core, rebuild both api-v3 copies (they take
+  main, which is what the image took unless core moved in between; then the check fails and names both commits). Which tag is live:
   `aws ecs describe-task-definition --task-definition ddp-scrapers --query 'taskDefinition.containerDefinitions[0].image'`
   on the Mac (read-only).
 * **Not scheduled yet:** run by hand at each release; a scheduled run is a follow-up (OPEN-579).
@@ -562,11 +565,20 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
    together: `bill_no=S3` or `bill_no=H4001` also scrapes the rest of that group, and the run log names the extra
    bills ("OPEN-568: also scraping ..."). Count those bills in the preview. If any bill of the group cannot be
    read whole (its page or a page of its history fails), the run sends none of that group's votes and logs
-   "OPEN-568: ... not read whole", so nothing of the group is deleted; run it again. The exception: a paper whose
-   page fails both in the pre-pass and in the run is not recognised as a paper, and the votes moved from it are
-   deleted from its real bill until the next run (PRIMITIVES, OPEN-568). Its sign in the log is a "Server Error on
-   ..." line naming an amendment paper's URL (an "Amendment H./S." title on the site). To repair, rescrape it once its page loads
-   (`bill_no=<paper>`, which brings its real bill's group); the votes come back with new row ids.
+   "OPEN-568: ... not read whole", so nothing of the group is deleted; run it again. The bills that were read are
+   saved; a member whose page failed is not. Two exceptions, where the votes moved from a paper are deleted from
+   its real bill until the next run (PRIMITIVES, OPEN-568):
+   * the paper's page fails both in the pre-pass and in the run, so it is not recognised as a paper. Its sign in
+     the log is a "Server Error on ..." line naming an amendment paper's URL (an "Amendment H./S." title on the site);
+   * the paper's history page 1 fails both in the pre-pass and in the run, so it names no real bill. Its sign is
+     "OPEN-509: amendment paper <paper> names no single bill; not linked" plus "Skipping actions for <paper URL>
+     -- fetch failed".
+
+   To repair either, rescrape the paper once its page loads (`bill_no=<paper>`, which brings its real bill's
+   group); the votes come back with new row ids. **This protection holds only on the bills-only cloud path**
+   (`cloud_collector.py` runs MA with `--scrape bills` only). `run-scrape.sh` also runs MA's `votes` scraper, whose
+   journal votes would let the import delete a held-back real bill's moved votes, so a Massachusetts run through
+   `run-scrape.sh` does not have it.
 
 ### The same steps by hand (reference only: this is what the script runs)
 
