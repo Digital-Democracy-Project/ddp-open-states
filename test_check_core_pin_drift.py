@@ -215,6 +215,18 @@ def test_every_compose_file_that_builds_the_api_v3_image_passes_the_core_commit(
                          text, re.M), os.path.basename(p)
 
 
+def test_the_api_v3_build_imports_the_app_after_everything_it_runs_on_is_in_place():
+    """OPEN-616: an image that cannot start fails at build time. The import runs after the app is copied in and after
+    core (at DDP_CORE_SHA) and psycopg2 are installed, so it imports exactly what the container will run; the database
+    address it is given is a placeholder (importing the app opens no connection)."""
+    dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()
+    m = re.search(r'^RUN DATABASE_URL=(\S+) python -c "import api\.main"$', dockerfile, re.M)
+    assert m, "the build must import api.main"
+    for earlier in ("COPY . /app", "openstates @ https://", "psycopg2-binary=="):
+        assert dockerfile.index(earlier) < m.start(), f"the import must come after {earlier!r}"
+    assert m.group(1).startswith("postgresql://build-check:unused@localhost:1/")
+
+
 def _dockerfile_core_check(value):
     """Run the Dockerfile's own DDP_CORE_SHA check (the part of its RUN before the install) in a shell."""
     dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()

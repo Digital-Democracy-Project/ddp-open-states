@@ -45,3 +45,8 @@ RUN { [ "${#DDP_CORE_SHA}" -eq 40 ] && [ -z "$(printf '%s' "${DDP_CORE_SHA}" | t
 RUN pip3 install --force-reinstall --no-cache-dir 'psycopg2-binary==2.9.9'
 
 COPY . /app
+
+# DDP (OPEN-616): import the app once at build time, so an image that cannot start (a module the app needs is missing,
+# or the core installed above no longer has what api-v3 imports from it) fails here instead of after it goes live.
+# The address is a placeholder: importing the app reads DATABASE_URL but opens no connection (api/db/__init__.py).
+RUN DATABASE_URL=postgresql://build-check:unused@localhost:1/build-check python -c "import api.main"
