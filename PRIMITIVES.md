@@ -467,6 +467,15 @@ On 2026-11-16, 198 US Senate rows for those 14 senators were still blank (vote e
 on or before 2026-10-07; later imports resolve them). `backfill-vote-person-resolution.py` (US, fills
 blank voters by bioguide/lis id) is the general tool for that, not a one-off, and stays.
 
+**`relink-blank-voters.py` (OPEN-611) is the state-side twin:** it fills blank state roll-call voters that a
+new import would now link (the person or alias reached the database after the votes), only where exactly one person
+matching the name (name, other name or family name, as core's `resolve_person()` matches) held a seat in that
+chamber on the vote's own date, and never twice on one roll call. Dry run by default; `--commit` needs `--list`
+(the per-vote record the scorecard gate reviews; it takes its name only after the commit). Its cases are a list at
+the top of the script (OPEN-611: wa "Hunt" 673, ma "Garcia" 8, mi "Myers-Phillips" 9 of 11, fl "Garcia" 469
+after people #27 loads); a new case goes to the source first (people or scraper), then a line there, not a new
+script. Each state's commit is under the scorecard gate.
+
 Still at the repo root:
 
 - **Stale rows the scraper no longer writes** (a different family: this one deletes whole vote events, not
