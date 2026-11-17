@@ -651,7 +651,7 @@ step matters — a newer pip breaks one of the pinned deps' build.
   the flag. Rule: a session that has not started is never flagged; current = every active session (a special session
   counts, Ramon 2026-10-31) plus, when no regular session is active, the newest started regular one; previous = the
   regular session before the current regular one. "Regular" is the stored `classification == "primary"` and nothing
-  else (OPEN-557, api-v3 PR: the identifier guess is gone): each scraper's `legislative_sessions` entry sets
+  else (OPEN-557, api-v3 PR #72, live once both api-v3 hosts are rebuilt after scrapers PR #124 and the stored corrections: the identifier guess is gone): each scraper's `legislative_sessions` entry sets
   `classification` and the next import's session upsert stores it, so a wrong or blank value is fixed in the scrapers
   fork's list, never in api-v3 (scrapers `tests/test_session_classification.py` pins GA/OR/VA/WA, which were blank,
   against each legislature's own list). A blank classification is not regular. Consumers are their own tickets:
