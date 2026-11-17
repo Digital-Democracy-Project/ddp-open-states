@@ -148,9 +148,9 @@ def run(image, image_core, containers, out):
         return 2
     if drift:
         out.write("\napi-v3 and the scrapers image run different openstates-core commits. Bring them to one commit: "
-                  "if the image is newer, rebuild both api-v3 copies (they take core's main); if api-v3 is newer "
-                  "(core merged and api-v3 rebuilt without a new image), ship a scrapers image first. Release order: "
-                  "the image, then any stored recompute, then api-v3.\n")
+                  "rebuild both api-v3 copies at the live image's core (refresh-api-v3.sh does; on EC2 set DDP_CORE_SHA). "
+                  "If the image named here is not the live one, name the live one. Release order: the image, then any "
+                  "stored recompute, then api-v3.\n")
         return 1
     out.write(f"OK: the scrapers image and {len(containers)} api-v3 container(s) all run core "
               f"{found[0][1]}.\n")

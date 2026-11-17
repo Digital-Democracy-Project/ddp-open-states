@@ -1,6 +1,6 @@
 """
 Tests for check-core-pin-drift.py (OPEN-579, OPEN-586): the scrapers image's openstates-core and the core installed in
-each api-v3 container must be one commit. Both builds take core's main; there is no pin file.
+each api-v3 container must be one commit. api-v3 is built at the image's core (DDP_CORE_SHA); there is no pin file.
 
 Same discipline as test_check_jurisdiction_drift.py: a world in which everything agrees, then one planted
 disagreement per source, each of which must fail and name both commits. Docker is replaced by a stub (no daemon, no
@@ -94,7 +94,7 @@ def test_installed_mismatch_fails_naming_both_commits(docker):
     docker["installed"]["ddp-openstates-api-1"] = _direct_url(B)
     rc, out = _check()
     assert rc == 1 and re.search(rf"DRIFT installed in ddp-openstates-api-1 is {B}, but image img:v61 is {A}", out), out
-    assert "ship a scrapers image first" in out and "the image, then any stored recompute, then api-v3" in out, out
+    assert "rebuild both api-v3 copies at the live image's core" in out and "the image, then any stored recompute, then api-v3" in out, out
 
 
 def test_two_containers_agreeing_with_each_other_but_not_the_image_both_drift(docker):
