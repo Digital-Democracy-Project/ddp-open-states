@@ -223,7 +223,7 @@ def test_the_api_v3_build_imports_the_app_after_everything_it_runs_on_is_in_plac
     m = re.search(r'^RUN DATABASE_URL=(\S+) python -c "import api\.main"$', dockerfile, re.M)
     assert m, "the build must import api.main"
     for earlier in ("COPY . /app", "openstates @ https://", "psycopg2-binary=="):
-        assert dockerfile.index(earlier) < m.start(), f"the import must come after {earlier!r}"
+        assert dockerfile.rindex(earlier) < m.start(), f"the import must come after every {earlier!r}"
     assert m.group(1).startswith("postgresql://build-check:unused@localhost:1/")
 
 
