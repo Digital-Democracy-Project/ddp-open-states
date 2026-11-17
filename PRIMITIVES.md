@@ -969,11 +969,12 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Scope:** 984 of 2,923 documents (514 bills). SB 292 now reads "Class D felony".
   * **Released:** core PR #94 (`a89dd31c`); `pymupdf` is declared in core's pyproject. It needs an image and `os-text-extract refresh-extraction al` (dry run first).
   * **Do not** add a text-level "struck words" cleaner for Alabama: the strike is only in the drawing.
-- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader.**
+- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader (since joined by North Carolina, Georgia and Nevada).**
   * **Where:** `read_without_struck_text(extract)` in openstates-core `fulltext/al.py` wraps each state's own PDF extractor (`extract_sometimes_numbered_pdf` for la and ne, `extract_line_numbered_pdf` for wa) in `CONVERSION_FUNCTIONS`, so the extractor reads the copy with struck characters removed by OPEN-530's `without_struck_text`. Washington's HTML reader and the empty "(( ))" marks: see OPEN-580 below.
   * **Only left-to-right text is measured.** The whole-archive comparison found Louisiana's redistricting maps (pages turned 90 degrees) losing parish labels to the parish borders; text in any other direction is read as before.
   * **Whole-archive comparison (2026-11-15, the Mac's archive copy):** LA 10,468 PDFs, 3,391 change; NE 3,383, 1,691; WA 5,818, 3,677. No document gains a character apart from 18 WA documents where the old reader had dropped a printed line. `scripts/open560_compare_struck_text.py` in core repeats it (read-only).
   * **Released:** not yet (openstates-core PR #99). It needs a scrapers image, then `os-text-extract refresh-extraction <state>` for la, ne and wa (dry run first, Ramon's go).
+  * **States wrapped since (all on core main, 2026-11-16), each with `extract_sometimes_numbered_pdf`:** nc (OPEN-584, core #109), ga (OPEN-601, core #112), nv (OPEN-591, core #111). The strike-reader states are now la, ne, wa, nc, ga and nv; a core test pins that exact set. Each needs the same release: a scrapers image, then `os-text-extract refresh-extraction <state>` (dry run first, Ramon's go). For nc, `refresh-extraction` already recomputes the comparisons it rewrites, so a separate `recompute-diff-order nc` is redundant (harmless).
   * **Do not** add a second strike reader or a text-level "struck words" cleaner for these states: add a state by wrapping its extractor with `read_without_struck_text`.
 - **OPEN-580: Washington's HTML printings are read without struck-out words or their "((" "))" marks, and the empty marks the PDF reader leaves are taken out.**
   * **Where:** openstates-core `fulltext/wa.py`. `handle_washington_html` (the `"wa"` `text/html` entry) reads `//html` as OPEN-212 did, after taking out every element styled `text-decoration:line-through` (Washington's strike markup), then `drop_deletion_marks` takes out each "((" "))" pair left holding only the removed strikes, spacing and dot or dash leaders. `without_deletion_marks` wraps the WA PDF reader (OPEN-560) and takes out the pairs that hold only spacing. So both printings of a version read "two-year, four-year", with no "((or))" and no "(( ))".
@@ -981,6 +982,11 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Whole-archive comparison (Mac archive copy):** 3,677 HTML documents change; none gains a character, and each loses exactly its struck characters plus marks and leaders. `scripts/open580_compare_wa_html.py` in core repeats it (read-only). On the replica's WA PDF text, 86,793 empty pairs go to 0 with no character gained.
   * **Released:** not yet (openstates-core PR #107). It needs a scrapers image, then `os-text-extract refresh-extraction wa` (dry run first, Ramon's go).
   * **Do not** add a text-level "((...))" cleaner that ignores the strike markup: it would eat formulas and chemical names.
+- **OPEN-600: Oregon PDFs are read without the [bracketed] words a bill deletes.**
+  * **Where:** openstates-core `fulltext/oregon.py`. `without_bracketed_text(extract_sometimes_numbered_pdf)` is Oregon's `"or"` PDF entry: it takes out every `[ ... ]` span Oregon prints in italic (its deletion mark) and tidies the spacing. A bracket printed upright is kept (a chemical name such as "benzo[c]chromen", a "[,]" in a quotation, fill-in blanks "[ ___ ]"). Amendment papers lose their bracketed words too, so they read as the text would. One space is added where a new word is printed against the closing bracket ("agencies[.]and of", SB 1534), so the words do not run together. Oregon draws no strike line, so Alabama's reader does not apply.
+  * **Measured (2026R1, govbot's copy):** 664 version PDFs, 360 change; 419 amendment papers, 163 change; nothing outside a bracket span removed, no word added. `scripts/open600_compare_or_brackets.py` in core repeats it (read-only).
+  * **Released:** not yet (openstates-core #114, merged 2026-11-16). It needs a scrapers image, then Oregon's archive; Oregon has no stored text, so nothing to re-extract.
+  * **Do not** add a text-level bracket cleaner elsewhere for Oregon.
 - **OPEN-511 — Louisiana: Conference Committee Reports are not bill versions either.** Louisiana's entry in
   `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS` (openstates-core `utils/version_ordering.py`, the table OPEN-491 used for its amendment
   papers) also matches `Conference Committee Report, #<N>, House <Adopted|Proposed|Rejected|Withdrawn>, Senate <same>`. The
@@ -1075,18 +1081,25 @@ functions, layered on top of the ordering work above rather than changing it.
       `bill_no=`, one-chamber or chunk run adds the rest of the group, and records the run's groups). Every bill
       of a group holds its votes back until the whole group is scraped (`group_member_done`). If any member's page
       or any page of its history failed, **none of the group's votes is sent** that run, so the import deletes
-      none of them (the bills themselves are still saved). Otherwise they all go out, and a roll call cited twice
+      none of them (the bills that were read are still saved; a member whose page failed is not, as for any
+      bill). Otherwise they all go out, and a roll call cited twice
       (by the real bill and a paper, or by two papers) goes out once, the real bill's own first. A paper whose real
       bill is not in the list is in no group: its votes stay on it, as before.
-    * **The one case it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
-      known to be a paper, so it is in no group; the real bill's votes go out, and the import deletes the votes
+    * **This holds only on the bills-only path.** The cloud collector runs Massachusetts with `--scrape bills`
+      only (`cloud_collector.py`, `scrape.votes_scraper: false`), which is how MA runs today (`cloud_path: true`).
+      `run-scrape.sh` also runs MA's separate `votes` scraper (OPEN-50 auto-detect): its journal votes would bring
+      votes for a held-back real bill, and the import would then delete the votes already moved to it. If MA ever
+      goes back to `run-scrape.sh`, that run does not have this protection.
+    * **The cases it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
+      known to be a paper, and a paper whose history page 1 failed in the pre-pass *and* again in the run names no
+      real bill ("OPEN-509: amendment paper ... names no single bill; not linked"). Either way it is in no group; the real bill's votes go out, and the import deletes the votes
       already moved from that paper until the next run brings them back (new row ids). If only the pre-pass fetch
-      failed, the paper is read in the run, is not linked, and its stored votes move back to it for that run
-      (nothing deleted).
+      (of the page or of history page 1) failed, the paper is read in the run, is not linked, and its stored votes
+      move back to it for that run (nothing deleted).
     * 81 of the 87 paper votes of the 194th move (Mac replica, 2026-11-16); the other 6 (H 4271, H 5349, H 61) are
       2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
       too would duplicate them.
-    * **Status:** openstates-scrapers #107, not merged; needs an image and a Massachusetts run.
+    * **Status:** openstates-scrapers #107, merged 2026-11-16; needs an image and a Massachusetts run.
   * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
     Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
     relabels and links; no separate step). Which image first carries them is not recorded here.

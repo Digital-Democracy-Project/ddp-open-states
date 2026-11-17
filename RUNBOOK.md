@@ -565,11 +565,20 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
    together: `bill_no=S3` or `bill_no=H4001` also scrapes the rest of that group, and the run log names the extra
    bills ("OPEN-568: also scraping ..."). Count those bills in the preview. If any bill of the group cannot be
    read whole (its page or a page of its history fails), the run sends none of that group's votes and logs
-   "OPEN-568: ... not read whole", so nothing of the group is deleted; run it again. The exception: a paper whose
-   page fails both in the pre-pass and in the run is not recognised as a paper, and the votes moved from it are
-   deleted from its real bill until the next run (PRIMITIVES, OPEN-568). Its sign in the log is a "Server Error on
-   ..." line naming an amendment paper's URL (an "Amendment H./S." title on the site). To repair, rescrape it once its page loads
-   (`bill_no=<paper>`, which brings its real bill's group); the votes come back with new row ids.
+   "OPEN-568: ... not read whole", so nothing of the group is deleted; run it again. The bills that were read are
+   saved; a member whose page failed is not. Two exceptions, where the votes moved from a paper are deleted from
+   its real bill until the next run (PRIMITIVES, OPEN-568):
+   * the paper's page fails both in the pre-pass and in the run, so it is not recognised as a paper. Its sign in
+     the log is a "Server Error on ..." line naming an amendment paper's URL (an "Amendment H./S." title on the site);
+   * the paper's history page 1 fails both in the pre-pass and in the run, so it names no real bill. Its sign is
+     "OPEN-509: amendment paper <paper> names no single bill; not linked" plus "Skipping actions for <paper URL>
+     -- fetch failed".
+
+   To repair either, rescrape the paper once its page loads (`bill_no=<paper>`, which brings its real bill's
+   group); the votes come back with new row ids. **This protection holds only on the bills-only cloud path**
+   (`cloud_collector.py` runs MA with `--scrape bills` only). `run-scrape.sh` also runs MA's `votes` scraper, whose
+   journal votes would let the import delete a held-back real bill's moved votes, so a Massachusetts run through
+   `run-scrape.sh` does not have it.
 
 ### The same steps by hand (reference only: this is what the script runs)
 
