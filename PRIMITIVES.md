@@ -593,9 +593,9 @@ step matters — a newer pip breaks one of the pinned deps' build.
   the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
 - **`check-core-pin-drift.py`** (OPEN-579, repo root; test `test_check_core_pin_drift.py`) — the one check that api-v3
-  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). **api-v3 builds from
-  core's main, like the scrapers image; there is no pin file** (OPEN-586, Ramon 2026-11-16: core, scrapers and api-v3
-  ship together; `ddp-openstates-core.txt` is gone). The check confirms both builds took the same main: it compares, as
+  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). **There is no pin
+  file** (OPEN-586, Ramon 2026-11-16: core, scrapers and api-v3 ship together; `ddp-openstates-core.txt` is gone): the
+  scrapers image takes core's main at build, and api-v3 is built at that image's commit. The check confirms it: it compares, as
   full 40-character SHAs, the core the live scrapers image was built from with the core installed in each api-v3
   container. Exit 0 agree, 1 drift (each line names both commits),
   2 a source could not be read (never a pass), the same contract as `check-jurisdiction-drift.py`.
@@ -603,19 +603,26 @@ step matters — a newer pip breaks one of the pinned deps' build.
     `/opt/openstates-core/DDP_CORE_COMMIT` before it deletes `.git`; `deploy-scrapers-image.sh` reads it back, stops if it
     is missing, and prints it. Images v60 and older have no record (their `.git` was deleted unrecorded): pass
     `--image-core <sha>`. `--image <ref>` reads the record with `docker run`, so the image must be on the host (the Mac).
-  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). api-v3's build
-    (`deploy/Dockerfile.ddp` here, api-v3's own `Dockerfile` and CI, the same install in each) resolves main with a remote
-    `ADD` of the GitHub ref, which Docker re-fetches every build (a new main busts the cache; no `--no-cache` needed), and
-    installs the fork archive **at that commit**, so pip records it. Do not install `archive/main.tar.gz`: it records no
-    commit and the check would call it drift. The version
+  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). The build both
+    api-v3 copies use (`deploy/Dockerfile.ddp`) installs the fork archive **at `DDP_CORE_SHA`, the live scrapers image's
+    core** (OPEN-586 follow-up, 2026-11-17), so pip records it and api-v3 always matches the image. There is no default:
+    a build without a full 40-character commit stops. `refresh-api-v3.sh` fills it from `SCRAPERS_IMAGE` /
+    `SCRAPERS_IMAGE_CORE` with `check-core-pin-drift.py --print-image-core` (the same reader the check uses; do not add a
+    second one) before it builds; on EC2 the prod agent sets `DDP_CORE_SHA=<sha>` for `docker-compose build api`. The
+    build no longer asks GitHub which commit main is (that unauthenticated lookup hit GitHub's 60-an-hour limit on the
+    Mac on 2026-11-17 and stopped a release). api-v3's own `Dockerfile` and CI still take main's commit (they test
+    against main; neither is deployed). Do not install `archive/main.tar.gz`: it records no commit and the check would
+    call it drift. The version
     string is useless here (fork and PyPI both say 6.26.5); a container with no fork archive URL is drift.
   * **Which image is live is the caller's to say** (`--image`/`--image-core`), like `check-jurisdiction-drift.py --live`;
     the script makes no AWS call and needs no new permission.
   * **Where it runs:** last step of `refresh-api-v3.sh` (`SCRAPERS_IMAGE` or `SCRAPERS_IMAGE_CORE`; neither is exit 2),
     by the prod agent after each EC2 api-v3 rebuild, and after each scrapers image release. **Do not** compare version
     strings or add a second copy of this comparison elsewhere. No schedule yet (follow-up).
-  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts. Rebuilding
-    api-v3 alone after a core merge puts it ahead of the image, and the check flags it.
+  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts, each built
+    at the new image's core. A core merge without a new image changes nothing in api-v3: a rebuild still takes the live
+    image's core. **Rollback:** retag a `ddp-openstates-api:pre-*` image as `:local` and recreate `api` only; rebuilding
+    an older api-v3 commit also works now, at the image's core.
   * **First run (Mac, 2026-11-16):** the Mac container ran `96445eb26` (the old pin) and v61 carries `bcde78e2c`, so the
     check reports drift until both api-v3 copies are rebuilt from main (OPEN-586; a test build of api-v3 from main on
     2026-11-16 installed `bcde78e2c` and passed the check against v61).

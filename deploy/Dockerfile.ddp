@@ -27,17 +27,19 @@ RUN poetry install --no-root --only main \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# DDP (OPEN-538, OPEN-586): api-v3's bill-version rules come from DDP's openstates-core fork, installed from the fork's
-# main at build time, the same install as api-v3's own Dockerfile (which says why each piece is there). The remote ADD is
-# re-fetched on every build, so a rebuild after a core merge picks up the new main without --no-cache; the archive is
-# installed at the resolved commit so pip's direct_url.json records it for check-core-pin-drift.py.
-ADD https://api.github.com/repos/Digital-Democracy-Project/openstates-core/git/ref/heads/main /tmp/ddp-core-main.json
-RUN sha=$(python3 -c "import json; print(json.load(open('/tmp/ddp-core-main.json'))['object']['sha'])") \
-    && echo "$sha" | grep -Eqx '[0-9a-f]{40}' \
-    && echo "DDP openstates-core main: $sha" \
+# DDP (OPEN-538, OPEN-586): api-v3's bill-version rules come from DDP's openstates-core fork. The build installs the
+# fork at DDP_CORE_SHA, the core commit the live scrapers image was built from (its /opt/openstates-core/DDP_CORE_COMMIT),
+# so api-v3 and the image run one commit and an old api-v3 commit rebuilds onto the same core (rollbacks reproduce).
+# refresh-api-v3.sh passes it from SCRAPERS_IMAGE / SCRAPERS_IMAGE_CORE; on EC2 the prod agent sets DDP_CORE_SHA for
+# `docker-compose build api`. No default: a build without a full 40-character commit stops here. The archive is
+# installed at that commit so pip's direct_url.json records it for check-core-pin-drift.py. Same flags as api-v3's own
+# Dockerfile (which says why each is there).
+ARG DDP_CORE_SHA
+RUN { [ "${#DDP_CORE_SHA}" -eq 40 ] && [ -z "$(printf '%s' "${DDP_CORE_SHA}" | tr -d 0-9a-f)" ]; } \
+       || { echo "DDP_CORE_SHA must be the scrapers image's full core commit (40 hex), got '${DDP_CORE_SHA}'" >&2; exit 1; } \
+    && echo "DDP openstates-core: ${DDP_CORE_SHA}" \
     && pip3 install --disable-pip-version-check --no-cache-dir --no-deps --ignore-requires-python \
-       "openstates @ https://github.com/Digital-Democracy-Project/openstates-core/archive/${sha}.tar.gz" \
-    && rm /tmp/ddp-core-main.json
+       "openstates @ https://github.com/Digital-Democracy-Project/openstates-core/archive/${DDP_CORE_SHA}.tar.gz"
 
 # DDP fix: replace the SCRAM-incapable psycopg2 with a modern-libpq wheel.
 RUN pip3 install --force-reinstall --no-cache-dir 'psycopg2-binary==2.9.9'

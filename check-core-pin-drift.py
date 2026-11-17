@@ -19,7 +19,8 @@ Compares these commits, each a full 40-character SHA, and fails on any differenc
              caller's to say, same convention as check-jurisdiction-drift.py's --live: this script makes no AWS call.
   installed  the openstates package installed in each api-v3 container (`--container`, repeatable; default
              ddp-openstates-api-1): pip's direct_url.json for the archive install carries the URL with the SHA. api-v3's
-             build installs the archive at the commit it resolved for main, so this is the core it actually runs. The
+             build installs the archive at DDP_CORE_SHA (the image's commit, passed in by refresh-api-v3.sh or the
+             prod agent; `--print-image-core` prints it), so this is the core it actually runs. The
              version string cannot tell the fork from PyPI (both say 6.26.5), so a container with no direct_url.json
              (PyPI, or anything that is not an archive install of the fork) is drift too.
 
@@ -93,25 +94,28 @@ def installed_commit(container):
     return _fork_sha(data.get("url"))
 
 
+def image_source(image, image_core):
+    """(label, sha) of the live scrapers image's core, from exactly one of --image / --image-core."""
+    if image and image_core:
+        raise SourceError("give --image or --image-core, not both")
+    if image:
+        return "image " + image, image_commit(image)
+    if image_core:
+        if FULL_SHA.fullmatch(image_core):
+            return "image (--image-core)", image_core
+        raise SourceError(f"--image-core must be a full 40-character commit, got {image_core!r}")
+    raise SourceError("no scrapers image given: pass --image <ref> (the live tag) or --image-core <sha>")
+
+
 def run(image, image_core, containers, out):
     found = []    # (label, sha); the image first, so every drift line compares a container with the image
     errors = []
     drift = []
 
-    if image and image_core:
-        errors.append("give --image or --image-core, not both")
-    elif image:
-        try:
-            found.append(("image " + image, image_commit(image)))
-        except SourceError as exc:
-            errors.append(str(exc))
-    elif image_core:
-        if FULL_SHA.fullmatch(image_core):
-            found.append(("image (--image-core)", image_core))
-        else:
-            errors.append(f"--image-core must be a full 40-character commit, got {image_core!r}")
-    else:
-        errors.append("no scrapers image given: pass --image <ref> (the live tag) or --image-core <sha>")
+    try:
+        found.append(image_source(image, image_core))
+    except SourceError as exc:
+        errors.append(str(exc))
 
     if not containers:
         errors.append("no api-v3 container given")
@@ -144,9 +148,9 @@ def run(image, image_core, containers, out):
         return 2
     if drift:
         out.write("\napi-v3 and the scrapers image run different openstates-core commits. Bring them to one commit: "
-                  "if the image is newer, rebuild both api-v3 copies (they take core's main); if api-v3 is newer "
-                  "(core merged and api-v3 rebuilt without a new image), ship a scrapers image first. Release order: "
-                  "the image, then any stored recompute, then api-v3.\n")
+                  "rebuild both api-v3 copies at the live image's core (refresh-api-v3.sh does; on EC2 set DDP_CORE_SHA). "
+                  "If the image named here is not the live one, name the live one. Release order: the image, then any "
+                  "stored recompute, then api-v3.\n")
         return 1
     out.write(f"OK: the scrapers image and {len(containers)} api-v3 container(s) all run core "
               f"{found[0][1]}.\n")
@@ -160,7 +164,16 @@ def main(argv, out=sys.stdout):
     parser.add_argument("--image-core", help="the live scrapers image's core commit (full SHA), when the image is not on this host")
     parser.add_argument("--container", action="append", default=None,
                         help=f"an api-v3 container to read (repeatable; default {DEFAULT_CONTAINER})")
+    parser.add_argument("--print-image-core", action="store_true",
+                        help="print the image's core commit and exit (refresh-api-v3.sh builds api-v3 at it, OPEN-586)")
     args = parser.parse_args(argv[1:])
+    if args.print_image_core:
+        try:
+            out.write(image_source(args.image, args.image_core)[1] + "\n")
+        except SourceError as exc:
+            out.write(f"ERROR {exc}\n")
+            return 2
+        return 0
     return run(args.image, args.image_core, args.container or [DEFAULT_CONTAINER], out)
 
 

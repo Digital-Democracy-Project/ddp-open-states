@@ -80,6 +80,9 @@ def _run(host, script):
         API_V3_DIR=str(host["api_v3"]),
         DOCKER_HOST="unix:///nonexistent",
         MANIFEST_PYTHON=sys.executable,
+        # refresh-api-v3.sh reads the scrapers image's core before its build (OPEN-586); start-os-api.sh ignores these
+        REPO_DIR=_HERE,
+        SCRAPERS_IMAGE_CORE="44c3b8dc82a0f296b68c3bf2a2e6e2454e5b29b9",
     )
     return subprocess.run(["bash", str(host["scripts"] / script)], env=env, capture_output=True, text=True, timeout=60)
 
