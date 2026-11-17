@@ -1,4 +1,4 @@
-# UPDATE to GO `1fc0d67`: add step 7, Georgia, Nevada and Oregon's people loads and first manual runs on v62 (`ddp-scrapers:65`), after steps 1-6. 2026-11-17 (Mac side)
+# UPDATE to GO `1fc0d67`: add step 7, Georgia, Nevada and Oregon's people loads and first manual runs on v62 (`ddp-scrapers:65`), after steps 1-6. 2026-11-17 (Mac side; two clarifications from the Push Button Onboarding session added 02:20 UTC)
 
 **Ramon, 2026-11-17 (pop-up):** "Add them to my request now". The Push Button Onboarding session prepared these states; it does the Mac-side checks after each run (send it the run ids through this branch's reply).
 
@@ -16,8 +16,9 @@ Steps 1-6 of `1fc0d67` are unchanged and come first. The Congress deadline (02:4
 * Any "went missing" or retirement line in another state: stop and report.
 
 **B. One manual run each**, the `1f19165` method: `POST /ddp-sync/v1/trigger/openstates-scrape/<st>`, one call, no retry. Order: **nv**, then **or**, then **ga** (the long one).
-* **Gate, each:** ECS revision **65**; the scrape line shows the manifest's session (**ga `2026_ss`**, **nv `2025Special36`**, **or `2026R1`**); `status=completed failed=0`; the archive finished.
+* **Gate, each:** ECS revision **65**; the scraper's own "no session provided, using active sessions: {…}" line names **ga `2026_ss`**, **nv `2025Special36`**, **or `2026R1`** (the manifest has no session field; Oregon's votes scraper uses the same active session); `status=completed failed=0`; the archive finished.
 * **ga:** a full run, about 1.5 h (about 29 s per bill). Do not set `start_filter` (it stays false until a later manifest PR, OPEN-604).
+* **ga archive:** `www.legis.ga.gov` timed out from the Mac on 11-16 (the 10-31 Fargate probe got through). Report the archive's fetched and `fetch_errors` counts for ga; fetch errors are a report, not a retry.
 * **or:** report vote events > 0, **floor and committee** separately.
 * Report each run id, bill count, vote-event count and archived-document count.
 
