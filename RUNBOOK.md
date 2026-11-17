@@ -447,6 +447,69 @@ source activate.sh && python validate_jurisdictions.py && $OS_PEOPLE --help >/de
 # way back: rm -rf .venv && mv .venv-py39 .venv
 ```
 
+**The EC2 production host's tool venv (OPEN-614; still Python 3.9.2 as of 2026-11-17).** The host
+(Debian 11) keeps one venv outside containers, `/opt/ddp-open-states/.venv`. It is built on
+`/usr/bin/python3.9`, with `openstates` installed editable from `/opt/ddp-open-states/openstates-core`.
+The prod agent's inventory (ops-handoff `1a2ff64`):
+- **No cron job, systemd timer or container uses it.**
+- **The manifest tools do:** `deploy/rollout-manifest.sh`, `deploy/sync-manifest.sh` and `validate_jurisdictions.py`
+  call `.venv/bin` (so do `activate.sh` and the legacy `run-scrape.sh`, which the Fargate path doesn't use).
+- **So do the prod agent's one-off passes:** `recompute-diff-order`, `reverse-action-order`,
+  `remove-stale-documents`, `refresh-extraction`. Each runs with a throwaway worktree of the target core on
+  `PYTHONPATH`, in front of the checkout. **That stays the way to pick the core:** switching the venv
+  doesn't change which core runs.
+
+Debian 11 ships no Python 3.13, so the host gets uv's standalone build. It installs under the
+`bitnami` user's home; nothing goes through apt, and the system Python isn't touched.
+The switch follows the Mac recipe above, with three differences:
+- no Playwright (the host doesn't scrape);
+- the old venv is kept as `.venv-py39`;
+- a before/after dry run must match.
+
+**Only with Ramon's go**, with no pass or manifest rollout running, as the user that owns
+`/opt/ddp-open-states`:
+
+```bash
+cd /opt/ddp-open-states
+# 0. uv and Python 3.13, user-local (pin the uv version; the installer writes to ~/.local/bin)
+curl -LsSf https://astral.sh/uv/0.11.7/install.sh | sh
+~/.local/bin/uv python install 3.13
+~/.local/bin/uv python find 3.13                     # a path under ~/.local/share/uv/python/
+
+# 1. Baseline on the OLD venv: one read-only dry run, kept for the comparison in step 4
+git -C openstates-core worktree add -f /tmp/core-614 <live image core sha>   # the usual throwaway worktree
+PYTHONPATH=/tmp/core-614 .venv/bin/os-text-extract recompute-diff-order nv --dry-run --list /tmp/614-old.csv > /tmp/614-old.txt 2>&1
+.venv/bin/python validate_jurisdictions.py > /tmp/614-old-validate.txt 2>&1
+
+# 2. Switch (tools unavailable for the few minutes of the build)
+mv .venv .venv-py39
+"$(~/.local/bin/uv python find 3.13)" -m venv .venv
+.venv/bin/pip install 'pip<24.1'
+.venv/bin/pip install --no-deps -r requirements-openstates.txt
+.venv/bin/pip install --no-deps -e openstates-core
+.venv/bin/python --version                           # 3.13.x
+.venv/bin/python -c "import openstates; print(openstates.__file__)"   # under /opt/ddp-open-states/openstates-core
+
+# 3. The same checks on the NEW venv
+PYTHONPATH=/tmp/core-614 .venv/bin/os-text-extract recompute-diff-order nv --dry-run --list /tmp/614-new.csv > /tmp/614-new.txt 2>&1
+.venv/bin/python validate_jurisdictions.py > /tmp/614-new-validate.txt 2>&1
+bash deploy/rollout-manifest.sh --host ec2 --ddp-sync-root <ddp-sync path> --dry-run   # must exit 0
+
+# 4. Gate: identical results (timestamps aside)
+diff /tmp/614-old.csv /tmp/614-new.csv && diff /tmp/614-old-validate.txt /tmp/614-new-validate.txt
+# summary lines (corrected=, nulled=, errors=) in 614-old.txt and 614-new.txt must match
+
+# way back: rm -rf .venv && mv .venv-py39 .venv
+```
+
+- **Keep `.venv-py39`** until one real pass (a committed recompute or a manifest rollout) has run on
+  the new venv; then delete it with Ramon's go.
+- If step 2's `pip install -e openstates-core` refuses the checkout's Python range, stop and roll back.
+  The checkout (`5c79b47d`, 2026-09-08) declares `python = "^3.9"`, which 3.13 satisfies; core main
+  declares `^3.13`.
+- The step 1 and 3 dry run is `nv` because it is small (49 comparisons) and read-only; any small state
+  works.
+
 > **Do NOT `pip install` FastAPI or any pydantic-v2 package into this venv** — that reintroduces the
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
 > does not use this venv.
