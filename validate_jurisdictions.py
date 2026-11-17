@@ -67,6 +67,7 @@ TOP_LEVEL_FIELDS = {
     "enrollment": dict,
     "waf": dict,
     "quality": dict,
+    "chambers": dict,
     "api_keys": list,
     "onboarding": dict,
 }
@@ -143,6 +144,17 @@ WAF_FIELDS = {
 
 QUALITY_FIELDS = {
     "diff_cleaner": str,
+}
+
+# OPEN-556 (PLAN-state-specific-handling C7): the legislature's own chamber names, for display, instead of "House" and
+# "Senate" everywhere (wrong for an Assembly, Virginia's House of Delegates and Nebraska). `upper` and `lower` are
+# OpenStates' chamber classifications. A one-house legislature (`unicameral: true`, Nebraska) has its one name in
+# `upper`, because OpenStates' `legislature` chamber is read as the upper chamber (BROKER-456), and `lower: null`.
+# Display only: no stored data uses these. api-v3 serves them at GET /ddp/enrollment.
+CHAMBERS_FIELDS = {
+    "unicameral": bool,
+    "upper": str,
+    "lower": (str, type(None)),
 }
 
 ONBOARDING_FIELDS = {
@@ -279,6 +291,20 @@ def validate(data):
 
         if isinstance(entry.get("quality"), dict):
             _check_block(entry["quality"], QUALITY_FIELDS, f"{code}.quality", errors)
+
+        if isinstance(entry.get("chambers"), dict):
+            _check_block(entry["chambers"], CHAMBERS_FIELDS, f"{code}.chambers", errors)
+            chambers = entry["chambers"]
+            for side in ("upper", "lower"):
+                if isinstance(chambers.get(side), str) and not chambers[side].strip():
+                    errors.append(f"{code}.chambers.{side}: must be the chamber's name, got an empty string")
+            unicameral, lower = chambers.get("unicameral"), chambers.get("lower")
+            if unicameral is True and lower is not None:
+                errors.append(f"{code}.chambers.lower: must be null for a one-house legislature (unicameral: true); "
+                              f"its one name goes in chambers.upper, got {lower!r}")
+            if unicameral is False and "lower" in chambers and lower is None:
+                errors.append(f"{code}.chambers.lower: a two-house legislature (unicameral: false) needs its lower "
+                              f"chamber's name, got null")
 
         if isinstance(entry.get("onboarding"), dict):
             _check_block(entry["onboarding"], ONBOARDING_FIELDS, f"{code}.onboarding", errors)

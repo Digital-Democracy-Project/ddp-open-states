@@ -1677,7 +1677,7 @@ first credentialed onboarding DDP actually does is more likely Indiana than DC.
 
 An **eighth** mechanism, added after the six-mechanisms survey above — deliberately not folded
 into it, because it isn't a replacement for any of the seven: it's a new, narrowly-scoped
-per-jurisdiction manifest (name/status/scrape/archive/waf/quality/api_keys/onboarding
+per-jurisdiction manifest (name/status/scrape/archive/waf/quality/chambers/api_keys/onboarding
 fields, schema in `ddp-infra/PLAN-push-button-onboarding.md` §4.1) consumed **only** by this
 repo's own scripts (`activate.sh`, `run-scrape.sh`, `run-people-refresh.sh`, `start-os-api.sh`,
 `quality_check.py`) and the onboarding probe below. `ddp-sync`/`ddp-broker-py`/`ddp-next`/votebot
@@ -1753,6 +1753,17 @@ scope line was deliberate, not an oversight.
   `jurisdictions.yaml`. **Never add Voatz data to this repo or api-v3.** Release order (BROKER-494): the broker first
   (it stops reading `voatz` from api-v3), then this file and api-v3 in either order (api-v3 already serves an entry
   without a `voatz` block).
+- **`chambers:` block (OPEN-556, PLAN-state-specific-handling C7, 2026-11-17).** Each entry names its legislature's
+  own chambers for display: `chambers.upper` and `chambers.lower` (OpenStates' chamber classifications) and
+  `chambers.unicameral`. A one-house legislature (`ne`, the only one) has `unicameral: true`, its one name in `upper`
+  (OpenStates' `legislature` chamber is read as the upper one, BROKER-456) and `lower: null`. Required on every entry,
+  live or not; the validator also refuses an empty name, a lower name on a one-house legislature and a null one on a
+  two-house legislature. `new-jurisdiction` writes Senate / House of Representatives and flags them for a human to check
+  against the legislature's site. api-v3's `GET /ddp/enrollment` serves the block as `chambers` (api-v3 OPEN-556 PR;
+  503 if an entry lacks it). **Release order: this file first on both hosts (pull, `deploy/sync-manifest.sh`), then
+  api-v3; a rollback goes the other way, api-v3 first** (a rebuilt api-v3 answers 503 to a manifest without the block). Display names only: no stored data changes, and the consumers (ddp-next, ddp-sync, which print
+  "House"/"Senate" today) move to it in their own tickets. No other list here to compare it with, so the drift check
+  does not read it.
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),

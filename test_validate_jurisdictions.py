@@ -55,6 +55,11 @@ def _valid_entry():
         "quality": {
             "diff_cleaner": "none",
         },
+        "chambers": {
+            "unicameral": False,
+            "upper": "Senate",
+            "lower": "House of Representatives",
+        },
         "api_keys": [],
         "onboarding": {
             "epic": None,
@@ -581,3 +586,54 @@ def test_the_real_manifest_keeps_the_values_ddp_sync_had():
     assert on(("enrollment", "broker_bill_event_signal")) == []
     assert all(e["scrape"]["cadence_escalation"] for e in data.values())
     assert {c: e["scrape"]["fargate_max_wait_s"] for c, e in data.items() if e["scrape"]["fargate_max_wait_s"]} == {"ma": 86400}
+
+
+# --- OPEN-556: chamber names and the one-house flag ----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("dotted", [None, "chambers.unicameral", "chambers.upper", "chambers.lower"])
+def test_chambers_are_required_on_every_entry(dotted):
+    entry = _valid_entry()
+    if dotted is None:
+        del entry["chambers"]
+        assert "xx.chambers: missing required field" in validate({"xx": entry})
+    else:
+        del entry["chambers"][dotted.split(".")[1]]
+        assert f"xx.{dotted}: missing required field" in validate({"xx": entry})
+
+
+@pytest.mark.parametrize("field,value", [("unicameral", "no"), ("unicameral", None), ("upper", None), ("upper", 1),
+                                         ("lower", 1), ("upper", ""), ("lower", "  ")])
+def test_chambers_reject_a_wrong_type_or_an_empty_name(field, value):
+    entry = _valid_entry()
+    entry["chambers"][field] = value
+    assert any(e.startswith(f"xx.chambers.{field}:") for e in validate({"xx": entry}))
+
+
+def test_chambers_reject_an_unknown_field():
+    entry = _valid_entry()
+    entry["chambers"]["legislature"] = "Legislature"
+    assert validate({"xx": entry}) == ["xx.chambers.legislature: unknown field (not in the §4.1 schema)"]
+
+
+def test_a_one_house_legislature_has_no_lower_chamber_and_a_two_house_one_needs_it():
+    entry = _valid_entry()
+    entry["chambers"] = {"unicameral": True, "upper": "Legislature", "lower": None}
+    assert validate({"xx": entry}) == []
+    entry["chambers"]["lower"] = "House of Representatives"
+    assert any(e.startswith("xx.chambers.lower: must be null for a one-house") for e in validate({"xx": entry}))
+    entry["chambers"] = {"unicameral": False, "upper": "Senate", "lower": None}
+    assert any(e.startswith("xx.chambers.lower: a two-house legislature") for e in validate({"xx": entry}))
+
+
+def test_the_real_manifest_names_each_legislatures_chambers():
+    """OPEN-556: the values checked against each legislature's own site (see the PR). Pinned so a wrong edit is seen."""
+    with open(DEFAULT_MANIFEST_PATH) as fh:
+        data = yaml.safe_load(fh)
+    names = {c: (e["chambers"]["upper"], e["chambers"]["lower"]) for c, e in data.items()}
+    assert [c for c, e in data.items() if e["chambers"]["unicameral"]] == ["ne"]
+    assert names["ne"] == ("Legislature", None)
+    assert names["va"] == ("Senate", "House of Delegates")
+    assert names["nv"] == ("Senate", "Assembly")
+    house = {c for c, (upper, lower) in names.items() if (upper, lower) == ("Senate", "House of Representatives")}
+    assert house == set(data) - {"ne", "va", "nv"}

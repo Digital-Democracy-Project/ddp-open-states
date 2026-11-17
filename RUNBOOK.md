@@ -310,7 +310,8 @@ UTC**. Left behind by the 2026-10-07 write test (this IAM user cannot delete it)
 0. **A brand-new state (Stage 0):** run `new-jurisdiction <st> --from-probe <probe result.json or folder>
    --dry-run` to generate the initial `status: probing` entry from the probe's own result (OPEN-461) instead
    of hand-typing it. Review the printed block and the fields it lists as needing a human
-   (`quality.diff_cleaner`, `waf.profile`), then run it again without `--dry-run`. It refuses to write
+   (`quality.diff_cleaner`, `waf.profile`, and `chambers`: check the chamber names against the legislature's own
+   site, e.g. an Assembly, a House of Delegates or a one-house legislature, OPEN-556), then run it again without `--dry-run`. It refuses to write
    anything `validate_jurisdictions.py` rejects and never touches another state's block; rerun it any time
    against a newer probe result to see exactly what changed. Finish with step 2 below (the validator and drift
    check) before committing. See PRIMITIVES.md for exactly what it writes and what it deliberately never
