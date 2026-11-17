@@ -56,7 +56,12 @@ should reuse rather than reimplement:
   as `os-update ... start=<ts>` (incremental mode). No marker → full scrape. **This is the
   resumability primitive** — `backfill-fl-historical.sh` reuses it directly (it just checks
   whether `logs/last-run/fl_session_<id>.ts` exists before calling `run-scrape.sh` at all, rather
-  than duplicating cutoff logic).
+  than duplicating cutoff logic). **A state whose manifest says `scrape.start_filter: false` never
+  gets `start=`** (OPEN-501 follow-up, 2026-11-16): when a marker exists, `run-scrape.sh` asks
+  `cloud_collector.py`'s own `scraper_takes_start()` (the cloud path's rule: `usa` reads `us`, a
+  state with no entry keeps `start=`) and runs `false` states full, logging why; the marker is
+  still written. A manifest that does not validate stops the run before scraping. One rule for both
+  paths, no state list here; `test-start-filter.sh` pins it (al, nc, va, a manifest copy, a broken one).
 - **`log()`** — `echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a logs/scraper.log`. Every DDP
   script in this repo defines its own copy of this exact pattern (`run-scrape.sh`,
   `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write
@@ -179,6 +184,21 @@ should reuse rather than reimplement:
   the site still honours it (OPEN-232); `ddp-sync` now records `_meta.minted_at` and each Michigan run that gets past that
   check logs the cookie's age to stderr (a refused run prints its own ERROR instead) ("no minted_at recorded" for one published before that). Informational only:
   nothing refuses on age.
+  **Which scrapers it asks for is read from `jurisdictions.yaml`, never a list in this file:**
+  `scraper_takes_start()` (OPEN-501, `scrape.start_filter`: may `bills` be handed `start=`) and
+  `scraper_has_votes()` (OPEN-592, `scrape.votes_scraper`: also run the state's SEPARATE `votes`
+  scraper, the cloud twin of `run-scrape.sh`'s OPEN-50 auto-detect; Oregon's votes come only from
+  one). Both go through `_manifest_scrape_entry()`: `usa` reads `us`, a state with no entry keeps
+  the old behaviour (start allowed, no `votes`), and a manifest that does not validate stops the run
+  before scraping. `votes` is appended **after** every `k=v` (session, `start=`): os-update hands
+  each `k=v` to the scraper named just before it, so `votes` then gets its own `session=<s>` when
+  the run has one (only that: never `start=`, never e.g. `chamber=`). os-update runs `bills` first
+  and stops at the first scraper that returns nothing, so the OPEN-244 no-op ("no objects returned
+  from") applies only when no bill/vote file was written (the jurisdiction/organization files
+  os-update always writes do not count); bills written and then an empty `votes` is a **failed**
+  run (watermark kept, bills re-collected next run). Massachusetts registers a votes scraper but is
+  `false` on purpose (its votes come from `ma/bills.py`; Ramon, 2026-11-16: stays off). Add a
+  third per-state scrape fact the same way; do not hard-code a state list here.
 - **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
   **one** cloud collection run, identified by its manifest (never bare object presence): fetches
   every object the manifest names into a staging directory, refuses on an absent/unparsable/
@@ -396,20 +416,51 @@ agent tasks die on session teardown, this does not. If you add a backfill for an
 jurisdiction, copy this script's shape (marker-check loop + smallest-first ordering), don't
 build a new state-tracking mechanism.
 
-## `fix-open*.py` — one-off `personvote` repair scripts (repo root)
+## `fix-*.py` — one-off `personvote` repair scripts (`archive/person-matching-fixes/` and repo root)
 
-Seven of these now exist and they are a family, not seven unrelated scripts. All of them repair
-`opencivicdata_personvote` in the replica, and all share the same shape — **copy the nearest one
-rather than starting from psycopg2**:
+These are a family, not unrelated scripts. All of them repair `opencivicdata_personvote` in the
+replica, and all share the same shape — **copy the nearest one rather than starting from psycopg2**.
 
-- **Wrong person** (`voter_id` set, pointing at the wrong legislator): `fix-grijalva-*`,
-  `fix-open110-fl-smith-*`, `fix-open113-wa-cortes-valdez-*`, `fix-open114-mi-outman-*`,
-  `fix-open115-fl-smith-senate-*`. Completion record for the whole 2026-08-19 batch:
-  `vote-misattribution-backfills-completed-20260819.md`.
-- **No person** (`voter_id IS NULL`, resolved to nobody): `fix-open116-blank-voter-id-*` (bare
-  surnames that were ambiguous), `fix-open174-mi-myers-phillips-*` (a journal name the roster
-  spells differently). Completion record:
-  `OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`.
+**Six of the person-matching ones are archived (OPEN-553, 2026-11-16) in
+`archive/person-matching-fixes/`.** Each case was re-checked read-only against the production
+replica (`openstates_rds_repl_20260911`) on 2026-11-16: no stored row is still wrong or blank for
+these cases except the few listed below, and rows written by imports after each rule existed come
+out right, so none is a recurring chore any more. The rule that replaced each script lives at the
+source, not in a script:
+
+| Script (archived) | Case | Where the rule lives now |
+|---|---|---|
+| `fix-open110-fl-smith-*`, `fix-open115-fl-smith-senate-*` | FL "Smith", House/Senate crossed | core `resolve_person()` cache key includes the chamber (OPEN-112) |
+| `fix-open113-wa-cortes-valdez-*` | WA Senate "Cortes"/"Valdez" on House members | same OPEN-112 chamber cache key |
+| `fix-open114-mi-outman-*` | MI Senate "Outman" on Pat Outman | same OPEN-112 chamber cache key |
+| `fix-open116-blank-voter-id-*` | FL "Garcia", WA "Hunt", MI "Greene" left blank | chamber-scoped name match + current-role tie-break in `resolve_person()` |
+| `fix-open174-mi-myers-phillips-*` | MI House "Myers-Phillips" left blank | people fork `other_names: Myers-Phillips` (data/mi, 2026-08-26) |
+
+Archived means "not needed for new imports", not "no stored row is still wrong": on 2026-11-16, 9
+Michigan "Myers-Phillips" rows were still blank (vote events last imported before the name reached
+the database), and the choice between a re-import and a script run is Ramon's under the scorecard
+gate. Completion records of the real runs stay at the root:
+`vote-misattribution-backfills-completed-20260819.md`,
+`OPEN-174-mi-myers-phillips-backfill-completed-20260827.md`. **A new person-matching case goes to
+the source first** — a people `other_names` entry or identifier (as OPEN-474 and OPEN-526 did), or a
+scraper name rule — and only the rows already stored get a script, copied from the archive.
+
+**`fix-grijalva-vote-misattribution.py` stays at the root: its case is not settled.** Core's
+`resolve_person()` matches the bioguide id first (OPEN-2) and today resolves G000551 to Raúl
+Grijalva, but when that lookup finds no one it falls back to the bare surname, and the
+current-role tie-break then picks Adelita Grijalva for any 119th-Congress "Grijalva" row. On
+2026-11-16, 52 Raúl votes (Jan–Mar 2025) were on Adelita, 5 of them from vote events created by a
+2026-09-16 import; why the id lookup missed then is not known.
+
+`open304-add-lis-identifiers.py` stays at the repo root although its case is also covered now
+(the people fork carries the 14 `lis` ids since 2026-09-22): the Fargate image copies it and
+ddp-sync's `/trigger/open304-lis-identifiers` launches it, so retiring it is a change in both repos.
+On 2026-11-16, 198 US Senate rows for those 14 senators were still blank (vote events last imported
+on or before 2026-10-07; later imports resolve them). `backfill-vote-person-resolution.py` (US, fills
+blank voters by bioguide/lis id) is the general tool for that, not a one-off, and stays.
+
+Still at the repo root:
+
 - **Stale rows the scraper no longer writes** (a different family: this one deletes whole vote events, not
   `personvote` fields): `fix-open433-az-stale-empty-vote-events.py` removes the empty Arizona events that the
   pre-2026-07-11 scraper stored for procedural motions (0 counts, no voters, azleg floor-action source). The
@@ -542,24 +593,32 @@ step matters — a newer pip breaks one of the pinned deps' build.
   the 2026-10-30 dev results: api-v3 `docs/runbook/ddp-bill-search.md` section 8.
 
 - **`check-core-pin-drift.py`** (OPEN-579, repo root; test `test_check_core_pin_drift.py`) — the one check that api-v3
-  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). It compares, as
-  full 40-character SHAs: api-v3's pin (`api-v3/ddp-openstates-core.txt`, OPEN-538), the core the live scrapers image was
-  built from, and the core installed in each api-v3 container. Exit 0 agree, 1 drift (each line names both commits),
+  and the scrapers image run the **same openstates-core commit** (PLAN-state-specific-handling §4.4). **api-v3 builds from
+  core's main, like the scrapers image; there is no pin file** (OPEN-586, Ramon 2026-11-16: core, scrapers and api-v3
+  ship together; `ddp-openstates-core.txt` is gone). The check confirms both builds took the same main: it compares, as
+  full 40-character SHAs, the core the live scrapers image was built from with the core installed in each api-v3
+  container. Exit 0 agree, 1 drift (each line names both commits),
   2 a source could not be read (never a pass), the same contract as `check-jurisdiction-drift.py`.
   * **The image's record:** the `Dockerfile` writes `git rev-parse HEAD` of the core clone to
     `/opt/openstates-core/DDP_CORE_COMMIT` before it deletes `.git`; `deploy-scrapers-image.sh` reads it back, stops if it
     is missing, and prints it. Images v60 and older have no record (their `.git` was deleted unrecorded): pass
     `--image-core <sha>`. `--image <ref>` reads the record with `docker run`, so the image must be on the host (the Mac).
-  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). The version
+  * **The container's core:** pip's `direct_url.json` for `openstates` (the archive URL carries the SHA). api-v3's build
+    (`deploy/Dockerfile.ddp` here, api-v3's own `Dockerfile` and CI, the same install in each) resolves main with a remote
+    `ADD` of the GitHub ref, which Docker re-fetches every build (a new main busts the cache; no `--no-cache` needed), and
+    installs the fork archive **at that commit**, so pip records it. Do not install `archive/main.tar.gz`: it records no
+    commit and the check would call it drift. The version
     string is useless here (fork and PyPI both say 6.26.5); a container with no fork archive URL is drift.
   * **Which image is live is the caller's to say** (`--image`/`--image-core`), like `check-jurisdiction-drift.py --live`;
     the script makes no AWS call and needs no new permission.
   * **Where it runs:** last step of `refresh-api-v3.sh` (`SCRAPERS_IMAGE` or `SCRAPERS_IMAGE_CORE`; neither is exit 2),
     by the prod agent after each EC2 api-v3 rebuild, and after each scrapers image release. **Do not** compare version
     strings or add a second copy of this comparison elsewhere. No schedule yet (follow-up).
-  * **First run (Mac, 2026-11-16):** pin and the Mac container both `96445eb26`; v60's `/opt/openstates-core` matches
-    core `e964183b` file for file (OPEN-539's `diff_baseline_id`, merged after `96445eb26`), not `96445eb26`, so the
-    check reports drift until api-v3's pin moves to `e964183b` (or later, with a matching image).
+  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts. Rebuilding
+    api-v3 alone after a core merge puts it ahead of the image, and the check flags it.
+  * **First run (Mac, 2026-11-16):** the Mac container ran `96445eb26` (the old pin) and v61 carries `bcde78e2c`, so the
+    check reports drift until both api-v3 copies are rebuilt from main (OPEN-586; a test build of api-v3 from main on
+    2026-11-16 installed `bcde78e2c` and passed the check against v61).
 
 - **The "current session" rule lives in api-v3, once (OPEN-467, 2026-10-31).** `api-v3/api/current_session.py`
   (`session_flags`) decides which legislative sessions are current and previous, and
@@ -720,14 +779,10 @@ DB row order is chronological for any bill-version work; use these instead**:
   re-fetching), mirroring `os-text-extract archive`'s dry-run-then-commit discipline. Use this
   any time the stage table changes, or to correct existing wrong diffs after finding a new
   jurisdiction-specific ordering issue — don't hand-write a one-off correction script.
-- **api-v3 has its own copy of this classifier** (`api-v3/api/version_ordering.py`, OPEN-92) —
-  api-v3's bill-detail endpoint (`include=versions`) used to resolve "latest"/"previous" via a
-  naive `(date, note)` sort and needed the same fix, but api-v3 installs `openstates` from PyPI
-  rather than this fork, so it can't import the module above directly yet. The copy's own
-  docstring says to keep it byte-for-byte identical to this one — if you're changing the stage
-  table here, port the change to api-v3's copy too, not the other way around. Re-pinning api-v3's
-  `openstates` dependency to this fork (so the copy can be deleted) is a known, larger follow-up,
-  not yet done.
+- **api-v3 imports this module; it keeps no copy** (OPEN-538 removed `api-v3/api/version_ordering.py`, OPEN-92's
+  copy). api-v3 installs this fork (`--no-deps --ignore-requires-python`) from core's **main at build time** (OPEN-586,
+  no pin file), so a stage-table change reaches api-v3 at its next rebuild; release it after the scrapers image and
+  confirm with `check-core-pin-drift.py`.
 
 **Updated 2026-08-31 (OPEN-217/OPEN-107/OPEN-219):** three further fixes to the same two
 functions, layered on top of the ordering work above rather than changing it.
@@ -891,6 +946,32 @@ functions, layered on top of the ordering work above rather than changing it.
     kept_last_copy=56`), a final recompute dry run 0/0; api-v3 #62 before Alabama LegBot. Ramon's go for each.
   * **Do not** order Alabama versions by name again or add a second Alabama adoption rule; a new date-ordered state
     goes in `_DATE_ORDERED_JURISDICTIONS` (core and api-v3) once its scraper dates every version.
+- **OPEN-602: Georgia's version names have stages, its papers are not versions, and its versions are ordered by the site's document number.**
+  * **Stages** (`note_stage()` in openstates-core `utils/version_ordering.py`, exact shapes, last in the function): "LC n n/a"
+    introduced; House substitutes "LC n nS/hs", "/hcs", "/hss", "/hrcs", "/rcs" and Senate committee substitutes "Sen Ctee Sub LC ...",
+    "Committee Sub LC ..." amendment; "SCSFA to HB n", "SFA to HB n", "Adopted Senate", "Read and adopted LC ..." chamber passage;
+    "HB n/AP*" final passage. Spaces are collapsed first (Georgia types names by hand). 278 of 303 names had no stage, now 0.
+  * **Not versions** (Georgia's entry in `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS`, so `is_bill_version` is false): "Local Ad" (the
+    newspaper notice of intent to introduce a local bill), floor amendment papers ("Floor Amend 1 AM 47 0219", "Sen Floor Amend
+    1A"), fiscal notes, auditor's certifications.
+  * **Order:** `version_sort_key(..., "Georgia")` puts the site's document number (from the link URL, `document_number()`) first
+    (`_DOCUMENT_ORDERED_JURISDICTIONS`); the stage breaks a tie. Georgia's own `Version` field (`_version_id`) is not an order.
+  * **Where:** openstates-core PR #115. api-v3 imports these rules (OPEN-538), so it follows when its core pin moves.
+  * **Do not** order Georgia by stage or by `_version_id`, or add a second Georgia list; a new Georgia name goes in the same shapes.
+- **OPEN-593: Virginia's substitutes are ordered by LIS file number** (openstates-core #113, not yet live).
+  * **Core:** `document_number()` in `utils/version_ordering.py` also reads Virginia's LIS file number
+    (`lis.blob.core.windows.net/files/<n>.PDF`, the **largest** of a version's files) as `version_sort_key`'s last
+    tiebreaker, the slot Arizona's (OPEN-368) and Georgia's (OPEN-602) numbers use, but the largest file rather than the smallest; and for Virginia an amendment-stage version's ordinal is 0
+    ("Subcommittee #3" and "Secondary" were read as ordinals). The stage still leads.
+  * **Measured (Mac replica, 2026-11-16):** 565 Virginia bills change order (528 in 2026, 37 in 2027), 141 change their
+    latest version; a recompute would correct 4,763 stored comparisons in those 565 bills. Checked against the bills'
+    own action dates: 2026 pairs 462 agree, 1 contradicts; the 2027 carried-over session's re-published files only mostly
+    (23 / 7).
+  * **Release:** image, api-v3 rebuild on both hosts, `recompute-diff-order va` (dry run expects corrected=4,763), then
+    the broker's `refresh_bill_version_order --jurisdiction VA`.
+  * **Do not** add a second Virginia ordering rule or read an ordinal from a Virginia substitute's name. Other states'
+    remaining same-key ties (Florida `pb`/`Filed`, Michigan House/Senate pairs) come out right in today's walk order
+    and are not covered by a rule.
 - **OPEN-529: Alabama's pre-diff cleaner also drops the Enrolled signature and certification block, the front header (bill number, tracking code, sponsor, "RFD:", "First Read:") and spacing inside a line.**
   * **Where:** the same `_clean_al_text` (OPEN-372) in openstates-core `cli/text_extract.py`, through the one `apply_prediff_cleaning` chain. The cut points are found on the text as printed, before the older rules.
   * **Effect on all 917 comparisons:** changed lines 45,968 → 33,416; comparisons 95%+ noise 364 → 1; none gets more changed lines; 409 Enrolled comparisons become empty. Every cleaned document is a continuous slice of the old cleaned text (checked over all 2,923).
@@ -907,11 +988,12 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Scope:** 984 of 2,923 documents (514 bills). SB 292 now reads "Class D felony".
   * **Released:** core PR #94 (`a89dd31c`); `pymupdf` is declared in core's pyproject. It needs an image and `os-text-extract refresh-extraction al` (dry run first).
   * **Do not** add a text-level "struck words" cleaner for Alabama: the strike is only in the drawing.
-- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader.**
+- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader (since joined by North Carolina, Georgia and Nevada).**
   * **Where:** `read_without_struck_text(extract)` in openstates-core `fulltext/al.py` wraps each state's own PDF extractor (`extract_sometimes_numbered_pdf` for la and ne, `extract_line_numbered_pdf` for wa) in `CONVERSION_FUNCTIONS`, so the extractor reads the copy with struck characters removed by OPEN-530's `without_struck_text`. Washington's HTML reader and the empty "(( ))" marks: see OPEN-580 below.
   * **Only left-to-right text is measured.** The whole-archive comparison found Louisiana's redistricting maps (pages turned 90 degrees) losing parish labels to the parish borders; text in any other direction is read as before.
   * **Whole-archive comparison (2026-11-15, the Mac's archive copy):** LA 10,468 PDFs, 3,391 change; NE 3,383, 1,691; WA 5,818, 3,677. No document gains a character apart from 18 WA documents where the old reader had dropped a printed line. `scripts/open560_compare_struck_text.py` in core repeats it (read-only).
   * **Released:** not yet (openstates-core PR #99). It needs a scrapers image, then `os-text-extract refresh-extraction <state>` for la, ne and wa (dry run first, Ramon's go).
+  * **States wrapped since (all on core main, 2026-11-16), each with `extract_sometimes_numbered_pdf`:** nc (OPEN-584, core #109), ga (OPEN-601, core #112), nv (OPEN-591, core #111). The strike-reader states are now la, ne, wa, nc, ga and nv; a core test pins that exact set. Each needs the same release: a scrapers image, then `os-text-extract refresh-extraction <state>` (dry run first, Ramon's go). For nc, `refresh-extraction` already recomputes the comparisons it rewrites, so a separate `recompute-diff-order nc` is redundant (harmless).
   * **Do not** add a second strike reader or a text-level "struck words" cleaner for these states: add a state by wrapping its extractor with `read_without_struck_text`.
 - **OPEN-580: Washington's HTML printings are read without struck-out words or their "((" "))" marks, and the empty marks the PDF reader leaves are taken out.**
   * **Where:** openstates-core `fulltext/wa.py`. `handle_washington_html` (the `"wa"` `text/html` entry) reads `//html` as OPEN-212 did, after taking out every element styled `text-decoration:line-through` (Washington's strike markup), then `drop_deletion_marks` takes out each "((" "))" pair left holding only the removed strikes, spacing and dot or dash leaders. `without_deletion_marks` wraps the WA PDF reader (OPEN-560) and takes out the pairs that hold only spacing. So both printings of a version read "two-year, four-year", with no "((or))" and no "(( ))".
@@ -919,6 +1001,11 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Whole-archive comparison (Mac archive copy):** 3,677 HTML documents change; none gains a character, and each loses exactly its struck characters plus marks and leaders. `scripts/open580_compare_wa_html.py` in core repeats it (read-only). On the replica's WA PDF text, 86,793 empty pairs go to 0 with no character gained.
   * **Released:** not yet (openstates-core PR #107). It needs a scrapers image, then `os-text-extract refresh-extraction wa` (dry run first, Ramon's go).
   * **Do not** add a text-level "((...))" cleaner that ignores the strike markup: it would eat formulas and chemical names.
+- **OPEN-600: Oregon PDFs are read without the [bracketed] words a bill deletes.**
+  * **Where:** openstates-core `fulltext/oregon.py`. `without_bracketed_text(extract_sometimes_numbered_pdf)` is Oregon's `"or"` PDF entry: it takes out every `[ ... ]` span Oregon prints in italic (its deletion mark) and tidies the spacing. A bracket printed upright is kept (a chemical name such as "benzo[c]chromen", a "[,]" in a quotation, fill-in blanks "[ ___ ]"). Amendment papers lose their bracketed words too, so they read as the text would. One space is added where a new word is printed against the closing bracket ("agencies[.]and of", SB 1534), so the words do not run together. Oregon draws no strike line, so Alabama's reader does not apply.
+  * **Measured (2026R1, govbot's copy):** 664 version PDFs, 360 change; 419 amendment papers, 163 change; nothing outside a bracket span removed, no word added. `scripts/open600_compare_or_brackets.py` in core repeats it (read-only).
+  * **Released:** not yet (openstates-core #114, merged 2026-11-16). It needs a scrapers image, then Oregon's archive; Oregon has no stored text, so nothing to re-extract.
+  * **Do not** add a text-level bracket cleaner elsewhere for Oregon.
 - **OPEN-511 — Louisiana: Conference Committee Reports are not bill versions either.** Louisiana's entry in
   `_PROCEDURAL_DOCUMENT_NOTE_PATTERNS` (openstates-core `utils/version_ordering.py`, the table OPEN-491 used for its amendment
   papers) also matches `Conference Committee Report, #<N>, House <Adopted|Proposed|Rejected|Withdrawn>, Senate <same>`. The
@@ -965,6 +1052,8 @@ functions, layered on top of the ordering work above rather than changing it.
       from api-v3.
   * **Left alone:** amendment papers (the scraper still yields them and would overwrite the label; OPEN-509) and any
     bill with a recorded vote (the 8 rules items, Ramon 2026-11-08).
+  * Its write and summary code is shared with `relabel` (OPEN-546), the general per-state re-label pass; use that for
+    any new label rule.
   * **Do not** add a second "is this a bill" list: extend the title table and `_NON_BILL_KIND_RULES`. The website's
     filter for these labels is NEXT-182.
   * **Measured on the Mac replica (194th, 2026-11-10):** 3,132 to relabel (report 1,538, communication 998, study request
@@ -1011,18 +1100,25 @@ functions, layered on top of the ordering work above rather than changing it.
       `bill_no=`, one-chamber or chunk run adds the rest of the group, and records the run's groups). Every bill
       of a group holds its votes back until the whole group is scraped (`group_member_done`). If any member's page
       or any page of its history failed, **none of the group's votes is sent** that run, so the import deletes
-      none of them (the bills themselves are still saved). Otherwise they all go out, and a roll call cited twice
+      none of them (the bills that were read are still saved; a member whose page failed is not, as for any
+      bill). Otherwise they all go out, and a roll call cited twice
       (by the real bill and a paper, or by two papers) goes out once, the real bill's own first. A paper whose real
       bill is not in the list is in no group: its votes stay on it, as before.
-    * **The one case it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
-      known to be a paper, so it is in no group; the real bill's votes go out, and the import deletes the votes
+    * **This holds only on the bills-only path.** The cloud collector runs Massachusetts with `--scrape bills`
+      only (`cloud_collector.py`, `scrape.votes_scraper: false`), which is how MA runs today (`cloud_path: true`).
+      `run-scrape.sh` also runs MA's separate `votes` scraper (OPEN-50 auto-detect): its journal votes would bring
+      votes for a held-back real bill, and the import would then delete the votes already moved to it. If MA ever
+      goes back to `run-scrape.sh`, that run does not have this protection.
+    * **The cases it cannot cover:** a paper whose page failed in the pre-pass *and* again in the run is not
+      known to be a paper, and a paper whose history page 1 failed in the pre-pass *and* again in the run names no
+      real bill ("OPEN-509: amendment paper ... names no single bill; not linked"). Either way it is in no group; the real bill's votes go out, and the import deletes the votes
       already moved from that paper until the next run brings them back (new row ids). If only the pre-pass fetch
-      failed, the paper is read in the run, is not linked, and its stored votes move back to it for that run
-      (nothing deleted).
+      (of the page or of history page 1) failed, the paper is read in the run, is not linked, and its stored votes
+      move back to it for that run (nothing deleted).
     * 81 of the 87 paper votes of the 194th move (Mac replica, 2026-11-16); the other 6 (H 4271, H 5349, H 61) are
       2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
       too would duplicate them.
-    * **Status:** openstates-scrapers #107, not merged; needs an image and a Massachusetts run.
+    * **Status:** openstates-scrapers #107, merged 2026-11-16; needs an image and a Massachusetts run.
   * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
     Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
     relabels and links; no separate step). Which image first carries them is not recorded here.
@@ -1072,6 +1168,37 @@ functions, layered on top of the ordering work above rather than changing it.
     5. Set the state's label back to `actions.newest_first: false`.
     6. Silent broker re-bootstrap; confirm 0 events went out.
     7. Resume the scrape.
+- **OPEN-546: `os-text-extract relabel <state>` re-applies a state's label rules to its stored actions and bills**
+  (plan PLAN-state-specific-handling §6 Phase 3). When a state's action or bill rule moves from the broker into the
+  ETL, the scraper applies it only to bills it re-scrapes. This pass applies the same rule to the stored history, in
+  the state's **silent window**, before the broker reader is deleted.
+  * **The rule:** `classify_action(*, description, classification, chamber, date)` and
+    `classify_bill(*, identifier, title, classification)` in openstates-core `openstates/ddp_states/<state>.py`. Each
+    returns the whole label list and must give the same answer on its own output. The scraper calls the same
+    function; `state_rule(state, name)` in `openstates/ddp_states/__init__.py` finds it. **No state module exists yet**
+    (OPEN-545, OPEN-547 to 552 add them); a state without one is refused. **Do not** put a state's label rule anywhere
+    else (a second table, the broker, a script).
+  * **The command:** `os-text-extract relabel <state> [--session S] [--dry-run|--commit] [--expect N] [--list FILE]
+    [--undo LIST]`. Same shape as `reverse-action-order`.
+    * Dry run by default: `actions changed=N unchanged=M | bills changed=N unchanged=M`, then old -> new counts.
+    * `--list` writes one CSV row per changed action or bill (kind, id, bill, identifier, session, order, date,
+      chamber, text, old, new). `--commit` needs it, and the committed list is the audit record (no second label is
+      stored). It takes its name only after the database commit; an existing list is never overwritten. `--expect N`
+      counts bills and actions together.
+    * Only `classification` is written, never text, date, order or chamber. Each item is written only if its labels
+      and the rule's inputs are unchanged since the read; otherwise the whole run rolls back. A rule that would move
+      again on its own output is refused, so a second run changes 0.
+    * A bill whose action labels change has `latest_passage_date` recomputed and its `updated_at` moved (as a
+      re-import would); a bill-label-only change does not move `updated_at` (as `relabel-non-bills`).
+    * `--undo LIST --commit` puts back the old labels from a committed list (the window's rollback), only for items
+      that still hold the new labels.
+  * **Scorecards (Ramon, 2026-11-16):** a re-label never touches vote events, but the broker reads action labels for
+    which votes count (`motion_eligibility.py`, `openstates_service.py`), for stages and bill events (`bill_stage.py`,
+    `bill_events.py`), and stores `latest_passage_date`. So each state's run needs the silent window, the four
+    scorecard checks on its ticket (OPEN-546 comment), and Ramon's go per state.
+  * **`relabel-non-bills` (OPEN-517)** shares this command's guarded write and summary code and keeps its own
+    Massachusetts rule. A new label rule uses `relabel`, not a new command.
+  * **Status:** openstates-core #110, not merged, not run. Each run is a prod-agent step after a scrapers image.
 - **OPEN-564: `os-text-extract remove-stale-documents <state>` removes saved documents whose version note is gone.**
   The archiver keys a saved document on `(bill, version_note, version_date, source_url)`. When a scraper renames a
   version, the next archive saves the same file again under the new note, and the old row stays behind, matching no

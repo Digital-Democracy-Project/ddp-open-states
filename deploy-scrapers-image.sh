@@ -68,7 +68,7 @@ echo "$OUT"
 printf '%s\n' "$OUT" | grep -q '^RC=0$'   || die "UT smoke scrape did not exit 0"
 printf '%s\n' "$OUT" | grep -q '^SSL=0$'  || die "UT smoke scrape hit an SSLError"
 printf '%s\n' "$OUT" | grep -q 'bill: 1'  || die "UT smoke scrape did not produce 1 bill"
-echo "-- the core commit the image records (OPEN-579; compared with api-v3's pin by check-core-pin-drift.py)"
+echo "-- the core commit the image records (OPEN-579; compared with api-v3's by check-core-pin-drift.py)"
 CORE=$(docker run --rm --entrypoint cat "$IMG" /opt/openstates-core/DDP_CORE_COMMIT)
 printf '%s\n' "$CORE" | grep -Eq '^[0-9a-f]{40}$' || die "the image has no core commit record (got: $CORE)"
 echo "openstates-core $CORE"
@@ -105,6 +105,6 @@ REV=$(aws ecs register-task-definition --region "$REGION" --cli-input-json file:
 
 say "DONE: $TAG pushed, task-definition revision $REV registered"
 echo "Tell Claude:   tag $TAG, revision $REV, core $CORE"
-echo "Core pin:      cd ~/Developer/repos/ddp-open-states && python3 check-core-pin-drift.py --image $IMG"
-echo "               (fails until api-v3's pin is $CORE and both api-v3 copies are rebuilt; RUNBOOK -> api-v3 release)"
+echo "Core check:    cd ~/Developer/repos/ddp-open-states && python3 check-core-pin-drift.py --image $IMG"
+echo "               (fails until both api-v3 copies are rebuilt on core $CORE; RUNBOOK -> api-v3 release)"
 echo "Rollback:      aws ecs deregister-task-definition --region $REGION --task-definition ddp-scrapers:$REV"

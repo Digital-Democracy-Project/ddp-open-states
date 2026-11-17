@@ -337,9 +337,9 @@ def test_real_manifest_matches_known_live_config_values():
     assert data["va"]["api_keys"] == ["VA_API_KEY"]
     assert data["us"]["api_keys"] == ["CONGRESS_GOV_API_KEY"]
 
-    # OPEN-50: only MA has a live (non-commented) separate votes scraper today
-    assert data["ma"]["scrape"]["votes_scraper"] is True
-    for code in ("us", "fl", "wa", "va", "mi", "ut", "az"):
+    # OPEN-50/OPEN-592: MA registers a separate votes scraper but stays false on purpose (its votes
+    # come from ma/bills.py; Ramon, 2026-11-16: MAVoteScraper stays off)
+    for code in ("us", "fl", "wa", "va", "mi", "ut", "az", "ma"):
         assert data[code]["scrape"]["votes_scraper"] is False
 
     # OPEN-128: MA's start= filter was deleted 2026-08-25
