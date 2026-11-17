@@ -19,7 +19,7 @@ check-jurisdiction-drift.py requires for a code with no ddp-sync-specific entry;
 the probe's dry-scrape wall-clock or per-bill latency, which measure something else entirely).
 waf.profile and quality.diff_cleaner are never guessed from probe output (the exact mistake
 behind MA/NC/AL's wrong survey values) -- they are written as safe placeholders and printed as
-needing a human.
+needing a human. So are the chamber names (OPEN-556): Senate and House of Representatives, two houses.
 
 Safety:
   - Validates the composed manifest with validate_jurisdictions.py's own validate() before writing
@@ -221,6 +221,8 @@ def compose_entry(data, gate_b_facts):
         "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
         "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False},
         "quality": {"diff_cleaner": "none"},
+        # OPEN-556: the most common names, never read from the probe; a human checks them against the legislature's site
+        "chambers": {"unicameral": False, "upper": "Senate", "lower": "House of Representatives"},
         "api_keys": gate_b_facts["api_keys"],
         "onboarding": {
             "epic": None,
@@ -232,6 +234,8 @@ def compose_entry(data, gate_b_facts):
         ("waf.fargate_safe", "defaults to true (the probe produced a usable result, so the site was reachable); "
                              "set false only for a state whose cookie must be minted on the Mac, as mi's is"),
         ("quality.diff_cleaner", "never guessed from probe output (the MA/NC/AL survey's wrong-value mistake)"),
+        ("chambers", "the most common names (Senate, House of Representatives); check them against the "
+                     "legislature's own site (an Assembly, a House of Delegates, a one-house legislature)"),
     ]
     if not entry["onboarding"]["evidence"]:
         needs_human.append(("onboarding.evidence", "probe result had no run_id to derive a notes/ path from"))
@@ -297,6 +301,10 @@ def render_block(code, entry, needs_human, source_desc):
         f"    scrapebot_fallback: {_scalar(entry['waf']['scrapebot_fallback'])}    # SYNC-157: ScrapeBot cookie mint before scrape and archive",
         "  quality:",
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
+        f"  chambers:{note('chambers')}",
+        f"    unicameral: {_scalar(entry['chambers']['unicameral'])}",
+        f"    upper: {_scalar(entry['chambers']['upper'])}",
+        f"    lower: {_scalar(entry['chambers']['lower'])}",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
         "  onboarding:",
         f"    epic: {_scalar(entry['onboarding']['epic'])}",

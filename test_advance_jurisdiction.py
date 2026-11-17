@@ -59,6 +59,10 @@ pa:
     scrapebot_fallback: false
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -98,6 +102,10 @@ ne:
     scrapebot_fallback: false
   quality:
     diff_cleaner: none
+  chambers:
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null

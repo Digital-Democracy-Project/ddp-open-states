@@ -69,6 +69,14 @@
 #     openstates, voatz, legbot, etc."). The Voatz test precinct and the private poll creator id (BROKER-482) live
 #     in each state's Voatz entry in AWS Secrets Manager, read by the broker. The validator rejects a `voatz` block.
 #
+# OPEN-556 (2026-11-17, PLAN-state-specific-handling C7): `chambers:` names each legislature's own chambers for
+# display (upper, lower) and says whether it has one house (unicameral). Nebraska is the only one-house legislature: its
+# one name ("Legislature", from nebraskalegislature.gov's "Nebraska Legislature") is in upper, because OpenStates' and
+# the broker's reading of its `legislature` chamber is the upper one (BROKER-456), and lower is null. Every value was
+# checked on 2026-11-17 against the legislature's own site (sources in the OPEN-556 PR); Georgia's sites refused the
+# connection that day, so its two names rest on legis.ga.gov's own page titles ("Senators", "Representatives").
+# api-v3's GET /ddp/enrollment serves the block; no stored data uses it.
+#
 # SYNC-157 (2026-11-12): ddp-sync keeps no list of states of its own any more; it reads these (values copied from its
 # sync_schedule.yaml that day): scrape.sweep_import, scrape.full_walk, scrape.retry (never with a WAF profile, OPEN-53),
 # scrape.cadence_escalation, scrape.fargate_max_wait_s (null = ddp-sync's shared Fargate wait), waf.scrapebot_fallback and
@@ -151,6 +159,10 @@ us:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
@@ -195,6 +207,10 @@ fl:
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -234,6 +250,10 @@ wa:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -274,6 +294,10 @@ va:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Delegates
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
                                          # pattern -- see PRIMITIVES.md)
@@ -320,6 +344,10 @@ mi:
     scrapebot_fallback: true    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -359,6 +387,10 @@ ut:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -399,6 +431,10 @@ az:
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -454,6 +490,10 @@ ma:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
                                                # code already cleaned MA
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: null
@@ -506,6 +546,10 @@ nc:
                                          # OPEN-371); OPEN-462 found this said none while the code
                                          # already cleaned NC (gate C passed is about the extractor,
                                          # not about this cleaner)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -550,6 +594,10 @@ al:
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-146
@@ -591,6 +639,10 @@ pa:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -630,6 +682,10 @@ ne:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: true            # one house: its one name is in upper (BROKER-456 reads OpenStates' `legislature` as upper)
+    upper: Legislature
+    lower: null
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -669,6 +725,10 @@ la:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-480
@@ -709,6 +769,10 @@ ga:
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-587
@@ -749,6 +813,10 @@ nv:
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper adds the bill page's history rows top to bottom (scrapers/nv/bills.py add_actions), oldest first; 2026-11-16 Mac-half import: 0 of 54 next-action pairs went back in time (OPEN-588); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: Assembly
   api_keys: []
   onboarding:
     epic: OPEN-588
@@ -789,6 +857,10 @@ or:
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper adds MeasureHistoryActions in the API's order (scrapers/or/bills.py), oldest first; 2026-11-16 Mac-half import: 0 of 86 next-action pairs went back in time (OPEN-589); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
   api_keys: []
   onboarding:
     epic: OPEN-589
