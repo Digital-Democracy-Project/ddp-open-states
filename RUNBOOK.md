@@ -90,7 +90,7 @@ which image is live.
   and builds at it; without either, or with an unreadable image, it stops **before** the build (exit 2, the running
   container untouched). It runs the check last.
   On EC2 (no scrapers image there) the prod agent builds with
-  `DDP_CORE_SHA=<full sha> docker-compose -f docker-compose.ddp.yml build api` (a build without it fails), recreates
+  `DDP_CORE_SHA=<full sha> docker-compose -f /opt/ddp-open-states/deploy/docker-compose.rds.yml build api` (EC2's compose file; every compose file that builds `Dockerfile.ddp` passes `DDP_CORE_SHA`) (a build without it fails), recreates
   `api` only, then runs `python3 check-core-pin-drift.py --image-core <full sha> [--container <api-v3 container>]`
   from the checkout, with the sha from the deploy output or the ops-handoff note.
 * **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts, each

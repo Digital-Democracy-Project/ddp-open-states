@@ -202,6 +202,19 @@ def test_the_api_v3_build_installs_core_at_the_given_commit_the_checker_can_read
     assert re.search(r"^ +args:\n(?: +#.*\n)* +DDP_CORE_SHA: \$\{DDP_CORE_SHA:-\}$", compose, re.M), compose
 
 
+def test_every_compose_file_that_builds_the_api_v3_image_passes_the_core_commit():
+    """EC2 builds with docker-compose.rds.yml, the Mac with docker-compose.ddp.yml (review of #402): a compose file that
+    builds Dockerfile.ddp without passing DDP_CORE_SHA hands the build an empty value and the build stops."""
+    import glob
+    builders = [p for p in sorted(glob.glob(os.path.join(HERE, "deploy", "docker-compose*.yml")))
+                if "Dockerfile.ddp" in open(p).read()]
+    assert {os.path.basename(p) for p in builders} >= {"docker-compose.ddp.yml", "docker-compose.rds.yml"}, builders
+    for p in builders:
+        text = open(p).read()
+        assert re.search(r"^ +dockerfile: \.\./deploy/Dockerfile\.ddp\n +args:\n(?: +#.*\n)* +DDP_CORE_SHA: \$\{DDP_CORE_SHA:-\}$",
+                         text, re.M), os.path.basename(p)
+
+
 def _dockerfile_core_check(value):
     """Run the Dockerfile's own DDP_CORE_SHA check (the part of its RUN before the install) in a shell."""
     dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()

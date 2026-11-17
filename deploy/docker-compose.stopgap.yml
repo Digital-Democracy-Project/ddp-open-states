@@ -8,6 +8,9 @@ services:
     build:
       context: ../api-v3
       dockerfile: ../deploy/Dockerfile.ddp
+      args:
+        # OPEN-586: the live scrapers image's core commit (set DDP_CORE_SHA; empty fails the build).
+        DDP_CORE_SHA: ${DDP_CORE_SHA:-}
     image: ddp-openstates-api:local
     container_name: ddp-openstates-api-stopgap
     restart: unless-stopped
