@@ -19,6 +19,9 @@ Cases (OPEN-611, read on the production replica 2026-11-17):
   ma lower "Garcia"            8  Judith García; her "Garcia" other name loaded after the votes (2026-08-23)
   mi lower "Myers-Phillips"   11  Tonya Phillips; the "Myers-Phillips" other name (2026-08-26) loaded after the votes
   fl lower "Garcia"          469  Alina García; needs people #27 ("Garcia" other name) loaded first, else 0 fill
+  nc lower "Helfrich"        807  Beth Gardner Helfrich (House since 2025-01-01; 2025: 802, 2025E1: 5); needs people #22
+                                  (OPEN-233, "Helfrich" other name) loaded first, else 0 fill. Added 2026-11-17 (Ramon:
+                                  "Fold into OPEN-611")
 US Congress votes are not here: they carry the member's id, and backfill-vote-person-resolution.py fills them.
 
 Scorecards: a filled row starts counting on that legislator's scorecard. Each state's commit needs the scorecard gate
@@ -52,6 +55,7 @@ CASES = [
     ("ma", "lower", "Garcia"),
     ("mi", "lower", "Myers-Phillips"),
     ("fl", "lower", "Garcia"),
+    ("nc", "lower", "Helfrich"),
 ]
 
 
@@ -141,7 +145,7 @@ def plan_case(cur, state, chamber, name):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--state", help="only this state's case (wa, ma, mi, fl)")
+    parser.add_argument("--state", help="only this state's case (wa, ma, mi, fl, nc)")
     parser.add_argument("--list", dest="list_path", help="write one CSV row per vote that is (or would be) filled")
     parser.add_argument("--commit", action="store_true", help="write; without it this is a dry run")
     args = parser.parse_args(argv)
