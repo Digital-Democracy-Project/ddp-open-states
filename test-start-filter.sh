@@ -84,14 +84,18 @@ rm -rf "$RUN_ROOT"
 # The answer comes from the manifest, not from a list in the script: flip va to false in a copy.
 MANIFESTS=$(mktemp -d /tmp/start-filter-manifests.XXXXXX)
 trap 'rm -rf "$MANIFESTS"' EXIT
-python3 - "$SCRIPT_DIR/jurisdictions.yaml" "$MANIFESTS/va-false.yaml" <<'PY'
+# copy_with_va_start_filter <value> <dest>: the real manifest with only va's start_filter changed
+copy_with_va_start_filter() {
+    python3 - "$SCRIPT_DIR/jurisdictions.yaml" "$2" "$1" <<'PY'
 import sys
-src, dst = sys.argv[1], sys.argv[2]
+src, dst, value = sys.argv[1], sys.argv[2], sys.argv[3]
 text = open(src).read()
 start = text.index("\nva:\n")
 end = text.index("start_filter: true", start)
-open(dst, "w").write(text[:end] + "start_filter: false" + text[end + len("start_filter: true"):])
+open(dst, "w").write(text[:end] + "start_filter: " + value + text[end + len("start_filter: true"):])
 PY
+}
+copy_with_va_start_filter false "$MANIFESTS/va-false.yaml"
 
 echo "== the manifest decides: va flipped to false in a copy of the manifest =="
 run_state va "$MANIFESTS/va-false.yaml"
@@ -100,7 +104,9 @@ check "va (manifest copy says false): full mode" "full" "$(started_mode)"
 rm -rf "$RUN_ROOT"
 
 echo "== a manifest that cannot be read stops the run before scraping =="
-printf 'va:\n  scrape: {start_filter: "maybe"}\n' > "$MANIFESTS/broken.yaml"
+# Only va's start_filter is broken; every other field (allow_duplicates included) stays readable, so
+# nothing later in run-scrape.sh stops the run -- only the OPEN-501 refusal can.
+copy_with_va_start_filter '"maybe"' "$MANIFESTS/broken.yaml"
 run_state va "$MANIFESTS/broken.yaml"
 check "broken manifest: exits non-zero" "yes" "$([ "$RUN_RC" != "0" ] && echo yes || echo "no (rc=$RUN_RC)")"
 check "broken manifest: os-update never called" "no" "$([ -s "$RUN_ROOT/args" ] && echo yes || echo no)"
