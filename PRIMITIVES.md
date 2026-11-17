@@ -402,7 +402,9 @@ a `NOT NULL` column with no default, an identity/generated column, a function de
 the Mac and give existing rows different values), a changed type, a table with a generated column, or a table with no primary key. It reads RDS only
 (no publication or grant changes: those stay the prod agent's), never touches local-only tables, the locally built
 `ddp_bill_search` or the foreign keys the Mac dropped, and reports a new RDS table the publication does not carry only
-after `--seed-known-unpublished`. One run at a time (lock), bounded run time (watchdog kills the whole process tree),
+after `--seed-known-unpublished`. The only tables RDS keeps out of the publication on purpose are `ddp_bill_search` and
+`profiles_profile` (README → "The contract for exact"); every other table, `ddp_bill_document_not_found` included, belongs
+in it (that one's publication is a pending prod step, OPEN-621), so never add a name to the known-unpublished list to quiet a `FAIL:`. One run at a time (lock), bounded run time (watchdog kills the whole process tree),
 idempotent, `--dry-run`. Credential: the existing read-only replication login from a mode-600 file
 (`STRUCTURE_SYNC_ENV_FILE`) or the environment, never printed. **Reuses, does not reimplement:** the column read is
 `compare-schema.sh`'s `pg_attribute`/`format_type()` query (extended with default and identity), the table list is the

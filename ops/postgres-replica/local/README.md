@@ -87,7 +87,7 @@ switched on. **RDS is only ever read**: the job never changes the publication, g
 | New column that is `NOT NULL` with no default, identity/generated, or whose default is not a plain constant (`now()`, `gen_random_uuid()`, `nextval()`, any function) | **Refuses**: prints a `FAIL:` line, never applies it. A function default would be evaluated again on the Mac and give existing rows values that differ from RDS, for good (replication never replays RDS's backfill). Decide by hand |
 | A column's type or `NOT NULL` changed | **Refuses** (`FAIL:` line). Rebuild the replica (below) |
 | New table added to the publication | Creates it locally (columns, types, `NOT NULL`, primary key, other indexes; no foreign keys, defaults or triggers: the Mac copy is read-only; an identity column becomes a plain column), in one transaction. A table with a **generated** column is refused (its value is not replicated, the Mac would hold NULL for ever), as is one with no primary key. Then `ALTER SUBSCRIPTION ... REFRESH PUBLICATION`, which subscribes **every** pending published table, so it runs only when **all** of them exist locally and `ddp_local_replication` can `SELECT` them on RDS; if any one is not ready it prints a `FAIL:` line (the prod agent must `GRANT` it) and refreshes **nothing**, so no table-copy worker can crash-loop |
-| A table on RDS that is not in the publication | Never acted on. A `FAIL:` line only if it is **new** since `--seed-known-unpublished` (see install step 3); `ddp_bill_search` (the Mac builds its own) is always known |
+| A table on RDS that is not in the publication | Never acted on. A `FAIL:` line only if it is **new** since `--seed-known-unpublished` (see install step 3); `ddp_bill_search` (the Mac builds its own) is always known. The fix for such a line is to publish the table (see "The contract for exact" under OPEN-312), not to add it to the known list |
 | A column that exists only on the Mac | Left alone (`INFO:` line) |
 
 It never touches local-only tables (`profiles_profile`, the locally built `ddp_bill_search`) or the foreign keys the Mac
@@ -109,8 +109,9 @@ was visible 0 to 1 s after it ended. A refusal that nobody fixes shows up as the
    `compare-schema.sh` already takes; optional `RDS_PORT`, `RDS_DATABASE`). Never paste it anywhere else.
 2. First look: `bash ops/postgres-replica/local/sync-structure.sh --dry-run` (prints `WOULD:` lines, changes nothing).
 3. Once: `bash ops/postgres-replica/local/sync-structure.sh --seed-known-unpublished` (records today's unpublished RDS
-   tables as "intentionally not copied" in `logs/last-run/structure-sync.known-unpublished`; add a name to that file to
-   acknowledge a later one).
+   tables as "intentionally not copied" in `logs/last-run/structure-sync.known-unpublished`). That file must hold only
+   the two intentional exceptions, `ddp_bill_search` and `profiles_profile` (OPEN-621): if a seed records any other
+   table, delete that line and have the table published; a later table is published, never added to the file.
 4. The existing 5-minute hook runs it as soon as the file exists and this checkout has the change pulled. **Turn it
    off** by removing or renaming the credential file. Logs: `logs/replica-check.log` (`structure sync: APPLIED: ...`).
 5. Not part of this change and still to do before it matters in production: OPEN-313 (the monitoring itself live).
@@ -590,14 +591,20 @@ definition could not be read from the Mac; to read it, on RDS:
 `SELECT pubname, puballtables FROM pg_publication;` and
 `SELECT tablename FROM pg_publication_tables WHERE pubname = 'ddp_legbot_publication' ORDER BY 1;`
 
-**The contract for "exact".** Every published table arrives, with the same column names, types and
-nullability (`compare-schema.sh` enforces this). Intentionally different, and not drift:
-- `profiles_profile` (local API keys) exists only here and is not published.
+**The contract for "exact".** The Mac copy of RDS stays in lockstep (Ramon, 2026-11-17, OPEN-621): **every RDS
+table belongs in the publication except two**, and every published table arrives with the same column names, types and
+nullability (`compare-schema.sh` enforces this). The only two tables left out on purpose, and neither is data drift:
+- `ddp_bill_search`: the large search index; each server (and the Mac) builds its own, together with `pg_trgm`.
+- `profiles_profile`: each server's own api-v3 API keys; the Mac keeps its own keys, not RDS's.
+
+Every other table belongs in the publication, including `ddp_bill_document_not_found` (core migration `data.0050`,
+OPEN-506: bill document addresses the site answered "not found"). As of 2026-11-17 that table is **not yet** published:
+the grant and `ALTER PUBLICATION` are a pending prod-agent step (OPEN-621), and until it runs the replica monitor
+reports it. Other intentional differences:
 - Three foreign keys were dropped locally because the tables they point at are not replicated
   (`opencivicdata_jurisdiction.division_id`, `opencivicdata_membership.post_id`,
   `opencivicdata_voteevent.bill_action_id`; see OPEN-280 above). The columns remain.
-- Local-only extras are fine (the subscriber ignores columns it was never sent). The search table
-  `ddp_bill_search` and the `pg_trgm` extension are built per-instance and are NOT published.
+- Local-only extras are fine (the subscriber ignores columns it was never sent).
 
 **Not a mirror of the scrape database.** The Mac's other database, `openstates` (scrape-fed, used by
 the local api-v3), is a different thing from this replica. As of 2026-09-30 the replica holds
@@ -655,7 +662,9 @@ into one Slack message to `#automation-errors`, plus a recovery message.
 2. **New table that should replicate:** create it locally, then on RDS `GRANT SELECT ... TO
    ddp_local_replication` and `ALTER PUBLICATION ddp_legbot_publication ADD TABLE ...`, then locally
    `ALTER SUBSCRIPTION ddp_legbot_subscription REFRESH PUBLICATION`.
-3. **New table that should NOT replicate** (derived/search tables): do nothing to the publication.
-   Never create it on RDS while the publication is `FOR ALL TABLES` (`puballtables = t`).
+   **A new core table is granted and added to the publication in the same release that creates it on RDS**, or the
+   replica monitor reports it as a table the publication does not carry (OPEN-621).
+3. **New table that should NOT replicate:** none, beyond the two exceptions in "The contract for exact" above. Do
+   not add a name to `structure-sync.known-unpublished` to silence the monitor.
 4. Afterwards: `RDS_HOST=... RDS_REPLICATION_PASSWORD=... ./compare-schema.sh <db>` then
    `./replica-status.sh <db>`. The scheduled check will also notice within 6 h, but do not rely on it.
