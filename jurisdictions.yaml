@@ -151,7 +151,7 @@ us:
   quality:
     diff_cleaner: none
   actions:
-    newest_first: true    # OpenStates lists this state's bill actions newest first (BROKER-368; was the broker's NEWEST_FIRST_JURISDICTIONS)
+    newest_first: false   # OPEN-542: the US scraper stores actions oldest first and the stored history was reversed (reverse-action-order us); the whole field goes with OPEN-544
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
