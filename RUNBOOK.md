@@ -93,6 +93,11 @@ which image is live.
   `DDP_CORE_SHA=<full sha> docker-compose -f /opt/ddp-open-states/deploy/docker-compose.rds.yml build api` (EC2's compose file; every compose file that builds `Dockerfile.ddp` passes `DDP_CORE_SHA`) (a build without it fails), recreates
   `api` only, then runs `python3 check-core-pin-drift.py --image-core <full sha> [--container <api-v3 container>]`
   from the checkout, with the sha from the deploy output or the ops-handoff note.
+* **The build imports the app before it finishes (OPEN-616).** `deploy/Dockerfile.ddp`'s last step runs
+  `python -c "import api.main"` (with a placeholder database address; nothing connects). A build that fails there
+  (`ModuleNotFoundError`, `ImportError`) is an image that would not have started: the running container is untouched.
+  Usually the core named by `DDP_CORE_SHA` no longer has something api-v3 imports from it, or api-v3 needs a module
+  the image lacks. Fix the code or the core commit; do not remove the step to get a build through.
 * **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts, each
   at the new image's core. A core merge alone changes nothing for api-v3: until a new image ships, a rebuild still
   takes the live image's core.
