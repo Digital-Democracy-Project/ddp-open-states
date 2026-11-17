@@ -1191,7 +1191,9 @@ functions, layered on top of the ordering work above rather than changing it.
     inside the silent window and check ddp-sync's reaction.
   * **Run order (LA, then NE):**
     1. Merge #370, openstates-scrapers #91/#92 and this entry's PR (#369); build the scrapers image.
-    2. Pause the state's scrape and the broker's bill-event task before the image's first run for that state.
+    2. Pause the state's scrape and the broker's bill-event task before the image's first run for that state, and
+       rule out a signalled check (no run of the state in flight, no check queued or running, `recheck_requested`
+       false; see OPEN-546 below).
     3. Dry run with `--manifest`.
     4. On Ramon's go: `--commit --expect N --list <lasting path>`.
     5. Set the state's label back to `actions.newest_first: false` (before OPEN-544; since 2026-11-17 there is no label to set).
@@ -1203,10 +1205,13 @@ functions, layered on top of the ordering work above rather than changing it.
   the state's **silent window**, before the broker reader is deleted.
   * **The rule:** `classify_action(*, description, classification, chamber, date)` and
     `classify_bill(*, identifier, title, classification)` in openstates-core `openstates/ddp_states/<state>.py`. Each
-    returns the whole label list and must give the same answer on its own output. The scraper calls the same
-    function; `state_rule(state, name)` in `openstates/ddp_states/__init__.py` finds it. **No state module exists yet**
-    (OPEN-545, OPEN-547 to 552 add them); a state without one is refused. **Do not** put a state's label rule anywhere
-    else (a second table, the broker, a script).
+    returns the whole label list and must give the same answer on its own output; `state_rule(state, name)` in
+    `openstates/ddp_states/__init__.py` finds it. **No state module exists yet** (OPEN-545, OPEN-547 to 552 add them);
+    a state without one is refused. **Do not** put a state's label rule anywhere else (a second table, the broker, a
+    script).
+  * **No scraper calls `ddp_states` yet (2026-11-17, OPEN-615).** The scraper is meant to call the same function on
+    what it parses; wiring the state's scraper is an acceptance line of each state's ticket. A state relabelled before
+    its scraper is wired gets the old labels back on its next re-scrape, so wire the scraper first (same image).
   * **The command:** `os-text-extract relabel <state> [--session S] [--dry-run|--commit] [--expect N] [--list FILE]
     [--undo LIST]`. Same shape as `reverse-action-order`.
     * Dry run by default: `actions changed=N unchanged=M | bills changed=N unchanged=M`, then old -> new counts.
@@ -1217,17 +1222,40 @@ functions, layered on top of the ordering work above rather than changing it.
     * Only `classification` is written, never text, date, order or chamber. Each item is written only if its labels
       and the rule's inputs are unchanged since the read; otherwise the whole run rolls back. A rule that would move
       again on its own output is refused, so a second run changes 0.
-    * A bill whose action labels change has `latest_passage_date` recomputed and its `updated_at` moved (as a
-      re-import would); a bill-label-only change does not move `updated_at` (as `relabel-non-bills`).
+    * A bill whose action labels change has its computed fields recomputed by the importer's `update_bill_fields`
+      and its `updated_at` moved (as a re-import would). `latest_passage_date` is the one a label moves; the other
+      three (`first_action_date`, `latest_action_date`, `latest_action_description`) are rewritten too if an older
+      import left them stale. **Both the dry run and the commit print how many bills each of the four changes on**
+      (`bills whose computed fields would change: ...`; OPEN-615); the dry run counts with the same function on
+      in-memory copies and writes nothing.
+    * A bill whose own label changes and none of whose actions' labels do is written without moving `updated_at`
+      (as `relabel-non-bills`); with an action change too, `updated_at` moves as above. **That label is stored
+      downstream:** ddp-sync copies a bill's `classification` into its knowledge-base text ("Type:",
+      `ingestion/sources/openstates.py`) and metadata (`ingestion/metadata.py`), and finds changed bills through
+      `updated_since`, so it keeps the old type until the bill's next real update. A state ticket that changes bill
+      labels (Virginia, OPEN-545: 1,579 HR/SR/HJ/SJ) says how that copy is refreshed.
     * `--undo LIST --commit` puts back the old labels from a committed list (the window's rollback), only for items
       that still hold the new labels.
   * **Scorecards (Ramon, 2026-11-16):** a re-label never touches vote events, but the broker reads action labels for
     which votes count (`motion_eligibility.py`, `openstates_service.py`), for stages and bill events (`bill_stage.py`,
     `bill_events.py`), and stores `latest_passage_date`. So each state's run needs the silent window, the four
     scorecard checks on its ticket (OPEN-546 comment), and Ramon's go per state.
+  * **Silent window: switching off the broker's scheduled bill-event task is not enough (OPEN-615).** ddp-sync's
+    end-of-scrape signal (BROKER-300, `POST /api/openstates-bill-events/check/`) queues a check for one state directly,
+    whether or not the scheduled task is on, and a signal that could not be queued stays recorded
+    (`JurisdictionEventWatermark.recheck_requested`) for the next run to pick up.
+    Before the change, in this order: (1) the state's scrape is paused **and no run of it is in flight** (a run
+    already going sends its signal when it ends: wait for it to finish); (2) no check for the state is queued or
+    running; (3) its `recheck_requested` is false. If it is true with no check queued or running (the signal could
+    not be queued), the prod agent runs one check for that state by hand (`check_openstates_bill_events("<st>")`)
+    and lets it finish **before** the window opens, so it publishes only on the old data; then re-check (2) and (3).
+    This applies to every silent window (`reverse-action-order` too).
   * **`relabel-non-bills` (OPEN-517)** shares this command's guarded write and summary code and keeps its own
     Massachusetts rule. A new label rule uses `relabel`, not a new command.
-  * **Status:** openstates-core #110, not merged, not run. Each run is a prod-agent step after a scrapers image.
+  * **Massachusetts stays on its own path for now:** `relabel-non-bills` and `non_bill_kind` (OPEN-517). OPEN-551
+    moves its action rule here, so there is one home in the end.
+  * **Status:** openstates-core #110 merged (`53a7ce03`), in v62 (core `44c3b8dc`); not run on any state. OPEN-615's
+    review fixes (core, this entry) come before the first state's run. Each run is a prod-agent step.
 - **OPEN-564: `os-text-extract remove-stale-documents <state>` removes saved documents whose version note is gone.**
   The archiver keys a saved document on `(bill, version_note, version_date, source_url)`. When a scraper renames a
   version, the next archive saves the same file again under the new note, and the old row stays behind, matching no
