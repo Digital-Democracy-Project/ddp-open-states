@@ -84,6 +84,13 @@ _MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS = int(
 )
 
 
+def _catchup_glob(source):
+    """OPEN-609: the file a scraper keeps between catch-up runs, in its cache directory (ma/catchup.py writes
+    ma_catchup_<session>.json). Carried like Michigan's baseline: fetched before the scrape, saved after a successful
+    one only. Named by the source, so no state list here: a source whose scraper keeps none has nothing to carry."""
+    return f"{source}_catchup_*.json"
+
+
 def _mi_waf_cookies_are_fresh(cache_dir, filename, now, min_remaining_seconds):
     """OPEN-188 acceptance criterion: "stale-beyond-threshold produces a loud skip." Refuses
     -- returns False -- on anything short of a parsed file naming at least one cookie whose
@@ -742,6 +749,14 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
                                     session=session)
             return 1
 
+        # OPEN-609: a scraper's catch-up record (Massachusetts: the last whole run's bill and hearing lists). Optional,
+        # unlike Michigan's baseline: a scraper without it reads every bill, as before, so a store that cannot be read
+        # here costs a full run, not the run.
+        try:
+            memory.hydrate_cache(source, cache_dir, _catchup_glob(source))
+        except MemoryUnavailable as e:
+            print(f"WARNING: {e} -- {source} reads every bill this run (OPEN-609)", file=sys.stderr)
+
         # OPEN-501: a scraper that takes no `start=` always runs full, watermark or not. The
         # watermark is still written below, so nothing else about the run changes.
         try:
@@ -927,6 +942,7 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # incremental) -- disagreeing with what was actually loaded. Cache-resident memory
         # first, watermark last, exactly as scraper-memory.sh established.
         memory.persist_cache(source, cache_dir, _MI_BASELINE_GLOB)
+        memory.persist_cache(source, cache_dir, _catchup_glob(source))
         memory.persist_markers(source, scrape_key, last_run_dir)
 
         # The completion marker, written LAST of all, after every object it names -- including

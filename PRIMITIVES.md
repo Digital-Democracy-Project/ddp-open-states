@@ -199,6 +199,13 @@ should reuse rather than reimplement:
   run (watermark kept, bills re-collected next run). Massachusetts registers a votes scraper but is
   `false` on purpose (its votes come from `ma/bills.py`; Ramon, 2026-11-16: stays off). Add a
   third per-state scrape fact the same way; do not hard-code a state list here.
+  **A scraper's catch-up record (OPEN-609, 2026-11-17)** is carried the way Michigan's baseline is, by
+  `_catchup_glob(source)` = `<source>_catchup_*.json` in the cache directory: fetched before the scrape, saved
+  only after a successful one (before the watermark). Unlike the baseline it is optional: a store that cannot be
+  read logs a WARNING and the scrape runs without it, and a scraper without its record reads every bill. Today only
+  `ma/bills.py` keeps one (`ma/catchup.py`: the last whole run's bill and hearing lists, the date of its last full
+  walk, and the bills it could not read). No state list: the file's name is the opt-in. The Mac's
+  `run-scrape.sh` path needs nothing, because its `_cache` directory stays on disk between runs.
 - **`cloud_loader.py` (OPEN-190, 2026-08-29)** — the on-prem load half of the split. Consumes
   **one** cloud collection run, identified by its manifest (never bare object presence): fetches
   every object the manifest names into a staging directory, refuses on an absent/unparsable/
@@ -1122,6 +1129,20 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
     Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
     relabels and links; no separate step). Which image first carries them is not recorded here.
+- **OPEN-609: Massachusetts catch-up runs** (`ma/bills.py` `scrape()`/`catch_up()`, `ma/catchup.py`; design and
+  measurements in `notes/ma-journal-change-signal-20261117.md`). A whole run given `start=` reads only the bills named
+  in the House and Senate journals dated from 21 days before `start=`, signed on the Session Laws page in that time,
+  on hearings posted since the last run, new in the Documents list since the last run, or left unread by the last run.
+  It reads every bill instead when there is no record of the last run (`ma_catchup_<session>.json`, carried by
+  `cloud_collector.py`), when the last full walk is 28 days old (`catchup.FULL_WALK_EVERY`, the periodic backstop),
+  or when any source fails or answers empty: never a partial run. A quiet run raises `EmptyScrape`. The journal
+  listing (`JOURNAL_MONTH_URL`, `JOURNAL_PDF_LINKS`, `journal_date`) lives in `ma/votes.py`, shared with its
+  (still off) votes scraper: **do not add a second journal reader.** Partial runs (`chamber=`, `bill_no=`, chunk)
+  and runs without `start=` are unchanged and neither read nor write the record. The OPEN-568 paper groups still
+  hold: `with_paper_pairs` runs on the selected bills, and the amendment pre-pass still reads every paper (about
+  1,390 bill pages a run, the largest part of a catch-up run's requests).
+  * **Status:** code in openstates-scrapers (PR, not merged) and the collector half here; MA's
+    `scrape.start_filter` stays `false` until both are in a live image (a separate manifest PR, Ramon's go).
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
   re-scrapes. This pass reverses the stored history in one **silent window**, so one state never holds both orders.

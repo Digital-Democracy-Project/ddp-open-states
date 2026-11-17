@@ -113,3 +113,40 @@ Unlike Michigan, MA's journals are near-perfect on floor activity. They fall sho
 - **Scope:** only the 194th General Court and the 2026 Session Laws page.
 
 **Files** (scratch folder of the 2026-11-17 measuring session, not committed): `reqlog.tsv`, `dl/`, `pdf/`, `dl2/`, `txt/`, `bin/parse.py` → `journal_bills.json`, `bin/analyze.py` → `analyze_out.txt`, `bin/combo.py` → `combo.json`, `actions.csv`, `billspan.csv`, `sessionlaws.json`.
+
+## Addendum: re-measured with the built code (OPEN-609, 2026-11-17)
+
+The selection as built (`scrapers/ma/catchup.py` in the scrapers fork) was replayed week by week against the
+Mac replica (`openstates_rds_repl_20260911`, read-only; MA bills updated up to 2026-11-15 16:48 UTC). Each weekly
+run is taken at Sunday 23:59 with `start=` one week earlier less one hour, so it reads the journals dated from 21
+days before `start=`. "Active" = bills with any action that week.
+
+| Window | Active bill-weeks | Journals | + new bills | + Session Laws | + hearings (upper bound) | Bills read per run |
+|---|---|---|---|---|---|---|
+| Fall 2026-09-21 to 11-15 (8 weeks) | 644 | 75.9% | 96.3% | 96.3% | **98.3%** | 180-259 (mean 218) |
+| Spring 2026-03-02 to 04-26 (8 weeks) | 3,684 | 87.6% | 91.4% | 91.7% | **94.0%** | 1,348-2,291 (mean 1,767) |
+
+- **Spring is under 95%, and why:** 199 of its 221 misses are House committee "Reporting date extended" actions
+  (141 of them one batch on 2026-03-18/19). The House journal prints the extension order as covering "current House
+  documents" and names only the order itself (House, No. 5263), never the bills, so no journal reader can find them.
+  Without those, spring is 99.4% (3,463 of 3,485). The 28-day full walk picks them up. The other 22 misses are
+  Joint Rules reports, Senate "Accompanied S..." and "Rules suspended" lines, and the three joint-session records.
+- **The 21-day re-read** raises the journals' own share in the fall from 68.2% to 75.9% and makes the Session Laws
+  source add nothing in either window (the enactment is already in a re-read journal); Session Laws stays as the
+  check for a signing with no recent journal entry.
+- **Posting delay:** in the fall, 94.3% is caught by the run of the same week (journal PDF creation or last edit
+  date before the run) and the rest by the next run, which re-reads the same journals. In spring this cannot be
+  measured: the files served now were edited months later.
+- **Hearings** remain an upper bound (every "Hearing scheduled/rescheduled" bill counted as found), as above.
+- **Journals that name nothing:** the House month lists also carry `hj..._RollCalls.pdf` roll-call sheets
+  (6 in spring); they are read and name no bill in the "House, No." form, which is harmless.
+
+**Requests and time per weekly run.** Measured live once on 2026-11-17 (the built code, 30 requests a minute,
+`start=2026-11-09T23:00:00`, a record holding today's bill list and all hearings but the newest 10): the Documents
+list 7.5 s; the sources 37 requests in about 75 s (4 month pages, 12 House journal PDFs of which one is a
+roll-call sheet, 9 Senate journal PDFs, the Session Laws page, the hearing list and 10 hearing pages); 178 bills selected. Then, not measured live (it would be a
+real run): the OPEN-509 amendment pre-pass, unchanged by this work, reads every Documents row without a docket number
+(1,390 bill pages) and the histories of the ~145 amendment papers; and each selected bill costs a page, a cosponsor page and
+one or more history pages. At the ~2 s per page of a full walk, that is about 50 minutes for the pre-pass, plus about
+10-15 minutes for a fall week's ~220 bills and 1.5-2 hours for a spring week's ~1,770. So about 1-1.25 h a run in
+the fall and 2.5-3 h in spring, against 10-14 h for a full walk. The first runs' logged durations are the real check.

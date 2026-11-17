@@ -1279,3 +1279,85 @@ def test_main_releases_lock_even_when_the_run_fails(tmp_path, monkeypatch):
 
     lock_data = json.loads(client.objects["dev-open201/mi_test/_lock"])
     assert lock_data["expires_at"] < cc.time.time()
+
+
+# ── OPEN-609: a scraper's catch-up record is carried between runs ──────────────────────────────
+
+CATCHUP_KEY = "dev-open201/ma/_cache/ma_catchup_194.json"
+
+
+def _catchup_os_update(tmp_path, *, exit_code=0):
+    """A stand-in for os-update that, like ma/bills.py, reads ma_catchup_194.json from --cachedir (recording what it
+    found) and writes the new one, then exits `exit_code`."""
+    script = tmp_path / "fake_os_update.sh"
+    seen = tmp_path / "seen.txt"
+    script.write_text("\n".join([
+        "#!/usr/bin/env bash",
+        "set -e",
+        'while [ $# -gt 2 ]; do if [ "$1" = "--cachedir" ]; then CACHEDIR="$2"; fi; shift; done',
+        'DATADIR="$2"',
+        f'cat "$CACHEDIR/ma_catchup_194.json" > {str(seen)!r} 2>/dev/null || echo absent > {str(seen)!r}',
+        'echo \'{"bills": ["H 2"]}\' > "$CACHEDIR/ma_catchup_194.json"',
+        'mkdir -p "$DATADIR/bills" && echo "{}" > "$DATADIR/bills/bill_1.json"',
+        f"exit {exit_code}",
+    ]) + "\n")
+    script.chmod(script.stat().st_mode | stat.S_IEXEC)
+    return str(script), seen
+
+
+def _ma_incremental(monkeypatch, client, script):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", script)
+    monkeypatch.setattr(cc, "scraper_takes_start", lambda source: True)  # as after ma's start_filter flip
+    monkeypatch.setattr(cc, "scraper_has_votes", lambda source: False)
+    client.objects["dev-open201/ma/ma_194th/ma_194th.ts"] = b"2026-11-09T00:00:00"
+    return cc.main(["ma", "session=194th"], s3_client=client)
+
+
+def test_the_catch_up_record_is_handed_to_the_scraper_and_the_new_one_kept(tmp_path, monkeypatch):
+    script, seen = _catchup_os_update(tmp_path)
+    client = FakeS3Client()
+    client.objects[CATCHUP_KEY] = b'{"bills": ["H 1"]}'
+    assert _ma_incremental(monkeypatch, client, script) == 0
+    assert seen.read_text().strip() == '{"bills": ["H 1"]}'
+    assert client.objects[CATCHUP_KEY].strip() == b'{"bills": ["H 2"]}'
+    # saved before the watermark, as the other memory
+    assert client.put_calls.index(CATCHUP_KEY) < client.put_calls.index("dev-open201/ma/ma_194th/ma_194th.ts")
+
+
+def test_a_failed_run_does_not_keep_its_record(tmp_path, monkeypatch):
+    script, _ = _catchup_os_update(tmp_path, exit_code=1)
+    client = FakeS3Client()
+    client.objects[CATCHUP_KEY] = b'{"bills": ["H 1"]}'
+    assert _ma_incremental(monkeypatch, client, script) == 1
+    assert client.objects[CATCHUP_KEY] == b'{"bills": ["H 1"]}'
+
+
+def test_no_record_yet_is_a_normal_run(tmp_path, monkeypatch):
+    script, seen = _catchup_os_update(tmp_path)
+    client = FakeS3Client()
+    assert _ma_incremental(monkeypatch, client, script) == 0
+    assert seen.read_text().strip() == "absent"
+    assert CATCHUP_KEY in client.objects
+
+
+def test_an_unreadable_record_store_still_runs_the_scrape(tmp_path, monkeypatch, capsys):
+    """The scraper then has no record and reads every bill: a full run, never a refused one."""
+    script, seen = _catchup_os_update(tmp_path)
+    client = FakeS3Client()
+    real_list = cc.S3Memory.list
+    monkeypatch.setattr(
+        cc.S3Memory, "list",
+        lambda self, prefix: None if prefix.endswith("/_cache/") else real_list(self, prefix),
+    )
+    assert _ma_incremental(monkeypatch, client, script) == 0
+    assert seen.read_text().strip() == "absent"
+    assert "reads every bill this run (OPEN-609)" in capsys.readouterr().err
+
+
+def test_another_sources_record_is_not_fetched(tmp_path):
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/_cache/ma_catchup_194.json"] = b"{}"
+    mem = cc.S3Memory(client, "bucket", "dev-open201")
+    assert mem.hydrate_cache("ut", str(tmp_path), cc._catchup_glob("ut")) == []
