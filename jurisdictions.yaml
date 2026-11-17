@@ -708,7 +708,7 @@ ga:
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ga-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
     votes_scraper: false           # probe gate B: "votes scraper registered"
-    start_filter: false            # probe gate B: "bills scraper accepts start="
+    start_filter: true             # OPEN-604: catch-up runs from the search service's status-date filter + the vote list (7-day lookback); first full load done 2026-11-17 (ga-9cc31fc4c24c)
     sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
     full_walk: false               # SYNC-157: periodic forced full walk
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
