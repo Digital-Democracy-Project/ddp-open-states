@@ -86,8 +86,8 @@ _MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS = int(
 
 def _catchup_glob(source):
     """OPEN-609: the file a scraper keeps between catch-up runs, in its cache directory (ma/catchup.py writes
-    ma_catchup_<session>.json). Carried like Michigan's baseline: fetched before the scrape, saved after a successful
-    one only. Named by the source, so no state list here: a source whose scraper keeps none has nothing to carry."""
+    ma_catchup_<session>.json). Fetched before the scrape like Michigan's baseline; saved last, after a successful run's
+    watermark and completion marker. Named by the source, so no state list here: a source whose scraper keeps none has nothing to carry."""
     return f"{source}_catchup_*.json"
 
 
@@ -942,7 +942,6 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         # incremental) -- disagreeing with what was actually loaded. Cache-resident memory
         # first, watermark last, exactly as scraper-memory.sh established.
         memory.persist_cache(source, cache_dir, _MI_BASELINE_GLOB)
-        memory.persist_cache(source, cache_dir, _catchup_glob(source))
         memory.persist_markers(source, scrape_key, last_run_dir)
 
         # The completion marker, written LAST of all, after every object it names -- including
@@ -952,6 +951,16 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
         with open(marker_path, "w") as f:
             json.dump({"run_id": run_id, "source": source, "objects": manifest}, f)
         memory.store(marker_path, f"{work_prefix}/{source}/{run_id}/_manifest.json")
+
+        # OPEN-609 (review 21038): the catch-up record is saved LAST, after the watermark and the completion marker.
+        # A record saved ahead of a run that then fails to publish would tell the next run that bills it never
+        # delivered were already seen. Saved last, a failure leaves the OLDER record, so the next run compares with
+        # older lists and reads more bills, never fewer; the published run stands.
+        try:
+            memory.persist_cache(source, cache_dir, _catchup_glob(source))
+        except Exception as e:
+            print(f"WARNING: could not save {source}'s catch-up record ({e}); the next run compares with the "
+                  f"older one (OPEN-609)", file=sys.stderr)
 
         emit_completion_record(status="ok", mode=mode, source=source, run_id=run_id,
                                 session=session, found=found, duration_s=duration_s)

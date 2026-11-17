@@ -1322,8 +1322,30 @@ def test_the_catch_up_record_is_handed_to_the_scraper_and_the_new_one_kept(tmp_p
     assert _ma_incremental(monkeypatch, client, script) == 0
     assert seen.read_text().strip() == '{"bills": ["H 1"]}'
     assert client.objects[CATCHUP_KEY].strip() == b'{"bills": ["H 2"]}'
-    # saved before the watermark, as the other memory
-    assert client.put_calls.index(CATCHUP_KEY) < client.put_calls.index("dev-open201/ma/ma_194th/ma_194th.ts")
+    # saved LAST: after the watermark and after the completion marker (review 21038)
+    marker = next(k for k in client.put_calls if k.endswith("/_manifest.json"))
+    assert client.put_calls.index(CATCHUP_KEY) > client.put_calls.index("dev-open201/ma/ma_194th/ma_194th.ts")
+    assert client.put_calls.index(CATCHUP_KEY) > client.put_calls.index(marker)
+    # only the lock's release comes after it
+    assert [k for k in client.put_calls[client.put_calls.index(CATCHUP_KEY) + 1:]] in ([], ["dev-open201/ma/_lock"])
+
+
+def test_a_record_that_cannot_be_saved_leaves_the_older_one_and_the_run_stands(tmp_path, monkeypatch, capsys):
+    script, _ = _catchup_os_update(tmp_path)
+    client = FakeS3Client()
+    client.objects[CATCHUP_KEY] = b'{"bills": ["H 1"]}'
+    real_upload = client.upload_file
+
+    def upload_file(local_path, bucket, key):
+        if key == CATCHUP_KEY:
+            raise ClientError({"Error": {"Code": "500", "Message": "Internal Error"}}, "PutObject")
+        real_upload(local_path, bucket, key)
+
+    client.upload_file = upload_file
+    assert _ma_incremental(monkeypatch, client, script) == 0
+    assert client.objects[CATCHUP_KEY] == b'{"bills": ["H 1"]}'
+    assert any(k.endswith("/_manifest.json") for k in client.put_calls)
+    assert "could not save ma's catch-up record" in capsys.readouterr().err
 
 
 def test_a_failed_run_does_not_keep_its_record(tmp_path, monkeypatch):

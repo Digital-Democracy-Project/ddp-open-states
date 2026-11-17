@@ -201,7 +201,8 @@ should reuse rather than reimplement:
   third per-state scrape fact the same way; do not hard-code a state list here.
   **A scraper's catch-up record (OPEN-609, 2026-11-17)** is carried the way Michigan's baseline is, by
   `_catchup_glob(source)` = `<source>_catchup_*.json` in the cache directory: fetched before the scrape, saved
-  only after a successful one (before the watermark). Unlike the baseline it is optional: a store that cannot be
+  only after a successful one and **last**, after the watermark and the completion marker (review 21038: a failed
+  save leaves the older record, so the next run reads more bills, never fewer; the run stands). Unlike the baseline it is optional: a store that cannot be
   read logs a WARNING and the scrape runs without it, and a scraper without its record reads every bill. Today only
   `ma/bills.py` keeps one (`ma/catchup.py`: the last whole run's bill and hearing lists, the date of its last full
   walk, and the bills it could not read). No state list: the file's name is the opt-in. The Mac's
