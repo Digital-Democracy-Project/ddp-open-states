@@ -1141,7 +1141,7 @@ functions, layered on top of the ordering work above rather than changing it.
   and runs without `start=` are unchanged and neither read nor write the record. The OPEN-568 paper groups still
   hold: `with_paper_pairs` runs on the selected bills, and the amendment pre-pass still reads every paper (about
   1,390 bill pages a run, the largest part of a catch-up run's requests).
-  * **Status:** code in openstates-scrapers (PR, not merged) and the collector half here; MA's
+  * **Status:** openstates-scrapers #119 and the collector half here (not merged); MA's
     `scrape.start_filter` stays `false` until both are in a live image (a separate manifest PR, Ramon's go).
 - **OPEN-541: `os-text-extract reverse-action-order <state>` reverses a state's stored bill action order** (plan
   PLAN-state-specific-handling §6 Phase 2). A scraper order fix (LA OPEN-534, NE OPEN-535) changes only bills it
