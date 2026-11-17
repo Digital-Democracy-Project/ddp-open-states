@@ -172,6 +172,24 @@ wait_for "its 3 existing rows are copied" "SELECT count(*) FROM committee" 3 40
 assert_eq "primary key + the other index exist locally" "$(sc "SELECT count(*) FROM pg_indexes WHERE tablename='committee'")" 2
 assert_eq "no foreign keys or defaults were invented" "$(sc "SELECT count(*) FROM pg_constraint WHERE contype='f'")" 0
 
+echo; echo "== 6b. OPEN-624: a new published table with 2+ other indexes (the ddp_bill_document_not_found shape) is created with all of them"
+# A unique key plus Django's varchar_pattern_ops '_like' index, plus one more: before OPEN-624 the index statements
+# ran together with one ';' at the end ("syntax error at or near CREATE") and the table was never created.
+pc "CREATE TABLE doc_not_found (id int PRIMARY KEY, source_url varchar(2000) NOT NULL, bill_id text);
+    ALTER TABLE doc_not_found ADD CONSTRAINT doc_not_found_source_url_key UNIQUE (source_url);
+    CREATE INDEX doc_not_found_source_url_like ON doc_not_found (source_url varchar_pattern_ops);
+    CREATE INDEX doc_not_found_bill_id_idx ON doc_not_found (bill_id);
+    INSERT INTO doc_not_found VALUES (1,'https://a/1','b1'),(2,'https://a/2','b2');
+    GRANT SELECT ON doc_not_found TO ddp_local_replication;
+    ALTER PUBLICATION ddp_legbot_publication ADD TABLE doc_not_found" >/dev/null
+run_sync
+assert_eq "exit 0" "$RC" 0
+assert_not_contains "no syntax error from run-together index statements" "$OUT" "syntax error"
+assert_contains "created locally" "$OUT" "created table doc_not_found locally"
+assert_eq "primary key + all 3 other indexes exist locally" "$(sc "SELECT count(*) FROM pg_indexes WHERE tablename='doc_not_found'")" 4
+assert_eq "the unique index is still unique locally" "$(sc "SELECT count(*) FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid WHERE c.relname='doc_not_found_source_url_key' AND i.indisunique")" 1
+wait_for "its 2 existing rows are copied" "SELECT count(*) FROM doc_not_found" 2 40
+
 echo; echo "== 7. a published table the login cannot read yet: created locally, refresh WAITS, says who must grant"
 pc "CREATE TABLE committee2 (id int PRIMARY KEY, name text); INSERT INTO committee2 VALUES (1,'p'),(2,'q');
     ALTER PUBLICATION ddp_legbot_publication ADD TABLE committee2" >/dev/null
@@ -179,6 +197,7 @@ run_sync
 assert_eq "exit 1" "$RC" 1
 assert_contains "FAIL says the prod agent must GRANT SELECT" "$OUT" "committee2: in the publication but ddp_local_replication cannot SELECT it on RDS"
 assert_eq "table exists locally" "$(sc "SELECT count(*) FROM pg_tables WHERE tablename='committee2'")" 1
+assert_eq "no other index: just the primary key (OPEN-624, the 0-index case)" "$(sc "SELECT count(*) FROM pg_indexes WHERE tablename='committee2'")" 1
 assert_eq "but is not subscribed yet (no crash-looping table-copy worker)" "$(sc "SELECT count(*) FROM pg_subscription_rel r JOIN pg_class c ON c.oid=r.srrelid WHERE c.relname='committee2'")" 0
 pc "GRANT SELECT ON committee2 TO ddp_local_replication" >/dev/null
 run_sync
