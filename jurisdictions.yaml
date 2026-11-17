@@ -61,8 +61,9 @@
 # BROKER-368 (2026-11-12): a per-state fact the broker kept in its own code moves here, and the broker reads it
 # from api-v3's GET /ddp/enrollment (its one reader of this file, ddpbroker/enrollment.py), so no service keeps a
 # copy (Ramon: "every service must read from the canonical manifest of jurisdictions"):
-#   - actions.newest_first: this state's STORED bill actions are newest first (us, nc; la and ne were until
-#     OPEN-541's flip, 2026-11-16; checked by the broker's validate_bill_stages command). Was the broker's NEWEST_FIRST_JURISDICTIONS.
+#   - NOT here any more: actions.newest_first (OPEN-544). Every state's bill actions are stored oldest first, fixed
+#     in the scrapers (la, ne OPEN-534/535; nc OPEN-543; us OPEN-542), so the label was false everywhere and was
+#     removed; the validator rejects an `actions` block.
 #   - NOT here: anything Voatz. This file is OpenStates data (Ramon, 2026-11-13, BROKER-494: "api-v3 should only be
 #     serving up the ddp-open-states data. it's the responsibility of the broker to bring together data from
 #     openstates, voatz, legbot, etc."). The Voatz test precinct and the private poll creator id (BROKER-482) live
@@ -150,8 +151,6 @@ us:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
-  actions:
-    newest_first: false   # OPEN-542: the US scraper stores actions oldest first and the stored history was reversed (reverse-action-order us); the whole field goes with OPEN-544
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
@@ -196,8 +195,6 @@ fl:
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -237,8 +234,6 @@ wa:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -279,8 +274,6 @@ va:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
-  actions:
-    newest_first: false
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
                                          # pattern -- see PRIMITIVES.md)
@@ -327,8 +320,6 @@ mi:
     scrapebot_fallback: true    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -368,8 +359,6 @@ ut:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: none
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -410,8 +399,6 @@ az:
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -467,8 +454,6 @@ ma:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
                                                # code already cleaned MA
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: null
@@ -521,8 +506,6 @@ nc:
                                          # OPEN-371); OPEN-462 found this said none while the code
                                          # already cleaned NC (gate C passed is about the extractor,
                                          # not about this cleaner)
-  actions:
-    newest_first: false    # OPEN-543 (2026-11-16): NC's stored actions flipped oldest first; the scraper stores them oldest first
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -567,8 +550,6 @@ al:
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: OPEN-146
@@ -610,8 +591,6 @@ pa:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
-  actions:
-    newest_first: false
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -651,8 +630,6 @@ ne:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
-  actions:
-    newest_first: false    # OPEN-541/535 (2026-11-16): Nebraska's stored actions flipped oldest first; the scraper stores them oldest first
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -692,8 +669,6 @@ la:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
-  actions:
-    newest_first: false    # OPEN-541/534 (2026-11-16): Louisiana's stored actions flipped oldest first; the scraper stores them oldest first
   api_keys: []
   onboarding:
     epic: OPEN-480
@@ -733,8 +708,7 @@ ga:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  actions:
-    newest_first: false  # the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  # actions are stored oldest first: the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
   api_keys: []
   onboarding:
     epic: OPEN-587
@@ -774,8 +748,7 @@ nv:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  actions:
-    newest_first: false  # the scraper adds the bill page's history rows top to bottom (scrapers/nv/bills.py add_actions), oldest first; 2026-11-16 Mac-half import: 0 of 54 next-action pairs went back in time (OPEN-588); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  # actions are stored oldest first: the scraper adds the bill page's history rows top to bottom (scrapers/nv/bills.py add_actions), oldest first; 2026-11-16 Mac-half import: 0 of 54 next-action pairs went back in time (OPEN-588); validate_bill_stages re-checks once bills are scraped (BROKER-368)
   api_keys: []
   onboarding:
     epic: OPEN-588
@@ -815,8 +788,7 @@ or:
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  actions:
-    newest_first: false  # the scraper adds MeasureHistoryActions in the API's order (scrapers/or/bills.py), oldest first; 2026-11-16 Mac-half import: 0 of 86 next-action pairs went back in time (OPEN-589); validate_bill_stages re-checks once bills are scraped (BROKER-368)
+  # actions are stored oldest first: the scraper adds MeasureHistoryActions in the API's order (scrapers/or/bills.py), oldest first; 2026-11-16 Mac-half import: 0 of 86 next-action pairs went back in time (OPEN-589); validate_bill_stages re-checks once bills are scraped (BROKER-368)
   api_keys: []
   onboarding:
     epic: OPEN-589

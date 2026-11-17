@@ -60,9 +60,6 @@ def _valid_entry():
             "epic": None,
             "evidence": None,
         },
-        "actions": {
-            "newest_first": False,
-        },
     }
 
 
@@ -484,20 +481,18 @@ def test_archive_enabled_alone_is_valid_at_every_status(status):
     assert validate(_with(status=status, enabled=True)) == []
 
 
-# --- BROKER-368: actions.newest_first; BROKER-482/494: no voatz block ------------------------------------------------
+# --- OPEN-544: no actions block (was BROKER-368's actions.newest_first); BROKER-482/494: no voatz block ---------------
 
-def test_actions_is_a_required_block():
+@pytest.mark.parametrize("actions", [{"newest_first": False}, {"newest_first": True}, {}, None])
+def test_an_actions_block_is_rejected_whatever_it_holds(actions):
+    """OPEN-544: every state's bill actions are stored oldest first (fixed in the scrapers), so actions.newest_first was
+    false everywhere and nothing reads it. A state found storing them newest first is fixed in its scraper, so the
+    block, even `newest_first: false` or empty, is refused with the reason."""
     entry = _valid_entry()
-    del entry["actions"]
-    assert validate({"ts": entry}) == ["ts.actions: missing required field"]
-
-
-def test_newest_first_must_be_a_bool():
-    entry = _valid_entry()
-    entry["actions"]["newest_first"] = "yes"
-    assert any("ts.actions.newest_first: expected bool" in e for e in validate({"ts": entry}))
-    entry["actions"] = {}
-    assert validate({"ts": entry}) == ["ts.actions.newest_first: missing required field"]
+    entry["actions"] = actions
+    errors = validate({"ts": entry})
+    assert errors == [errors[0]] and errors[0].startswith("ts.actions: unknown field"), errors
+    assert "OPEN-544" in errors[0] and "scraper" in errors[0], errors
 
 
 @pytest.mark.parametrize("voatz", [
@@ -514,25 +509,18 @@ def test_a_voatz_block_is_rejected_whatever_it_holds(voatz):
     assert "BROKER-494" in errors[0] and "Secrets Manager" in errors[0], errors
 
 
-def test_an_unknown_field_in_the_actions_block_is_rejected():
-    entry = _valid_entry()
-    entry["actions"]["organization_id"] = "800000075"
-    assert any("ts.actions.organization_id: unknown field" in e for e in validate({"ts": entry}))
-
-
-def test_the_real_manifest_keeps_the_broker_values_it_replaces_and_nothing_voatz():
-    """The values the broker kept in code until BROKER-368: newest-first us and nc; plus la and ne (OPEN-562, Ramon
-    2026-11-15: their stored actions are newest first until OPEN-534/535 and OPEN-541 ship). No voatz block (BROKER-494: the test
-    precincts moved to Secrets Manager) and no Voatz creator id anywhere in the file (BROKER-482: private), not even a
-    number that looks like one."""
+def test_the_real_manifest_has_no_actions_block_and_nothing_voatz():
+    """No actions block (OPEN-544: actions.newest_first is gone, every state stores its actions oldest first). No voatz
+    block (BROKER-494: the test precincts moved to Secrets Manager) and no Voatz creator id anywhere in the file
+    (BROKER-482: private), not even a number that looks like one."""
     import re
     import yaml
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
     with open(path) as fh:
         text = fh.read()
     data = yaml.safe_load(text)
-    # OPEN-542 (2026-11-17): the US was the last newest-first state; every state now stores actions oldest first
-    assert sorted(c for c, e in data.items() if e["actions"]["newest_first"]) == []
+    assert [c for c, e in data.items() if "actions" in e] == []
+    assert "newest_first:" not in text
     assert [c for c, e in data.items() if "voatz" in e] == []
     assert "test_precinct" not in text and "creator_id" not in text
     # Voatz ids are nine digits starting 9 (creator) or 8 (organization, not secret); no 9-prefixed one may appear

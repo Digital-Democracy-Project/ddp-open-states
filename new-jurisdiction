@@ -222,8 +222,6 @@ def compose_entry(data, gate_b_facts):
         "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False},
         "quality": {"diff_cleaner": "none"},
         "api_keys": gate_b_facts["api_keys"],
-        # BROKER-368: oldest-first unless the broker's validate_bill_stages says otherwise (no voatz block: BROKER-494)
-        "actions": {"newest_first": False},
         "onboarding": {
             "epic": None,
             "evidence": f"notes/{run_id}/report.md" if run_id else None,
@@ -234,8 +232,6 @@ def compose_entry(data, gate_b_facts):
         ("waf.fargate_safe", "defaults to true (the probe produced a usable result, so the site was reachable); "
                              "set false only for a state whose cookie must be minted on the Mac, as mi's is"),
         ("quality.diff_cleaner", "never guessed from probe output (the MA/NC/AL survey's wrong-value mistake)"),
-        ("actions.newest_first", "the probe cannot see the order of a state's bill actions; the broker's validate_bill_stages "
-                                 "command checks it once bills are scraped (BROKER-368)"),
     ]
     if not entry["onboarding"]["evidence"]:
         needs_human.append(("onboarding.evidence", "probe result had no run_id to derive a notes/ path from"))
@@ -301,8 +297,6 @@ def render_block(code, entry, needs_human, source_desc):
         f"    scrapebot_fallback: {_scalar(entry['waf']['scrapebot_fallback'])}    # SYNC-157: ScrapeBot cookie mint before scrape and archive",
         "  quality:",
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
-        "  actions:",
-        f"    newest_first: {_scalar(entry['actions']['newest_first'])}{note('actions.newest_first')}",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
         "  onboarding:",
         f"    epic: {_scalar(entry['onboarding']['epic'])}",
