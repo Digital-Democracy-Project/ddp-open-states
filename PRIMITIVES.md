@@ -56,7 +56,12 @@ should reuse rather than reimplement:
   as `os-update ... start=<ts>` (incremental mode). No marker → full scrape. **This is the
   resumability primitive** — `backfill-fl-historical.sh` reuses it directly (it just checks
   whether `logs/last-run/fl_session_<id>.ts` exists before calling `run-scrape.sh` at all, rather
-  than duplicating cutoff logic).
+  than duplicating cutoff logic). **A state whose manifest says `scrape.start_filter: false` never
+  gets `start=`** (OPEN-501 follow-up, 2026-11-16): when a marker exists, `run-scrape.sh` asks
+  `cloud_collector.py`'s own `scraper_takes_start()` (the cloud path's rule: `usa` reads `us`, a
+  state with no entry keeps `start=`) and runs `false` states full, logging why; the marker is
+  still written. A manifest that does not validate stops the run before scraping. One rule for both
+  paths, no state list here; `test-start-filter.sh` pins it (al, nc, va, a manifest copy, a broken one).
 - **`log()`** — `echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a logs/scraper.log`. Every DDP
   script in this repo defines its own copy of this exact pattern (`run-scrape.sh`,
   `run-people-refresh.sh`, `backfill-fl-historical.sh` — the last two write

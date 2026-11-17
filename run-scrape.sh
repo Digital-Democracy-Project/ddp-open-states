@@ -273,6 +273,38 @@ source "$SCRIPT_DIR/activate.sh"
 [ -n "$_OVERRIDE_DATA_DIR" ] && export SCRAPED_DATA_DIR="$_OVERRIDE_DATA_DIR"
 [ -n "$_OVERRIDE_CACHE_DIR" ] && export CACHE_DIR="$_OVERRIDE_CACHE_DIR"
 
+# OPEN-501 (follow-up to #387): a state whose manifest says `scrape.start_filter: false` has a bills
+# scraper with no `start` parameter (Alabama's crashed on the cloud path with "unexpected keyword argument 'start'" on
+# 2026-11-16), so it always runs full, watermark or not. The answer comes from cloud_collector.py's
+# own scraper_takes_start() -- the rule the cloud path uses (usa reads us, a state with no entry keeps
+# start=, a manifest that does not validate raises) -- so there is one rule and no second state list.
+# Read only when a watermark would have added start=; done here, after activate.sh, because the venv
+# python is what has PyYAML, and before every refusal below so their completion records carry the
+# right mode. The watermark is still written at the end, exactly as on the cloud path.
+. "$SCRIPT_DIR/jurisdiction-field.sh"
+if [ -n "$INCREMENTAL_FLAG" ]; then
+    _TAKES_START=$("$(_jf_python run-scrape.sh)" -c '
+import sys
+sys.path.insert(0, sys.argv[1])
+from cloud_collector import scraper_takes_start
+print("yes" if scraper_takes_start(sys.argv[2], sys.argv[3]) else "no")
+' "$SCRIPT_DIR" "$STATE" "$(_jf_manifest_path)" 2>"$LOG_DIR/.start-filter-$$.err") || _TAKES_START=""
+    case "$_TAKES_START" in yes|no) ;; *) _TAKES_START="" ;; esac   # anything but yes/no is a failed read
+    if [ -z "$_TAKES_START" ]; then
+        # Same rule as the cloud path and as scrape.allow_duplicates below: never guess.
+        log "ERROR: cannot read scrape.start_filter for $STATE from jurisdictions.yaml -- not scraping (OPEN-501): $(tail -1 "$LOG_DIR/.start-filter-$$.err" 2>/dev/null)"
+        rm -f "$LOG_DIR/.start-filter-$$.err"
+        COMPLETION_STATUS="failed"
+        exit 1
+    fi
+    rm -f "$LOG_DIR/.start-filter-$$.err"
+    if [ "$_TAKES_START" = "no" ]; then
+        log "$STATE: scrape.start_filter is false in jurisdictions.yaml -- running full, no start= (OPEN-501)"
+        INCREMENTAL_FLAG=""
+        MODE="full"
+    fi
+fi
+
 # Slack alert on any scrape/import failure: post_slack_alert in on_failure below (token and CodeBot
 # identity are handled by lib/slack-alert.sh).
 
@@ -571,7 +603,7 @@ DIR_FLAGS="--cachedir $CACHE_DIR --datadir $SCRAPED_DATA_DIR"
 # OPEN-327: derived from jurisdictions.yaml (scrape.allow_duplicates), no longer a list typed here -- the
 # list that was extended four times by hand. An unreadable manifest aborts the scrape (the ERR trap
 # alerts): guessing "no duplicates allowed" would fail the import of MI/FL/VA/MA far later and less clearly.
-. "$SCRIPT_DIR/jurisdiction-field.sh"
+# (jurisdiction-field.sh is sourced above, next to the OPEN-501 start_filter read.)
 ALLOW_DUPLICATES_STATES="$(jurisdiction_codes scrape.allow_duplicates)" \
     || { echo "ERROR: cannot read scrape.allow_duplicates from jurisdictions.yaml -- not scraping $STATE" >&2; exit 1; }
 IMPORT_FLAGS=""
