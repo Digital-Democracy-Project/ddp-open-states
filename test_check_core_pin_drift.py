@@ -185,20 +185,58 @@ def test_the_dockerfile_records_the_core_commit_where_the_checker_and_deploy_scr
     assert drift.IMAGE_RECORD in open(os.path.join(HERE, "deploy-scrapers-image.sh")).read()
 
 
-def test_the_api_v3_build_installs_core_main_at_a_commit_the_checker_can_read():
-    """deploy/Dockerfile.ddp (the build both api-v3 copies use) resolves main to a commit with a remote ADD (re-fetched
-    every build, so the cache never keeps an old core) and installs the fork archive at that commit, whose URL is what
-    pip records in direct_url.json. An install of `archive/main.tar.gz` would record no commit."""
+def test_the_api_v3_build_installs_core_at_the_given_commit_the_checker_can_read():
+    """deploy/Dockerfile.ddp (the build both api-v3 copies use) installs the fork archive at DDP_CORE_SHA, the scrapers
+    image's core (OPEN-586 follow-up), whose URL is what pip records in direct_url.json. It no longer asks GitHub for
+    main (an unauthenticated lookup that hit GitHub's hourly limit on 2026-11-17), and the compose file passes the
+    commit in. An install of `archive/main.tar.gz` would record no commit."""
     dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()
-    add = re.search(r"^ADD https://api\.github\.com/repos/Digital-Democracy-Project/openstates-core/git/ref/heads/main "
-                    r"(/tmp/\S+)$", dockerfile, re.M)
-    assert add and f"json.load(open('{add.group(1)}'))['object']['sha']" in dockerfile, "main must be resolved by an ADD"
-    add = add.start()
-    m = re.search(r'"openstates @ (https://\S+/archive/)\$\{sha\}(\.tar\.gz)"', dockerfile)
-    assert m and add < m.start(), "the archive must be installed at the commit resolved from main"
+    assert "api.github.com" not in dockerfile and "heads/main" not in dockerfile
+    arg = re.search(r"^ARG DDP_CORE_SHA$", dockerfile, re.M)
+    m = re.search(r'"openstates @ (https://\S+/archive/)\$\{DDP_CORE_SHA\}(\.tar\.gz)"', dockerfile)
+    assert arg and m and arg.start() < m.start(), "the archive must be installed at the commit passed in"
     assert drift._fork_sha(m.group(1) + A + m.group(2)) == A
     assert "--no-deps --ignore-requires-python" in dockerfile
     assert "ddp-openstates-core.txt" not in dockerfile
+    compose = open(os.path.join(HERE, "deploy", "docker-compose.ddp.yml")).read()
+    assert re.search(r"^ +args:\n(?: +#.*\n)* +DDP_CORE_SHA: \$\{DDP_CORE_SHA:-\}$", compose, re.M), compose
+
+
+def _dockerfile_core_check(value):
+    """Run the Dockerfile's own DDP_CORE_SHA check (the part of its RUN before the install) in a shell."""
+    dockerfile = open(os.path.join(HERE, "deploy", "Dockerfile.ddp")).read()
+    run = re.search(r"^ARG DDP_CORE_SHA\nRUN (.*?)\n +&& echo \"DDP openstates-core", dockerfile, re.M | re.S).group(1)
+    return subprocess.run(["sh", "-c", run.rstrip(" \\")], env=dict(os.environ, DDP_CORE_SHA=value),
+                          capture_output=True, text=True)
+
+
+@pytest.mark.parametrize("value", ["", "main", A[:9], A.upper(), A + "0", A + "\nmain"])
+def test_the_api_v3_build_refuses_anything_but_a_full_commit(value):
+    r = _dockerfile_core_check(value)
+    assert r.returncode != 0 and "DDP_CORE_SHA must be" in r.stderr, (value, r)
+
+
+def test_the_api_v3_build_accepts_a_full_commit():
+    r = _dockerfile_core_check(A)
+    assert r.returncode == 0, r
+
+
+def test_print_image_core_prints_the_image_record(docker):
+    out = io.StringIO()
+    assert drift.main(["x", "--print-image-core", "--image", "img:v61"], out=out) == 0
+    assert out.getvalue() == A + "\n"
+    out = io.StringIO()
+    assert drift.main(["x", "--print-image-core", "--image-core", B], out=out) == 0
+    assert out.getvalue() == B + "\n"
+    assert not [c for c in docker["calls"] if c[1] == "exec"], "printing the image's core reads no container"
+
+
+@pytest.mark.parametrize("argv", [[], ["--image", "img:v61", "--image-core", A], ["--image-core", A[:9]],
+                                  ["--image", "img:none"]])
+def test_print_image_core_without_one_readable_full_commit_is_an_error(docker, argv):
+    out = io.StringIO()
+    assert drift.main(["x", "--print-image-core", *argv], out=out) == 2
+    assert out.getvalue().startswith("ERROR "), out.getvalue()
 
 
 def test_the_pin_option_is_gone():
@@ -236,7 +274,8 @@ def refresh_host(tmp_path):
     (deploy / "sync-manifest.sh").write_text("exit 0\n")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    for name, body in (("docker", STUB_DOCKER), ("docker-compose", "#!/usr/bin/env bash\nexit 0\n")):
+    compose = f'#!/usr/bin/env bash\necho "$* DDP_CORE_SHA=${{DDP_CORE_SHA:-unset}}" >> {tmp_path}/compose-calls\nexit 0\n'
+    for name, body in (("docker", STUB_DOCKER), ("docker-compose", compose)):
         p = bin_dir / name
         p.write_text(body)
         p.chmod(p.stat().st_mode | stat.S_IEXEC)
@@ -285,3 +324,31 @@ def test_refresh_without_an_image_fails_rather_than_passing_unchecked(refresh_ho
     r = _refresh(refresh_host)
     assert r.returncode == 2, r.stdout + r.stderr
     assert "no scrapers image given" in r.stdout
+
+
+def _compose_calls(h):
+    p = h["tmp"] / "compose-calls"
+    return p.read_text().splitlines() if p.exists() else []
+
+
+def test_refresh_builds_api_v3_at_the_images_core(refresh_host):
+    """OPEN-586 follow-up: the build gets the image's recorded core, read before anything is built."""
+    r = _refresh(refresh_host, SCRAPERS_IMAGE="img:v61")
+    assert r.returncode == 0, r.stdout + r.stderr
+    builds = [c for c in _compose_calls(refresh_host) if " build api" in c]
+    assert builds == [f"-f docker-compose.ddp.yml build api DDP_CORE_SHA={A}"], _compose_calls(refresh_host)
+
+
+def test_refresh_builds_at_an_image_core_given_by_sha(refresh_host):
+    r = _refresh(refresh_host, SCRAPERS_IMAGE_CORE=B, STUB_INSTALLED=B)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert f"build api DDP_CORE_SHA={B}" in "\n".join(_compose_calls(refresh_host))
+
+
+@pytest.mark.parametrize("env", [{}, {"SCRAPERS_IMAGE_CORE": "main"}, {"SCRAPERS_IMAGE": "img:v61", "SCRAPERS_IMAGE_CORE": A}])
+def test_refresh_without_one_readable_image_core_builds_nothing(refresh_host, env):
+    """No image, a bad sha or both given: stop before the build, the running container untouched."""
+    r = _refresh(refresh_host, **env)
+    assert r.returncode == 2, r.stdout + r.stderr
+    assert "nothing was built" in r.stdout
+    assert _compose_calls(refresh_host) == [], _compose_calls(refresh_host)

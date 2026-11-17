@@ -62,7 +62,23 @@ cd "$COMPOSE_DIR"
 # failed sync (set -e) stops the refresh before the build and before the container is touched.
 bash "$COMPOSE_DIR/sync-manifest.sh" 2>&1 | tee -a "$LOG"
 log "api-v3's copy of jurisdictions.yaml refreshed (deploy/sync-manifest.sh)"
-log "rebuilding ddp-openstates-api:local image"
+# OPEN-586: build api-v3 at the live scrapers image's core commit (deploy/Dockerfile.ddp's DDP_CORE_SHA), so the two
+# run one commit and a rebuild never asks GitHub which commit main is. Say which image is live: SCRAPERS_IMAGE=<ref>
+# (read on this host) or SCRAPERS_IMAGE_CORE=<full sha>. Without either (or with an unreadable image) this stops here,
+# before the build, with the running container untouched.
+image_arg=()
+if [ -n "${SCRAPERS_IMAGE:-}" ]; then image_arg=(--image "$SCRAPERS_IMAGE"); fi
+if [ -n "${SCRAPERS_IMAGE_CORE:-}" ]; then image_arg+=(--image-core "$SCRAPERS_IMAGE_CORE"); fi
+set +e
+DDP_CORE_SHA="$(python3 "$REPO_DIR/check-core-pin-drift.py" --print-image-core ${image_arg[@]+"${image_arg[@]}"} 2>&1)"
+core_rc=$?
+set -e
+if [ "$core_rc" -ne 0 ]; then
+    log "FATAL: could not read the scrapers image's core commit, so nothing was built: $DDP_CORE_SHA"
+    exit "$core_rc"
+fi
+export DDP_CORE_SHA
+log "rebuilding ddp-openstates-api:local image at openstates-core $DDP_CORE_SHA (the scrapers image's)"
 docker-compose -f "$COMPOSE_FILE" build api
 
 log "recreating the api container only -- scoped to 'api', --no-deps, see header comment"
@@ -91,13 +107,7 @@ done
 
 log "api-v3 refresh complete -- $API_CONTAINER healthy, $POSTGRES_CONTAINER untouched"
 
-# OPEN-579/OPEN-586: the rebuilt container installed openstates-core's main at build time (deploy/Dockerfile.ddp); it
-# must be the same commit as the live scrapers image's. Say which image is live: SCRAPERS_IMAGE=<ref> (read on this
-# host) or SCRAPERS_IMAGE_CORE=<full sha>. Without either, the check fails (exit 2)
-# rather than passing unchecked. The container is already up either way.
-image_arg=()
-if [ -n "${SCRAPERS_IMAGE:-}" ]; then image_arg=(--image "$SCRAPERS_IMAGE"); fi
-if [ -n "${SCRAPERS_IMAGE_CORE:-}" ]; then image_arg+=(--image-core "$SCRAPERS_IMAGE_CORE"); fi
+# OPEN-579/OPEN-586: confirm what the rebuilt container actually installed is the image's commit (same image_arg).
 set +e
 python3 "$REPO_DIR/check-core-pin-drift.py" --container "$API_CONTAINER" ${image_arg[@]+"${image_arg[@]}"} 2>&1 | tee -a "$LOG"
 drift_rc=${PIPESTATUS[0]}
