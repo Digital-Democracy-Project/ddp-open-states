@@ -269,6 +269,9 @@ pc "CREATE TABLE new_unpublished (id int PRIMARY KEY)" >/dev/null
 run_sync
 assert_eq "exit 1" "$RC" 1
 assert_contains "names the new table" "$OUT" "new_unpublished: a table on RDS that the publication does not carry"
+assert_contains "says to publish it" "$OUT" "Publish it: ask the prod agent (ops-handoff) to GRANT SELECT on it to ddp_local_replication, then add it to ddp_legbot_publication"
+assert_contains "says the known list is only the exceptions" "$OUT" "that list holds only the intentional exceptions (ddp_bill_search, profiles_profile)"
+assert_not_contains "never says to add it to the known list" "$OUT" "if not, add its name to"
 assert_not_contains "never mentions the search table" "$OUT" "ddp_bill_search:"
 assert_not_contains "never mentions django_session" "$OUT" "django_session:"
 echo "new_unpublished" >> "$T/state/structure-sync.known-unpublished"

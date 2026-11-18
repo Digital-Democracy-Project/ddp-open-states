@@ -339,7 +339,7 @@ if [ -f "$KNOWN" ]; then
   for t in $unpublished; do
     case " $ALWAYS_UNPUBLISHED " in *" $t "*) continue ;; esac
     grep -qx "$t" "$KNOWN" && continue
-    fail "$t: a table on RDS that the publication does not carry (new since the list was seeded). If the Mac should have it, the prod agent adds it to the publication and grants SELECT; if not, add its name to $KNOWN"
+    fail "$t: a table on RDS that the publication does not carry (new since the list was seeded). Publish it: ask the prod agent (ops-handoff) to GRANT SELECT on it to ddp_local_replication, then add it to ddp_legbot_publication. Do not add it to $KNOWN: that list holds only the intentional exceptions (ddp_bill_search, profiles_profile)"
   done
 else
   echo "INFO: no known-unpublished list yet ($KNOWN): run with --seed-known-unpublished once so new unpublished RDS tables are reported"
