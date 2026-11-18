@@ -1407,7 +1407,9 @@ python3 fix-ut-vote-chamber.py --apply-list ut-chamber-dry-run.csv --commit --ex
 python3 fix-ut-vote-chamber.py --undo ut-chamber-committed.csv --commit --list ut-chamber-undone.csv
 ```
 
-A second dry run afterwards finds 0. Then BROKER-490 can drop the broker's Utah chamber re-point.
+Afterwards: a second dry run must find 0, and `validate_bill_stages --jurisdictions ut` with the broker's Utah reader
+switched off must show `passed_both_without_passed_one` 0 (OPEN-622's table). Only then can BROKER-490 drop the broker's
+Utah chamber re-point. `--apply-list` and `--undo` do not run the scraper's rule: the reviewed list is what is written.
 
 ### Audit files
 

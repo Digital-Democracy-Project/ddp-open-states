@@ -74,16 +74,17 @@ class _Cursor:
         if sql == fix.TOUCH_SQL:
             self.conn.pending_touched |= set(params[0])
             return
-        new, action_id, old, description = params
+        new, action_id, bill_id, old, description = params
         stored = self.conn.stored.get(action_id)
-        self.rowcount = 1 if stored == (old, description) else 0
+        self.rowcount = 1 if stored == (old, description) and self.conn.bills.get(action_id) == bill_id else 0
         if self.rowcount:
             self.conn.pending[action_id] = (new, description)
 
 
 class _Conn:
-    def __init__(self, stored):
+    def __init__(self, stored, bills=None):
         self.stored = dict(stored)
+        self.bills = bills or {r["id"]: r["bill_id"] for r in ROWS}
         self.pending, self.pending_touched, self.touched = {}, set(), set()
 
     def cursor(self):
@@ -133,6 +134,31 @@ def test_commit_moves_updated_at_and_undo_round_trips(tmp_path):
         assert [r["id"] for r in csv.DictReader(f)] == ["a1", "a4", "a5", "a8", "a9"]
     fix.write(conn, fix.read_list(str(tmp_path / "committed.csv"), undo=True), None)
     assert conn.stored == stored(ROWS)
+
+
+def test_a_list_naming_the_wrong_bill_aborts_the_whole_write():
+    changes = fix.plan(ROWS, ORGS)
+    changes[0] = dict(changes[0], bill_id="ocd-bill/SB 98")  # an edited or wrong list: a1 belongs to HB 209
+    conn = _Conn(stored(ROWS))
+    with pytest.raises(SystemExit, match="nothing written"):
+        fix.write(conn, changes, None)
+    assert conn.stored == stored(ROWS) and conn.touched == set()
+
+
+@pytest.mark.parametrize(
+    "edit",
+    [
+        {"new_org": "ocd-organization/legislature"},  # not a chamber
+        {"new_chamber": "upper"},  # a1 goes to the House; chamber and organization disagree
+        {"old_org": "ocd-organization/other-state-senate"},
+    ],
+)
+def test_a_list_moving_an_action_outside_utahs_chambers_is_refused(edit):
+    changes = fix.plan(ROWS, ORGS)
+    fix.check_list(changes, ORGS)  # the planned list passes
+    changes[0] = dict(changes[0], **edit)
+    with pytest.raises(SystemExit, match="nothing written"):
+        fix.check_list(changes, ORGS)
 
 
 def test_a_list_from_another_script_is_refused(tmp_path):

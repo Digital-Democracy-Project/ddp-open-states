@@ -8,13 +8,14 @@ passage lines, all 214 concurrence lines, 12 of 26 conference "Final Passage" li
 vote line (passage, concurrence or its refusal, a failed vote, a conference report's final passage) under the chamber
 its text names (`voting_chamber()` in openstates-scrapers `scrapers/ut/bills.py`; its passage pattern is core's
 `ddp_states/ut.py` and the broker's `_read_utah`). This applies that rule to the stored history, so the broker's Utah
-chamber correction can go (BROKER-490) and each roll call pairs with its own line. Only the action's organization changes: never its text,
-labels, date or order. A bill whose action moves has its `updated_at` moved, as a re-import by the fixed scraper would,
-so api-v3's `updated_since` readers see it: run it in Utah's silent window.
+chamber correction can go (BROKER-490) and each roll call pairs with its own line. Only the action's organization
+changes: never its text, labels, date or order. A bill whose action moves has its `updated_at` moved, as a re-import by
+the fixed scraper would, so api-v3's `updated_since` readers see it: run it in Utah's silent window.
 
 Dry run unless --commit. Every write is guarded: an action whose organization or text is no longer the one the change
-was planned from aborts the whole run with nothing written. The list is the audit record: it takes its name only after
-the commit, and an existing list is never overwritten.
+was planned from (or that belongs to another bill) aborts the whole run with nothing written; a list that names an
+organization other than Utah's House and Senate, or a chamber that does not match it, is refused. The list is the audit
+record: it takes its name only after the commit, and an existing list is never overwritten.
 
 Usage:
     python3 fix-ut-vote-chamber.py --list PLANNED                          # dry run: the change list
@@ -59,10 +60,10 @@ CHAMBERS_SQL = """
     WHERE jurisdiction_id = %s AND classification IN ('upper', 'lower') GROUP BY classification
 """
 
-# Guarded: matches only while the action still has the organization and text the change was planned from.
+# Guarded: matches only while the action still has the bill, organization and text the change was planned from.
 UPDATE_SQL = """
     UPDATE opencivicdata_billaction SET organization_id = %s
-    WHERE id = %s AND organization_id = %s AND description = %s
+    WHERE id = %s AND bill_id = %s AND organization_id = %s AND description = %s
 """
 
 TOUCH_SQL = "UPDATE opencivicdata_bill SET updated_at = now() WHERE id = ANY(%s)"
@@ -98,6 +99,18 @@ def chamber_organizations(cur):
     return {chamber: ids[0] for chamber, ids in found.items()}
 
 
+def check_list(changes, chamber_orgs):
+    """Refuse a list (reviewed, or committed for --undo) that moves an action anywhere but between Utah's two chambers,
+    or whose chamber names do not match its organizations."""
+    for c in changes:
+        for side in ("old", "new"):
+            if chamber_orgs.get(c[f"{side}_chamber"]) != c[f"{side}_org"]:
+                sys.exit(
+                    f"aborted, nothing written: action {c['id']} has {side}_chamber {c[f'{side}_chamber']!r} and "
+                    f"{side}_org {c[f'{side}_org']!r}, not one of Utah's chambers {chamber_orgs}"
+                )
+
+
 def read_list(path, undo):
     with open(path, newline="") as f:
         reader = csv.DictReader(f)
@@ -116,7 +129,7 @@ def write(conn, changes, list_path):
     with conn.cursor() as cur:
         updated = 0
         for c in changes:
-            cur.execute(UPDATE_SQL, (c["new_org"], c["id"], c["old_org"], c["description"]))
+            cur.execute(UPDATE_SQL, (c["new_org"], c["id"], c["bill_id"], c["old_org"], c["description"]))
             updated += cur.rowcount
         if updated != len(changes):
             conn.rollback()
@@ -162,12 +175,14 @@ def main(argv=None):
     conn = psycopg2.connect(DATABASE_URL) if DATABASE_URL else psycopg2.connect(**DB_CONFIG)
     conn.autocommit = False
     try:
+        with conn.cursor() as cur:
+            orgs = chamber_organizations(cur)
         if args.apply_list or args.undo:
             changes = read_list(args.apply_list or args.undo, undo=bool(args.undo))
+            check_list(changes, orgs)
             print(f"{len(changes):,} changes read from {args.apply_list or args.undo}" + (" (undo)" if args.undo else ""))
         else:
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-                orgs = chamber_organizations(cur)
                 cur.execute(FETCH_SQL, (UT,))
                 rows = cur.fetchall()
             changes = plan(rows, orgs)
