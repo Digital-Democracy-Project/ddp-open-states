@@ -1176,21 +1176,20 @@ functions, layered on top of the ordering work above rather than changing it.
     the 03:00 run on v62 clean, prod agent `28de4d6`, `0c96e78`)**. `validate_bill_stages` on the Mac replica
     (2025 onward, all 16 states, 2026-11-17) finds no state storing actions newest first. **Never al.** A state
     onboarded later that stores newest first is fixed in its scraper first, then this pass.
-  * **Decided 2026-11-17 (Ramon, "Remove it"):** the manifest check below goes (OPEN-544); the per-bill mark already
-    stops a second reversal. Until that core change is in the live image, the override is needed for any state.
+  * **Decided 2026-11-17 (Ramon, "Remove it"):** the command reads no manifest label (OPEN-544, openstates-core
+    #129, not merged). The per-bill mark already stops a second reversal. **Until #129 is in the live scrapers image,**
+    the image's command still checks the removed label and refuses every state unless
+    `--even-if-manifest-says-oldest-first` is passed; after it, that option and `--manifest` no longer exist.
   * **The command:** `os-text-extract reverse-action-order <state> [--session S] [--dry-run|--commit] [--undo]
-    [--expect N] [--list FILE] [--manifest PATH] [--even-if-manifest-says-oldest-first]`. It has the same shape as
+    [--expect N] [--list FILE]`. It has the same shape as
     `relabel-non-bills`.
     * Dry run by default (`reversed=N actions=M skipped_...`, plus how the dates run: `newest_first`, `same_day`,
       `mixed`).
     * `--commit` needs `--list`. The CSV (bill, old and new order as action ids, old and new dates) is the audit
       record. It only takes its name after the database commit; a refused or rolled-back run leaves none.
       `--expect N` aborts before writing unless exactly N bills would change.
-    * It refuses unless the manifest (`--manifest`, default `$DDP_JURISDICTIONS_MANIFEST` or `./jurisdictions.yaml`)
-      says `actions.newest_first: true`, unless `--even-if-manifest-says-oldest-first` is passed.
-      **After OPEN-544** the manifest has no `actions` block, so the command reports the label `missing` and refuses
-      unless `--even-if-manifest-says-oldest-first` is passed: a later state's reversal passes the override, with the
-      dry run's date-direction counts as the evidence.
+    * It reads no per-state label (OPEN-544): the bills' own dates and the mark decide. The dry run's date-direction
+      counts are the evidence that a state is stored newest first, and `--expect` holds the commit to that count.
     * A reversed bill gets `extras["ddp_open541_actions_reversed"]`. A second run skips it, and the bill import keeps
       the key (`keep_extras_keys`, as OPEN-518). Bills whose dates already run oldest first, and one-action bills,
       are skipped.
@@ -1202,8 +1201,7 @@ functions, layered on top of the ordering work above rather than changing it.
     paused before the first run of the new scrapers image for that state. If the state is scraped once on the fixed
     image before the pass, bills whose actions are all on one day or run in mixed directions cannot be told apart
     from old ones, and the pass would flip them back to newest first (and mark them).
-  * **On a host or container:** pass `--manifest <path to a state list that has #370>` (the image carries the list
-    it was built with), and write `--list` to a lasting path, not inside a throwaway container.
+  * **On a host or container:** write `--list` to a lasting path, not inside a throwaway container.
   * **`updated_at` moves** on changed bills, so ddp-sync's `updated_since` reads see them as updated. Keep the run
     inside the silent window and check ddp-sync's reaction.
   * **Run order (LA, then NE):**
@@ -1211,7 +1209,7 @@ functions, layered on top of the ordering work above rather than changing it.
     2. Pause the state's scrape and the broker's bill-event task before the image's first run for that state, and
        rule out a signalled check (no run of the state in flight, no check queued or running, `recheck_requested`
        false; see OPEN-546 below).
-    3. Dry run with `--manifest`.
+    3. Dry run.
     4. On Ramon's go: `--commit --expect N --list <lasting path>`.
     5. Set the state's label back to `actions.newest_first: false` (before OPEN-544; since 2026-11-17 there is no label to set).
     6. Silent broker re-bootstrap; confirm 0 events went out.
