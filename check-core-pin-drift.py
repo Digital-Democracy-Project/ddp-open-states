@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-check-core-pin-drift.py -- fail when api-v3 and the scrapers image run different openstates-core commits (OPEN-579).
+check-core-pin-drift.py -- fail when api-v3, ddp-sync's cloud loader and the scrapers image run different openstates-core
+commits (OPEN-579, SYNC-180).
 
 api-v3 imports its bill-version rules (stage, order, full text) from DDP's openstates-core fork (OPEN-538). Both api-v3
 and the scrapers image install the fork's main at build time (OPEN-586; api-v3 records the resolved commit in pip's
@@ -23,10 +24,16 @@ Compares these commits, each a full 40-character SHA, and fails on any differenc
              prod agent; `--print-image-core` prints it), so this is the core it actually runs. The
              version string cannot tell the fork from PyPI (both say 6.26.5), so a container with no direct_url.json
              (PyPI, or anything that is not an archive install of the fork) is drift too.
+  loader     the core in each ddp-sync container (`--sync-container`, repeatable; none by default, because only EC2 runs
+             ddp-sync in a container). Its cloud_loader.py imports scrapes into RDS with `os-update` from ddp-sync's own
+             copy of core, not the image's (SYNC-180: it was found at v62's 44c3b8dc while v65 was live). ddp-sync's
+             infrastructure/Dockerfile fetches core at DDP_CORE_SHA and writes the same /opt/openstates-core/DDP_CORE_COMMIT
+             record as the image, read here with `docker exec ... cat`. A ddp-sync built before SYNC-180 has no record:
+             an ERROR, never a pass.
 
 Usage (each host checks its own api-v3 container):
     python3 check-core-pin-drift.py --image 350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:v61   # the Mac
-    python3 check-core-pin-drift.py --image-core <40-hex sha>                                                 # EC2
+    python3 check-core-pin-drift.py --image-core <40-hex sha> --sync-container ddp-sync-ddp-sync-1                 # EC2
 
 Exit 0: all commits agree. Exit 1: drift (each disagreement names both commits). Exit 2: a source could not be read
 (no image record, container not running). A source that cannot be read is an ERROR, never a pass.
@@ -94,6 +101,18 @@ def installed_commit(container):
     return _fork_sha(data.get("url"))
 
 
+def loader_commit(container):
+    """The core commit recorded in a ddp-sync container by its build (SYNC-180)."""
+    try:
+        out = _run(["docker", "exec", container, "cat", IMAGE_RECORD]).strip()
+    except SourceError as exc:
+        raise SourceError(f"loader: {container} has no readable {IMAGE_RECORD} (a ddp-sync built before SYNC-180 has "
+                          f"none: rebuild it at the image's core): {exc}")
+    if not FULL_SHA.fullmatch(out):
+        raise SourceError(f"loader: {container}'s {IMAGE_RECORD} is not a full commit: {out!r}")
+    return out
+
+
 def image_source(image, image_core):
     """(label, sha) of the live scrapers image's core, from exactly one of --image / --image-core."""
     if image and image_core:
@@ -107,7 +126,7 @@ def image_source(image, image_core):
     raise SourceError("no scrapers image given: pass --image <ref> (the live tag) or --image-core <sha>")
 
 
-def run(image, image_core, containers, out):
+def run(image, image_core, containers, out, sync_containers=()):
     found = []    # (label, sha); the image first, so every drift line compares a container with the image
     errors = []
     drift = []
@@ -132,6 +151,12 @@ def run(image, image_core, containers, out):
         else:
             found.append((label, sha))
 
+    for container in sync_containers:
+        try:
+            found.append(("ddp-sync loader in " + container, loader_commit(container)))
+        except SourceError as exc:
+            errors.append(str(exc))
+
     for label, sha in found:
         out.write(f"  {sha}  {label}\n")
     if found:
@@ -147,23 +172,28 @@ def run(image, image_core, containers, out):
     if errors:
         return 2
     if drift:
-        out.write("\napi-v3 and the scrapers image run different openstates-core commits. Bring them to one commit: "
-                  "rebuild both api-v3 copies at the live image's core (refresh-api-v3.sh does; on EC2 set DDP_CORE_SHA). "
+        out.write("\napi-v3, ddp-sync and the scrapers image must run one openstates-core commit. Bring them to it: "
+                  "rebuild both api-v3 copies at the live image's core (refresh-api-v3.sh does; on EC2 set DDP_CORE_SHA), "
+                  "and rebuild ddp-sync on EC2 with DDP_CORE_SHA set to the same commit. "
                   "If the image named here is not the live one, name the live one. Release order: the image, then any "
-                  "stored recompute, then api-v3.\n")
+                  "stored recompute, then api-v3 and ddp-sync.\n")
         return 1
-    out.write(f"OK: the scrapers image and {len(containers)} api-v3 container(s) all run core "
+    loaders = f" and {len(sync_containers)} ddp-sync container(s)" if sync_containers else ""
+    out.write(f"OK: the scrapers image and {len(containers)} api-v3 container(s){loaders} all run core "
               f"{found[0][1]}.\n")
     return 0
 
 
 def main(argv, out=sys.stdout):
-    parser = argparse.ArgumentParser(description="Compare the openstates-core commit in each api-v3 container with "
-                                                 "the scrapers image's (OPEN-579, OPEN-586).")
+    parser = argparse.ArgumentParser(description="Compare the openstates-core commit in each api-v3 container (and each "
+                                                 "ddp-sync container given) with the scrapers image's (OPEN-579, "
+                                                 "OPEN-586, SYNC-180).")
     parser.add_argument("--image", help="the live scrapers image ref; its build record is read with `docker run`")
     parser.add_argument("--image-core", help="the live scrapers image's core commit (full SHA), when the image is not on this host")
     parser.add_argument("--container", action="append", default=None,
                         help=f"an api-v3 container to read (repeatable; default {DEFAULT_CONTAINER})")
+    parser.add_argument("--sync-container", action="append", default=None,
+                        help="a ddp-sync container whose cloud loader's core to read (repeatable; none by default, SYNC-180)")
     parser.add_argument("--print-image-core", action="store_true",
                         help="print the image's core commit and exit (refresh-api-v3.sh builds api-v3 at it, OPEN-586)")
     args = parser.parse_args(argv[1:])
@@ -174,7 +204,7 @@ def main(argv, out=sys.stdout):
             out.write(f"ERROR {exc}\n")
             return 2
         return 0
-    return run(args.image, args.image_core, args.container or [DEFAULT_CONTAINER], out)
+    return run(args.image, args.image_core, args.container or [DEFAULT_CONTAINER], out, args.sync_container or [])
 
 
 if __name__ == "__main__":

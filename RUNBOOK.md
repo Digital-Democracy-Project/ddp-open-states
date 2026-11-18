@@ -98,15 +98,20 @@ which image is live.
   (`ModuleNotFoundError`, `ImportError`) is an image that would not have started: the running container is untouched.
   Usually the core named by `DDP_CORE_SHA` no longer has something api-v3 imports from it, or api-v3 needs a module
   the image lacks. Fix the code or the core commit; do not remove the step to get a build through.
-* **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts, each
-  at the new image's core. A core merge alone changes nothing for api-v3: until a new image ships, a rebuild still
+* **Release order:** the scrapers image first, then any stored recompute, then the api-v3 rebuild on both hosts and the
+  ddp-sync rebuild on EC2, each at the new image's core. A core merge alone changes nothing for api-v3: until a new image ships, a rebuild still
   takes the live image's core.
 * **Rollback:** retag a `ddp-openstates-api:pre-*` image as `ddp-openstates-api:local` and recreate `api` only
   (`docker-compose -f docker-compose.ddp.yml up -d --force-recreate --no-deps api`). Tag `:local` as `pre-<api-v3
   commit>` before every rebuild. Rebuilding an older api-v3 commit also reproduces it, at the image's core.
 * **Scrapers image release:** `deploy-scrapers-image.sh` prints the core commit it baked in (`core <sha>`); hand it to
   the prod agent with the tag and revision. If api-v3 runs a different core, rebuild both api-v3 copies at that
-  commit (the check fails and names both commits until they are). Which tag is live:
+  commit (the check fails and names both commits until they are). **Rebuild ddp-sync on EC2 at the same commit too
+  (SYNC-180):** cloud loads import into RDS inside ddp-sync's container, with ddp-sync's own copy of core, not the
+  image's (on 2026-11-18 it was v62's `44c3b8dc` while v65 was live, so newer state rules did not apply on load). On
+  EC2, with no cloud load running: tag the running image for rollback (`docker tag ddp-sync:prod ddp-sync:pre-<sha>`), then `DDP_CORE_SHA=<full sha> docker-compose -f infrastructure/docker-compose.prod.yml
+  build ddp-sync` in `/opt/ddp-sync` (a build without it fails), recreate `ddp-sync` only, then add
+  `--sync-container ddp-sync-ddp-sync-1` (its name in the prod notes; `docker ps` to confirm) to the check above. Which tag is live:
   `aws ecs describe-task-definition --task-definition ddp-scrapers --query 'taskDefinition.containerDefinitions[0].image'`
   on the Mac (read-only).
 * **Not scheduled yet:** run by hand at each release; a scheduled run is a follow-up (OPEN-579).
