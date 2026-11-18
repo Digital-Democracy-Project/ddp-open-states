@@ -33,7 +33,8 @@ def _direct_url(sha):
 @pytest.fixture
 def docker(monkeypatch):
     """Stub for drift._run: `docker run ... cat <record>` and `docker exec <container> python -c ...`."""
-    state = {"image": {"img:v61": A}, "installed": {"ddp-openstates-api-1": _direct_url(A)}, "calls": []}
+    state = {"image": {"img:v61": A}, "installed": {"ddp-openstates-api-1": _direct_url(A)},
+             "loader": {"ddp-sync": A}, "calls": []}
 
     def fake_run(cmd):
         state["calls"].append(cmd)
@@ -43,6 +44,12 @@ def docker(monkeypatch):
             if image not in state["image"]:
                 raise drift.SourceError(f"`{' '.join(cmd)}` exited 1: cat: {drift.IMAGE_RECORD}: No such file")
             return state["image"][image] + "\n"
+        if cmd[1] == "exec" and cmd[3] == "cat":
+            container = cmd[2]
+            assert cmd[4] == drift.IMAGE_RECORD, cmd
+            if container not in state["loader"]:
+                raise drift.SourceError(f"`{' '.join(cmd)}` exited 1: cat: {drift.IMAGE_RECORD}: No such file")
+            return state["loader"][container] + "\n"
         if cmd[1] == "exec":
             container = cmd[2]
             if container not in state["installed"]:
@@ -54,9 +61,9 @@ def docker(monkeypatch):
     return state
 
 
-def _check(image="img:v61", image_core=None, containers=("ddp-openstates-api-1",)):
+def _check(image="img:v61", image_core=None, containers=("ddp-openstates-api-1",), sync_containers=()):
     out = io.StringIO()
-    rc = drift.run(image, image_core, list(containers), out)
+    rc = drift.run(image, image_core, list(containers), out, list(sync_containers))
     return rc, out.getvalue()
 
 
@@ -174,6 +181,60 @@ def test_an_image_with_no_container_to_compare_is_an_error_not_a_pass(docker, im
 def test_container_not_running_is_an_error(docker):
     rc, out = _check(containers=("ddp-openstates-api-1", "gone"))
     assert rc == 2 and "No such container: gone" in out, out
+
+
+# --- ddp-sync's cloud loader (SYNC-180) -------------------------------------------------------------
+# cloud_loader.py imports each cloud scrape into RDS inside ddp-sync's container, with ddp-sync's own copy of core
+# (found 2026-11-18 at v62's 44c3b8dc while v65 was live). Its build records the commit like the image does.
+
+def test_passes_when_the_ddp_sync_loader_agrees(docker):
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 0, out
+    assert f"{A}  ddp-sync loader in ddp-sync" in out
+    assert "1 api-v3 container(s) and 1 ddp-sync container(s) all run core" in out, out
+
+
+def test_a_ddp_sync_loader_on_another_core_fails_naming_both_commits(docker):
+    """The 11-18 case: the image moved on, ddp-sync was not rebuilt."""
+    docker["loader"]["ddp-sync"] = B
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 1, out
+    assert re.search(rf"DRIFT ddp-sync loader in ddp-sync is {B}, but image \(--image-core\) is {A}", out), out
+    assert "rebuild ddp-sync on EC2 with DDP_CORE_SHA" in out, out
+
+
+def test_a_ddp_sync_loader_matching_api_v3_but_not_the_image_still_drifts(docker):
+    docker["loader"]["ddp-sync"] = B
+    docker["installed"]["ddp-openstates-api-1"] = _direct_url(B)
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 1 and len([l for l in out.splitlines() if l.startswith("DRIFT")]) == 2, out
+
+
+def test_a_ddp_sync_built_before_the_record_is_an_error_not_a_pass(docker):
+    del docker["loader"]["ddp-sync"]
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 2 and "built before SYNC-180" in out and "OK:" not in out, out
+
+
+@pytest.mark.parametrize("record", ["", "44c3b8dc", "main", A.upper()])
+def test_a_ddp_sync_record_that_is_not_a_full_commit_is_an_error(docker, record):
+    docker["loader"]["ddp-sync"] = record
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 2 and "is not a full commit" in out, out
+
+
+def test_no_ddp_sync_container_is_read_unless_one_is_named(docker):
+    """The Mac runs ddp-sync natively (no container), so refresh-api-v3.sh's check must not look for one."""
+    rc, out = _check()
+    assert rc == 0, out
+    assert not [c for c in docker["calls"] if c[1] == "exec" and c[3] == "cat"], docker["calls"]
+
+
+def test_sync_container_option_reaches_the_check(docker):
+    docker["loader"]["ddp-sync"] = B
+    out = io.StringIO()
+    rc = drift.main(["check-core-pin-drift.py", "--image-core", A, "--sync-container", "ddp-sync"], out=out)
+    assert rc == 1 and B in out.getvalue(), out.getvalue()
 
 
 # --- the real files ---------------------------------------------------------------------------------

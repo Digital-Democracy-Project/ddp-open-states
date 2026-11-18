@@ -638,11 +638,19 @@ step matters — a newer pip breaks one of the pinned deps' build.
     string is useless here (fork and PyPI both say 6.26.5); a container with no fork archive URL is drift.
   * **Which image is live is the caller's to say** (`--image`/`--image-core`), like `check-jurisdiction-drift.py --live`;
     the script makes no AWS call and needs no new permission.
+  * **ddp-sync's cloud loader (SYNC-180):** `--sync-container <name>` (repeatable, none by default) also reads the core
+    in a ddp-sync container. cloud_loader.py imports each cloud scrape into RDS there with ddp-sync's own copy of core,
+    so it must match the image too (found 2026-11-18 at v62's `44c3b8dc` while v65 was live). ddp-sync's
+    `infrastructure/Dockerfile` fetches core at `DDP_CORE_SHA` (no default; set it for `docker-compose build ddp-sync`
+    on EC2) and writes the same `/opt/openstates-core/DDP_CORE_COMMIT` record, read with `docker exec ... cat`. A
+    ddp-sync built before SYNC-180 has no record: exit 2. The Mac runs ddp-sync natively and loads nothing, so
+    `refresh-api-v3.sh` names no ddp-sync container. Lasting fix: the load moves into the Fargate task (OPEN-633).
   * **Where it runs:** last step of `refresh-api-v3.sh` (`SCRAPERS_IMAGE` or `SCRAPERS_IMAGE_CORE`; neither is exit 2),
-    by the prod agent after each EC2 api-v3 rebuild, and after each scrapers image release. **Do not** compare version
+    by the prod agent after each EC2 api-v3 or ddp-sync rebuild (with `--sync-container`), and after each scrapers image
+    release. **Do not** compare version
     strings or add a second copy of this comparison elsewhere. No schedule yet (follow-up).
-  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts, each built
-    at the new image's core. A core merge without a new image changes nothing in api-v3: a rebuild still takes the live
+  * **Release order:** scrapers image first (then any stored recompute), then the api-v3 rebuild on both hosts and the
+    ddp-sync rebuild on EC2, each built at the new image's core. A core merge without a new image changes nothing in api-v3: a rebuild still takes the live
     image's core. **Rollback:** retag a `ddp-openstates-api:pre-*` image as `:local` and recreate `api` only; rebuilding
     an older api-v3 commit also works now, at the image's core.
   * **First run (Mac, 2026-11-16):** the Mac container ran `96445eb26` (the old pin) and v61 carries `bcde78e2c`, so the
