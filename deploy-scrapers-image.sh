@@ -58,7 +58,7 @@ docker run --rm --entrypoint pdftotext "$IMG" -v 2>&1 | head -1
 
 echo "-- the code that will run is importable (both forks are cloned from main at build time)"
 docker run --rm --entrypoint python3 "$IMG" -c \
-  "import nc.bills, ut.bills, openstates.cli.text_extract, openstates.cli.update; print('imports OK')"
+  "import nc.bills, ut.bills, openstates.cli.text_extract, openstates.cli.update, pandas; print('imports OK')"
 
 echo "-- end-to-end scrape smoke test: one Utah bill through the real os-update path (one request to le.utah.gov)"
 OUT=$(docker run --rm --entrypoint /bin/sh "$IMG" -c \
