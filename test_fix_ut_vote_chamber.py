@@ -1,4 +1,4 @@
-"""OPEN-622: fix-ut-passage-chamber.py. A stored Utah passage line moves to the chamber its text names (the scraper's
+"""OPEN-622: fix-ut-vote-chamber.py. A stored Utah floor vote line moves to the chamber its text names (the scraper's
 own rule), nothing else moves, and a write either applies every planned change or none. No database: rows and the
 connection are stand-ins; the plan itself is checked by the dry run on the replica and the commit + undo rehearsal on
 a throwaway copy (OPEN-622)."""
@@ -9,7 +9,7 @@ import os
 import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_spec = importlib.util.spec_from_file_location("fix_ut_passage_chamber", os.path.join(HERE, "fix-ut-passage-chamber.py"))
+_spec = importlib.util.spec_from_file_location("fix_ut_vote_chamber", os.path.join(HERE, "fix-ut-vote-chamber.py"))
 fix = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fix)
 
@@ -24,8 +24,9 @@ def row(action_id, description, chamber, bill="HB 209"):
     )
 
 
-# HB 209 (2026) as stored on the replica: the House's passage under the Senate, the Senate's suspension passage under
-# the House; SB 98's House passage already under the House.
+# HB 209 (2026) as stored on the replica: the House's passage and concurrence under the Senate, the Senate's suspension
+# passage under the House; SB 98's House passage already under the House; HB 136's House conference final passage
+# under the Senate.
 ROWS = [
     row("a1", "House/ passed 3rd reading", "upper"),
     row("a2", "House/ to Senate", "upper"),
@@ -35,15 +36,19 @@ ROWS = [
     row("a6", "Senate/ signed by President/ returned to House", "lower"),
     row("a7", "House/ passed 3rd reading", "lower", bill="SB 98"),
     row("a8", "Senate/ passed 3rd reading", "lower", bill="SB 98"),
+    row("a9", "House Conference Committee - Final Passage [Senate President]", "upper", bill="HB 136"),
+    row("a10", "House Conference Committee Appointed [Conference Committee]", "upper", bill="HB 136"),
 ]
 
 
-def test_passage_lines_move_to_the_chamber_that_voted_and_nothing_else_moves():
+def test_vote_lines_move_to_the_chamber_that_voted_and_nothing_else_moves():
     changes = fix.plan(ROWS, ORGS)
     assert [(c["id"], c["old_chamber"], c["new_chamber"], c["old_org"], c["new_org"]) for c in changes] == [
         ("a1", "upper", "lower", SENATE, HOUSE),
         ("a4", "lower", "upper", HOUSE, SENATE),
+        ("a5", "upper", "lower", SENATE, HOUSE),
         ("a8", "lower", "upper", HOUSE, SENATE),
+        ("a9", "upper", "lower", SENATE, HOUSE),
     ]
 
 
@@ -122,10 +127,10 @@ def test_commit_moves_updated_at_and_undo_round_trips(tmp_path):
     conn = _Conn(stored(ROWS))
     fix.write(conn, changes, str(tmp_path / "committed.csv"))
     assert conn.stored["a1"][0] == HOUSE and conn.stored["a4"][0] == SENATE and conn.stored["a8"][0] == SENATE
-    assert conn.stored["a2"][0] == SENATE  # untouched
-    assert conn.touched == {"ocd-bill/HB 209", "ocd-bill/SB 98"}
+    assert conn.stored["a2"][0] == SENATE and conn.stored["a10"][0] == SENATE  # untouched
+    assert conn.touched == {"ocd-bill/HB 209", "ocd-bill/SB 98", "ocd-bill/HB 136"}
     with open(tmp_path / "committed.csv", newline="") as f:
-        assert [r["id"] for r in csv.DictReader(f)] == ["a1", "a4", "a8"]
+        assert [r["id"] for r in csv.DictReader(f)] == ["a1", "a4", "a5", "a8", "a9"]
     fix.write(conn, fix.read_list(str(tmp_path / "committed.csv"), undo=True), None)
     assert conn.stored == stored(ROWS)
 

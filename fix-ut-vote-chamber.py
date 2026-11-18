@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-OPEN-622: move Utah's stored floor passage lines to the chamber that voted.
+OPEN-622: move Utah's stored floor vote lines to the chamber that voted.
 
 Utah's scraper stored each action under le.utah.gov's "owner", the office holding the bill next, so "House/ passed 3rd
-reading" sat under the Senate (930 of 1,260 passage lines on the Mac replica, 2026-11-18). The scraper now stores a
-passage line under the chamber its text names (`passage_chamber()` in openstates-scrapers `scrapers/ut/bills.py`, the
-same pattern as core's `ddp_states/ut.py` and the broker's `_read_utah`). This applies that rule to the stored history,
-so the broker's Utah chamber correction can go (BROKER-490). Only the action's organization changes: never its text,
+reading" and "House/ concurs with Senate amendment" sat under the Senate (on the Mac replica, 2026-11-18: 930 of 1,260
+passage lines, all 214 concurrence lines, 12 of 26 conference "Final Passage" lines). The scraper now stores a floor
+vote line (passage, concurrence or its refusal, a failed vote, a conference report's final passage) under the chamber
+its text names (`voting_chamber()` in openstates-scrapers `scrapers/ut/bills.py`; its passage pattern is core's
+`ddp_states/ut.py` and the broker's `_read_utah`). This applies that rule to the stored history, so the broker's Utah
+chamber correction can go (BROKER-490) and each roll call pairs with its own line. Only the action's organization changes: never its text,
 labels, date or order. A bill whose action moves has its `updated_at` moved, as a re-import by the fixed scraper would,
 so api-v3's `updated_since` readers see it: run it in Utah's silent window.
 
@@ -15,10 +17,10 @@ was planned from aborts the whole run with nothing written. The list is the audi
 the commit, and an existing list is never overwritten.
 
 Usage:
-    python3 fix-ut-passage-chamber.py --list PLANNED                          # dry run: the change list
-    python3 fix-ut-passage-chamber.py --commit --expect N --list COMMITTED    # write (aborts unless exactly N)
-    python3 fix-ut-passage-chamber.py --apply-list REVIEWED --commit --expect N --list COMMITTED
-    python3 fix-ut-passage-chamber.py --undo COMMITTED --commit --list UNDONE  # put every action back
+    python3 fix-ut-vote-chamber.py --list PLANNED                          # dry run: the change list
+    python3 fix-ut-vote-chamber.py --commit --expect N --list COMMITTED    # write (aborts unless exactly N)
+    python3 fix-ut-vote-chamber.py --apply-list REVIEWED --commit --expect N --list COMMITTED
+    python3 fix-ut-vote-chamber.py --undo COMMITTED --commit --list UNDONE  # put every action back
 """
 import argparse
 import csv
@@ -71,12 +73,12 @@ LIST_COLUMNS = [
 
 
 def plan(rows, chamber_orgs):
-    """Each stored passage line whose organization is not the chamber its text names, as a change-list row."""
-    from ut.bills import passage_chamber  # the scraper's own rule (OPEN-622)
+    """Each stored floor vote line whose organization is not the chamber its text names, as a change-list row."""
+    from ut.bills import voting_chamber  # the scraper's own rule (OPEN-622)
 
     changes = []
     for row in rows:
-        voted = passage_chamber(row["description"])
+        voted = voting_chamber(row["description"])
         if voted is None or voted == row["chamber"]:
             continue
         changes.append(dict(
