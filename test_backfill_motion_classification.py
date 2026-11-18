@@ -159,6 +159,13 @@ def test_arizona_result_is_azlegs_outcome_not_yeas_over_nays():
     ]
 
 
+def test_arizona_result_reads_counts_when_no_voter_is_recorded():
+    # the scraper keeps a roll call with counts but no voter list; so does the fix-up
+    counts_only = result_row("ocd-vote/16", "failed to pass", "pass", 28, 25, voters=0)
+    changes, unclassified = bmc.plan_results([counts_only])
+    assert ([(c["id"], c["new"]) for c in changes], unclassified) == ([("ocd-vote/16", "fail")], 0)
+
+
 def test_arizona_result_leaves_empty_roll_calls_and_other_states_alone():
     empty = result_row("ocd-vote/14", "failed to pass", "pass", 0, 0, voters=0)
     us = result_row("ocd-vote/15", "failed to pass", "pass", 28, 25, jurisdiction="ocd-jurisdiction/country:us/government")

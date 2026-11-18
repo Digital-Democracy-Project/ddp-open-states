@@ -178,8 +178,11 @@ def plan_results(rows):
 
     changes, unclassified = [], 0
     for row in rows:
-        if JURISDICTION_MAP[row["jurisdiction_id"]] != "az" or not row["voters"]:
-            # An empty 0-0 roll call is left as it is, as in classify_row (the scraper no longer emits them).
+        empty = not row["voters"] and not row["yes"] and not row["no"]
+        if JURISDICTION_MAP[row["jurisdiction_id"]] != "az" or empty:
+            # An empty 0-0 roll call (no voters, no counts: the scraper no longer emits them) is left as it is, as in
+            # classify_row. Stored votes do not keep azleg's UnanimouslyAdopted; every stored Arizona text with counts
+            # says "Passed" or "failed to pass", so the text decides.
             unclassified += 1
             continue
         new = vote_result(row["chamber"], row["motion_text"], row["yes"] or 0)
@@ -287,7 +290,7 @@ def main(argv=None):
             changes, unclassified = plan_results(rows) if args.result else plan(rows, az_steps)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             if unclassified:
-                why = "no voters" if args.result else "no --az-cache, no voters, or no Bill page"
+                why = "an empty 0-0 roll call" if args.result else "no --az-cache, no voters, or no Bill page"
                 print(f"  left as they are: {unclassified:,} (Arizona: {why})")
         groups = {}
         for c in changes:
