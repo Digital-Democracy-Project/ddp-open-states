@@ -1390,6 +1390,27 @@ python3 backfill-motion-classification.py --undo az-votes-committed.csv --list a
 The backfill writes every record whose label differs from the current YAML output (Arizona only with
 `--az-cache`) — re-running after a YAML fix always produces the correct state.
 
+### Utah: floor vote lines under the chamber that voted (OPEN-622)
+
+Utah's scraper stores a floor vote line (passage, concurrence or its refusal, a failed vote, a conference report's
+final passage) under the chamber its text names (before, under the chamber the bill went to next). `fix-ut-vote-chamber.py`
+moves the stored ones; it changes only the action's organization and moves the touched bills' `updated_at`, so it runs
+in Utah's silent window, after the scrapers image with the scraper fix (an import on an older image puts the old
+chamber back). Dry run unless `--commit`:
+
+```bash
+# Mac, read-only on the replica: the list to review (2026-11-18: 1,172 actions on 696 bills,
+# notes/open622-ut-vote-chamber-dry-run-20261118.csv)
+PGOPTIONS='-c default_transaction_read_only=on' python3 fix-ut-vote-chamber.py --list ut-chamber-dry-run.csv
+# where it is applied (Ramon's go): exactly the reviewed list, then the undo if needed
+python3 fix-ut-vote-chamber.py --apply-list ut-chamber-dry-run.csv --commit --expect <rows> --list ut-chamber-committed.csv
+python3 fix-ut-vote-chamber.py --undo ut-chamber-committed.csv --commit --list ut-chamber-undone.csv
+```
+
+Afterwards: a second dry run must find 0, and `validate_bill_stages --jurisdictions ut` with the broker's Utah reader
+switched off must show `passed_both_without_passed_one` 0 (OPEN-622's table). Only then can BROKER-490 drop the broker's
+Utah chamber re-point. `--apply-list` and `--undo` do not run the scraper's rule: the reviewed list is what is written.
+
 ### Audit files
 
 `audit-motion-texts.py` generates `motion-text-audit/<jurisdiction>.md` — one row per unique

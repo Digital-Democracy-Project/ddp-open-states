@@ -1417,6 +1417,17 @@ functions, layered on top of the ordering work above rather than changing it.
   from the motion text (MI, WA), saved LIS answers (`--va-votes`) or the scrape cache (`--az-cache`); same
   list / `--apply-list` / `--undo` / `--expect` pattern and all-or-nothing guards as the classification backfill above,
   never changes a stored number, never touches `updated_at`, and reuses that script's `JURISDICTION_MAP`.
+- **`fix-ut-vote-chamber.py`** (repo root, OPEN-622) — one-time, guarded fix-up of Utah's stored floor vote lines:
+  each passage ("<chamber>/ passed 3rd reading", "passed 2nd & 3rd readings"), concurrence or refusal to concur,
+  "<chamber>/ failed" and "<chamber> Conference Committee - Final Passage" action moves to the chamber its text names
+  (the Utah scraper's own `voting_chamber()`, `openstates-scrapers/scrapers/ut/bills.py`, which now stores new ones that
+  way; le.utah.gov's "owner" is the office holding the bill next). Only `organization_id` changes; the touched bills'
+  `updated_at` moves (as a re-import would), so it runs in Utah's silent window. Dry run unless `--commit`; `--list`,
+  `--apply-list`, `--undo`, `--expect` as in `backfill-motion-classification.py`; a guard miss (organization or text
+  changed underneath) rolls the whole run back. Measured 2026-11-18 on the Mac replica: 1,172 actions on 696 bills.
+  **Not** core's `os-text-extract relabel`: that tool changes labels only, never an action's chamber. Once it has run,
+  the broker's Utah chamber re-point (`_read_utah`) has nothing left to correct (BROKER-490), and each Utah roll call
+  pairs with its own line on the broker's action basis.
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,
   classification)` pair per jurisdiction with vote/pass/fail counts, written to
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
