@@ -1378,6 +1378,22 @@ functions, layered on top of the ordering work above rather than changing it.
   `quality_check.py`'s `OCD_TO_CODE` (built from `jurisdictions.yaml` since OPEN-327) but the
   same idea; if you're about to write a third one of these OCD-jurisdiction maps, check whether
   one of the two existing ones can just be imported instead. `--dry-run` prints without writing.
+  **Writes only rows whose label changes, guarded** (each UPDATE matches only while the row still holds the old label;
+  one miss rolls the whole run back). `--jurisdiction KEY` limits it to one state; `--list FILE` writes the changes
+  (dry run or write); `--apply-list FILE` writes exactly a reviewed list (production, where no scrape cache exists);
+  `--undo FILE` writes a list back; `--expect N` aborts unless exactly N rows change. It never touches `updated_at`:
+  the broker re-reads tracked bills' votes on its scheduled fetch, not by timestamp.
+  **Arizona (OPEN-625) is classified only with `--az-cache DIR`** (the scrape cache holding Arizona's Bill pages): a
+  stored vote does not keep its floor step, so the step comes from that page's `FloorHeaders`, matched on the vote
+  source's `billStatusActionId`, and the rule is the az scraper's own `vote_classification()` (only Third and Final
+  Reading roll calls are passage). Without the cache Arizona is left as it is, because the text rules alone would make
+  every Committee of the Whole, amendment and reconsider roll call a passage vote again. **Arizona's empty 0-0 roll
+  calls (no voters, OPEN-433) are left as they are:** the broker keeps one Motion for same-day votes with the same
+  text, so relabelling an empty "Passed" beside a real third reading takes the real vote off scorecards (measured on a
+  throwaway broker copy: 7 scorecard bills, 130 entries). Measured 2026-11-17 on the Mac replica: 24 of 3,411 Arizona
+  votes change (21 COW motions to amend, 1 COW vote, 2 reconsider motions). **Do not** run it for a state missing from
+  `JURISDICTION_MAP` (pa, la: the text rules would wipe the scraper's own labels; PLAN-push-button-onboarding
+  2026-11-17).
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,
   classification)` pair per jurisdiction with vote/pass/fail counts, written to
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
