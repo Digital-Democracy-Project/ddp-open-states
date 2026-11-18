@@ -19,8 +19,8 @@ same value the scraper would, from data already stored:
         matched on the vote's billStatusActionId and ReferralNumber.
     Without its directory, Virginia or Arizona is left as it is.
 
-Every write needs --expect N. Only a vote with no roll-call key at all is written; a stored number is never changed. A vote whose number cannot be
-read is left as it is and counted.
+Every write needs --expect N. Only a vote with no roll-call key at all is written; a stored number is never
+changed. A vote whose number cannot be read is left as it is and counted.
 
 A reviewed list is applied where the scrape cache does not exist (production): --list writes the changes (dry run or
 write), --apply-list writes exactly a list's changes, --undo takes a list's keys off again. Every write is guarded: a
@@ -177,7 +177,10 @@ def plan(rows, az_times, va_times=None):
 
 def check_list(changes):
     """A list is written only if every row names a roll-call key and a number, each vote once (pm-review)."""
-    bad = [c.get("id") for c in changes if c.get("key") not in KEYS or not str(c.get("rollcall_num", "")).isdigit()]
+    bad = [
+        c.get("id") for c in changes
+        if c.get("key") not in KEYS or not re.fullmatch(r"[0-9]+", str(c.get("rollcall_num", "")))
+    ]
     ids = [c.get("id") for c in changes]
     if bad or not all(ids) or len(set(ids)) != len(ids):
         sys.exit(f"aborted, nothing written: the list has rows without a roll-call key and number ({bad[:5]}), "

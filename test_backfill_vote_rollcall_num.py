@@ -198,6 +198,7 @@ def test_an_undo_guard_miss_rolls_the_whole_run_back():
 @pytest.mark.parametrize("bad", [
     dict(id="ocd-vote/c", key="bill_action", rollcall_num="1"),
     dict(id="ocd-vote/c", key="house-rollcall-num", rollcall_num="#47"),
+    dict(id="ocd-vote/c", key="house-rollcall-num", rollcall_num="\u0664\u0667"),  # Arabic-Indic 47
     dict(id="", key="house-rollcall-num", rollcall_num="47"),
     dict(id="ocd-vote/a", key="house-rollcall-num", rollcall_num="47"),
 ])
