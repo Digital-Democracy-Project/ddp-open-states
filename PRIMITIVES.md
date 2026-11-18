@@ -1394,6 +1394,15 @@ functions, layered on top of the ordering work above rather than changing it.
   votes change (21 COW motions to amend, 1 COW vote, 2 reconsider motions). **Do not** run it for a state missing from
   `JURISDICTION_MAP` (pa, la: the text rules would wipe the scraper's own labels; PLAN-push-button-onboarding
   2026-11-17).
+  **Arizona's `result` (OPEN-627): `--result`** plans Arizona's stored `result` instead, with the az scraper's own
+  `vote_result()` (`scrapers/az/bills.py`): azleg's outcome in the motion text ("failed to pass" is a fail even when
+  the yeas outnumber the nays; some readings need more than a majority, e.g. SB 1152 failed 16-11), and only when the
+  text says neither, the yeas against a majority of the chamber (31 House, 16 Senate). No cache needed (the stored
+  motion text is azleg's Action); empty 0-0 roll calls are left alone. A list row's `field` column says which column it
+  writes (`result` or, when missing, `motion_classification`), so the same `--apply-list` / `--undo` / `--expect`
+  apply. Measured 2026-11-18 on the Mac replica: 44 of 3,411 Arizona votes change, all "failed to pass" stored "pass"
+  (41 third, 3 final readings), each matching azleg's answer in the scrape cache. **Do not** derive a vote's outcome
+  from yeas > nays anywhere else for Arizona; import `vote_result()`.
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,
   classification)` pair per jurisdiction with vote/pass/fail counts, written to
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config

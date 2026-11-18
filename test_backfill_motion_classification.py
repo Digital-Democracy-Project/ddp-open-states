@@ -92,6 +92,7 @@ class _Cursor:
 
     def execute(self, sql, params):
         new, vote_id, old = params
+        self.conn.sql.append(" ".join(sql.split()))
         self.rowcount = 1 if self.conn.stored.get(vote_id) == old else 0
         if self.rowcount:
             self.conn.pending[vote_id] = new
@@ -101,6 +102,7 @@ class _Conn:
     def __init__(self, stored):
         self.stored = dict(stored)
         self.pending = {}
+        self.sql = []
 
     def cursor(self):
         return _Cursor(self)
@@ -130,3 +132,70 @@ def test_commit_then_undo_round_trips(tmp_path):
         assert [r["id"] for r in csv.DictReader(f)] == ["ocd-vote/1", "ocd-vote/3"]
     bmc.write(conn, bmc.read_list(str(tmp_path / "committed.csv"), undo=True), None)
     assert conn.stored == {"ocd-vote/1": ["passage"], "ocd-vote/3": ["passage"]}
+
+
+# OPEN-627: Arizona's stored result is the az scraper's vote_result(): azleg's outcome in the motion text, not yeas >
+# nays. Real 2026 rows (Mac replica): HB 2918's third reading failed 28-25 and is stored "pass"; SB 1152's failed 16-11
+# (16 is a Senate majority) and is stored "pass"; HB 2913's failed 22-30 and HB 2758's passed 32-24 are right already.
+def result_row(vote_id, text, result, yes, no, chamber="lower", voters=60, jurisdiction=AZ, bill="HB 2918"):
+    return dict(row(vote_id, 0, text, ["passage"], jurisdiction=jurisdiction, bill=bill), result=result, yes=yes,
+                no=no, chamber=chamber, voters=voters)
+
+
+RESULT_ROWS = [
+    result_row("ocd-vote/10", "failed to pass", "pass", 28, 25),
+    result_row("ocd-vote/11", "failed to pass", "pass", 16, 11, chamber="upper", voters=30, bill="SB 1152"),
+    result_row("ocd-vote/12", "failed to pass", "fail", 22, 30, bill="HB 2913"),
+    result_row("ocd-vote/13", "Passed", "pass", 32, 24, bill="HB 2758"),
+]
+
+
+def test_arizona_result_is_azlegs_outcome_not_yeas_over_nays():
+    changes, unclassified = bmc.plan_results(RESULT_ROWS)
+    assert unclassified == 0
+    assert [(c["id"], c["field"], c["old"], c["new"], c["yes"], c["no"]) for c in changes] == [
+        ("ocd-vote/10", "result", "pass", "fail", 28, 25),
+        ("ocd-vote/11", "result", "pass", "fail", 16, 11),
+    ]
+
+
+def test_arizona_result_leaves_empty_roll_calls_and_other_states_alone():
+    empty = result_row("ocd-vote/14", "failed to pass", "pass", 0, 0, voters=0)
+    us = result_row("ocd-vote/15", "failed to pass", "pass", 28, 25, jurisdiction="ocd-jurisdiction/country:us/government")
+    assert bmc.plan_results([empty, us]) == ([], 2)
+
+
+def test_result_list_writes_the_result_column_and_undoes(tmp_path):
+    changes, _ = bmc.plan_results(RESULT_ROWS)
+    conn = _Conn({"ocd-vote/10": "pass", "ocd-vote/11": "pass"})
+    bmc.write(conn, changes, str(tmp_path / "committed.csv"))
+    assert conn.stored == {"ocd-vote/10": "fail", "ocd-vote/11": "fail"}
+    assert all("SET result = %s WHERE id = %s AND result = %s" in sql for sql in conn.sql)
+    applied = bmc.read_list(str(tmp_path / "committed.csv"), undo=False)
+    assert [(r["field"], r["old"], r["new"]) for r in applied] == [("result", "pass", "fail")] * 2
+    bmc.write(conn, bmc.read_list(str(tmp_path / "committed.csv"), undo=True), None)
+    assert conn.stored == {"ocd-vote/10": "pass", "ocd-vote/11": "pass"}
+
+
+def test_a_stale_result_aborts_the_whole_write(tmp_path):
+    changes, _ = bmc.plan_results(RESULT_ROWS)
+    conn = _Conn({"ocd-vote/10": "pass", "ocd-vote/11": "fail"})  # vote 11 already fixed underneath
+    with pytest.raises(SystemExit, match="nothing written"):
+        bmc.write(conn, changes, str(tmp_path / "committed.csv"))
+    assert conn.stored == {"ocd-vote/10": "pass", "ocd-vote/11": "fail"}
+
+
+def test_a_list_without_a_field_column_writes_classifications(tmp_path):
+    # OPEN-625's reviewed list predates the "field" column.
+    path = tmp_path / "open625.csv"
+    path.write_text("id,jurisdiction,bill,date,chamber,motion_text,floor_step,voters,old,new\n"
+                    "ocd-vote/1,az,HB 2689,2026-02-11,lower,failed to pass,MOTION,56,passage,\n")
+    conn = _Conn({"ocd-vote/1": ["passage"]})
+    bmc.write(conn, bmc.read_list(str(path), undo=False), None)
+    assert conn.stored == {"ocd-vote/1": []}
+    assert "SET motion_classification = %s" in conn.sql[0]
+
+
+def test_an_unknown_field_in_a_list_is_refused():
+    with pytest.raises(ValueError, match="unknown field"):
+        bmc.write(_Conn({}), [dict(id="ocd-vote/1", field="updated_at", old="a", new="b")], None)
