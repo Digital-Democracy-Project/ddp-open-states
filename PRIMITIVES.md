@@ -1392,6 +1392,15 @@ functions, layered on top of the ordering work above rather than changing it.
   votes change (21 COW motions to amend, 1 COW vote, 2 reconsider motions). **Do not** run it for a state missing from
   `JURISDICTION_MAP` (pa, la: the text rules would wipe the scraper's own labels; PLAN-push-button-onboarding
   2026-11-17).
+  **Arizona's `result` (OPEN-627): `--result`** plans Arizona's stored `result` instead, with the az scraper's own
+  `vote_result()` (`scrapers/az/bills.py`): azleg's outcome in the motion text ("failed to pass" is a fail even when
+  the yeas outnumber the nays; some readings need more than a majority, e.g. SB 1152 failed 16-11), and only when the
+  text says neither, the yeas against a majority of the chamber (31 House, 16 Senate). No cache needed (the stored
+  motion text is azleg's Action); empty 0-0 roll calls are left alone. A list row's `field` column says which column it
+  writes (`result` or, when missing, `motion_classification`), so the same `--apply-list` / `--undo` / `--expect`
+  apply. Measured 2026-11-18 on the Mac replica: 44 of 3,411 Arizona votes change, all "failed to pass" stored "pass"
+  (41 third, 3 final readings), each matching azleg's answer in the scrape cache. **Do not** derive a vote's outcome
+  from yeas > nays anywhere else for Arizona; import `vote_result()`.
 - **Same-day vote order: the `house-rollcall-num` / `senate-rollcall-num` extras key** (OPEN-628). The broker reads any
   vote extras key ending in `rollcall-num` into `Motion.rollcall_num`, and its scorecard builders order a bill's votes in
   one chamber by date, then that number. WA, VA, MI and AZ store a vote's day without a time, so the key is how two

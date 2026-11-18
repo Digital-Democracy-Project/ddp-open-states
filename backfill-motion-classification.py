@@ -17,6 +17,12 @@ otherwise left as it is: re-applying the text rules alone would turn its Committ
 Whole, amendment and reconsider roll calls back into passage votes. Arizona's empty 0-0 roll
 calls (no voters, OPEN-433) are left as they are too (see classify_row).
 
+Arizona's result (OPEN-627): --result re-derives each Arizona roll call's stored result ("pass" /
+"fail") with the az scraper's own vote_result(): azleg's outcome in the motion text ("failed to
+pass" is a fail even when the yeas outnumber the nays), else the yeas against the chamber's
+majority. It needs no cache (the stored motion text is azleg's Action), and it writes the result
+column only; the list's "field" column says which column a row writes.
+
 A reviewed list is applied where that cache does not exist (production): --list writes the
 changes (dry run or write), --apply-list writes exactly a list's changes, --undo writes a
 list's changes back. Every write is guarded: a row whose stored classification is no longer
@@ -25,6 +31,7 @@ the list's "old" aborts the run with nothing written.
 Usage:
     python3 backfill-motion-classification.py [--dry-run]
     python3 backfill-motion-classification.py --jurisdiction az --az-cache DIR --dry-run --list FILE
+    python3 backfill-motion-classification.py --result --dry-run --list FILE
     python3 backfill-motion-classification.py --apply-list FILE --expect N --list COMMITTED
     python3 backfill-motion-classification.py --undo COMMITTED --list UNDONE
 """
@@ -69,13 +76,16 @@ FETCH_SQL = """
         ve.id,
         ve.motion_text,
         ve.motion_classification,
+        ve.result,
         ve.extras->>'bill_action' AS bill_action,
         j.id AS jurisdiction_id,
         b.identifier AS bill,
         ve.start_date,
         o.classification AS chamber,
         (SELECT min(url) FROM opencivicdata_votesource vs WHERE vs.vote_event_id = ve.id) AS source,
-        (SELECT count(*) FROM opencivicdata_personvote pv WHERE pv.vote_event_id = ve.id) AS voters
+        (SELECT count(*) FROM opencivicdata_personvote pv WHERE pv.vote_event_id = ve.id) AS voters,
+        (SELECT sum(value) FROM opencivicdata_votecount vc WHERE vc.vote_event_id = ve.id AND vc.option = 'yes') AS yes,
+        (SELECT sum(value) FROM opencivicdata_votecount vc WHERE vc.vote_event_id = ve.id AND vc.option = 'no') AS no
     FROM opencivicdata_voteevent ve
     JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
     JOIN opencivicdata_jurisdiction j ON j.id = ls.jurisdiction_id
@@ -85,14 +95,25 @@ FETCH_SQL = """
     ORDER BY j.id, ve.id
 """
 
-# Guarded: matches only while the row still holds the classification the change was planned from.
-UPDATE_SQL = """
-    UPDATE opencivicdata_voteevent
-    SET motion_classification = %s
-    WHERE id = %s AND motion_classification = %s
-"""
+# Guarded: matches only while the row still holds the value the change was planned from. A list row's "field" says
+# which column it writes; a list without that column (OPEN-625's) writes motion_classification.
+UPDATE_SQL = {
+    "motion_classification": """
+        UPDATE opencivicdata_voteevent
+        SET motion_classification = %s
+        WHERE id = %s AND motion_classification = %s
+    """,
+    "result": """
+        UPDATE opencivicdata_voteevent
+        SET result = %s
+        WHERE id = %s AND result = %s
+    """,
+}
 
-LIST_COLUMNS = ["id", "jurisdiction", "bill", "date", "chamber", "motion_text", "floor_step", "voters", "old", "new"]
+LIST_COLUMNS = [
+    "id", "jurisdiction", "bill", "date", "chamber", "motion_text", "floor_step", "voters", "yes", "no", "field",
+    "old", "new",
+]
 
 _AZ_ACTION_ID = re.compile(r"billStatusActionId=(\d+)")
 
@@ -151,6 +172,29 @@ def plan(rows, az_steps):
     return changes, unclassified
 
 
+def plan_results(rows):
+    """Arizona's stored results against the az scraper's vote_result() (OPEN-627)."""
+    from az.bills import vote_result  # the scraper's own rule
+
+    changes, unclassified = [], 0
+    for row in rows:
+        empty = not row["voters"] and not row["yes"] and not row["no"]
+        if JURISDICTION_MAP[row["jurisdiction_id"]] != "az" or empty:
+            # An empty 0-0 roll call (no voters, no counts: the scraper no longer emits them) is left as it is, as in
+            # classify_row. Stored votes do not keep azleg's UnanimouslyAdopted; every stored Arizona text with counts
+            # says "Passed" or "failed to pass", so the text decides.
+            unclassified += 1
+            continue
+        new = vote_result(row["chamber"], row["motion_text"], row["yes"] or 0)
+        if new != row["result"]:
+            changes.append(dict(
+                id=row["id"], jurisdiction="az", bill=row["bill"], date=row["start_date"], chamber=row["chamber"],
+                motion_text=row["motion_text"], floor_step="", voters=row["voters"], yes=row["yes"], no=row["no"],
+                field="result", old=row["result"], new=new,
+            ))
+    return changes, unclassified
+
+
 def read_list(path, undo):
     with open(path, newline="") as f:
         rows = list(csv.DictReader(f))
@@ -164,18 +208,30 @@ def _labels(text):
     return [x for x in text.split(",") if x]
 
 
+def _field(change):
+    field = change.get("field") or "motion_classification"
+    if field not in UPDATE_SQL:
+        raise ValueError(f"unknown field {field!r} in the list")
+    return field
+
+
+def _value(field, text):
+    return _labels(text) if field == "motion_classification" else text
+
+
 def write(conn, changes, list_path):
     """Write every change or none: a guard miss rolls the whole run back."""
     with conn.cursor() as cur:
         updated = 0
         for c in changes:
-            cur.execute(UPDATE_SQL, (_labels(c["new"]), c["id"], _labels(c["old"])))
+            field = _field(c)
+            cur.execute(UPDATE_SQL[field], (_value(field, c["new"]), c["id"], _value(field, c["old"])))
             updated += cur.rowcount
     if updated != len(changes):
         conn.rollback()
         sys.exit(
             f"aborted, nothing written: {len(changes)} changes planned, {updated} rows still held the expected "
-            "classification (a row changed underneath, or the list is stale)"
+            "value (a row changed underneath, or the list is stale)"
         )
     if list_path:
         _write_list(f"{list_path}.partial", changes)
@@ -202,6 +258,7 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true", help="Print changes without writing")
     parser.add_argument("--jurisdiction", help="only this short key (az, us, ut, ...)")
     parser.add_argument("--az-cache", help="scrapelib cache with Arizona's Bill pages (classifies Arizona)")
+    parser.add_argument("--result", action="store_true", help="Arizona's result instead of classifications (OPEN-627)")
     parser.add_argument("--list", dest="list_path", help="write the changes (planned, or written) to this CSV")
     parser.add_argument("--apply-list", help="write exactly this list's changes (no classifying)")
     parser.add_argument("--undo", help="write this list's changes back (new -> old)")
@@ -210,6 +267,8 @@ def main(argv=None):
 
     if args.apply_list and args.undo:
         parser.error("--apply-list and --undo are separate runs")
+    if args.result and (args.apply_list or args.undo or args.az_cache or args.jurisdiction not in (None, "az")):
+        parser.error("--result plans Arizona's results only; a list is applied with --apply-list alone")
     if args.jurisdiction and args.jurisdiction not in JURISDICTION_MAP.values():
         parser.error(f"unknown jurisdiction {args.jurisdiction!r}")
     if args.list_path and os.path.exists(args.list_path):
@@ -222,18 +281,20 @@ def main(argv=None):
             changes = read_list(args.apply_list or args.undo, undo=bool(args.undo))
             print(f"{len(changes):,} changes read from {args.apply_list or args.undo}" + (" (undo)" if args.undo else ""))
         else:
-            ids = [j for j, k in JURISDICTION_MAP.items() if not args.jurisdiction or k == args.jurisdiction]
+            jurisdiction = "az" if args.result else args.jurisdiction
+            ids = [j for j, k in JURISDICTION_MAP.items() if not jurisdiction or k == jurisdiction]
             az_steps = az_floor_steps(args.az_cache) if args.az_cache else None
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(FETCH_SQL, (ids,))
                 rows = cur.fetchall()
-            changes, unclassified = plan(rows, az_steps)
+            changes, unclassified = plan_results(rows) if args.result else plan(rows, az_steps)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             if unclassified:
-                print(f"  left as they are: {unclassified:,} (Arizona: no --az-cache, no voters, or no Bill page)")
+                why = "an empty 0-0 roll call" if args.result else "no --az-cache, no voters, or no Bill page"
+                print(f"  left as they are: {unclassified:,} (Arizona: {why})")
         groups = {}
         for c in changes:
-            key = (c["jurisdiction"], c["floor_step"], c["motion_text"], c["old"], c["new"])
+            key = (c["jurisdiction"], c.get("field") or c["floor_step"], c["motion_text"], c["old"], c["new"])
             groups[key] = groups.get(key, 0) + 1
         for (jur, step, text, old, new), n in sorted(groups.items()):
             print(f"  {jur} {step or '-'} | {text!r:.40} | {old or '(none)'} -> {new or '(none)'}: {n:,}")
