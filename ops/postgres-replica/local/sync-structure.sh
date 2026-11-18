@@ -244,8 +244,9 @@ for table in $published; do
       || { fail "$table: could not read its indexes from RDS"; continue; }
     sql="CREATE TABLE public.\"$table\" ($defs);
 ALTER TABLE public.\"$table\" ADD PRIMARY KEY ($pk);"
+    # one statement per index line, each with its own ';' (OPEN-624: one ';' after them all ran 2+ indexes together)
     [ -n "$idx" ] && sql="$sql
-$idx;"
+$(printf '%s\n' "$idx" | sed 's/$/;/')"
     if [ "$DRY" = 1 ]; then would "create table $table locally (primary key $pk, $(printf '%s\n' "$idx" | grep -c . ) other index(es))"; created="$created $table"; continue; fi
     out="$(local_tx "$sql")" || { fail "$table: not created locally (rolled back): $(printf '%s' "$out" | head -2 | tr '\n' ' ')"; continue; }
     did "created table $table locally (primary key $pk)"; created="$created $table"
