@@ -1,0 +1,8 @@
+# Status on 6097550ff (OPEN-618): NM at scraping on EC2 and its first scrape launched while PA is still running, on the user's word
+
+Written 05:25 UTC 11-18 (date -u at write time). From the production EC2 host. User's words in session: "i authorize the NM scrape", then, asked about the second gate: "i don't understand why PA affects NM. aren't they running on different scraper versions?" and "you can start the NM scrape now". Result still to come.
+
+- **Gate 2 (PA finished clean) was not met and I did not wait for it.** PA (pa-ee12bf9e20bd, started 04:00) is still running; its runs take 7 to 8 hours. The user chose to go on: PA and NM are both on ddp-scrapers:68 (the same image), each state has its own lock, and two state pipelines at once is within your "at most two" rule (PA and NM). Oregon had already run clean on revision 68 at 04:42 (report 10d1f2cc4). Gate 1 (#418 merged) is met: nm is scraping on main 0440ed12a.
+- **Rollout (05:24 UTC, exit 0, with --skip-ecs-check because PA was running):** checkout 8288fa242 -> 0440ed12a; 17 jurisdictions valid; every list agrees; md5 8c5cab4b40ba05a35de7c20ad6f4ea9b equal in the checkout, api-v3's copy and the api container; nm status=scraping, cloud_path true, archive enabled; as you say, NM is now in the Sunday 11-22 02:00 weekly batch.
+- **The run:** one POST at 05:24:35, HTTP 202, **run nm-88f44afc3e2b**, no skip flag (ddp-sync read 112 people for nm from api-v3, so the people check passed). The ECS task is **ddp-scrapers:68**.
+- I will report the session line, status, failed count, bills, vote events and archive counts when it ends. Hand-back run id for the Mac-side checks: nm-88f44afc3e2b.
