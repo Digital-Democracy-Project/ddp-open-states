@@ -546,14 +546,15 @@ def _manifest_scrape_entry(source, manifest_path=None):
     """The source's `scrape:` block from the manifest, or None when the source has no entry (a
     brand-new onboarding candidate). A manifest that does not load or validate raises -- never
     guess, for any state. Shared by scraper_takes_start() and scraper_has_votes()."""
-    from validate_jurisdictions import load_and_validate
+    from validate_jurisdictions import code_for_scraper_module, load_and_validate
 
     path = manifest_path or str(REPO_ROOT / "jurisdictions.yaml")
     manifest, problems = load_and_validate(path)
     if problems:
         raise RuntimeError(f"the jurisdiction manifest ({path}) does not validate, so "
                            f"its scrape settings cannot be read: {problems[0]}")
-    entry = manifest.get(_MANIFEST_CODE_FOR_SOURCE.get(source, source))
+    # OPEN-555: the entry whose scraper_module is this source; the table above is the fallback until step 4.
+    entry = manifest.get(code_for_scraper_module(source, manifest, _MANIFEST_CODE_FOR_SOURCE))
     return None if entry is None else entry["scrape"]
 
 

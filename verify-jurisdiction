@@ -86,7 +86,7 @@ import tempfile
 import time
 from urllib.parse import urlparse
 
-from validate_jurisdictions import load_and_validate
+from validate_jurisdictions import load_and_validate, scraper_module_for
 # OPEN-445: shared with quality_check.py's Stage 3 gates -- the one implementation of each rule,
 # not a second copy in a script that can't be `import`ed by name (no .py extension).
 from qa_primitives import ocd_jurisdiction_id, count_people_loaded
@@ -146,7 +146,7 @@ TOP_UNRESOLVED_VOTERS_LIMIT = 10
 # ── Pure helpers (unit-testable, no scraper/DB/network needed) ─────────────────
 
 
-def scraper_module_name(st):
+def scraper_module_name(st, manifest=None):
     """Jurisdiction short code -> importable scraper module name.
 
     Bare name (e.g. "fl", "usa"), NOT "scrapers.fl" -- verified live, 2026-08-30: under
@@ -157,8 +157,11 @@ def scraper_module_name(st):
     activate.sh/activate-dev.sh's environment as-is instead of a third PYTHONPATH convention, so
     it must call get_jurisdiction() the way run-scrape.sh's own votes-scraper probe does (bare
     $STATE), not the way check-scraper-imports.sh does.
+
+    OPEN-555: the manifest's `scraper_module` for the state when it has one; SCRAPER_MODULE_OVERRIDES
+    is the fallback (a state not in the manifest yet, or a manifest without the field).
     """
-    return SCRAPER_MODULE_OVERRIDES.get(st, st)
+    return scraper_module_for(st, manifest, SCRAPER_MODULE_OVERRIDES)
 
 
 def looks_like_unreachable_site(text):
@@ -1333,7 +1336,8 @@ def main(argv=None):
         parser.error("--fargate and --from-dir cannot be combined")
 
     st = args.state.lower()
-    module_name = scraper_module_name(st)
+    manifest, problems = load_and_validate(MANIFEST_PATH)
+    module_name = scraper_module_name(st, None if problems else manifest)
     run_at = datetime.datetime.now(datetime.timezone.utc)
     ctx = {"fargate": args.fargate, "notes": []}
     payload = None

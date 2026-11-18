@@ -20,6 +20,8 @@ def _valid_entry():
     return {
         "name": "Test State",
         "status": "live",
+        "scraper_module": "ts",
+        "ocd_id": "ocd-jurisdiction/country:us/state:ts/government",
         "scrape": {
             "allow_duplicates": False,
             "timeout_s": 21600,
@@ -31,6 +33,8 @@ def _valid_entry():
             "retry": False,
             "cadence_escalation": True,
             "fargate_max_wait_s": None,
+            "session_list_attempts": None,
+            "session_list_backoff_s": None,
         },
         "archive": {
             "enabled": True,
@@ -51,6 +55,11 @@ def _valid_entry():
             "profile": "none",
             "fargate_safe": True,
             "scrapebot_fallback": False,
+            "requests_per_minute": None,
+            "max_consecutive_blocks": None,
+            "max_attempts": None,
+            "cooldown_after_failures": None,
+            "cooldown_s": None,
         },
         "quality": {
             "diff_cleaner": "none",
@@ -59,6 +68,10 @@ def _valid_entry():
             "unicameral": False,
             "upper": "Senate",
             "lower": "House of Representatives",
+        },
+        "votes": {
+            "house_speaker_by_session": None,
+            "bare_key_session": None,
         },
         "api_keys": [],
         "onboarding": {
@@ -637,3 +650,110 @@ def test_the_real_manifest_names_each_legislatures_chambers():
     assert names["nv"] == ("Senate", "Assembly")
     house = {c for c, (upper, lower) in names.items() if (upper, lower) == ("Senate", "House of Representatives")}
     assert house == set(data) - {"ne", "va", "nv"}
+
+
+# --- OPEN-555: per-state values moved out of code (scraper_module, ocd_id, fetch limits, vote-reading values) ---------
+
+OPEN555_FIELDS = ["scraper_module", "ocd_id", "votes", "scrape.session_list_attempts", "scrape.session_list_backoff_s",
+                  "waf.requests_per_minute", "waf.max_consecutive_blocks", "waf.max_attempts",
+                  "waf.cooldown_after_failures", "waf.cooldown_s", "votes.house_speaker_by_session",
+                  "votes.bare_key_session"]
+
+
+@pytest.mark.parametrize("dotted", OPEN555_FIELDS)
+def test_open555_fields_are_required_on_every_entry(dotted):
+    entry = _valid_entry()
+    *blocks, leaf = dotted.split(".")
+    node = entry
+    for block in blocks:
+        node = node[block]
+    del node[leaf]
+    assert f"xx.{dotted}: missing required field" in validate({"xx": entry})
+
+
+@pytest.mark.parametrize("dotted,value", [
+    ("scraper_module", 1), ("scraper_module", "US"), ("scraper_module", "scrapers.fl"), ("scraper_module", ""),
+    ("ocd_id", None), ("ocd_id", "ocd-jurisdiction/country:us/state:ts"), ("ocd_id", "state:ts"),
+    ("scrape.session_list_attempts", 0), ("scrape.session_list_attempts", "3"), ("scrape.session_list_backoff_s", -1),
+    ("scrape.session_list_backoff_s", True),
+    ("votes.bare_key_session", 2025), ("votes.bare_key_session", " "), ("votes.house_speaker_by_session", []),
+    ("votes.house_speaker_by_session", {"194th": ""}), ("votes.house_speaker_by_session", {"194th": None}),
+])
+def test_open555_fields_reject_a_wrong_value(dotted, value):
+    entry = _valid_entry()
+    *blocks, leaf = dotted.split(".")
+    node = entry
+    for block in blocks:
+        node = node[block]
+    node[leaf] = value
+    assert any(e.startswith(f"xx.{dotted}") for e in validate({"xx": entry})), validate({"xx": entry})
+
+
+@pytest.mark.parametrize("value", ["ocd-jurisdiction/country:us/government",
+                                   "ocd-jurisdiction/country:us/district:dc/government",
+                                   "ocd-jurisdiction/country:us/territory:pr/government"])
+def test_open555_ocd_id_accepts_us_districts_and_territories(value):
+    entry = _valid_entry()
+    entry["ocd_id"] = value
+    assert validate({"xx": entry}) == []
+
+
+@pytest.mark.parametrize("field", ["requests_per_minute", "max_consecutive_blocks", "max_attempts",
+                                   "cooldown_after_failures", "cooldown_s"])
+def test_open555_fetch_limits_are_null_without_a_waf_profile(field):
+    entry = _valid_entry()
+    entry["waf"][field] = 3
+    assert any(e.startswith(f"xx.waf.{field}: must be null for a state with no WAF profile")
+               for e in validate({"xx": entry}))
+    entry["waf"]["profile"] = "cookie_provider"
+    entry["waf"]["requests_per_minute"] = entry["waf"]["requests_per_minute"] or 10
+    entry["waf"]["max_consecutive_blocks"] = entry["waf"]["max_consecutive_blocks"] or 3
+    assert validate({"xx": entry}) == []
+    entry["waf"][field] = 0
+    assert any(e.startswith(f"xx.waf.{field}: must be null or a positive whole number") for e in validate({"xx": entry}))
+
+
+@pytest.mark.parametrize("field", ["requests_per_minute", "max_consecutive_blocks"])
+def test_open555_a_waf_profile_needs_its_rate_and_block_limit(field):
+    """openstates-core's resilience profile reads these two; the other three are optional (mi has none of them)."""
+    entry = _valid_entry()
+    entry["waf"].update(profile="cookie_provider", requests_per_minute=10, max_consecutive_blocks=3)
+    assert validate({"xx": entry}) == []
+    entry["waf"][field] = None
+    assert any(e.startswith(f"xx.waf.{field}: a state with a WAF profile") for e in validate({"xx": entry}))
+
+
+def test_open555_the_real_manifest_carries_todays_constants():
+    """The values written out by hand from the constants each reader keeps as its fallback (openstates-core
+    resilience_profiles.py, openstates-scrapers mi/fl/ut/ma/nc, qa_primitives.ocd_jurisdiction_id's rule), so the
+    manifest and the fallbacks agree until step 4 deletes the constants."""
+    with open(DEFAULT_MANIFEST_PATH) as fh:
+        data = yaml.safe_load(fh)
+    limits = ("requests_per_minute", "max_consecutive_blocks", "max_attempts", "cooldown_after_failures", "cooldown_s")
+    assert {c: tuple(e["waf"][f] for f in limits) for c, e in data.items() if e["waf"]["profile"] != "none"} == {
+        "mi": (10, 3, None, None, None),
+        "fl": (10, 3, 3, 3, 300),
+    }
+    assert all(all(e["waf"][f] is None for f in limits) for e in data.values() if e["waf"]["profile"] == "none")
+    retries = {c: (e["scrape"]["session_list_attempts"], e["scrape"]["session_list_backoff_s"]) for c, e in data.items()}
+    assert {c: v for c, v in retries.items() if v != (None, None)} == {"ut": (3, 2)}
+    speakers = {c: e["votes"]["house_speaker_by_session"] for c, e in data.items()}
+    assert {c: v for c, v in speakers.items() if v is not None} == {
+        "ma": {"192nd": "Ronald Mariano", "193rd": "Ronald Mariano", "194th": "Ronald Mariano"}}
+    bare = {c: e["votes"]["bare_key_session"] for c, e in data.items()}
+    assert {c: v for c, v in bare.items() if v is not None} == {"nc": "2025"}
+    assert {c: e["scraper_module"] for c, e in data.items() if e["scraper_module"] != c} == {"us": "usa"}
+    for code, entry in data.items():
+        expected = ("ocd-jurisdiction/country:us/government" if code == "us"
+                    else f"ocd-jurisdiction/country:us/state:{code}/government")
+        assert entry["ocd_id"] == expected, code
+
+
+def test_open555_two_entries_may_not_share_a_scraper_module():
+    """code_for_scraper_module() maps a module back to one entry; a shared one would route by file order."""
+    a, b = _valid_entry(), _valid_entry()
+    b["ocd_id"] = "ocd-jurisdiction/country:us/state:tt/government"
+    assert validate({"ts": a, "tt": b}) == ["ts, tt: scraper_module 'ts' is used by more than one entry; each "
+                                            "jurisdiction has its own scraper module"]
+    b["scraper_module"] = "tt"
+    assert validate({"ts": a, "tt": b}) == []

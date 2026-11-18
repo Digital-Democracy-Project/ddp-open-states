@@ -29,7 +29,7 @@ import os
 import sys
 import time
 
-from validate_jurisdictions import load_and_validate
+from validate_jurisdictions import code_for_scraper_module, load_and_validate
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,7 +55,7 @@ def refused_states(manifest):
     return {code for code, entry in manifest.items() if not entry["waf"]["fargate_safe"]}
 
 
-def probeable_states(scrapers_dir, refused):
+def probeable_states(scrapers_dir, refused, manifest=None):
     """Every jurisdiction directory under the scrapers code with a bills scraper, as the probe's state codes,
     without the refused ones."""
     states = []
@@ -65,17 +65,17 @@ def probeable_states(scrapers_dir, refused):
             continue
         if not (os.path.isfile(os.path.join(path, "bills.py")) or os.path.isdir(os.path.join(path, "bills"))):
             continue
-        state = MODULE_TO_STATE.get(name, name)
+        state = code_for_scraper_module(name, manifest, MODULE_TO_STATE)  # OPEN-555: the manifest's scraper_module
         if state not in refused:
             states.append(state)
     return states
 
 
-def normalize_states(states):
+def normalize_states(states, manifest=None):
     """Lower-case, map module names to state codes (usa -> us) and drop repeats, keeping the order: one task per state."""
     seen, out = set(), []
     for state in states:
-        state = MODULE_TO_STATE.get(state.lower(), state.lower())
+        state = code_for_scraper_module(state.lower(), manifest, MODULE_TO_STATE)  # OPEN-555
         if state not in seen:
             seen.add(state)
             out.append(state)
@@ -248,10 +248,10 @@ def main(argv=None):
         if not scrapers_dir or not os.path.isdir(scrapers_dir):
             print("ERROR: --all needs the scrapers directory (--scrapers-dir, or source activate-dev.sh)", file=sys.stderr)
             return 3
-        states = probeable_states(scrapers_dir, refused)
+        states = probeable_states(scrapers_dir, refused, manifest)
     else:
         states = args.states
-    states = normalize_states(states)
+    states = normalize_states(states, manifest)
     problem = refusal(states, prefix, refused)
     if problem:
         print(f"ERROR: {problem}", file=sys.stderr)

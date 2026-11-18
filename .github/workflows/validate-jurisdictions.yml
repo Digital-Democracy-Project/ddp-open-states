@@ -37,6 +37,11 @@ on:
       # (scraper_takes_start, scraper_has_votes), and run-scrape.sh now asks it the same question
       - "cloud_collector.py"
       - "test_cloud_collector.py"
+      - "qa_primitives.py"
+      - "verify-jurisdiction"
+      - "probe-on-fargate"
+      - "os-status"
+      - "test_open555_manifest_readers.py"
 
 jobs:
   validate:
@@ -75,6 +80,8 @@ jobs:
         run: python3 -m pytest test_check_core_pin_drift.py -v
       - name: Run the cloud collector's test suite (OPEN-501; needs no AWS access)
         run: python3 -m pytest test_cloud_collector.py -v
+      - name: Run the manifest readers' tests (OPEN-555 scraper_module / ocd_id, each with its old fallback)
+        run: python3 -m pytest test_open555_manifest_readers.py -v
       - name: Check every hard-coded jurisdiction list against the manifest (OPEN-318)
         run: |
           echo "comparing against ddp-sync main at $(git -C ddp-sync rev-parse HEAD)"   # main moves: say which commit
