@@ -26,7 +26,7 @@
 1. **ddp-sync's importer runs core `5c1455e1` or later** (SYNC-180, request `125fc5e`): your checkpoint shows `check-core-pin-drift.py --sync-container` exit 0.
    * **Why:** cloud imports apply the label rule with ddp-sync's own core. On the old core (`44c3b8dc`), the next Utah import writes the old labels back on every bill it re-imports.
    * The chamber fix needs only v68's scraper, already registered (rev 71).
-2. **Utah's broker switch is live** (ddp-broker-py request `5da5c42c`, with #767), so these runs change no counting vote.
+2. **Utah's broker switch is live** (ddp-broker-py request `f49bc6c8`, which replaced `5da5c42c`; it carries #767), so these runs change no counting vote.
    * If Ramon wants them before it, say so in the GO. OPEN-622's gate measured 23 vote changes on the old basis.
 3. **Utah's quiet window:**
    * No `ut` scrape, collect or import running (ECS check, and no `os-update` for ut in ddp-sync).
