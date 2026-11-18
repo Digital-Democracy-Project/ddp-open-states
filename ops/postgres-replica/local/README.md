@@ -672,3 +672,41 @@ into one Slack message to `#automation-errors`, plus a recovery message.
    not add a name to `structure-sync.known-unpublished` to silence the monitor.
 4. Afterwards: `RDS_HOST=... RDS_REPLICATION_PASSWORD=... ./compare-schema.sh <db>` then
    `./replica-status.sh <db>`. The scheduled check will also notice within 6 h, but do not rely on it.
+
+### Troubleshooting: RDS times out from the replica but not from the Mac (OPEN-636)
+
+**Symptom.** `logs/replica-check.log` shows `ALERT: structure — FAIL: could not read publication ... from RDS: ...
+timeout expired`, then `RECOVERED` 5 to 45 minutes later, several times a day; the replica container's own log
+(`docker logs ddp-openstates-postgres-1`) shows `terminating logical replication worker due to timeout` followed by
+`could not connect to the publisher: ... Operation timed out`. Meanwhile `nc -z 172.31.97.44 5432` from the Mac itself
+succeeds and the WireGuard watchdog (`/var/log/wireguard.log`) keeps reaching its gateway.
+
+**Cause (found 2026-11-18).** RDS lives in the AWS default VPC, `172.31.0.0/16`. Docker inside Colima hands out bridge
+networks from `172.17.0.0/16` to `172.31.0.0/16` (no `default-address-pools` is set in `~/.colima/default/colima.yaml`).
+By 2026-11-16 long-lived networks held `172.17` to `172.30`, so a short-lived network (a test stack) could be given
+`172.31.0.0/16`. While it exists, the Colima VM routes RDS's address to that local bridge, so everything that reaches
+RDS from **inside a container** (the subscription, `sync-structure.sh`, `compare-schema.sh`) times out; when the test
+stack is removed the route goes and the connection comes back by itself. The Mac's own routing (through WireGuard)
+is not affected, which is why a probe from the Mac passes.
+Seen directly on 2026-11-18 at 22:24 UTC: CodeBot's test stack
+`codebot-test-ddpbroker-tests-test-scheduled-tasks-create-93956_default` was given `172.31.0.0/16`, the VM had a
+`172.31.0.0/16 dev br-...` route, a TCP connect to RDS from inside the replica container failed, and the same connect
+from the Mac succeeded; the subscription timed out at 22:25:27 UTC and streaming resumed once no network held `172.31.0.0/16` any more
+(22:36 UTC; a second test network had it briefly at 22:35).
+
+**Check, read only:**
+
+```bash
+colima ssh -- ip route show 172.31.0.0/16      # a line "dev br-..." = a Docker bridge is hiding RDS
+docker network ls -q | xargs docker network inspect -f '{{.Name}} {{range .IPAM.Config}}{{.Subnet}}{{end}}' | sort -k2 -V
+```
+
+**Do not probe RDS with `docker exec ddp-openstates-postgres-1 bash -c 'timeout ... </dev/tcp/...'`.** During this
+investigation, running that every ~25 s while connects were timing out coincided with 21 Postgres crash recoveries in
+10 minutes (2026-11-18, 22:26 to 22:36 UTC: `server process (PID ...) was terminated by signal 13: Broken pipe`, then
+`terminating any other active server processes`, which ends every open session); they stopped when the probe stopped.
+The likely reason is that Postgres is PID 1 in that container and adopts the probe's leftover process. Use the two
+commands above instead.
+
+No data loss was seen in November 2026: RDS keeps the WAL for the subscription's slot and the subscription caught
+up after each drop. The fix (keeping Docker off `172.31.0.0/16`) is its own ticket; see OPEN-636 for the evidence.
