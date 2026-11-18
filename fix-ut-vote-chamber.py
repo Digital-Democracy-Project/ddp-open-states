@@ -109,6 +109,8 @@ def check_list(changes, chamber_orgs):
                     f"aborted, nothing written: action {c['id']} has {side}_chamber {c[f'{side}_chamber']!r} and "
                     f"{side}_org {c[f'{side}_org']!r}, not one of Utah's chambers {chamber_orgs}"
                 )
+        if c["old_org"] == c["new_org"]:
+            sys.exit(f"aborted, nothing written: action {c['id']} does not change chamber ({c['old_chamber']!r})")
 
 
 def read_list(path, undo):

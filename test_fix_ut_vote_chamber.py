@@ -151,6 +151,7 @@ def test_a_list_naming_the_wrong_bill_aborts_the_whole_write():
         {"new_org": "ocd-organization/legislature"},  # not a chamber
         {"new_chamber": "upper"},  # a1 goes to the House; chamber and organization disagree
         {"old_org": "ocd-organization/other-state-senate"},
+        {"new_chamber": "upper", "new_org": SENATE},  # a1 is under the Senate: a "move" that changes nothing
     ],
 )
 def test_a_list_moving_an_action_outside_utahs_chambers_is_refused(edit):
