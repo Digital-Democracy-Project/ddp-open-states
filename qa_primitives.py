@@ -15,6 +15,10 @@ bounded dry-scrape instead, since nothing is imported yet at that point). They l
 this is already "the module for shared QA primitives scoped by jurisdiction," not because anything
 else reuses them yet.
 """
+import functools
+import os
+
+MANIFEST_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jurisdictions.yaml")
 
 
 # DC is a district and the five territories are territories in the ids the scrapers create in the database,
@@ -29,8 +33,25 @@ _NON_STATE_DIVISIONS = {
 }
 
 
+@functools.lru_cache(maxsize=None)
+def _manifest_ocd_ids(path):
+    """OPEN-555: code -> `ocd_id` from the manifest next to this file; {} when it is missing or does not validate."""
+    from validate_jurisdictions import load_and_validate
+
+    manifest, problems = load_and_validate(path)
+    if problems:
+        return {}
+    return {code: entry["ocd_id"] for code, entry in manifest.items() if isinstance(entry.get("ocd_id"), str)}
+
+
 def ocd_jurisdiction_id(st):
-    """Short code -> the OCD jurisdiction id string used throughout the local DB."""
+    """Short code -> the OCD jurisdiction id string used throughout the local DB.
+
+    OPEN-555: the manifest's `ocd_id` for a state it has; the rule below is the fallback (a state not in the
+    manifest yet, such as a probe candidate, or a manifest without the field)."""
+    from_manifest = _manifest_ocd_ids(MANIFEST_PATH).get(st)
+    if from_manifest:
+        return from_manifest
     if st == "us":
         return "ocd-jurisdiction/country:us/government"
     return f"ocd-jurisdiction/country:us/{_NON_STATE_DIVISIONS.get(st, f'state:{st}')}/government"

@@ -35,6 +35,8 @@ def _entry(status="live", archive=True, waf_profile="none", waf_fargate_safe=Tru
     e["enrollment"].update({k: v for k, v in enrollment.items()})
     e["waf"]["profile"] = waf_profile
     e["waf"]["fargate_safe"] = waf_fargate_safe
+    if waf_profile != "none":  # OPEN-555: a WAF profile carries its rate and block limit
+        e["waf"].update(requests_per_minute=10, max_consecutive_blocks=3)
     return e
 
 
@@ -55,7 +57,10 @@ def _manifest():
     al = _entry(status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
     al["name"] = "Alabama"
     al["quality"]["diff_cleaner"] = "clean_al_text"
-    return {"fl": fl, "us": us, "nc": nc, "al": al}
+    manifest = {"fl": fl, "us": us, "nc": nc, "al": al}
+    for code, entry in manifest.items():  # OPEN-555: each entry has its own scraper module
+        entry["scraper_module"] = "usa" if code == "us" else code
+    return manifest
 
 
 # OPEN-327: this repo's scripts derive their lists from the manifest, so the fixture files are the derived shape.
@@ -448,7 +453,11 @@ def test_waf_profile_agrees_with_resilience_profiles(world):
 def test_a_cookie_provider_state_with_no_code_handler_is_drift(world):
     """AC: a state declared waf.profile: cookie_provider that no code handles fails the drift check."""
     text = open(world[2]).read()
-    _write(world[2], text.replace("profile: none\n", "profile: cookie_provider\n", 1))
+    # OPEN-555: a WAF profile carries its rate and block limit (yaml.safe_dump writes the waf keys in this order)
+    text = text.replace("max_consecutive_blocks: null\n    profile: none\n    requests_per_minute: null\n",
+                        "max_consecutive_blocks: 3\n    profile: cookie_provider\n    requests_per_minute: 10\n", 1)
+    assert "profile: cookie_provider" in text
+    _write(world[2], text)
     code, out = _run(world, with_sync=False)
     assert code == 1
     assert "DRIFT waf.profile: openstates-core RESILIENCE_PROFILES" in out

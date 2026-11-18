@@ -21,6 +21,7 @@ classifier) and says not to build it. If it shows up in a manifest entry anyway,
 as an unknown field (see UNKNOWN field handling below) rather than silently accepted.
 """
 
+import re
 import sys
 
 try:
@@ -68,7 +69,12 @@ TOP_LEVEL_FIELDS = {
     "waf": dict,
     "quality": dict,
     "chambers": dict,
+    "votes": dict,
     "api_keys": list,
+    # OPEN-555 (PLAN-state-specific-handling Phase 4): the openstates-scrapers module (US Congress is "usa", every
+    # state its own code) and the OpenStates jurisdiction id stored in the database.
+    "scraper_module": str,
+    "ocd_id": str,
     "onboarding": dict,
 }
 
@@ -85,6 +91,9 @@ SCRAPE_FIELDS = {
     "retry": bool,                             # bounded whole-run retry (OPEN-87); refused with a WAF below (OPEN-53)
     "cadence_escalation": bool,                # dynamic cadence may raise the state to nightly (OPEN-140)
     "fargate_max_wait_s": (int, type(None)),   # this state's own Fargate ceiling; null = the shared one (OPEN-476)
+    # OPEN-555: Utah's session-list retry (scrapers/ut/__init__.py, OPEN-106); null for every other state.
+    "session_list_attempts": (int, type(None)),
+    "session_list_backoff_s": (int, type(None)),
 }
 
 ARCHIVE_FIELDS = {
@@ -140,7 +149,19 @@ WAF_FIELDS = {
     "fargate_safe": bool,
     # SYNC-157: ddp-sync mints WAF cookies with ScrapeBot before this state's scrape and archive (PLAN-scrapebot.md 3.7).
     "scrapebot_fallback": bool,
+    # OPEN-555: fetch limits, read by openstates-core's RESILIENCE_PROFILES (requests_per_minute,
+    # max_consecutive_blocks) and the FL/MI scrapers (the rest), each falling back to its old constant. Null for a
+    # state with no WAF profile; a state with one needs the first two (its profile reads them).
+    "requests_per_minute": (int, type(None)),
+    "max_consecutive_blocks": (int, type(None)),
+    "max_attempts": (int, type(None)),
+    "cooldown_after_failures": (int, type(None)),
+    "cooldown_s": (int, type(None)),
 }
+
+WAF_LIMIT_FIELDS = ("requests_per_minute", "max_consecutive_blocks", "max_attempts", "cooldown_after_failures",
+                    "cooldown_s")
+WAF_PROFILE_NEEDS = ("requests_per_minute", "max_consecutive_blocks")
 
 QUALITY_FIELDS = {
     "diff_cleaner": str,
@@ -156,6 +177,15 @@ CHAMBERS_FIELDS = {
     "upper": str,
     "lower": (str, type(None)),
 }
+
+# OPEN-555: per-state values a scraper uses to read votes, each falling back to its old constant in the scraper.
+VOTES_FIELDS = {
+    "house_speaker_by_session": (dict, type(None)),  # ma: who "Mr. Speaker" is, per session (OPEN-474)
+    "bare_key_session": (str, type(None)),           # nc: the session whose votes keep a bare roll-call key (OPEN-397)
+}
+
+SCRAPER_MODULE_RE = re.compile(r"^[a-z]+(_[a-z]+)*$")
+OCD_ID_RE = re.compile(r"^ocd-jurisdiction/country:us(/(state|district|territory):[a-z]{2})?/government$")
 
 ONBOARDING_FIELDS = {
     "epic": (str, type(None)),
@@ -183,6 +213,13 @@ def _check_type(value, expected, path, errors):
         errors.append(f"{path}: expected {_type_name(expected)}, got {type(value).__name__} ({value!r})")
         return False
     return True
+
+
+def _check_positive_or_null(node, field, path, errors):
+    """OPEN-555: a count or a number of seconds, when set, is a whole number above zero (the type is checked apart)."""
+    value = node.get(field)
+    if isinstance(value, bool) or (isinstance(value, int) and value <= 0):  # bool is an int subclass
+        errors.append(f"{path}.{field}: must be null or a positive whole number, got {value!r}")
 
 
 def _check_block(node, fields, path, errors):
@@ -260,6 +297,17 @@ def validate(data):
                 errors.append(f"{code}.scrape.retry: must be false for a state with a WAF profile ({waf.get('profile')!r}): "
                               f"retrying against a WAF worsens a block (OPEN-53)")
 
+        if isinstance(entry.get("scrape"), dict):
+            for field in ("session_list_attempts", "session_list_backoff_s"):
+                _check_positive_or_null(entry["scrape"], field, f"{code}.scrape", errors)
+
+        if isinstance(entry.get("scraper_module"), str) and not SCRAPER_MODULE_RE.match(entry["scraper_module"]):
+            errors.append(f"{code}.scraper_module: must be an openstates-scrapers module name (lowercase letters), "
+                          f"got {entry['scraper_module']!r}")
+        if isinstance(entry.get("ocd_id"), str) and not OCD_ID_RE.match(entry["ocd_id"]):
+            errors.append(f"{code}.ocd_id: must look like ocd-jurisdiction/country:us/state:<xx>/government "
+                          f"(or country:us/government for US Congress), got {entry['ocd_id']!r}")
+
         if isinstance(entry.get("archive"), dict):
             _check_block(entry["archive"], ARCHIVE_FIELDS, f"{code}.archive", errors)
             timeout = entry["archive"].get("timeout_s")
@@ -288,6 +336,18 @@ def validate(data):
             profile = entry["waf"].get("profile")
             if isinstance(profile, str) and profile not in WAF_PROFILE_VALUES:
                 errors.append(f"{code}.waf.profile: {profile!r} is not one of {sorted(WAF_PROFILE_VALUES)}")
+            for field in WAF_LIMIT_FIELDS:
+                _check_positive_or_null(entry["waf"], field, f"{code}.waf", errors)
+            if profile == "none":
+                for field in WAF_LIMIT_FIELDS:
+                    if entry["waf"].get(field) is not None:
+                        errors.append(f"{code}.waf.{field}: must be null for a state with no WAF profile (nothing "
+                                      f"reads it), got {entry['waf'][field]!r}")
+            elif isinstance(profile, str):
+                for field in WAF_PROFILE_NEEDS:
+                    if field in entry["waf"] and entry["waf"][field] is None:
+                        errors.append(f"{code}.waf.{field}: a state with a WAF profile ({profile!r}) needs it "
+                                      f"(openstates-core's resilience profile reads it), got null")
 
         if isinstance(entry.get("quality"), dict):
             _check_block(entry["quality"], QUALITY_FIELDS, f"{code}.quality", errors)
@@ -306,6 +366,18 @@ def validate(data):
                 errors.append(f"{code}.chambers.lower: a two-house legislature (unicameral: false) needs its lower "
                               f"chamber's name, got null")
 
+        if isinstance(entry.get("votes"), dict):
+            _check_block(entry["votes"], VOTES_FIELDS, f"{code}.votes", errors)
+            speakers = entry["votes"].get("house_speaker_by_session")
+            if isinstance(speakers, dict):
+                for session, name in speakers.items():
+                    if not isinstance(session, str) or not isinstance(name, str) or not name.strip():
+                        errors.append(f"{code}.votes.house_speaker_by_session: each entry must be a session name "
+                                      f"and the Speaker's name, got {session!r}: {name!r}")
+            bare = entry["votes"].get("bare_key_session")
+            if isinstance(bare, str) and not bare.strip():
+                errors.append(f"{code}.votes.bare_key_session: must be a session name or null, got an empty string")
+
         if isinstance(entry.get("onboarding"), dict):
             _check_block(entry["onboarding"], ONBOARDING_FIELDS, f"{code}.onboarding", errors)
 
@@ -315,7 +387,35 @@ def validate(data):
                 if not isinstance(key, str) or not key:
                     errors.append(f"{code}.api_keys[{i}]: must be a non-empty string, got {key!r}")
 
+    # OPEN-555: code_for_scraper_module() maps a module name back to ONE entry, so two entries may not share one.
+    modules = {}
+    for code, entry in data.items():
+        module = entry.get("scraper_module") if isinstance(entry, dict) else None
+        if isinstance(module, str):
+            modules.setdefault(module, []).append(code)
+    for module, codes in modules.items():
+        if len(codes) > 1:
+            errors.append(f"{', '.join(codes)}: scraper_module {module!r} is used by more than one entry; each "
+                          f"jurisdiction has its own scraper module")
+
     return errors
+
+
+def scraper_module_for(code, manifest, fallback):
+    """OPEN-555: `code`'s `scraper_module` from a loaded manifest (None: not loaded), else the caller's old override
+    table `fallback` (e.g. {"us": "usa"}), else the code itself."""
+    entry = (manifest or {}).get(code) if isinstance(manifest, dict) else None
+    module = entry.get("scraper_module") if isinstance(entry, dict) else None
+    return module if isinstance(module, str) and module else fallback.get(code, code)
+
+
+def code_for_scraper_module(module, manifest, fallback):
+    """OPEN-555: the manifest code whose `scraper_module` is `module`, else the caller's old table `fallback` (e.g.
+    {"usa": "us"}), else the module name itself."""
+    for code, entry in (manifest.items() if isinstance(manifest, dict) else ()):
+        if isinstance(entry, dict) and entry.get("scraper_module") == module:
+            return code
+    return fallback.get(module, module)
 
 
 def load_and_validate(path):
