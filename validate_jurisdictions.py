@@ -387,6 +387,17 @@ def validate(data):
                 if not isinstance(key, str) or not key:
                     errors.append(f"{code}.api_keys[{i}]: must be a non-empty string, got {key!r}")
 
+    # OPEN-555: code_for_scraper_module() maps a module name back to ONE entry, so two entries may not share one.
+    modules = {}
+    for code, entry in data.items():
+        module = entry.get("scraper_module") if isinstance(entry, dict) else None
+        if isinstance(module, str):
+            modules.setdefault(module, []).append(code)
+    for module, codes in modules.items():
+        if len(codes) > 1:
+            errors.append(f"{', '.join(codes)}: scraper_module {module!r} is used by more than one entry; each "
+                          f"jurisdiction has its own scraper module")
+
     return errors
 
 

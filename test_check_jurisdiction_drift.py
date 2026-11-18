@@ -57,7 +57,10 @@ def _manifest():
     al = _entry(status="paused", people_refresh=True, search_refresh=False, embedding=False, cloud_path=False, api_smoke_test=False, qa_sweep=True, replica_routing=False, legbot_replica=False)
     al["name"] = "Alabama"
     al["quality"]["diff_cleaner"] = "clean_al_text"
-    return {"fl": fl, "us": us, "nc": nc, "al": al}
+    manifest = {"fl": fl, "us": us, "nc": nc, "al": al}
+    for code, entry in manifest.items():  # OPEN-555: each entry has its own scraper module
+        entry["scraper_module"] = "usa" if code == "us" else code
+    return manifest
 
 
 # OPEN-327: this repo's scripts derive their lists from the manifest, so the fixture files are the derived shape.

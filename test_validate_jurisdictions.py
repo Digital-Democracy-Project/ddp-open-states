@@ -747,3 +747,13 @@ def test_open555_the_real_manifest_carries_todays_constants():
         expected = ("ocd-jurisdiction/country:us/government" if code == "us"
                     else f"ocd-jurisdiction/country:us/state:{code}/government")
         assert entry["ocd_id"] == expected, code
+
+
+def test_open555_two_entries_may_not_share_a_scraper_module():
+    """code_for_scraper_module() maps a module back to one entry; a shared one would route by file order."""
+    a, b = _valid_entry(), _valid_entry()
+    b["ocd_id"] = "ocd-jurisdiction/country:us/state:tt/government"
+    assert validate({"ts": a, "tt": b}) == ["ts, tt: scraper_module 'ts' is used by more than one entry; each "
+                                            "jurisdiction has its own scraper module"]
+    b["scraper_module"] = "tt"
+    assert validate({"ts": a, "tt": b}) == []

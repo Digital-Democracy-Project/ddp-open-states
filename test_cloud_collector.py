@@ -355,6 +355,7 @@ def _manifest_with_oregon(tmp_path, *, votes_scraper):
     real = _real_manifest_without_oregon()
     start, end = real.index("\nut:\n"), real.index("\naz:\n")
     block = real[start:end].replace("\nut:\n", "\nor:\n", 1)
+    block = block.replace("scraper_module: ut", "scraper_module: or", 1)  # OPEN-555: one entry per module
     assert "    votes_scraper: false" in block
     block = block.replace("    votes_scraper: false",
                           f"    votes_scraper: {'true' if votes_scraper else 'false'}", 1)
