@@ -1392,6 +1392,19 @@ functions, layered on top of the ordering work above rather than changing it.
   votes change (21 COW motions to amend, 1 COW vote, 2 reconsider motions). **Do not** run it for a state missing from
   `JURISDICTION_MAP` (pa, la: the text rules would wipe the scraper's own labels; PLAN-push-button-onboarding
   2026-11-17).
+- **Same-day vote order: the `house-rollcall-num` / `senate-rollcall-num` extras key** (OPEN-628). The broker reads any
+  vote extras key ending in `rollcall-num` into `Motion.rollcall_num`, and its scorecard builders order a bill's votes in
+  one chamber by date, then that number. WA, VA, MI and AZ store a vote's day without a time, so the key is how two
+  same-day votes (a re-vote after reconsideration) come out in order. Per state, written by the scraper: **MI** the
+  journal's roll-call number, **WA** the roll call's `SequenceNumber` (the chamber's roll-call order for that day),
+  **VA** the time of day of LIS's `VoteDate` as HHMMSS (LIS's `VoteID` is *not* in vote order), **AZ** the time of day
+  of `ReportDate` as HHMMSS (Arizona prints no roll-call number). **So for VA and AZ, `Motion.rollcall_num` holds a time
+  of day, not a roll-call number:** use it only to order votes, never show it as "Roll call #N". The time is kept out of `start_date` on purpose: the
+  broker finds a stored vote by its date before its id, so moving a stored vote's date breaks its re-import (a broker
+  change would come first). **`backfill-vote-rollcall-num.py`** (repo root) writes the same values on stored votes,
+  from the motion text (MI, WA), saved LIS answers (`--va-votes`) or the scrape cache (`--az-cache`); same
+  list / `--apply-list` / `--undo` / `--expect` pattern and all-or-nothing guards as the classification backfill above,
+  never changes a stored number, never touches `updated_at`, and reuses that script's `JURISDICTION_MAP`.
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,
   classification)` pair per jurisdiction with vote/pass/fail counts, written to
   `motion-text-audit/<jurisdiction>.md`. Use this to find motion text patterns the YAML config
