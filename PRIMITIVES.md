@@ -1788,6 +1788,22 @@ scope line was deliberate, not an oversight.
   api-v3; a rollback goes the other way, api-v3 first** (a rebuilt api-v3 answers 503 to a manifest without the block). Display names only: no stored data changes, and the consumers (ddp-next, ddp-sync, which print
   "House"/"Senate" today) move to it in their own tickets. No other list here to compare it with, so the drift check
   does not read it.
+- **Per-state values moved out of code (OPEN-555, PLAN-state-specific-handling Phase 4, 2026-11-18).** Required on
+  every entry: `scraper_module` and `ocd_id`; `waf.requests_per_minute`, `max_consecutive_blocks`, `max_attempts`,
+  `cooldown_after_failures`, `cooldown_s` (null without a WAF profile; the first two required with one);
+  `scrape.session_list_attempts` / `session_list_backoff_s` (ut); `votes.house_speaker_by_session` (ma) and
+  `votes.bare_key_session` (nc). Readers: here, `validate_jurisdictions.scraper_module_for()` /
+  `code_for_scraper_module()` (cloud_collector.py, verify-jurisdiction, probe-on-fargate),
+  `qa_primitives.ocd_jurisdiction_id()` (quality_check.py, verify-jurisdiction, new-jurisdiction) and os-status's
+  `juris_ocd_id` (through jurisdiction-field.sh); in openstates-core, `openstates/utils/ddp_manifest.manifest_value()`
+  (RESILIENCE_PROFILES, and the scrapers' mi/fl/ut/ma/nc constants), reading `$DDP_JURISDICTIONS_MANIFEST` (the image
+  sets `/app/jurisdictions.yaml`) or `./jurisdictions.yaml`. **Every reader keeps its old constant as the fallback**
+  (field missing, null, wrong type, no entry, no file); **do not delete a constant until both hosts and the scrapers
+  image run a manifest with the field** (plan steps 3 and 4). Use these readers for a new per-state value of the same
+  kind; do not add another manifest loader. Not moved, on purpose: check-jurisdiction-drift.py's `SYNC_SCRAPE_CODE`
+  and ddp-sync's own `usa` spellings (ddp-sync's job names), quality_check.py's `GOVBOT_REPO_SLUG` (govbot's repo
+  name), backfill-motion-classification.py's `JURISDICTION_MAP` (the states whose motion rules were checked, not an id
+  table: reading the manifest would widen what a bare run relabels).
 - **`enrollment:` block and `check-jurisdiction-drift.py` (OPEN-318, 2026-10-05).** The manifest now
   also records which per-feature lists each jurisdiction is on (`enrollment.people_refresh`,
   `search_refresh`, `embedding`, `cloud_path`, `api_smoke_test`, `qa_sweep`, alongside `archive.enabled`),

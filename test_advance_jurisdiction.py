@@ -29,6 +29,8 @@ MANIFEST = """# header comment
 pa:
   name: Pennsylvania
   status: probing
+  scraper_module: pa
+  ocd_id: ocd-jurisdiction/country:us/state:pa/government
   scrape:
     allow_duplicates: false
     timeout_s: 21600
@@ -40,6 +42,8 @@ pa:
     retry: false
     cadence_escalation: true
     fargate_max_wait_s: null
+    session_list_attempts: null
+    session_list_backoff_s: null
   archive:
     enabled: false
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default
@@ -57,12 +61,20 @@ pa:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false
+    requests_per_minute: null
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   chambers:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -72,6 +84,8 @@ pa:
 ne:
   name: Nebraska
   status: probing
+  scraper_module: ne
+  ocd_id: ocd-jurisdiction/country:us/state:ne/government
   scrape:
     allow_duplicates: false
     timeout_s: 21600
@@ -83,6 +97,8 @@ ne:
     retry: false
     cadence_escalation: true
     fargate_max_wait_s: null
+    session_list_attempts: null
+    session_list_backoff_s: null
   archive:
     enabled: false
     timeout_s: 14400
@@ -100,12 +116,20 @@ ne:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false
+    requests_per_minute: null
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none
   chambers:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null

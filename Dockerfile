@@ -170,6 +170,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 # sets for the real pipeline, pointed at the cloned checkout's own scrapers/ subdirectory.
 ENV PYTHONPATH="/opt/openstates-scrapers/scrapers"
 ENV PYTHONUNBUFFERED=1
+# OPEN-555: openstates-core's manifest_value() (the WAF fetch limits) and the scrapers (MI/FL limits, UT's session-list
+# retry, MA's Speaker table, NC's bare-key session) read their per-state values from this copy of the manifest, each
+# falling back to its old constant. Named here so the answer does not depend on the working directory.
+ENV DDP_JURISDICTIONS_MANIFEST=/app/jurisdictions.yaml
 
 USER scraper
 
