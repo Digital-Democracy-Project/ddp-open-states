@@ -389,7 +389,10 @@ state machine and "advance state only when Slack answered `ok:true`" rule, now r
 It runs with `HOME` unset and a minimal `PATH`; the helper needs neither. (A monitor may reasonably stay
 self-contained, as OPEN-43 noted for the retired staleness watchdog: it should not break because the thing it
 watches did. The helper depends on nothing but `curl` and `/usr/bin`.) Test seams: `REPLICA_*` env vars, see
-`test-replica-monitoring.sh`. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
+`test-replica-monitoring.sh`. **Stage 3 runs the real `sync-structure.sh` whenever `STRUCTURE_SYNC_ENV_FILE` (default: the real
+credential file) is readable**, so a test of this script must set it and `REPLICA_SYNC_CMD` to throwaway values, including
+in any `env -i` case; `test-replica-monitoring.sh` refuses to start otherwise and puts tripwire `docker`/`psql`/`curl` first
+on PATH (OPEN-631). Copy that preamble, do not write a second one. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
 
 ## `ops/postgres-replica/local/sync-structure.sh` — the Mac replica follows RDS's table structure by itself (OPEN-314)
 
