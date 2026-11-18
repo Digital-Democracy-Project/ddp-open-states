@@ -62,6 +62,7 @@ from validate_jurisdictions import (
     _DuplicateKeyCheckingLoader,
     validate,
 )
+from qa_primitives import ocd_jurisdiction_id
 
 # ddp-sync SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S "default" entries (check-jurisdiction-drift.py's
 # timeouts() helper requires every manifest code with no ddp-sync-specific entry to equal these).
@@ -201,6 +202,9 @@ def compose_entry(data, gate_b_facts):
     entry = {
         "name": data["name"] if isinstance(data.get("name"), str) and data["name"] else data["state"],
         "status": "probing",
+        # OPEN-555: a new state's scraper module is its code, and its OCD id follows the one rule (qa_primitives)
+        "scraper_module": data["state"],
+        "ocd_id": ocd_jurisdiction_id(data["state"]),
         "scrape": {
             "allow_duplicates": False,
             "timeout_s": DEFAULT_SCRAPE_TIMEOUT_S,
@@ -213,16 +217,22 @@ def compose_entry(data, gate_b_facts):
             "retry": False,
             "cadence_escalation": True,
             "fargate_max_wait_s": None,
+            "session_list_attempts": None,   # OPEN-555: only ut retries its session list
+            "session_list_backoff_s": None,
         },
         "archive": {
             "enabled": False,
             "timeout_s": DEFAULT_ARCHIVE_TIMEOUT_S,
         },
         "enrollment": {field: False for field in ENROLLMENT_FIELD_ORDER},
-        "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False},
+        "waf": {"profile": "none", "fargate_safe": True, "scrapebot_fallback": False,
+                # OPEN-555: fetch limits, null without a WAF profile
+                "requests_per_minute": None, "max_consecutive_blocks": None, "max_attempts": None,
+                "cooldown_after_failures": None, "cooldown_s": None},
         "quality": {"diff_cleaner": "none"},
         # OPEN-556: the most common names, never read from the probe; a human checks them against the legislature's site
         "chambers": {"unicameral": False, "upper": "Senate", "lower": "House of Representatives"},
+        "votes": {"house_speaker_by_session": None, "bare_key_session": None},  # OPEN-555: none for a new state
         "api_keys": gate_b_facts["api_keys"],
         "onboarding": {
             "epic": None,
@@ -271,6 +281,8 @@ def render_block(code, entry, needs_human, source_desc):
         f"{code}:",
         f"  name: {_scalar(entry['name'])}",
         f"  status: {_scalar(entry['status'])}",
+        f"  scraper_module: {_scalar(entry['scraper_module'])}      # OPEN-555: the openstates-scrapers module",
+        f"  ocd_id: {_scalar(entry['ocd_id'])}",
         "  scrape:",
         f"    allow_duplicates: {_scalar(entry['scrape']['allow_duplicates'])}",
         f"    timeout_s: {_scalar(entry['scrape']['timeout_s'])}"
@@ -286,6 +298,8 @@ def render_block(code, entry, needs_human, source_desc):
         f"    retry: {_scalar(entry['scrape']['retry'])}                   # SYNC-157: bounded retry (never with a WAF)",
         f"    cadence_escalation: {_scalar(entry['scrape']['cadence_escalation'])}       # SYNC-157: dynamic cadence may raise it",
         f"    fargate_max_wait_s: {_scalar(entry['scrape']['fargate_max_wait_s'])}       # SYNC-157: null = ddp-sync's shared ceiling",
+        f"    session_list_attempts: {_scalar(entry['scrape']['session_list_attempts'])}    # OPEN-555: only ut retries its session list",
+        f"    session_list_backoff_s: {_scalar(entry['scrape']['session_list_backoff_s'])}",
         "  archive:",
         f"    enabled: {_scalar(entry['archive']['enabled'])}",
         f"    timeout_s: {_scalar(entry['archive']['timeout_s'])}"
@@ -299,12 +313,20 @@ def render_block(code, entry, needs_human, source_desc):
         f"    profile: {_scalar(entry['waf']['profile'])}{note('waf.profile')}",
         f"    fargate_safe: {_scalar(entry['waf']['fargate_safe'])}{note('waf.fargate_safe')}",
         f"    scrapebot_fallback: {_scalar(entry['waf']['scrapebot_fallback'])}    # SYNC-157: ScrapeBot cookie mint before scrape and archive",
+        f"    requests_per_minute: {_scalar(entry['waf']['requests_per_minute'])}    # OPEN-555: fetch limits, only with a WAF profile",
+        f"    max_consecutive_blocks: {_scalar(entry['waf']['max_consecutive_blocks'])}",
+        f"    max_attempts: {_scalar(entry['waf']['max_attempts'])}",
+        f"    cooldown_after_failures: {_scalar(entry['waf']['cooldown_after_failures'])}",
+        f"    cooldown_s: {_scalar(entry['waf']['cooldown_s'])}",
         "  quality:",
         f"    diff_cleaner: {_scalar(entry['quality']['diff_cleaner'])}{note('quality.diff_cleaner')}",
         f"  chambers:{note('chambers')}",
         f"    unicameral: {_scalar(entry['chambers']['unicameral'])}",
         f"    upper: {_scalar(entry['chambers']['upper'])}",
         f"    lower: {_scalar(entry['chambers']['lower'])}",
+        "  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)",
+        f"    house_speaker_by_session: {_scalar(entry['votes']['house_speaker_by_session'])}",
+        f"    bare_key_session: {_scalar(entry['votes']['bare_key_session'])}",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
         "  onboarding:",
         f"    epic: {_scalar(entry['onboarding']['epic'])}",

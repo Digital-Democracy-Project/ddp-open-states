@@ -117,7 +117,8 @@ was visible 0 to 1 s after it ended. A refusal that nobody fixes shows up as the
 5. Not part of this change and still to do before it matters in production: OPEN-313 (the monitoring itself live).
 
 Tests: `bash test-structure-sync.sh` (a throwaway publisher/subscriber pair of two `postgres:16` containers, about a minute,
-needs Docker and the `postgres:16` image) and `bash test-replica-monitoring.sh` (the alert glue, no database).
+needs Docker and the `postgres:16` image) and `bash test-replica-monitoring.sh` (the alert glue, no database, no network; it refuses to run if it could reach the
+real credential file or the live replica, OPEN-631).
 
 ### Manual break-glass procedure (OPEN-277, plan §7.9)
 
@@ -653,7 +654,10 @@ into one Slack message to `#automation-errors`, plus a recovery message.
   columns match). **Run
   `compare-schema.sh` by hand after any change to a replicated table on RDS** (checklist below), and
   revisit this if OPEN-314 (automatic pickup of new tables) needs a credential anyway.
-- **Tests:** `bash test-replica-monitoring.sh` (no network, no database; `docker` is a stub).
+- **Tests:** `bash test-replica-monitoring.sh` (no network, no database; `docker` is a stub). Since OPEN-631 it
+  enforces that: it refuses to start if a case could reach the real `replica-structure-sync.env`, the real
+  `sync-structure.sh` or `ddp-openstates-postgres-1`, and `docker`, `psql` and `curl` are tripwires that fail the run
+  if anything calls them. (Before OPEN-631 two cases ran the real structure sync against RDS on the Mac.)
 
 ### Changing the replicated schema (checklist — the long form is "Django migration procedure" above)
 

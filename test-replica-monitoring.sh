@@ -4,8 +4,9 @@
 #   ops/postgres-replica/local/replica-status.sh   (stale-receipt check, RDS-side via container)
 #   ops/postgres-replica/local/compare-schema.sh   (table list from the publication, set comparison)
 #
-# No network, no database, no production paths: `docker` is a stub on PATH that answers from fixture
-# files, every state/log path is a mktemp dir, and Slack is REPLICA_DRY_RUN=1. Run it anywhere:
+# No network, no database, no production paths (enforced since OPEN-631, see "Isolation" below): `docker` is a
+# stub on PATH that answers from fixture files, every state/log path is a mktemp dir, and Slack is REPLICA_DRY_RUN=1
+# (or a curl stub). Run it anywhere:
 #     bash test-replica-monitoring.sh
 # Exits 0 with "ALL PASS" or 1 after listing every failing assertion.
 
@@ -18,6 +19,53 @@ COMPARE="$HERE/ops/postgres-replica/local/compare-schema.sh"
 T=$(mktemp -d /tmp/replica-monitoring-test.XXXXXX)
 trap 'rm -rf "$T"' EXIT
 PASS=0; FAIL=0
+
+# --- Isolation (OPEN-631) -------------------------------------------------------------------------------------------
+# check-replica-health.sh runs stage 3, the REAL sync-structure.sh (reads RDS with the replication login, then changes
+# the live replica: ADD COLUMN, CREATE TABLE, REFRESH PUBLICATION), whenever STRUCTURE_SYNC_ENV_FILE is readable, and
+# both that file and the sync command default to the production paths. Before OPEN-631 the Slack, launchd and
+# discovery-failure cases set neither, so every run of this file on the Mac ran the real structure sync (the launchd
+# and Slack ones with the real docker, i.e. against RDS and the live replica). Now:
+#   * every glue run inherits throwaway settings exported here (a case that clears its environment (env's -i flag)
+#     passes them on with "${ISO[@]}");
+#   * `docker`, `psql` and `curl` are tripwires first on PATH: any call is recorded, fails, and fails the file at the end;
+#   * the file refuses to start (exit 2, before any case) if those settings could reach the real ones.
+REAL_SYNC_ENV=/Users/agentsmith/.config/ddp/replica-structure-sync.env
+REAL_PG_CONTAINER=ddp-openstates-postgres-1
+TW="$T/tripwire"; mkdir -p "$TW"; : > "$T/tripwire.calls"
+for b in docker psql curl sync-not-expected.sh compare-not-expected.sh; do
+    printf '#!/bin/sh\necho "%s $*" >> "%s"\necho "tripwire: this test must not run %s" >&2\nexit 97\n' \
+        "$b" "$T/tripwire.calls" "$b" > "$TW/$b"
+    chmod +x "$TW/$b"
+done
+unset RDS_HOST RDS_REPLICATION_PASSWORD RDS_MONITORING_DATABASE_URL DOCKER_HOST
+export STRUCTURE_SYNC_ENV_FILE="$T/no-such-structure-sync.env"
+export REPLICA_SYNC_CMD="$TW/sync-not-expected.sh"
+export REPLICA_COMPARE_CMD="$TW/compare-not-expected.sh"
+export PG_CONTAINER=open631-test-no-such-container
+export SLACK_ALERT_ENV_FILE=/dev/null   # no .env is read; the Slack cases pass their own token
+export PATH="$TW:$PATH"
+ISO=(PATH="$TW:/usr/bin:/bin:/usr/sbin:/sbin" STRUCTURE_SYNC_ENV_FILE="$STRUCTURE_SYNC_ENV_FILE"
+     REPLICA_SYNC_CMD="$REPLICA_SYNC_CMD" REPLICA_COMPARE_CMD="$REPLICA_COMPARE_CMD" PG_CONTAINER="$PG_CONTAINER"
+     SLACK_ALERT_ENV_FILE=/dev/null)
+
+refuse_unless_isolated() {
+    local why="" envi='env -''i' line
+    [ "$STRUCTURE_SYNC_ENV_FILE" = "$REAL_SYNC_ENV" ] && why="STRUCTURE_SYNC_ENV_FILE is the real credential file"
+    [ -z "$why" ] && [ -e "$STRUCTURE_SYNC_ENV_FILE" ] && why="STRUCTURE_SYNC_ENV_FILE exists, so stage 3 would run"
+    [ "$REPLICA_SYNC_CMD" = "$TW/sync-not-expected.sh" ] || why="REPLICA_SYNC_CMD is not the tripwire stub ($REPLICA_SYNC_CMD)"
+    [ "$REPLICA_COMPARE_CMD" = "$TW/compare-not-expected.sh" ] || why="REPLICA_COMPARE_CMD is not the tripwire stub ($REPLICA_COMPARE_CMD)"
+    [ "$PG_CONTAINER" = "$REAL_PG_CONTAINER" ] && why="PG_CONTAINER is the live replica container"
+    [ "$(command -v docker)" = "$TW/docker" ] || why="docker on PATH is not the tripwire"
+    [ "$(command -v psql)" = "$TW/psql" ] || why="psql on PATH is not the tripwire"
+    [ "$(command -v curl)" = "$TW/curl" ] || why="curl on PATH is not the tripwire"
+    # A clean-environment run (env's -i flag) drops the exports above: each such case must pass them on.
+    while IFS= read -r line; do
+        case "$line" in *"$envi"*) case "$line" in *"$envi \"\${ISO[@]}\""*) ;; *) why="a clean-environment case does not pass \"\${ISO[@]}\": $line" ;; esac ;; esac
+    done < "${BASH_SOURCE[0]}"
+    if [ -n "$why" ]; then echo "REFUSING TO RUN (OPEN-631): $why"; exit 2; fi
+}
+refuse_unless_isolated
 
 assert_contains() {  # <label> <haystack> <needle>
     if printf '%s' "$2" | grep -qF -- "$3"; then echo "PASS: $1"; PASS=$((PASS + 1))
@@ -241,7 +289,8 @@ echo "--- glue: runs under launchd's bare environment (no HOME, minimal PATH) --
 rm -f "$G/last-run/"replica-health.*
 set_status DISCONNECTED "daemon-env check"
 run_glue_bare() {  # <now_offset_s>   (from /, not the repo: the helper must be found from the script's own location)
-    cd / && env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+    # "${ISO[@]}" (OPEN-631): the throwaway structure-sync settings, and PATH = the tripwire dir + launchd's bare PATH.
+    cd / && env -i "${ISO[@]}" \
         REPLICA_LAST_RUN_DIR="$G/last-run" REPLICA_LOG_FILE="$G/test.log" REPLICA_DRY_RUN=1 \
         REPLICA_NOW_EPOCH=$(( NOW + $1 )) REPLICA_DB=fixture_db REPLICA_SLACK_TOKEN=x \
         REPLICA_STATUS_CMD="$G/status.sh" GLUE_STATUS_FILE="$G/status.out" \
@@ -397,6 +446,10 @@ assert_contains "and exits non-zero" "$out" "exit=1"
 
 reset_fx; : > "$FX/published"; out=$(run_compare)
 assert_contains "an empty publication is a failure, not a pass" "$out" "lists no tables"
+
+echo "--- isolation (OPEN-631)"
+assert_eq "no case started docker, psql, curl, the structure sync or the schema compare outside its own stub" \
+    "$(cat "$T/tripwire.calls")" ""
 
 echo
 if [ "$FAIL" -eq 0 ]; then echo "ALL PASS ($PASS assertions)"; exit 0

@@ -44,6 +44,21 @@ DB_USER=openstates
 DB_NAME=openstates
 DDP_SYNC_SCHEDULE_URL="http://localhost:8001/ddp-sync/v1/schedule"
 
+# OCD jurisdiction id for a jurisdiction abbr (OPEN-555): the manifest's ocd_id, read through
+# jurisdiction-field.sh next to this script; the rule below is the fallback while the manifest has no
+# such field (or no entry for the abbr, or cannot be read).
+juris_ocd_id() {
+    local juris=$1 jid
+    jid=$("$(dirname "$0")/jurisdiction-field.sh" "$juris" ocd_id 2>/dev/null)
+    if [ -n "$jid" ]; then
+        echo "$jid"
+    elif [ "$juris" = "us" ]; then
+        echo "ocd-jurisdiction/country:us/government"
+    else
+        echo "ocd-jurisdiction/country:us/state:${juris}/government"
+    fi
+}
+
 # Full name for a jurisdiction abbr, for display only. Looked up from Postgres
 # (opencivicdata_jurisdiction.name is the real source of truth DDP already
 # maintains for every tracked jurisdiction) rather than a hardcoded list here
@@ -53,11 +68,7 @@ DDP_SYNC_SCHEDULE_URL="http://localhost:8001/ddp-sync/v1/schedule"
 # the DB is unreachable or the abbr isn't a real jurisdiction.
 juris_name() {
     local juris=$1 jid name
-    if [ "$juris" = "us" ]; then
-        jid="ocd-jurisdiction/country:us/government"
-    else
-        jid="ocd-jurisdiction/country:us/state:${juris}/government"
-    fi
+    jid=$(juris_ocd_id "$juris")
     name=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
         "SELECT name FROM opencivicdata_jurisdiction WHERE id = '$jid';" 2>/dev/null)
     if [ -n "$name" ]; then
@@ -80,11 +91,7 @@ juris_name() {
 # timeout isn't needed for the realistic failure modes here.
 db_backlog() {
     local juris=$1 jid
-    if [ "$juris" = "us" ]; then
-        jid="ocd-jurisdiction/country:us/government"
-    else
-        jid="ocd-jurisdiction/country:us/state:${juris}/government"
-    fi
+    jid=$(juris_ocd_id "$juris")
     docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -F'|' -c "
         SELECT
           (SELECT count(*) FROM opencivicdata_billversionlink l

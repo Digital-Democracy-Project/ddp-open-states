@@ -77,6 +77,22 @@
 # connection that day, so its two names rest on legis.ga.gov's own page titles ("Senators", "Representatives").
 # api-v3's GET /ddp/enrollment serves the block; no stored data uses it.
 #
+# OPEN-555 (2026-11-18, PLAN-state-specific-handling Phase 4, "values go to the manifest, not into code"): per-state
+# values that sat in code as constants, with today's values:
+#   - scraper_module (the openstates-scrapers module: `usa` for us, the code for every state) and ocd_id (the OpenStates
+#     jurisdiction id in the database). Read by qa_primitives.ocd_jurisdiction_id (so quality_check.py and
+#     verify-jurisdiction), os-status, cloud_collector.py, verify-jurisdiction and probe-on-fargate.
+#   - waf.requests_per_minute / max_consecutive_blocks (openstates-core RESILIENCE_PROFILES, mi and fl; MI_SCRAPELIB_RPM
+#     in the env still wins for mi) and fl's waf.max_attempts / cooldown_after_failures / cooldown_s (scrapers/fl/bills.py).
+#     Null for a state with no WAF profile; the validator requires the first two for a state with one.
+#   - scrape.session_list_attempts / session_list_backoff_s (ut only, scrapers/ut/__init__.py).
+#   - votes.house_speaker_by_session (ma, scrapers/ma/voter_names.py: add a session here when a new Speaker is elected)
+#     and votes.bare_key_session (nc, scrapers/nc/bills.py).
+# Every reader still keeps its old constant as the fallback (a host or image whose manifest lacks the field, or a state
+# with no entry). The constants are deleted only after both hosts and the scrapers image run this manifest (the plan's
+# steps 3 and 4). The image reads /app/jurisdictions.yaml (DDP_JURISDICTIONS_MANIFEST). The full-walk flag needed no
+# new field: it is scrape.start_filter (false = the scraper ignores start= and walks everything).
+#
 # SYNC-157 (2026-11-12): ddp-sync keeps no list of states of its own any more; it reads these (values copied from its
 # sync_schedule.yaml that day): scrape.sweep_import, scrape.full_walk, scrape.retry (never with a WAF profile, OPEN-53),
 # scrape.cadence_escalation, scrape.fargate_max_wait_s (null = ddp-sync's shared Fargate wait), waf.scrapebot_fallback and
@@ -127,6 +143,8 @@
 us:
   name: United States (Congress)
   status: live
+  scraper_module: usa   # OPEN-555: the openstates-scrapers module (US Congress is "usa")
+  ocd_id: ocd-jurisdiction/country:us/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 14400        # SCRAPE_TIMEOUT_S["usa"], 4h
@@ -140,6 +158,8 @@ us:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 86400          # ARCHIVE_TIMEOUT_S["us"], 24h -- sized for cold-backfill runs
@@ -157,12 +177,20 @@ us:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
     epic: null                # predates this manifest / the onboarding runbook
@@ -171,6 +199,8 @@ us:
 fl:
   name: Florida
   status: live
+  scraper_module: fl   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:fl/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: true    # pagination overlap produces duplicate bill JSON (upstream #5697)
     timeout_s: 57600           # SCRAPE_TIMEOUT_S["fl"], 16h -- FL is the longest-running job
@@ -186,6 +216,8 @@ fl:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 57600            # ARCHIVE_TIMEOUT_S["fl"], 16h
@@ -204,6 +236,11 @@ fl:
     fargate_safe: true           # the warm-up runs in-process wherever the scraper runs -- no
                                   # Mac-only mint step, unlike mi (OPEN-464)
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: 10         # OPEN-555: RESILIENCE_PROFILES["fl"] (openstates-core resilience_profiles.py)
+    max_consecutive_blocks: 3       # OPEN-555: WAF blocks in a row before the scrape stops (the profile's circuit breaker)
+    max_attempts: 3                 # OPEN-555: tries per flhouse.gov vote-chain page (FLHOUSE_WAF_MAX_ATTEMPTS)
+    cooldown_after_failures: 3      # OPEN-555: bills failing in a row before the bill loop pauses
+    cooldown_s: 300                 # OPEN-555: that pause, in seconds
   quality:
     diff_cleaner: none            # FL's extractor already strips noise as a side effect --
                                    # verified, not just untried (OPEN-8's actual finding)
@@ -211,6 +248,9 @@ fl:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -219,6 +259,8 @@ fl:
 wa:
   name: Washington
   status: live
+  scraper_module: wa   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:wa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 28800            # SCRAPE_TIMEOUT_S["wa"], 8h
@@ -231,6 +273,8 @@ wa:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 28800              # ARCHIVE_TIMEOUT_S["wa"], 8h
@@ -248,12 +292,20 @@ wa:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_wa_text    # boilerplate stripping (_clean_wa_text, text_extract.py)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -262,6 +314,8 @@ wa:
 va:
   name: Virginia
   status: live
+  scraper_module: va   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:va/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: true        # pagination overlap (upstream #5697); scraper-side dedup also
                                    # added (65363ef)
@@ -275,6 +329,8 @@ va:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400                  # ARCHIVE_TIMEOUT_S default, 4h (no VA-specific entry)
@@ -292,12 +348,20 @@ va:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_virginia_text  # 6 distinct artifact classes stripped (_clean_virginia_text)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Delegates
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
                                          # pattern -- see PRIMITIVES.md)
@@ -308,6 +372,8 @@ va:
 mi:
   name: Michigan
   status: live
+  scraper_module: mi   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:mi/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: true         # pagination overlap (upstream #5697)
     timeout_s: 36000                 # SCRAPE_TIMEOUT_S["mi"], 10h -- MI also gets a periodic
@@ -322,6 +388,8 @@ mi:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 86400                   # ARCHIVE_TIMEOUT_S["mi"], 24h (ddp-sync; this said the 4h default, which MI's
@@ -342,12 +410,20 @@ mi:
     fargate_safe: false                 # the cookie can only be reliably minted by the Mac; a
                                          # cold Fargate scrape risks the block (OPEN-458/OPEN-464)
     scrapebot_fallback: true    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: 10         # OPEN-555: RESILIENCE_PROFILES["mi"] (openstates-core resilience_profiles.py) and MI_SCRAPELIB_RPM; the env var still wins
+    max_consecutive_blocks: 3       # OPEN-555: WAF blocks in a row before the scrape stops (the profile's circuit breaker)
+    max_attempts: null           # OPEN-555: mi retries once, inside its cookie provider (code, not a value)
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_michigan_text    # per-jurisdiction cleanup (_clean_michigan_text)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -356,6 +432,8 @@ mi:
 ut:
   name: Utah
   status: live
+  scraper_module: ut   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:ut/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no UT-specific entry)
@@ -368,6 +446,8 @@ ut:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: 3         # OPEN-555: tries at le.utah.gov's session list (scrapers/ut/__init__.py, OPEN-106)
+    session_list_backoff_s: 2        # OPEN-555: seconds times the attempt number between tries
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no UT-specific entry)
@@ -385,12 +465,20 @@ ut:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -399,6 +487,8 @@ ut:
 az:
   name: Arizona
   status: live
+  scraper_module: az   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:az/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no AZ-specific entry)
@@ -411,6 +501,8 @@ az:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no AZ-specific entry)
@@ -428,6 +520,11 @@ az:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: reflow_paragraphs      # paragraph *reflow*, the opposite technique from
                                          # boilerplate stripping (_reflow_paragraphs)
@@ -435,6 +532,9 @@ az:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -447,6 +547,8 @@ ma:
                                      # scraped/archived/served on /explore today; OPEN-68/
                                      # OPEN-169/176/177 track its remaining data-quality gaps,
                                      # not an onboarding-stage regression
+  scraper_module: ma   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:ma/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: true             # run-scrape.sh ALLOW_DUPLICATES_STATES has had ma since OPEN-55 (a completed
                                         # 9,496-bill MA scrape lost its whole import without it); this manifest said false
@@ -469,6 +571,8 @@ ma:
     retry: true                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: 86400           # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds (OPEN-476: 24 h, Ramon 2026-11-01)
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400                    # ARCHIVE_TIMEOUT_S default, 4h (no MA-specific entry)
@@ -486,6 +590,11 @@ ma:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_massachusetts_text    # page-footer-tail stripping (_clean_massachusetts_text,
                                                # OPEN-400); OPEN-462 found this said none while the
@@ -494,6 +603,12 @@ ma:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session:  # "Mr. Speaker" on a House roll call, per session (scrapers/ma/voter_names.py, OPEN-474);
+      192nd: Ronald Mariano    # only sessions with one Speaker throughout; add the session when a new Speaker is elected
+      193rd: Ronald Mariano
+      194th: Ronald Mariano
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: null
@@ -507,6 +622,8 @@ nc:
                                        # (the first that could count was 2026-10-25). So `live` here means "decided",
                                        # not "soaked". Probed 2026-08-31 (OPEN-230), pilot #1 (OPEN-231). Routing to
                                        # the replica is a separate step (BROKER-302); see replica_routing below.
+  scraper_module: nc   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:nc/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h -- no NC-specific entry
@@ -521,6 +638,8 @@ nc:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true                       # OPEN-231 Stage 4: probe gate C passed, so nc clears the gate to enable
                                         # archiving. This file isn't wired into activate.sh (see this file's own
@@ -541,6 +660,11 @@ nc:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_nc_text         # header/footer/signature-block stripping (_clean_nc_text,
                                          # OPEN-371); OPEN-462 found this said none while the code
@@ -550,6 +674,9 @@ nc:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: "2025"   # the one session whose stored votes keep a bare roll-call key (scrapers/nc/bills.py, OPEN-397)
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
     epic: null                          # Stage 1 fix-cycle epic: none filed -- nc's only
@@ -563,6 +690,8 @@ al:
   name: Alabama
   status: scraping                    # OPEN-523 (2026-11-10, Ramon ran /onboard-state Alabama): bill scraping resumes after the
                                        # 2026-06 pause (people-only since then); ddp-sync's default timing (weekly).
+  scraper_module: al   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:al/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry)
@@ -574,6 +703,8 @@ al:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
@@ -591,6 +722,11 @@ al:
     profile: none
     fargate_safe: true
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_al_text    # synopsis/tracking/title/history-block stripping (_clean_al_text);
                                     # OPEN-462 found this said none while the code already cleaned AL
@@ -598,6 +734,9 @@ al:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-146
@@ -607,6 +746,8 @@ al:
 pa:
   name: Pennsylvania
   status: scraping
+  scraper_module: pa   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:pa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
@@ -620,6 +761,8 @@ pa:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
@@ -637,12 +780,20 @@ pa:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_pa_text  # OPEN-495: change bar, printer's number line, case and spacing ignored (_clean_pa_text, text_extract.py); needs the openstates-core change that adds it
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-478
@@ -652,6 +803,8 @@ pa:
 ne:
   name: Nebraska
   status: scraping
+  scraper_module: ne   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:ne/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ne-specific entry in ddp-sync yet
@@ -663,6 +816,8 @@ ne:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
@@ -680,12 +835,20 @@ ne:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_ne_text  # OPEN-486: header lines dropped, one sentence per line (_clean_ne_text, text_extract.py); needs the openstates-core change that adds it
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: true            # one house: its one name is in upper (BROKER-456 reads OpenStates' `legislature` as upper)
     upper: Legislature
     lower: null
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-479
@@ -695,6 +858,8 @@ ne:
 la:
   name: Louisiana
   status: scraping
+  scraper_module: la   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:la/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no la-specific entry in ddp-sync yet
@@ -706,6 +871,8 @@ la:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true                       # OPEN-478/479/480 Stage 4 (2026-11-03); since OPEN-521 the archive follows each scrape
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
@@ -723,12 +890,20 @@ la:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive (was ddp-sync's two scrapebot_fallback.jurisdictions lists)
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: clean_louisiana_text  # OPEN-496: "Page N of M" footer lines dropped (_clean_louisiana_text, text_extract.py); needs the openstates-core change that adds it
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-480
@@ -738,6 +913,8 @@ la:
 ga:
   name: Georgia
   status: scraping
+  scraper_module: ga   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:ga/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ga-specific entry in ddp-sync yet
@@ -749,6 +926,8 @@ ga:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ga-specific entry in ddp-sync yet
@@ -766,6 +945,11 @@ ga:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 30 vote events)
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
@@ -773,6 +957,9 @@ ga:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-587
@@ -782,6 +969,8 @@ ga:
 nv:
   name: Nevada
   status: scraping
+  scraper_module: nv   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:nv/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nv-specific entry in ddp-sync yet
@@ -793,6 +982,8 @@ nv:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nv-specific entry in ddp-sync yet
@@ -810,6 +1001,11 @@ nv:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 13 vote events)
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper adds the bill page's history rows top to bottom (scrapers/nv/bills.py add_actions), oldest first; 2026-11-16 Mac-half import: 0 of 54 next-action pairs went back in time (OPEN-588); validate_bill_stages re-checks once bills are scraped (BROKER-368)
@@ -817,6 +1013,9 @@ nv:
     unicameral: false
     upper: Senate
     lower: Assembly
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-588
@@ -826,6 +1025,8 @@ nv:
 or:
   name: Oregon
   status: scraping
+  scraper_module: or   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:or/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no or-specific entry in ddp-sync yet
@@ -837,6 +1038,8 @@ or:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no or-specific entry in ddp-sync yet
@@ -854,6 +1057,11 @@ or:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills)
     fargate_safe: true  # the 2026-10-31 Fargate probe reached the site and scraped 10 bills
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   # actions are stored oldest first: the scraper adds MeasureHistoryActions in the API's order (scrapers/or/bills.py), oldest first; 2026-11-16 Mac-half import: 0 of 86 next-action pairs went back in time (OPEN-589); validate_bill_stages re-checks once bills are scraped (BROKER-368)
@@ -861,6 +1069,9 @@ or:
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-589
@@ -870,6 +1081,8 @@ or:
 nm:
   name: New Mexico
   status: scraping
+  scraper_module: nm   # OPEN-555: the openstates-scrapers module
+  ocd_id: ocd-jurisdiction/country:us/state:nm/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nm-specific entry in ddp-sync yet
@@ -881,6 +1094,8 @@ nm:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    session_list_attempts: null      # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
   archive:
     enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nm-specific entry in ddp-sync yet
@@ -898,12 +1113,20 @@ nm:
     profile: none  # probe gate B 2026-10-31 (revision 44): no WAF resilience profile found; the dry scrape ran clean (10 bills in 8.8 s)
     fargate_safe: true  # the 2026-10-31 Fargate probe reached www.nmlegis.gov and scraped 10 bills (needs mdbtools, in the image since v41, OPEN-471)
     scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only for a state with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); nmlegis.gov: Senate, House of Representatives
     unicameral: false
     upper: Senate
     lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
+    house_speaker_by_session: null
+    bare_key_session: null
   api_keys: []
   onboarding:
     epic: OPEN-618
