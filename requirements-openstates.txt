@@ -20,6 +20,11 @@
 # adds the same package). Everything else installs and imports on 3.13 as pinned. numpy 2.2.6
 # needs Python 3.10+, so every venv built from this file (the Mac's, the scrapers image's,
 # ddp-sync's /opt/venv-openstates) must be on 3.13 together.
+#
+# pandas 2.2.3 (OPEN-630, 2026-11-18): New Mexico's vote reader (nm/votes.py) turns each vote PDF's
+# table into a pandas DataFrame with PyMuPDF's to_pandas(), which imports pandas only when called, so
+# check-scraper-imports.sh cannot see it. 2.2.3 is the openstates-scrapers lock's version and has 3.13
+# wheels; its own dependencies (numpy, python-dateutil, pytz, tzdata) are already pinned above.
 altgraph==0.17.2
 annotated-doc==0.0.4
 annotated-types==0.7.0
@@ -100,6 +105,7 @@ opencv-python-headless==4.13.0.92
 openpyxl==3.1.5
 orjson==3.11.5
 packaging==26.2
+pandas==2.2.3
 parso==0.8.7
 pathspec==1.1.1
 pdfminer.six==20191110
