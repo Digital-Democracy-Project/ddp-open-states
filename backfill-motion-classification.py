@@ -14,7 +14,8 @@ which vote it was; the floor step it is filed under does (the az scraper's
 vote_classification()). Stored votes do not keep that step, so Arizona is classified only
 with --az-cache, the scrape cache holding Arizona's Bill pages (their FloorHeaders), and is
 otherwise left as it is: re-applying the text rules alone would turn its Committee of the
-Whole, amendment and reconsider roll calls back into passage votes.
+Whole, amendment and reconsider roll calls back into passage votes. Arizona's empty 0-0 roll
+calls (no voters, OPEN-433) are left as they are too (see classify_row).
 
 A reviewed list is applied where that cache does not exist (production): --list writes the
 changes (dry run or write), --apply-list writes exactly a list's changes, --undo writes a
@@ -119,6 +120,11 @@ def classify_row(jur_key, row, az_steps):
             return None, None
         from az.bills import vote_classification  # the scraper's own rule (OPEN-625)
 
+        if not row["voters"]:
+            # An empty 0-0 roll call (OPEN-433; the scraper no longer emits them) is left as it is. The broker keeps
+            # one Motion for same-day votes with the same text, so relabelling an empty "Passed" next to a real
+            # third reading would take the real vote off scorecards (measured on 2026-11-17: 7 scorecard bills).
+            return None, None
         found = _AZ_ACTION_ID.search(row["source"] or "")
         if not found or int(found.group(1)) not in az_steps:
             return None, None
@@ -224,7 +230,7 @@ def main(argv=None):
             changes, unclassified = plan(rows, az_steps)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             if unclassified:
-                print(f"  left as they are: {unclassified:,} (Arizona needs --az-cache with each vote's Bill page)")
+                print(f"  left as they are: {unclassified:,} (Arizona: no --az-cache, no voters, or no Bill page)")
         groups = {}
         for c in changes:
             key = (c["jurisdiction"], c["floor_step"], c["motion_text"], c["old"], c["new"])

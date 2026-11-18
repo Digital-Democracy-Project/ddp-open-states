@@ -1387,9 +1387,11 @@ functions, layered on top of the ordering work above rather than changing it.
   stored vote does not keep its floor step, so the step comes from that page's `FloorHeaders`, matched on the vote
   source's `billStatusActionId`, and the rule is the az scraper's own `vote_classification()` (only Third and Final
   Reading roll calls are passage). Without the cache Arizona is left as it is, because the text rules alone would make
-  every Committee of the Whole, amendment and reconsider roll call a passage vote again. Measured 2026-11-17 on the
-  Mac replica: 1,654 of 3,411 Arizona votes change, 24 of them with voters (21 COW motions to amend, 1 COW vote,
-  2 reconsider motions); the other 1,630 are OPEN-433's empty roll calls. **Do not** run it for a state missing from
+  every Committee of the Whole, amendment and reconsider roll call a passage vote again. **Arizona's empty 0-0 roll
+  calls (no voters, OPEN-433) are left as they are:** the broker keeps one Motion for same-day votes with the same
+  text, so relabelling an empty "Passed" beside a real third reading takes the real vote off scorecards (measured on a
+  throwaway broker copy: 7 scorecard bills, 130 entries). Measured 2026-11-17 on the Mac replica: 24 of 3,411 Arizona
+  votes change (21 COW motions to amend, 1 COW vote, 2 reconsider motions). **Do not** run it for a state missing from
   `JURISDICTION_MAP` (pa, la: the text rules would wipe the scraper's own labels; PLAN-push-button-onboarding
   2026-11-17).
 - **`audit-motion-texts.py`** (repo root) — read-only report: every distinct `(motion_text,

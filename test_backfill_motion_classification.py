@@ -56,6 +56,14 @@ def test_arizona_vote_whose_floor_step_is_unknown_is_left_alone():
     assert (changes, unclassified) == ([], 1)
 
 
+def test_arizona_empty_roll_call_is_left_alone():
+    # HB 2918 (2026-03-03): an empty 0-0 "Passed" (MISC) shares its day and text with the real third reading
+    # (32-24); the broker keeps one Motion for both, so relabelling the empty one would drop the real vote.
+    empty = dict(row("ocd-vote/5", 242129, "Passed", ["passage"], bill="HB 2918"), voters=0)
+    changes, unclassified = bmc.plan([empty], STEPS)
+    assert (changes, unclassified) == ([], 1)
+
+
 def test_other_jurisdictions_keep_the_text_rules():
     us = row("ocd-vote/4", 1, "On Passage", [], jurisdiction="ocd-jurisdiction/country:us/government")
     changes, _ = bmc.plan([us], None)
