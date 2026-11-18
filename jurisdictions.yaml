@@ -869,7 +869,7 @@ or:
 # written by new-jurisdiction from notes/probe-vtnm-20261031/nm/result.json on 2026-11-17 (OPEN-461)
 nm:
   name: New Mexico
-  status: probing
+  status: scraping
   scrape:
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nm-specific entry in ddp-sync yet
@@ -882,13 +882,13 @@ nm:
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
   archive:
-    enabled: false
+    enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nm-specific entry in ddp-sync yet
   enrollment:
-    people_refresh: false
+    people_refresh: true
     search_refresh: false
     embedding: false
-    cloud_path: false
+    cloud_path: true
     api_smoke_test: false
     qa_sweep: false
     replica_routing: false
