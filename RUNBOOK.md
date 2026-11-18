@@ -1374,8 +1374,21 @@ python3 backfill-motion-classification.py
 python3 audit-motion-texts.py
 ```
 
-The backfill unconditionally overwrites all records with the current YAML output — re-running
-after a YAML fix always produces the correct state.
+Arizona's labels come from each roll call's floor step, which stored votes do not keep (OPEN-625). Arizona is left
+as it is unless the run is given the scrape cache with its Bill pages; the reviewed list is then applied where the
+cache is not:
+
+```bash
+# Mac, read-only on the replica: the list to review
+PGOPTIONS='-c default_transaction_read_only=on' python3 backfill-motion-classification.py --jurisdiction az \
+  --az-cache openstates-scrapers/_cache --dry-run --list az-votes-dry-run.csv
+# where the list is applied (Ramon's go): exactly the reviewed list, then the undo if needed
+python3 backfill-motion-classification.py --apply-list az-votes-dry-run.csv --expect <rows> --list az-votes-committed.csv
+python3 backfill-motion-classification.py --undo az-votes-committed.csv --list az-votes-undone.csv
+```
+
+The backfill writes every record whose label differs from the current YAML output (Arizona only with
+`--az-cache`) — re-running after a YAML fix always produces the correct state.
 
 ### Audit files
 
