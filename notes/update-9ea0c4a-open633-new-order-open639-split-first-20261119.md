@@ -11,6 +11,9 @@ ECS hands a task definition's secrets to **every** task started from it. The RDS
 1. **OPEN-639, ddp-open-states #430 (the deploy script): merged** as `fce11e13` (11-19). ddp-sync **#301 stays unmerged** until step 2's check passes. Once #301 is on main, any ddp-sync rebuild (the BROKER-537/541 switch-on is queued) would make the nightly archives fail until `ddp-scrapers-db` exists. The PM merges #301 after step 2.
 2. **Image release with #430's script (Ramon, on the Mac), without `TASK_RDS_*`.** This is the next image (v71 expected), built from ddp-open-states main at or after `fce11e13`.
    * It registers the image on `ddp-scrapers` and creates `ddp-scrapers-db` from it.
+   * **This image carries a new core:** openstates-core main is now `10f32ce0` (OPEN-554, merged after v70; moves only, the comparison with `c983ae68` showed no change in behaviour). So, as at every core change (OPEN-586, SYNC-180), after this release **api-v3 (both hosts) and ddp-sync are rebuilt with `DDP_CORE_SHA` = the core this image prints**. Each rebuild is on its own go.
+     * The ddp-sync rebuild can be the same build as step 3, once #301 is merged.
+     * **Check:** `check-core-pin-drift.py --image-core <that sha> --container ... --sync-container ...` exits 0.
    * **Check:** `aws ecs describe-task-definition --task-definition ddp-scrapers-db` exists, has the same image, and shows no secrets. The script prints `RDS secret in ddp-scrapers: no` and `RDS secret in ddp-scrapers-db: no`.
 3. **#301 merged (PM), then ddp-sync at that merge on EC2 (prod agent), only after step 2's check.** Use the same build-and-recreate procedure as Part C, `DDP_CORE_SHA` unchanged unless the image's core changed.
    * Before step 2, every archive would fail at launch, with an alert.
@@ -25,7 +28,7 @@ ECS hands a task definition's secrets to **every** task started from it. The RDS
    * **Rollback:** deregister the new `ddp-scrapers-db` revision.
 6. **Later, each its own note:**
    * `rds_from_task_secret: true` in ddp-sync;
-   * then, after the Mac rehearsal (plan step 3, starting now on v70), the first state's `scrape.load_on_fargate: true`.
+   * then the first state's `scrape.load_on_fargate: true`. The Mac rehearsal (plan step 3) passed on v70 on 11-19: identical tables, a replay changed nothing, and a killed load left nothing behind (OPEN-633 comment).
 
 ## Superseded
 `9ea0c4a` Part A as written (grant before the split) and Part B as written (the secret on `ddp-scrapers`) are replaced by steps 4 and 5 above. Do not put the secret on `ddp-scrapers`.
