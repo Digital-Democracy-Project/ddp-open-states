@@ -7,8 +7,8 @@
 #   bash deploy-scrapers-image.sh              # verifies, pushes, then registers the new revision
 #   CONFIRM=1 bash deploy-scrapers-image.sh    # same, but asks before the one step that goes live
 #   TASK_RDS_SECRET_ARN=<arn> TASK_RDS_HOST=<host> TASK_RDS_PORT=5432 TASK_RDS_DBNAME=<db> \
-#     bash deploy-scrapers-image.sh            # OPEN-633: also gives the task definition the RDS secret
-#                                              # (once; later revisions copy it forward)
+#     bash deploy-scrapers-image.sh            # OPEN-633/639: also gives the ddp-scrapers-db definition (load and
+#                                              # archive only) the RDS secret, once; later revisions copy it forward
 #
 # Stops at the first failed check. Nothing goes live until the final register step.
 set -euo pipefail
@@ -81,8 +81,8 @@ say "5. Push $IMG"
 docker push "$IMG" | tail -3
 
 say "6. Going live: register a new task-definition revision pointing at $TAG"
-echo "ddp-sync launches the family 'ddp-scrapers', which ECS resolves to the LATEST ACTIVE revision,"
-echo "so the next launched task (any jurisdiction) uses $TAG once this is registered."
+echo "ddp-sync launches the families 'ddp-scrapers' (collection, probe) and 'ddp-scrapers-db' (load, archive; OPEN-639),"
+echo "which ECS resolves to the LATEST ACTIVE revision, so the next launched task uses $TAG once both are registered."
 echo "Tasks currently running on the cluster:"
 aws ecs list-tasks --cluster "$CLUSTER" --region "$REGION" --query 'taskArns' --output text \
     || echo "(could not list running tasks, likely no ecs:ListTasks permission; continuing, this list is informational only)"
@@ -92,44 +92,99 @@ if [ "${CONFIRM:-}" = "1" ]; then   # opt-in prompt; the default follows the run
 fi
 aws ecs describe-task-definition --task-definition ddp-scrapers --region "$REGION" \
     --query taskDefinition > /tmp/taskdef-current.json
+# OPEN-639: the load and archive tasks run from their own family, ddp-scrapers-db, the only one that may carry the
+# database login. It does not exist before the first release with this script; the step below creates it only when
+# AWS says exactly that, and stops on any other failure (an access or network error must never rebuild it and lose
+# its secret).
+set +e
+aws ecs describe-task-definition --task-definition ddp-scrapers-db --region "$REGION" \
+    --query taskDefinition > /tmp/taskdef-db-current.json 2> /tmp/taskdef-db-describe.err
+echo $? > /tmp/taskdef-db-describe.rc
+set -e
 TAG="$TAG" python3 - <<'EOF'
-import json, os
-td = json.load(open('/tmp/taskdef-current.json'))
-c = td['containerDefinitions'][0]
-print('previous image:', c['image'])
-c['image'] = c['image'].rsplit(':', 1)[0] + ':' + os.environ['TAG']
-# OPEN-633 (D2): the load and archive tasks read the RDS login from the task definition's own
-# secret instead of a DATABASE_URL launch variable. Every revision is copied from the current one,
-# so once these entries exist they carry forward on every later image. They are added (or
-# replaced) only when TASK_RDS_SECRET_ARN is given, together with the three fixed address values.
-# The execution role must already be allowed to read that secret (an IAM step, done first).
+import copy, json, os, re
+
+DB_FAMILY = 'ddp-scrapers-db'
+SECRET_NAMES = {'RDS_USERNAME', 'RDS_PASSWORD'}
+ADDRESS_NAMES = ('RDS_HOST', 'RDS_PORT', 'RDS_DBNAME')
+DROP = ['taskDefinitionArn', 'revision', 'status', 'requiresAttributes', 'compatibilities',
+        'registeredAt', 'registeredBy', 'deregisteredAt']
+
+
+def next_revision(td):
+    """The current revision with the new image tag and ECS's read-only fields removed."""
+    td = copy.deepcopy(td)
+    c = td['containerDefinitions'][0]
+    print(td['family'] + ': previous image', c['image'])
+    c['image'] = c['image'].rsplit(':', 1)[0] + ':' + os.environ['TAG']
+    for k in DROP:
+        td.pop(k, None)
+    return td, c
+
+
+def carries_login(c):
+    """Any RDS_* name or DATABASE_URL, as a secret or a plain setting (ECS exposes both as environment variables)."""
+    names = [x['name'] for x in c.get('secrets', []) + c.get('environment', [])]
+    return any(n.startswith('RDS_') or n == 'DATABASE_URL' for n in names)
+
+
+current = json.load(open('/tmp/taskdef-current.json'))
+main, main_c = next_revision(current)
+# OPEN-639: collection and probe tasks fetch and parse outside websites and never touch the database, so the
+# ddp-scrapers family must never hold the login (ECS injects a definition's secrets into every task started from it).
+if carries_login(main_c):
+    raise SystemExit('ddp-scrapers carries RDS_* or DATABASE_URL entries; they belong on ' + DB_FAMILY +
+                     ' only (OPEN-639). Remove them from ddp-scrapers before releasing.')
+
+if open('/tmp/taskdef-db-describe.rc').read().strip() == '0':
+    db, db_c = next_revision(json.load(open('/tmp/taskdef-db-current.json')))
+elif not re.search(r'\(ClientException\) when calling the DescribeTaskDefinition operation: '
+                   r'Unable to describe task definition\.\s*\Z', open('/tmp/taskdef-db-describe.err').read()):
+    raise SystemExit('could not read ' + DB_FAMILY + ' (not a "does not exist" answer), so it is not rebuilt: ' +
+                     open('/tmp/taskdef-db-describe.err').read().strip()[-300:])
+else:
+    created = copy.deepcopy(current)
+    created['family'] = DB_FAMILY
+    db, db_c = next_revision(created)
+    print(DB_FAMILY + ': not registered yet; created from ddp-scrapers (same image, roles, size and logs)')
+
+# OPEN-633 (D2): the load and archive tasks read the RDS login from their task definition's own secret instead of a
+# DATABASE_URL launch variable. Every revision is copied from the current one, so once these entries exist they
+# carry forward on every later image. They are added (or replaced) only when TASK_RDS_SECRET_ARN is given, together
+# with the three fixed address values, and only ever on the DB family (OPEN-639). The execution role must already
+# be allowed to read that secret (an IAM step, done first).
 arn = os.environ.get('TASK_RDS_SECRET_ARN', '')
 if arn:
-    addr = {k: os.environ.get('TASK_' + k, '') for k in ('RDS_HOST', 'RDS_PORT', 'RDS_DBNAME')}
+    addr = {k: os.environ.get('TASK_' + k, '') for k in ADDRESS_NAMES}
     missing = [k for k, v in addr.items() if not v]
     if missing:
         raise SystemExit('TASK_RDS_SECRET_ARN is set but TASK_' + '/TASK_'.join(missing) + ' is not')
-    if not td.get('executionRoleArn'):
-        raise SystemExit('the task definition has no execution role, so ECS cannot read the secret')
+    if not db.get('executionRoleArn'):
+        raise SystemExit(DB_FAMILY + ' has no execution role, so ECS cannot read the secret')
     want = {'RDS_USERNAME': arn + ':username::', 'RDS_PASSWORD': arn + ':password::'}
-    c['secrets'] = [x for x in c.get('secrets', []) if x['name'] not in want] + \
-                   [{'name': k, 'valueFrom': v} for k, v in want.items()]
-    c['environment'] = [x for x in c.get('environment', []) if x['name'] not in addr] + \
-                       [{'name': k, 'value': v} for k, v in addr.items()]
-    print('RDS secret entries set (RDS_USERNAME, RDS_PASSWORD, RDS_HOST, RDS_PORT, RDS_DBNAME)')
-have = {x['name'] for x in c.get('secrets', [])}
-print('RDS secret in task definition:', 'yes' if {'RDS_USERNAME', 'RDS_PASSWORD'} <= have else 'no')
-for k in ['taskDefinitionArn','revision','status','requiresAttributes','compatibilities',
-          'registeredAt','registeredBy','deregisteredAt']:
-    td.pop(k, None)
-json.dump(td, open('/tmp/taskdef-register.json', 'w'), indent=2)
+    db_c['secrets'] = [x for x in db_c.get('secrets', []) if x['name'] not in want] + \
+                      [{'name': k, 'valueFrom': v} for k, v in want.items()]
+    db_c['environment'] = [x for x in db_c.get('environment', []) if x['name'] not in addr] + \
+                          [{'name': k, 'value': v} for k, v in addr.items()]
+    print(DB_FAMILY + ': RDS secret entries set (RDS_USERNAME, RDS_PASSWORD, RDS_HOST, RDS_PORT, RDS_DBNAME)')
+for td, c in ((main, main_c), (db, db_c)):
+    have = {x['name'] for x in c.get('secrets', [])}
+    print('RDS secret in ' + td['family'] + ':', 'yes' if SECRET_NAMES <= have else 'no')
+json.dump(main, open('/tmp/taskdef-register.json', 'w'), indent=2)
+json.dump(db, open('/tmp/taskdef-db-register.json', 'w'), indent=2)
 EOF
+# The DB family first: ddp-sync uses it only for load and archive, so if the second registration fails the
+# collection tasks are still on the previous image, and the printed rollback undoes the first.
+DB_REV=$(aws ecs register-task-definition --region "$REGION" --cli-input-json file:///tmp/taskdef-db-register.json \
+        --query 'taskDefinition.revision' --output text)
+echo "registered ddp-scrapers-db:$DB_REV (rollback: aws ecs deregister-task-definition --region $REGION --task-definition ddp-scrapers-db:$DB_REV)"
 REV=$(aws ecs register-task-definition --region "$REGION" --cli-input-json file:///tmp/taskdef-register.json \
         --query 'taskDefinition.revision' --output text)
 
-say "DONE: $TAG pushed, task-definition revision $REV registered"
-echo "Tell Claude:   tag $TAG, revision $REV, core $CORE"
+say "DONE: $TAG pushed, task-definition revisions ddp-scrapers:$REV and ddp-scrapers-db:$DB_REV registered"
+echo "Tell Claude:   tag $TAG, revision $REV (db $DB_REV), core $CORE"
 echo "Core check:    cd ~/Developer/repos/ddp-open-states && python3 check-core-pin-drift.py --image $IMG"
 echo "               (fails until both api-v3 copies are rebuilt on core $CORE; RUNBOOK -> api-v3 release)"
 echo "ddp-sync:      EC2's ddp-sync loads cloud scrapes with its own core: rebuild it with DDP_CORE_SHA=$CORE (SYNC-180)"
 echo "Rollback:      aws ecs deregister-task-definition --region $REGION --task-definition ddp-scrapers:$REV"
+echo "               aws ecs deregister-task-definition --region $REGION --task-definition ddp-scrapers-db:$DB_REV"

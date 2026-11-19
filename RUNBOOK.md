@@ -586,8 +586,15 @@ The script does, in order, and stops at the first failure (nothing is live until
    modules import, and one real Utah bill scrapes end to end through `os-update` (catches TLS,
    packaging and import breakage that unit tests can't);
 6. pushes, lists the tasks currently running on the `ddp-scrapers` cluster, and registers a new
-   task-definition revision identical to the live one except for the image tag;
-7. prints the new tag and revision, the openstates-core commit the image carries (OPEN-579; step 5 stops if the
+   task-definition revision identical to the live one except for the image tag, **on both families** (OPEN-639):
+   `ddp-scrapers` (collection and probe tasks) and `ddp-scrapers-db` (load and archive tasks; created from
+   `ddp-scrapers` the first time). Only `ddp-scrapers-db` may carry the database login: with `TASK_RDS_SECRET_ARN`
+   and `TASK_RDS_HOST/PORT/DBNAME` set, the script adds it there (once; later revisions copy it forward), and it
+   refuses to release while `ddp-scrapers` carries any `RDS_*` or `DATABASE_URL` entry. It creates
+   `ddp-scrapers-db` only when AWS answers that it does not exist; any other read failure stops the release. It
+   registers `ddp-scrapers-db` first, so a failure on the second leaves collection on the previous image. It prints
+   which family carries the secret;
+7. prints the new tag and both revisions, the openstates-core commit the image carries (OPEN-579; step 5 stops if the
    image has no record of it), the core pin drift check to run, and the rollback command.
 
 `CONFIRM=1 bash ...` asks before step 6. Re-running after a failed run is safe: it rebuilds, and if the
