@@ -518,6 +518,45 @@ def touch_do_not_retry():
         Path(flag).touch()
 
 
+_RDS_SECRET_ENV = ("RDS_USERNAME", "RDS_PASSWORD")
+_RDS_ADDRESS_ENV = ("RDS_HOST", "RDS_PORT", "RDS_DBNAME")
+
+
+def apply_rds_task_secret(environ=None):
+    """OPEN-633 (D2): builds DATABASE_URL from the task definition's own RDS secret, so ddp-sync
+    no longer has to pass the full connection string (password included) as a launch variable,
+    where it sits in ECS's task start records. The task definition's `secrets` inject
+    RDS_USERNAME/RDS_PASSWORD from the RDS-managed secret (ECS reads it at each task start, so a
+    rotation is picked up by the next task); its `environment` carries the fixed
+    RDS_HOST/RDS_PORT/RDS_DBNAME -- the same split, and the same URL encoding, as ddp-sync's
+    rds_credentials.resolve_rds_database_url() (the secret holds only username/password).
+
+    A DATABASE_URL the launcher passed always wins, and then the secret is not even looked at:
+    the switch is ddp-sync's `cloud_path.fargate.rds_from_task_secret`, which stops passing it.
+    So giving the task definition the secret changes nothing by itself (pm-review: a bad secret
+    must not break running archives before that switch is turned). Returns True when DATABASE_URL
+    was built from the secret, False when one was passed or there is no secret. Raises ValueError
+    (naming only the missing variables, never a value) for a half-configured secret or address
+    with no passed DATABASE_URL -- that must fail loudly, not connect somewhere unintended."""
+    from urllib.parse import quote
+
+    env = os.environ if environ is None else environ
+    if env.get("DATABASE_URL"):
+        return False
+    present = [k for k in _RDS_SECRET_ENV if env.get(k)]
+    if not present:
+        return False
+    missing = [k for k in _RDS_SECRET_ENV + _RDS_ADDRESS_ENV if not env.get(k)]
+    if missing:
+        raise ValueError(f"RDS secret is set but {'/'.join(missing)} is not -- the task "
+                         f"definition must carry all of {'/'.join(_RDS_SECRET_ENV + _RDS_ADDRESS_ENV)}")
+    env["DATABASE_URL"] = (
+        f"postgresql://{quote(env['RDS_USERNAME'], safe='')}:{quote(env['RDS_PASSWORD'], safe='')}"
+        f"@{env['RDS_HOST']}:{env['RDS_PORT']}/{quote(env['RDS_DBNAME'], safe='')}"
+    )
+    return True
+
+
 def _incremental_start_arg(ts_path):
     """Reads a hydrated `.ts` file and returns a `start=<cutoff>` scrape parameter, exactly as
     run-scrape.sh derives INCREMENTAL_FLAG (run-scrape.sh:235-245) -- one hour before the

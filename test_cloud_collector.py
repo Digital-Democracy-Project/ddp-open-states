@@ -1384,3 +1384,41 @@ def test_another_sources_record_is_not_fetched(tmp_path):
     client.objects["dev-open201/ut/_cache/ma_catchup_194.json"] = b"{}"
     mem = cc.S3Memory(client, "bucket", "dev-open201")
     assert mem.hydrate_cache("ut", str(tmp_path), cc._catchup_glob("ut")) == []
+
+
+# ── OPEN-633 (D2): DATABASE_URL from the task definition's RDS secret ──────────────────────
+
+_RDS_SECRET = {"RDS_USERNAME": "load@user", "RDS_PASSWORD": "p:w/d@%x",
+               "RDS_HOST": "db.example.internal", "RDS_PORT": "5432", "RDS_DBNAME": "open states"}
+# Written out by hand (not built by the code under test): each reserved character percent-encoded.
+_RDS_SECRET_URL = "postgresql://load%40user:p%3Aw%2Fd%40%25x@db.example.internal:5432/open%20states"
+
+
+def test_rds_task_secret_builds_an_encoded_database_url_when_none_is_passed():
+    env = dict(_RDS_SECRET)
+    assert cc.apply_rds_task_secret(env) is True
+    assert env["DATABASE_URL"] == _RDS_SECRET_URL
+
+
+def test_a_passed_database_url_wins_so_adding_the_secret_alone_changes_nothing():
+    """pm-review: the task definition gaining the secret must not switch running archives over by itself; the switch
+    is ddp-sync no longer passing DATABASE_URL (rds_from_task_secret)."""
+    env = dict(_RDS_SECRET, DATABASE_URL="postgresql://passed-by-launcher/db")
+    assert cc.apply_rds_task_secret(env) is False
+    assert env["DATABASE_URL"] == "postgresql://passed-by-launcher/db"
+
+
+def test_without_the_rds_task_secret_nothing_is_set():
+    env = {"RDS_HOST": "h"}
+    assert cc.apply_rds_task_secret(env) is False
+    assert "DATABASE_URL" not in env
+
+
+@pytest.mark.parametrize("missing", ["RDS_USERNAME", "RDS_PASSWORD", "RDS_HOST", "RDS_PORT", "RDS_DBNAME"])
+def test_a_half_configured_secret_refuses_and_never_shows_the_password(missing):
+    env = {k: v for k, v in _RDS_SECRET.items() if k != missing}
+    with pytest.raises(ValueError) as exc:
+        cc.apply_rds_task_secret(env)
+    assert missing in str(exc.value)
+    assert _RDS_SECRET["RDS_PASSWORD"] not in str(exc.value)
+    assert "DATABASE_URL" not in env

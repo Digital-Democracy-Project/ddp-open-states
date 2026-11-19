@@ -98,6 +98,8 @@
 # scrape.cadence_escalation, scrape.fargate_max_wait_s (null = ddp-sync's shared Fargate wait), waf.scrapebot_fallback and
 # enrollment.broker_bill_event_signal, plus scrape.timeout_s / archive.timeout_s and the cloud_path, embedding,
 # search_refresh and legbot_replica enrollments. ddp-sync's global switches (`enabled`) and numbers stay in its own file.
+# OPEN-633 (2026-11-19): scrape.load_on_fargate -- true makes ddp-sync run this state's load as a Fargate task of the
+# scrapers image (cloud_loader.py) instead of in its own container; false (every state at first) keeps the local load.
 #
 # Every value below was pulled from the real running config on 2026-08-30, not guessed:
 #   - scrape.timeout_s / archive.timeout_s: ddp-sync's SCRAPE_TIMEOUT_S / ARCHIVE_TIMEOUT_S dicts
@@ -158,6 +160,7 @@ us:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -216,6 +219,7 @@ fl:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -273,6 +277,7 @@ wa:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -329,6 +334,7 @@ va:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -388,6 +394,7 @@ mi:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -446,6 +453,7 @@ ut:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: 3         # OPEN-555: tries at le.utah.gov's session list (scrapers/ut/__init__.py, OPEN-106)
     session_list_backoff_s: 2        # OPEN-555: seconds times the attempt number between tries
   archive:
@@ -501,6 +509,7 @@ az:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -571,6 +580,7 @@ ma:
     retry: true                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: 86400           # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds (OPEN-476: 24 h, Ramon 2026-11-01)
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -638,6 +648,7 @@ nc:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -703,6 +714,7 @@ al:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -761,6 +773,7 @@ pa:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -816,6 +829,7 @@ ne:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -871,6 +885,7 @@ la:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -926,6 +941,7 @@ ga:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -982,6 +998,7 @@ nv:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -1038,6 +1055,7 @@ or:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
@@ -1094,6 +1112,7 @@ nm:
     retry: false                   # SYNC-157: bounded retry (never with a WAF)
     cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
     fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:

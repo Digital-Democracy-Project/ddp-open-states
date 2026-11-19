@@ -6,6 +6,9 @@
 #
 #   bash deploy-scrapers-image.sh              # verifies, pushes, then registers the new revision
 #   CONFIRM=1 bash deploy-scrapers-image.sh    # same, but asks before the one step that goes live
+#   TASK_RDS_SECRET_ARN=<arn> TASK_RDS_HOST=<host> TASK_RDS_PORT=5432 TASK_RDS_DBNAME=<db> \
+#     bash deploy-scrapers-image.sh            # OPEN-633: also gives the task definition the RDS secret
+#                                              # (once; later revisions copy it forward)
 #
 # Stops at the first failed check. Nothing goes live until the final register step.
 set -euo pipefail
@@ -95,6 +98,27 @@ td = json.load(open('/tmp/taskdef-current.json'))
 c = td['containerDefinitions'][0]
 print('previous image:', c['image'])
 c['image'] = c['image'].rsplit(':', 1)[0] + ':' + os.environ['TAG']
+# OPEN-633 (D2): the load and archive tasks read the RDS login from the task definition's own
+# secret instead of a DATABASE_URL launch variable. Every revision is copied from the current one,
+# so once these entries exist they carry forward on every later image. They are added (or
+# replaced) only when TASK_RDS_SECRET_ARN is given, together with the three fixed address values.
+# The execution role must already be allowed to read that secret (an IAM step, done first).
+arn = os.environ.get('TASK_RDS_SECRET_ARN', '')
+if arn:
+    addr = {k: os.environ.get('TASK_' + k, '') for k in ('RDS_HOST', 'RDS_PORT', 'RDS_DBNAME')}
+    missing = [k for k, v in addr.items() if not v]
+    if missing:
+        raise SystemExit('TASK_RDS_SECRET_ARN is set but TASK_' + '/TASK_'.join(missing) + ' is not')
+    if not td.get('executionRoleArn'):
+        raise SystemExit('the task definition has no execution role, so ECS cannot read the secret')
+    want = {'RDS_USERNAME': arn + ':username::', 'RDS_PASSWORD': arn + ':password::'}
+    c['secrets'] = [x for x in c.get('secrets', []) if x['name'] not in want] + \
+                   [{'name': k, 'valueFrom': v} for k, v in want.items()]
+    c['environment'] = [x for x in c.get('environment', []) if x['name'] not in addr] + \
+                       [{'name': k, 'value': v} for k, v in addr.items()]
+    print('RDS secret entries set (RDS_USERNAME, RDS_PASSWORD, RDS_HOST, RDS_PORT, RDS_DBNAME)')
+have = {x['name'] for x in c.get('secrets', [])}
+print('RDS secret in task definition:', 'yes' if {'RDS_USERNAME', 'RDS_PASSWORD'} <= have else 'no')
 for k in ['taskDefinitionArn','revision','status','requiresAttributes','compatibilities',
           'registeredAt','registeredBy','deregisteredAt']:
     td.pop(k, None)

@@ -17,7 +17,7 @@ from botocore.exceptions import ClientError
 
 sys.path.insert(0, os.path.dirname(__file__))
 import cloud_archiver as ca
-from test_cloud_collector import FakeS3Client
+from test_cloud_collector import _RDS_SECRET, _RDS_SECRET_URL, FakeS3Client
 
 
 # ── parse_summary_line: the one place this file reads the archiver's own output ────────────
@@ -278,3 +278,35 @@ def test_main_unhandled_exception_still_releases_the_lock(tmp_path, monkeypatch,
     lock = ca.SourceLock(client, "bucket", "dev-open192", holder="next-attempt",
                           suffix="_archive_lock")
     assert lock.acquire("fl") is True
+
+
+# ── OPEN-633 (D2): the login comes from the task definition's RDS secret ────────────────────
+
+def test_archive_hands_os_text_extract_the_database_url_built_from_the_task_secret(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open633")
+    monkeypatch.delenv("DATABASE_URL", raising=False)  # ddp-sync passes none (rds_from_task_secret)
+    for k, v in _RDS_SECRET.items():
+        monkeypatch.setenv(k, v)
+    seen = tmp_path / "seen_url.txt"
+    monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(
+        tmp_path, expect_env_var="DATABASE_URL", env_var_file=seen))
+    assert ca.main(["fl", "session=2026E"], s3_client=FakeS3Client()) == 0
+    assert seen.read_text() == _RDS_SECRET_URL
+
+
+def test_archive_refuses_when_the_task_secret_has_no_address(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open633")
+    for k, v in _RDS_SECRET.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.delenv("RDS_DBNAME")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    ran = tmp_path / "ran.txt"
+    monkeypatch.setenv("OS_TEXT_EXTRACT", _fake_os_text_extract(
+        tmp_path, expect_env_var="MEMORY_BUCKET", env_var_file=ran))
+    assert ca.main(["fl"], s3_client=FakeS3Client()) == 1
+    assert not ran.exists()
+    out = capsys.readouterr()
+    assert json.loads(out.out.strip().splitlines()[-1])["status"] == "failed"
+    assert _RDS_SECRET["RDS_PASSWORD"] not in out.out + out.err

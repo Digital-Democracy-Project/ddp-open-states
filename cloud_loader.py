@@ -22,6 +22,10 @@ Environment:
     WORKING_TIER_PREFIX    Prefix for raw run output within MEMORY_BUCKET (default
                            "working-tier", matching cloud_collector.py)
     OS_UPDATE              The os-update binary to invoke (default "os-update")
+    DATABASE_URL           Read by os-update itself (Django). OPEN-633: when the launcher passes
+                           none, built from the task definition's RDS secret
+                           (RDS_USERNAME/RDS_PASSWORD + RDS_HOST/RDS_PORT/RDS_DBNAME;
+                           cloud_collector.apply_rds_task_secret)
 
 The handoff contract (PLAN-scraper-execution-migration.md SS3): a run is only ever consumed
 from the manifest cloud_collector.py wrote LAST, after every object it names was already
@@ -65,6 +69,7 @@ from cloud_collector import (
     LockUnavailable,
     S3Memory,
     SourceLock,
+    apply_rds_task_secret,
     derive_scrape_key,
     parse_kv_args,
 )
@@ -242,6 +247,15 @@ def main(argv, s3_client=None):
 
     session = params.get("session")
     scrape_key = derive_scrape_key(source, params)
+
+    # OPEN-633 (D2): when ddp-sync passes no DATABASE_URL, the database login comes from the task definition's secret;
+    # os-update (Django) reads the DATABASE_URL this sets.
+    try:
+        apply_rds_task_secret()
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        emit_completion_record(status="failed", source=source, run_id=run_id, session=session)
+        return 1
 
     try:
         bucket = os.environ["MEMORY_BUCKET"]

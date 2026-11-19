@@ -28,7 +28,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(__file__))
 import cloud_loader as cl
-from test_cloud_collector import FakeS3Client
+from test_cloud_collector import _RDS_SECRET, _RDS_SECRET_URL, FakeS3Client
 
 
 def _seed_manifest(client, prefix, source, run_id, objects, *, manifest_run_id=None,
@@ -353,3 +353,56 @@ def test_fails_cleanly_when_memory_bucket_is_not_set(monkeypatch, capsys):
     assert rc == 1
     mock_popen.assert_not_called()
     assert "MEMORY_BUCKET is required" in capsys.readouterr().err
+
+
+# ── OPEN-633 (D2): the login comes from the task definition's RDS secret ────────────────────
+
+def test_load_hands_os_update_the_database_url_built_from_the_task_secret(env, monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)  # ddp-sync passes none (rds_from_task_secret)
+    for k, v in _RDS_SECRET.items():
+        monkeypatch.setenv(k, v)
+    client = FakeS3Client()
+    _seed_manifest(client, "prod", "mi", "mi-run1", [])
+    seen = {}
+
+    def fake_popen(cmd, **kwargs):
+        seen["url"] = (kwargs.get("env") or os.environ).get("DATABASE_URL")
+        return _fake_proc(returncode=0)
+
+    with patch("cloud_loader.subprocess.Popen", side_effect=fake_popen):
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 0
+    assert seen["url"] == _RDS_SECRET_URL
+
+
+def test_load_refuses_before_importing_when_the_task_secret_has_no_address(env, monkeypatch, capsys):
+    for k, v in _RDS_SECRET.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.delenv("RDS_HOST")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    client = FakeS3Client()
+    _seed_manifest(client, "prod", "mi", "mi-run1", [])
+    with patch("cloud_loader.subprocess.Popen") as mock_popen:
+        rc = cl.main(["mi", "mi-run1"], s3_client=client)
+    assert rc == 1
+    mock_popen.assert_not_called()
+    out = capsys.readouterr()
+    assert json.loads(out.out.strip().splitlines()[-1])["status"] == "failed"
+    assert _RDS_SECRET["RDS_PASSWORD"] not in out.out + out.err
+
+
+def test_load_keeps_the_passed_database_url_while_ddp_sync_still_passes_one(env, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://passed-by-launcher/db")
+    for k, v in _RDS_SECRET.items():
+        monkeypatch.setenv(k, v)
+    client = FakeS3Client()
+    _seed_manifest(client, "prod", "mi", "mi-run1", [])
+    seen = {}
+
+    def fake_popen(cmd, **kwargs):
+        seen["url"] = (kwargs.get("env") or os.environ).get("DATABASE_URL")
+        return _fake_proc(returncode=0)
+
+    with patch("cloud_loader.subprocess.Popen", side_effect=fake_popen):
+        assert cl.main(["mi", "mi-run1"], s3_client=client) == 0
+    assert seen["url"] == "postgresql://passed-by-launcher/db"

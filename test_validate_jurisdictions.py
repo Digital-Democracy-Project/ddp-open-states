@@ -33,6 +33,7 @@ def _valid_entry():
             "retry": False,
             "cadence_escalation": True,
             "fargate_max_wait_s": None,
+            "load_on_fargate": False,
             "session_list_attempts": None,
             "session_list_backoff_s": None,
         },

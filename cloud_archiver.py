@@ -90,7 +90,9 @@ Environment:
 
 DATABASE_URL / DATABASE_URL_OVERRIDE are read by `os-text-extract` itself (Django), not by this
 file -- whatever the container's own environment already points at (RDS, in production) is what
-gets archived from. This file never touches the database directly.
+gets archived from. This file never touches the database directly. OPEN-633: when the task
+definition carries the RDS secret (RDS_USERNAME/RDS_PASSWORD plus RDS_HOST/RDS_PORT/RDS_DBNAME),
+main() builds DATABASE_URL from it when the launcher passed none (cloud_collector.apply_rds_task_secret).
 
 Credentials come from boto3's default chain -- an env-var access key here, an ECS task role in
 the cloud, matching cloud_collector.py's own "role-based" framing exactly.
@@ -116,6 +118,7 @@ from cloud_collector import (
     _MI_WAF_COOKIE_GLOB,
     _MI_WAF_COOKIE_MIN_FRESHNESS_SECONDS,
     _mi_waf_cookies_are_fresh,
+    apply_rds_task_secret,
     touch_do_not_retry,
 )
 
@@ -213,6 +216,16 @@ def main(argv, s3_client=None):
         return 1
 
     session = params.get("session")
+
+    # OPEN-633 (D2): when ddp-sync passes no DATABASE_URL, the database login comes from the task definition's secret;
+    # os-text-extract (Django) reads the DATABASE_URL this sets (archive_env copies
+    # os.environ).
+    try:
+        apply_rds_task_secret()
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        emit_completion_record(status="failed", source=state, run_id=run_id, session=session)
+        return 1
 
     try:
         bucket = os.environ["MEMORY_BUCKET"]

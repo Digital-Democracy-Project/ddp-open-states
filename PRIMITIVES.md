@@ -215,6 +215,17 @@ should reuse rather than reimplement:
   key with a `../` component, a doubled slash, or an empty/`.`/`..`-only relative path is refused
   before ever being resolved against the staging directory, because the failure mode of getting
   this wrong is writing outside it.
+  **OPEN-633 (2026-11-19): it is also in the scrapers image** (`RUNNER_SCRIPT=cloud_loader.py`, command
+  `<state> <run_id> [session=...]`), so ddp-sync can run the load as a Fargate task per state
+  (`scrape.load_on_fargate`, below) instead of with its own copy of openstates-core. The loader itself is unchanged.
+- **`apply_rds_task_secret()` (`cloud_collector.py`, OPEN-633, 2026-11-19)** — the one place a Fargate runner builds
+  `DATABASE_URL` from the task definition's RDS secret (`RDS_USERNAME`/`RDS_PASSWORD` from `secrets`,
+  `RDS_HOST`/`RDS_PORT`/`RDS_DBNAME` from `environment`; URL-encoded exactly as ddp-sync's
+  `rds_credentials.resolve_rds_database_url()`). `cloud_loader.py` and `cloud_archiver.py` call it first. A
+  `DATABASE_URL` the launcher passed always wins, so giving the task definition the secret changes nothing by itself;
+  the switch is ddp-sync's `cloud_path.fargate.rds_from_task_secret`, which stops passing it. With none passed, a
+  half-configured secret or address refuses (the error names only the missing variables). `deploy-scrapers-image.sh` adds the entries when run with `TASK_RDS_SECRET_ARN` + `TASK_RDS_HOST/PORT/DBNAME`
+  and copies them forward on every later revision. **Do not add a second DSN builder in a runner**; call this.
 - **The cross-machine locks (OPEN-187/OPEN-203, 2026-08-29)** — `SourceLock`
   (`cloud_collector.py`) and its bash mirror, `scraper_memory_acquire_lock`/`_release_lock`
   (`scraper-memory.sh`), replace the old `/tmp`-local `mkdir` locks (OPEN-154's scrape lock, and
@@ -1796,6 +1807,9 @@ scope line was deliberate, not an oversight.
   true` for a state whose `waf.profile` is not `none`**, which replaces ddp-sync's `jurisdictions_excluded: [mi]`, OPEN-53),
   `scrape.cadence_escalation` (true everywhere), `scrape.fargate_max_wait_s` (ma 86400, else null = ddp-sync's shared 12 h),
   `waf.scrapebot_fallback` (mi; ddp-sync's scrape and archive both read it) and `enrollment.broker_bill_event_signal` (none).
+  **OPEN-633 adds an eighth, `scrape.load_on_fargate`** (false everywhere at first): true makes ddp-sync run that
+  state's load as a Fargate task of the scrapers image instead of locally; flipped one state at a time, and removed with
+  the local path once every state is on Fargate (ddp-infra `PLAN-cloud-load-on-fargate.md`).
   ddp-sync also reads `scrape.timeout_s` / `archive.timeout_s` here now (it deleted `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S`),
   and the `cloud_path`, `embedding`, `search_refresh` and `legbot_replica` enrollments with no copy of its own.
   `new-jurisdiction` writes the opt-ins false, `cadence_escalation: true` and a null wait. The drift check compares these
