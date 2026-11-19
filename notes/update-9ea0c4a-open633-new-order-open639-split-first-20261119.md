@@ -8,11 +8,11 @@ ECS hands a task definition's secrets to **every** task started from it. The RDS
 * `ddp-scrapers-db`: load and archive tasks, the only one that may carry it.
 
 ## The new order (each step on its own go, each with its check)
-1. **Merge OPEN-639:** ddp-open-states #430 (the deploy script) and ddp-sync #301 (load and archive launch from `task_definition_db`). Merging changes nothing live.
-2. **Image release with #430's script (Ramon, on the Mac), without `TASK_RDS_*`.**
+1. **OPEN-639, ddp-open-states #430 (the deploy script): merged** as `fce11e13` (11-19). ddp-sync **#301 stays unmerged** until step 2's check passes. Once #301 is on main, any ddp-sync rebuild (the BROKER-537/541 switch-on is queued) would make the nightly archives fail until `ddp-scrapers-db` exists. The PM merges #301 after step 2.
+2. **Image release with #430's script (Ramon, on the Mac), without `TASK_RDS_*`.** This is the next image (v71 expected), built from ddp-open-states main at or after `fce11e13`.
    * It registers the image on `ddp-scrapers` and creates `ddp-scrapers-db` from it.
    * **Check:** `aws ecs describe-task-definition --task-definition ddp-scrapers-db` exists, has the same image, and shows no secrets. The script prints `RDS secret in ddp-scrapers: no` and `RDS secret in ddp-scrapers-db: no`.
-3. **ddp-sync at #301's merge on EC2 (prod agent), only after step 2's check.** Use the same build-and-recreate procedure as Part C, `DDP_CORE_SHA` unchanged unless the image's core changed.
+3. **#301 merged (PM), then ddp-sync at that merge on EC2 (prod agent), only after step 2's check.** Use the same build-and-recreate procedure as Part C, `DDP_CORE_SHA` unchanged unless the image's core changed.
    * Before step 2, every archive would fail at launch, with an alert.
    * **Check:** the next archive run's `run_task` names `ddp-scrapers-db`, and the next scrape's collection names `ddp-scrapers`.
 4. **Part A, the IAM grant (Ramon, in the console):** `secretsmanager:GetSecretValue` on the one RDS secret, for the execution role.
