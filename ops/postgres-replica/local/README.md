@@ -682,7 +682,8 @@ timeout expired`, then `RECOVERED` 5 to 45 minutes later, several times a day; t
 succeeds and the WireGuard watchdog (`/var/log/wireguard.log`) keeps reaching its gateway.
 
 **Cause (found 2026-11-18).** RDS lives in the AWS default VPC, `172.31.0.0/16`. Docker inside Colima hands out bridge
-networks from `172.17.0.0/16` to `172.31.0.0/16` (no `default-address-pools` is set in `~/.colima/default/colima.yaml`).
+networks from `172.17.0.0/16` to `172.31.0.0/16` unless `default-address-pools` says otherwise; it was not set in
+`~/.colima/default/colima.yaml` until 2026-11-18 (see the fix below).
 By 2026-11-16 long-lived networks held `172.17` to `172.30`, so a short-lived network (a test stack) could be given
 `172.31.0.0/16`. While it exists, the Colima VM routes RDS's address to that local bridge, so everything that reaches
 RDS from **inside a container** (the subscription, `sync-structure.sh`, `compare-schema.sh`) times out; when the test
@@ -702,11 +703,17 @@ docker network ls -q | xargs docker network inspect -f '{{.Name}} {{range .IPAM.
 ```
 
 **Do not probe RDS with `docker exec ddp-openstates-postgres-1 bash -c 'timeout ... </dev/tcp/...'`.** During this
-investigation, running that every ~25 s while connects were timing out coincided with 21 Postgres crash recoveries in
-10 minutes (2026-11-18, 22:26 to 22:36 UTC: `server process (PID ...) was terminated by signal 13: Broken pipe`, then
+investigation, running that every ~25 s while connects were timing out coincided with 24 Postgres crash recoveries in
+11 minutes (2026-11-18, 22:26:49 to 22:37:44 UTC: `server process (PID ...) was terminated by signal 13: Broken pipe`, then
 `terminating any other active server processes`, which ends every open session); they stopped when the probe stopped.
 The likely reason is that Postgres is PID 1 in that container and adopts the probe's leftover process. Use the two
 commands above instead.
 
 No data loss was seen in November 2026: RDS keeps the WAL for the subscription's slot and the subscription caught
-up after each drop. The fix (keeping Docker off `172.31.0.0/16`) is its own ticket; see OPEN-636 for the evidence.
+up after each drop. See OPEN-636 for the evidence.
+
+**Fix (applied 2026-11-18 23:56 UTC, AGENTS-248 / ddp-agents #469):** Colima's Docker now hands out networks from
+`10.200.0.0/16` in /24s (`docker.default-address-pools` in `~/.colima/default/colima.yaml`), so no container network
+can take `172.31.0.0/16` again. Check it with `docker info --format '{{json .DefaultAddressPools}}'`, which should
+show `[{"Base":"10.200.0.0/16","Size":24}]`. The older empty networks still hold `172.17` to `172.30`; they are
+harmless. If the symptom ever comes back, run the two checks above first.
