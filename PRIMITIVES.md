@@ -15,8 +15,8 @@ type: reference
 > **State rules (OPEN-537).** A state's data rules (action order, action and bill labels, vote names,
 > version stages, text clean-up) live in the openstates-scrapers and openstates-core forks, not in
 > this repo's scripts and not downstream: parsing and the motion YAML in the scrapers fork,
-> normalizing in core (today `version_ordering` and the `text_extract` cleaners and readers; later
-> one file per state in `openstates/ddp_states/`), and per-state values in `jurisdictions.yaml`. See
+> normalizing in core (one file per state in `openstates/ddp_states/<st>.py`: its labels, cleaner, reader
+> choice and version rules, OPEN-554), and per-state values in `jurisdictions.yaml`. See
 > ddp-infra `PLAN-state-specific-handling.md` §4.2 (§4.1 is the contract the data must meet).
 
 Everything DDP-owned in this repo lives at the root (shell scripts + a few Python tools) plus
@@ -868,6 +868,16 @@ functions, layered on top of the ordering work above rather than changing it.
   cur_media_type)`. **This is not the OPEN-121 registry migration below** — the dispatch is
   still the same `if jurisdiction_name == "Washington": ...` conditional chain, just
   consolidated into one function instead of duplicated across two; see that section's note.
+  **OPEN-554 (2026-11-19) replaced the chain:** each state's cleaner is `clean_text` in openstates-core
+  `openstates/ddp_states/<st>.py` (the helpers moved with it, unchanged; their old names stay importable
+  from `text_extract`), and `apply_prediff_cleaning` looks it up by the state's name (`state_rule_for_name`).
+  The same move put each state's reader choice (`readers()`, replacing upstream's entry in
+  `fulltext.CONVERSION_FUNCTIONS`) and version rules (`PROCEDURAL_DOCUMENT_NOTES`,
+  `PROCEDURAL_DOCUMENT_NOTE_PATTERN`, `REAL_MEASURE_TITLE_PATTERN`, `AMENDMENT_TEXT_OPENING`, the
+  `NON_BILL_*` rules, `VERSION_ORDER`, `AMENDMENTS_BY_DOCUMENT_NUMBER`) in the same file; `version_ordering`
+  builds its old tables (same names, same keys) from them with `state_values_by_name`. Where this file names a
+  table in `utils/version_ordering.py` below, the entry itself now lives in the state's file. **Do not** add a
+  state's rule to a generic file again: add the function or constant to its file.
 
 - **OPEN-487 — an archive file name is capped at 200 bytes, and every document the run could not save is named.**
   `_archive_path()` builds `<date>-<note>-<url hash>.<ext>`; the readable note part is the only thing trimmed, and only when
@@ -1243,8 +1253,8 @@ functions, layered on top of the ordering work above rather than changing it.
   * **The rule:** `classify_action(*, description, classification, chamber, date)` and
     `classify_bill(*, identifier, title, classification)` in openstates-core `openstates/ddp_states/<state>.py`. Each
     returns the whole label list and must give the same answer on its own output; `state_rule(state, name)` in
-    `openstates/ddp_states/__init__.py` finds it. **No state module exists yet** (OPEN-545, OPEN-547 to 552 add them);
-    a state without one is refused. **Do not** put a state's label rule anywhere else (a second table, the broker, a
+    `openstates/ddp_states/__init__.py` finds it (state modules: OPEN-545, OPEN-547 to 552; OPEN-554 moved the
+    cleaners, reader choices and version rules into the same files). A state without a label rule is refused. **Do not** put a state's label rule anywhere else (a second table, the broker, a
     script).
   * **No scraper calls `ddp_states` yet (2026-11-17, OPEN-615).** The scraper is meant to call the same function on
     what it parses; wiring the state's scraper is an acceptance line of each state's ticket. A state relabelled before
@@ -1902,7 +1912,10 @@ scope line was deliberate, not an oversight.
   that dispatch directly, an AST walk of `apply_prediff_cleaning()` rather than a second hand-kept
   table, and fail when a manifest value disagrees with it in either direction. CI's `validate` job
   now checks out `openstates-core` and passes `--require-openstates-core`, same as it already does
-  for `ddp-sync`. **Coupled to the current if-chain shape on purpose** (see "Per-jurisdiction
+  for `ddp-sync`. **OPEN-554:** once openstates-core keeps the cleaners in `openstates/ddp_states/<st>.py`, the
+  check reads each file's `clean_text` instead (`ddp_states_cleaner_table`, keyed by the file's state code; the
+  old if-chain is still read while core has no such file, so either repository's change can land first).
+  **Coupled to the current if-chain shape on purpose** (see "Per-jurisdiction
   configuration" -> OPEN-121 below): if that dispatch is ever migrated to a registry, this
   extractor needs updating in the same change, not quietly left to pass by checking nothing. **Not
   yet extended** to the procedural-document stage table in `utils/version_ordering.py` (also keyed

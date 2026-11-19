@@ -24,7 +24,8 @@ What it compares, each as a SET of jurisdiction codes (or a per-code value) agai
                       Its openstates_scrape.timing says only WHEN (OPEN-124), and a timing entry for a state the
                       manifest does not scrape is drift.
 
-  openstates-core (optional, OPEN-462) openstates/cli/text_extract.py's apply_prediff_cleaning(): its
+  openstates-core (optional, OPEN-462) openstates/cli/text_extract.py's apply_prediff_cleaning() (or, since
+                      OPEN-554, each openstates/ddp_states/<state>.py's clean_text()): its
                       `if jurisdiction_name == "<name>":` dispatch is parsed directly (an AST walk, not a
                       second hand-kept table here) into {jurisdiction name: cleaner name}, then compared
                       against every manifest entry's quality.diff_cleaner (its own `name` field maps a code
@@ -245,6 +246,49 @@ def diff_cleaner_table(path):
             )
         table[name] = called.pop()[1:]
     return table
+
+
+def ddp_states_cleaner_table(core_root):
+    """{state code: cleaner name} from openstates-core's per-state files (OPEN-554): since that ticket each state's
+    pre-diff cleaner is `clean_text` in `openstates/ddp_states/<code>.py`, and apply_prediff_cleaning() only looks it
+    up. Read from the AST, as the old dispatch was: `clean_text` must call exactly one underscored cleaner, and the
+    manifest value is that function's name without its leading underscore (`_clean_nc_text` -> `clean_nc_text`). A
+    state without a file, or a file without `clean_text`, is not in the table (the expected value "none"); files whose
+    name starts with "_" are shared helpers, not states."""
+    folder = os.path.join(core_root, "openstates", "ddp_states")
+    table = {}
+    for name in sorted(os.listdir(folder)):
+        if not name.endswith(".py") or name.startswith("_"):
+            continue
+        path = os.path.join(folder, name)
+        tree = ast.parse(_read(path), filename=path)
+        fn = next((n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "clean_text"), None)
+        if fn is None:
+            continue
+        called = {
+            inner.func.id
+            for inner in ast.walk(fn)
+            if isinstance(inner, ast.Call) and isinstance(inner.func, ast.Name) and inner.func.id.startswith("_")
+        }
+        if len(called) != 1:
+            raise SourceError(
+                f"{path}: clean_text() calls {len(called)} distinct cleaner function(s) ({sorted(called)}); expected exactly one"
+            )
+        table[name[:-3]] = called.pop()[1:]
+    return table
+
+
+def core_has_ddp_states_cleaners(core_root):
+    """True once openstates-core keeps its cleaners in per-state files (OPEN-554), False while they are still the
+    if-chain in apply_prediff_cleaning() (OPEN-462). Both layouts are read, so this check passes whichever of the two
+    repositories' changes lands first."""
+    folder = os.path.join(core_root, "openstates", "ddp_states")
+    if not os.path.isdir(folder):
+        return False
+    return any(
+        name.endswith(".py") and not name.startswith("_") and "def clean_text(" in _read(os.path.join(folder, name))
+        for name in os.listdir(folder)
+    )
 
 
 def sync_yaml(root):
@@ -540,12 +584,17 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
 
     if openstates_core_root:
         try:
-            table = diff_cleaner_table(os.path.join(openstates_core_root, "openstates", "cli", "text_extract.py"))
+            if core_has_ddp_states_cleaners(openstates_core_root):
+                by_code = ddp_states_cleaner_table(openstates_core_root)
+                source = "openstates-core openstates/ddp_states/<state>.py clean_text()"
+                want = {code: by_code.get(code, "none") for code in manifest}
+            else:
+                table = diff_cleaner_table(os.path.join(openstates_core_root, "openstates", "cli", "text_extract.py"))
+                source = "openstates-core text_extract.py apply_prediff_cleaning()"
+                want = {code: table.get(entry["name"], "none") for code, entry in manifest.items()}
         except SourceError as exc:
             errors.append(str(exc))
         else:
-            source = "openstates-core text_extract.py apply_prediff_cleaning()"
-            want = {code: table.get(entry["name"], "none") for code, entry in manifest.items()}
             have = {code: entry["quality"]["diff_cleaner"] for code, entry in manifest.items()}
             bad = {c: (want[c], have[c]) for c in want if want[c] != have[c]}
             if bad:

@@ -723,3 +723,78 @@ def test_after_sync_157_the_deleted_timeout_tables_are_skipped(world):
                "DEFAULT_TIMEOUT_S = 6 * 3600  # the per-state ceilings are the manifest's\n")
     code, out = _run(world)
     assert code == 0, out
+
+
+# ---------------------------------------------------------------------------------------------------
+# OPEN-554: the cleaners moved to openstates-core's openstates/ddp_states/<state>.py (`clean_text`); the
+# check reads that layout once it exists, and the old if-chain until then.
+# ---------------------------------------------------------------------------------------------------
+
+DDP_STATES_TEXT_EXTRACT_PY = '''
+def apply_prediff_cleaning(prior_text, raw_text, *, jurisdiction_name, is_bill, prior_media_type, cur_media_type):
+    clean_text = state_rule_for_name(jurisdiction_name, "clean_text")
+    if clean_text is None:
+        return prior_text, raw_text
+    return clean_text(prior_text, raw_text, is_bill=is_bill, prior_media_type=prior_media_type,
+                      cur_media_type=cur_media_type)
+'''
+
+
+def _state_file(cleaner):
+    return (
+        "import typing\n\n\ndef classify_action(**kw):\n    return []\n\n\n"
+        "def clean_text(prior_text, raw_text, *, is_bill, prior_media_type, cur_media_type):\n"
+        f"    return {cleaner}(prior_text), {cleaner}(raw_text)\n"
+    )
+
+
+@pytest.fixture
+def ddp_states_core(core_root):
+    """openstates-core after OPEN-554: no if-chain; nc and al each have a file with clean_text, plus a shared helper
+    file and a state file with no cleaner."""
+    _write(os.path.join(core_root, CORE_TEXT_EXTRACT_RELPATH), DDP_STATES_TEXT_EXTRACT_PY)
+    folder = os.path.join(core_root, "openstates", "ddp_states")
+    _write(os.path.join(folder, "__init__.py"), "def state_rule_for_name(name, rule):\n    return None\n")
+    _write(os.path.join(folder, "_text.py"), "def clean_text(a, b, **kw):\n    return _x(a), _y(b)\n")
+    _write(os.path.join(folder, "nc.py"), _state_file("_clean_nc_text"))
+    _write(os.path.join(folder, "al.py"), _state_file("_clean_al_text"))
+    _write(os.path.join(folder, "ut.py"), "def classify_action(**kw):\n    return []\n")
+    return core_root
+
+
+def test_per_state_files_matching_the_manifest_pass(world, ddp_states_core):
+    code, out = _run(world, with_sync=False, core=ddp_states_core)
+    assert code == 0, out
+
+
+def test_a_renamed_cleaner_in_a_state_file_is_drift(world, ddp_states_core):
+    path = os.path.join(ddp_states_core, "openstates", "ddp_states", "al.py")
+    _write(path, open(path).read().replace("_clean_al_text", "_clean_alabama_text_v2"))
+    code, out = _run(world, with_sync=False, core=ddp_states_core)
+    assert code == 1, out
+    assert "al: code dispatches to 'clean_alabama_text_v2', manifest says 'clean_al_text'" in out
+    assert "ddp_states" in out
+
+
+def test_a_state_file_losing_its_cleaner_is_drift(world, ddp_states_core):
+    _write(os.path.join(ddp_states_core, "openstates", "ddp_states", "nc.py"), "def classify_action(**kw):\n    return []\n")
+    code, out = _run(world, with_sync=False, core=ddp_states_core)
+    assert code == 1, out
+    assert "nc: code dispatches to 'none', manifest says 'clean_nc_text'" in out
+
+
+def test_a_manifest_none_for_a_state_with_a_cleaner_file_is_drift(world, ddp_states_core):
+    data = yaml.safe_load(open(world[2]))
+    data["nc"]["quality"]["diff_cleaner"] = "none"
+    _write(world[2], yaml.safe_dump(data))
+    code, out = _run(world, with_sync=False, core=ddp_states_core)
+    assert code == 1, out
+    assert "nc: code dispatches to 'clean_nc_text', manifest says 'none'" in out
+
+
+def test_a_state_cleaner_calling_two_cleaners_is_an_error(world, ddp_states_core):
+    path = os.path.join(ddp_states_core, "openstates", "ddp_states", "al.py")
+    _write(path, open(path).read().replace("_clean_al_text(raw_text)", "_clean_other_text(raw_text)"))
+    code, out = _run(world, with_sync=False, core=ddp_states_core)
+    assert code == 2, out
+    assert "2 distinct cleaner" in out
