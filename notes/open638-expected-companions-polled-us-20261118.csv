@@ -1,0 +1,100 @@
+congress,bill,related_congress,related_bill,congress_gov_types
+118,HJRES 109,118,SJRES 59,Identical bill
+118,HJRES 98,118,SJRES 49,Identical bill
+118,HR 2925,118,S 1281,Identical bill
+118,HR 2964,118,S 1350,Identical bill
+118,HR 3019,118,HR 3019,Identical bill
+118,HR 3019,118,S 1401,Identical bill
+118,HR 3397,118,S 1435,Identical bill
+118,HR 3507,118,S 1688,Identical bill
+118,HR 4143,118,S 4446,Identical bill
+118,HR 4639,118,S 2576,Identical bill
+118,HR 5349,118,S 634,Identical bill
+118,HR 5861,118,S 3745,Identical bill
+118,HR 6090,118,S 3141,Identical bill
+118,HR 615,118,S 1185,Identical bill
+118,HR 825,118,S 257,Identical bill
+118,HR 8281,118,S 4292,Identical bill
+118,HRES 1103,118,HRES 1209,Identical bill
+118,S 1171,118,HR 2678,Identical bill
+118,S 1323,118,HR 2891,Identical bill
+118,S 1510,118,HR 5300,Identical bill
+118,S 1973,118,HR 6206,Identical bill
+118,S 1979,118,HR 4120,Identical bill
+118,S 2228,118,HR 4549,Identical bill
+118,S 2383,118,HR 4733,Identical bill
+118,S 2407,118,HR 4818,Identical bill
+118,S 3056,118,HR 5974,Identical bill
+118,S 3187,118,HR 6523,Identical bill
+118,S 3696,118,HR 7569,Identical bill
+118,S 3764,118,HR 7025,Identical bill
+118,S 3791,118,HR 8811,Identical bill;Related bill
+118,S 3912,118,HR 9968,Identical bill
+118,S 3960,118,HR 7803,Identical bill
+118,S 4114,118,HR 7961,Identical bill
+118,S 4445,118,HR 9643,Identical bill
+118,S 4516,118,HR 8706,Identical bill
+118,S 4716,118,HR 10155,Identical bill
+118,S 656,118,HR 2830,Identical bill
+118,S 670,118,HR 1405,Identical bill
+119,HCONRES 93,119,HCONRES 103,Identical bill
+119,HCONRES 93,119,HCONRES 110,Identical bill
+119,HCONRES 93,119,HCONRES 117,Identical bill
+119,HCONRES 93,119,HCONRES 126,Identical bill
+119,HCONRES 93,119,HCONRES 40,Identical bill;Related bill
+119,HCONRES 93,119,HCONRES 86,Identical bill;Related bill
+119,HR 1004,119,S 410,Identical bill
+119,HR 1028,119,S 405,Identical bill
+119,HR 131,119,S 296,Identical bill
+119,HR 1491,119,S 1438,Identical bill;Public law contains the text
+119,HR 1689,119,S 4814,Identical bill
+119,HR 2102,119,S 1032,Identical bill
+119,HR 2352,119,S 4602,Identical bill
+119,HR 2481,119,S 841,Identical bill;PrimaryCompanionBillBecameLaw;Public law contains the text;SecondaryCompanionBillBecameLaw
+119,HR 2512,119,S 1202,Identical bill
+119,HR 261,119,S 2873,Identical bill
+119,HR 2853,119,S 1404,Identical bill
+119,HR 4464,119,S 3204,Identical bill
+119,HR 4667,119,S 2212,Identical bill
+119,HR 504,119,S 673,Identical bill
+119,HR 5334,119,HR 10076,Identical bill
+119,HR 5408,119,S 844,Identical bill
+119,HR 5587,119,S 4975,Identical bill
+119,HR 6085,119,S 3191,Identical bill
+119,HR 6589,119,S 3425,Identical bill
+119,HR 7,119,S 186,Identical bill
+119,HR 7296,119,S 3752,Identical bill
+119,HR 7661,119,S 4925,Identical bill
+119,HR 7726,119,S 4788,Identical bill
+119,HR 7892,119,S 4428,Identical bill
+119,HR 7937,119,S 4083,Identical bill
+119,HR 8464,119,S 4747,Identical bill
+119,HR 862,119,S 1483,Identical bill
+119,HR 884,119,S 2636,Identical bill
+119,HR 8884,119,S 4947,Identical bill
+119,HR 899,119,S 1148,Identical bill
+119,S 1241,119,HR 2548,Identical bill
+119,S 160,119,HR 956,Identical bill;Public law contains the text
+119,S 1782,119,HR 1520,Identical bill;Related bill
+119,S 2392,119,HR 2138,Identical bill;Public law contains the text
+119,S 260,119,HR 820,Identical bill;Public law contains the text
+119,S 2882,119,HR 5450,Identical bill
+119,S 3012,119,HR 5801,Identical bill
+119,S 3516,119,HR 6822,Identical bill
+119,S 381,119,HR 1944,Identical bill
+119,S 3956,119,HR 7767,Identical bill
+119,S 4032,119,HR 7919,Identical bill
+119,S 4082,119,HR 7901,Identical bill
+119,S 4127,119,S 4073,Identical bill
+119,S 4214,119,HR 9442,Identical bill
+119,S 499,119,HR 5405,Identical bill
+119,SJRES 124,119,HJRES 153,Identical bill
+119,SJRES 196,119,HJRES 189,Identical bill
+119,SJRES 198,119,HJRES 187,Identical bill
+119,SJRES 198,119,SJRES 192,Identical bill
+119,SJRES 37,119,SJRES 77,Identical bill
+119,SJRES 77,119,SJRES 37,Identical bill
+119,SJRES 83,119,HJRES 126,Identical bill
+119,SJRES 84,119,HJRES 123,Identical bill
+119,SJRES 88,119,HJRES 150,Identical bill
+119,SJRES 88,119,SJRES 49,Identical bill;Related bill
