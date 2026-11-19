@@ -225,7 +225,11 @@ should reuse rather than reimplement:
   `DATABASE_URL` the launcher passed always wins, so giving the task definition the secret changes nothing by itself;
   the switch is ddp-sync's `cloud_path.fargate.rds_from_task_secret`, which stops passing it. With none passed, a
   half-configured secret or address refuses (the error names only the missing variables). `deploy-scrapers-image.sh` adds the entries when run with `TASK_RDS_SECRET_ARN` + `TASK_RDS_HOST/PORT/DBNAME`
-  and copies them forward on every later revision. **Do not add a second DSN builder in a runner**; call this.
+  and copies them forward on every later revision. **OPEN-639: only on the `ddp-scrapers-db` task definition**, the one
+  the load and archive tasks run from (ddp-sync `cloud_path.fargate.task_definition_db`); `ddp-scrapers` (collection,
+  probe) never carries the login, and the script refuses to release while it carries any `RDS_*` or `DATABASE_URL`
+  entry. The script registers each image on both families and creates `ddp-scrapers-db` from `ddp-scrapers` the
+  first time. **Do not add a second DSN builder in a runner**; call this.
 - **The cross-machine locks (OPEN-187/OPEN-203, 2026-08-29)** — `SourceLock`
   (`cloud_collector.py`) and its bash mirror, `scraper_memory_acquire_lock`/`_release_lock`
   (`scraper-memory.sh`), replace the old `/tmp`-local `mkdir` locks (OPEN-154's scrape lock, and
