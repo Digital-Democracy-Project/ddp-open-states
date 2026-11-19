@@ -91,6 +91,7 @@ SCRAPE_FIELDS = {
     "retry": bool,                             # bounded whole-run retry (OPEN-87); refused with a WAF below (OPEN-53)
     "cadence_escalation": bool,                # dynamic cadence may raise the state to nightly (OPEN-140)
     "fargate_max_wait_s": (int, type(None)),   # this state's own Fargate ceiling; null = the shared one (OPEN-476)
+    "load_on_fargate": bool,                   # OPEN-633: the load runs as a Fargate task of the scrapers image, not in ddp-sync
     # OPEN-555: Utah's session-list retry (scrapers/ut/__init__.py, OPEN-106); null for every other state.
     "session_list_attempts": (int, type(None)),
     "session_list_backoff_s": (int, type(None)),

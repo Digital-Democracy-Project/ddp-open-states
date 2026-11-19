@@ -42,6 +42,7 @@ pa:
     retry: false
     cadence_escalation: true
     fargate_max_wait_s: null
+    load_on_fargate: false
     session_list_attempts: null
     session_list_backoff_s: null
   archive:
@@ -97,6 +98,7 @@ ne:
     retry: false
     cadence_escalation: true
     fargate_max_wait_s: null
+    load_on_fargate: false
     session_list_attempts: null
     session_list_backoff_s: null
   archive:

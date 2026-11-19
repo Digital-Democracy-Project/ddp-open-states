@@ -217,6 +217,7 @@ def compose_entry(data, gate_b_facts):
             "retry": False,
             "cadence_escalation": True,
             "fargate_max_wait_s": None,
+            "load_on_fargate": False,
             "session_list_attempts": None,   # OPEN-555: only ut retries its session list
             "session_list_backoff_s": None,
         },
@@ -298,6 +299,7 @@ def render_block(code, entry, needs_human, source_desc):
         f"    retry: {_scalar(entry['scrape']['retry'])}                   # SYNC-157: bounded retry (never with a WAF)",
         f"    cadence_escalation: {_scalar(entry['scrape']['cadence_escalation'])}       # SYNC-157: dynamic cadence may raise it",
         f"    fargate_max_wait_s: {_scalar(entry['scrape']['fargate_max_wait_s'])}       # SYNC-157: null = ddp-sync's shared ceiling",
+        f"    load_on_fargate: {_scalar(entry['scrape']['load_on_fargate'])}       # OPEN-633: false = ddp-sync's local load",
         f"    session_list_attempts: {_scalar(entry['scrape']['session_list_attempts'])}    # OPEN-555: only ut retries its session list",
         f"    session_list_backoff_s: {_scalar(entry['scrape']['session_list_backoff_s'])}",
         "  archive:",

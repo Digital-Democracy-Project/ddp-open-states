@@ -150,7 +150,10 @@ WORKDIR /app
 # read waf.fargate_safe instead of a hard-coded refused-states set; without these two files copied in, every
 # Fargate probe would find no manifest and fail closed for every state, not just the ones that should refuse).
 # It also imports qa_primitives.py (OPEN-445), so that file must be in this COPY too.
-COPY cloud_collector.py cloud_archiver.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
+# cloud_loader.py (OPEN-633) is the load half of a cloud run: RUNNER_SCRIPT=cloud_loader.py with
+# `<state> <run_id> [session=...]` imports one collected run into RDS as its own Fargate task, so
+# ddp-sync no longer needs openstates-core to run the load itself.
+COPY cloud_collector.py cloud_archiver.py cloud_loader.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
