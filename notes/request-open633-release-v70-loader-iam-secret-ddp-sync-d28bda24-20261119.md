@@ -2,7 +2,7 @@
 
 **Not a GO.** Each part waits for Ramon's go and posts its own checkpoint.
 
-**This note replaces request `53dd191`.** Its Parts 1 and 2 are folded in below as Parts A and B, unchanged in substance.
+**This note replaces request `91814c9`.** Its Parts 1 and 2 are folded in below as Parts A and B, unchanged in substance.
 
 **Every switch stays off throughout:**
 * no state gets `scrape.load_on_fargate: true`;
