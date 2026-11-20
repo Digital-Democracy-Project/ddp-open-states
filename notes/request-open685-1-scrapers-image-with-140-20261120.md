@@ -1,5 +1,7 @@
 # REQUEST 1 of 3 (not a GO): OPEN-685, the next scrapers image with openstates-scrapers #140 (same-day vote order for NE, LA, NM), at core `83584c48` (also for North Dakota's people load, OPEN-678)
 
+**Updated again 2026-11-20 (PM session):** scrapers main moved to **`bde9fb28`** with two more merges, #141 (OPEN-684) and #142 (OPEN-679), listed below. The one image carries them too.
+
 **Updated 2026-11-20 (PM session's request):** core #134 (OPEN-678) merged after this note was first written, so core main is now **`83584c48`**. The one image picks it up and serves North Dakota's people load as well (see "Core").
 
 Written 2026-11-20 (Mac side, State Specific Handling). **Not a GO.** Ramon builds the image. **Ramon gave the scorecard gate's go for OPEN-685 on 2026-11-20; the PM merged all three PRs.**
@@ -10,12 +12,13 @@ The OPEN-685 order:
 3. **request 3:** the broker release with #785, `request-deploy-broker-6b5eda91-open685-same-day-order-20261120.md` on ddp-broker-py `notes/ops-handoff`.
 
 ## What the image carries beyond v72 (the live `ddp-scrapers:75` and `ddp-scrapers-db:2`)
-**openstates-scrapers fork `bcaf1447`** (v72 had `8e0ab3dc3`). Four merges:
+**openstates-scrapers fork `bde9fb28`** (v72 had `8e0ab3dc3`). Six merges:
 - **#140 (OPEN-685):** Nebraska, Louisiana and New Mexico votes carry their roll-call number under the extras key the broker reads:
   - Nebraska: its KeyID, key `legislature-rollcall-num`;
   - Louisiana: the `(#N)` ending the link text;
   - New Mexico: the `RCS#` on the PDF.
 - **#137 (OPEN-675), #138 (OPEN-677), #139 (OPEN-680):** Wyoming's vote chamber, Wyoming's motion rules and Idaho voter names, from other sessions. Already merged; they ride here. Not states this session follows.
+- **#141 (OPEN-684):** Wyoming's veto-override vote results. **#142 (OPEN-679):** North Dakota's vote labels (motion rules). Both merged after `bcaf1447`; they ride here. Their own checks are on their tickets.
 
 **ddp-open-states `a6be426`** (v72 had `8977ced`):
 - #432, #435: backfill scripts (request 2 runs #435's);
@@ -32,7 +35,7 @@ The OPEN-685 order:
 ## Ramon's step
 - `deploy-scrapers-image.sh` from an updated checkout. Main's script registers both families: it copies `ddp-scrapers-db`'s own current revision forward, keeping its roles and no secret.
 - Register only when no scrape task is running (ECS check).
-- **Check (Mac side, after):** the new revisions name the new image, and the build reports scrapers `bcaf1447`, ddp-open-states `a6be426` or later, and **core `83584c48`**. If the build reports a later core, a core merge landed after this note: stop and say which.
+- **Check (Mac side, after):** the new revisions name the new image, and the build reports scrapers `bde9fb28`, ddp-open-states `a6be426` or later, and **core `83584c48`**. If the build reports a later core, a core merge landed after this note: stop and say which.
 
 ## The prod agent's check (read only, after each state's first run on the new image)
 For Nebraska, Louisiana and New Mexico, the votes the run stored carry the key:
