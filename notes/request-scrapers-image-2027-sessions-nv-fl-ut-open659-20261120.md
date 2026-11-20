@@ -2,7 +2,7 @@
 
 **Ramon, 2026-11-20 (relayed by the PM session):** "start setting all of our jurisdictions to their 2027 sessions ... most of them are already pre-filing bills for 2027 that we need to start scraping".
 
-**This waits for two things:** both PRs below merged, and Ramon's go. It needs no image of its own: it can ride the next scrapers image (for example the one in `ddf23c9`, SYNC-181).
+**This waits for Ramon's go.** Both PRs below are merged (PM review, 2026-11-20): **#135 = `23968383`**, **#136 = `8e0ab3dc`**, on the fork's main; not deployed. It needs no image of its own: it can ride the next scrapers image (for example the one in `ddf23c9`, SYNC-181).
 
 ## What changes (openstates-scrapers fork)
 * **#135** Nevada's 84th (2027) session is **active now**. Nevada lists about 190 pre-filed bills. The 2025 special session (`2025Special36`) stays active beside it until 84 starts on 2027-02-01.
