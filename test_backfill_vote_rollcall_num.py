@@ -164,7 +164,7 @@ def test_write_applies_every_change_with_its_guard(tmp_path):
     assert conn.committed and not conn.rolled_back
     assert [p for _, p in conn.executed] == [("house-rollcall-num", "45", "ocd-vote/a"),
                                              ("house-rollcall-num", "47", "ocd-vote/b")]
-    assert all("NOT (extras ? 'house-rollcall-num') AND NOT (extras ? 'senate-rollcall-num')" in sql
+    assert all("NOT (extras ?| array['house-rollcall-num', 'senate-rollcall-num', 'legislature-rollcall-num'])" in sql
                for sql, _ in conn.executed)
     assert (tmp_path / "committed.csv").exists()
 
@@ -226,3 +226,69 @@ def test_list_round_trip(tmp_path):
                                      chamber="lower", motion_text="passed Roll Call #45")])
     (back,) = brn.read_list(str(path))
     assert (back["id"], back["key"], back["rollcall_num"]) == ("ocd-vote/a", "house-rollcall-num", "45")
+
+
+# --- OPEN-685: Nebraska, Louisiana, New Mexico ----------------------------------------------------------------------
+
+
+def test_nebraska_lb48_key_ids_from_the_dedupe_key():
+    # Real stored rows: LB 48 on 2025-05-30, failed with the emergency clause (KeyID 12956), then passed with it
+    # stricken (12957). Nebraska's one chamber is stored as "legislature".
+    rows = [row("ne", "Failed on Final Reading with Emergency Clause 26-22*-1", dedupe_key="12956",
+                chamber="legislature", vote_id="ocd-vote/a"),
+            row("ne", "Passed on Final Reading with Emergency Clause stricken 27-21*-1", dedupe_key="12957",
+                chamber="legislature", vote_id="ocd-vote/b")]
+    assert planned(rows)[0] == [("ocd-vote/a", "legislature-rollcall-num", "12956"),
+                                ("ocd-vote/b", "legislature-rollcall-num", "12957")]
+
+
+def test_nebraska_dedupe_key_must_be_plain_digits():
+    changes, counts = planned([row("ne", "x", dedupe_key="KeyID=12956", chamber="legislature"),
+                               row("ne", "x", dedupe_key=None, chamber="legislature")])
+    assert changes == [] and counts["unread"] == 2
+
+
+def test_louisiana_sb487_numbers_from_the_motion_text():
+    rows = [row("la", "FINAL PASSAGE (#1393)", vote_id="ocd-vote/a"), row("la", "FINAL PASSAGE (#1400)", vote_id="ocd-vote/b"),
+            row("la", "CONCUR (#1432)", chamber="upper", vote_id="ocd-vote/c")]
+    assert planned(rows)[0] == [("ocd-vote/a", "house-rollcall-num", "1393"), ("ocd-vote/b", "house-rollcall-num", "1400"),
+                                ("ocd-vote/c", "senate-rollcall-num", "1432")]
+
+
+NM_URL = "https://www.nmlegis.gov/Sessions/26%20Regular/votes/HB0253SVOTE{}.PDF"
+
+
+def test_new_mexico_hb253_rcs_from_the_saved_pdf_text(tmp_path):
+    from urllib.parse import quote
+
+    # pdftotext -layout of nmlegis.gov's two HB 253 Senate roll calls (2026-02-18): the number sits far right.
+    (tmp_path / (quote(NM_URL.format(""), safe="") + ".txt")).write_text("LEGISLATIVE DAY 16   DATE: 02/18/26\n   RCS#            158\n")
+    (tmp_path / (quote(NM_URL.format("2"), safe="") + ".txt")).write_text("LEGISLATIVE DAY 17   DATE: 02/18/26\n   RCS#            173\n")
+    (tmp_path / "unrelated.json").write_text("{}")
+    numbers = brn.nm_vote_rcs(tmp_path)
+    assert numbers == {NM_URL.format(""): "158", NM_URL.format("2"): "173"}
+    rows = [row("nm", "senate passage", dedupe_key=NM_URL.format(""), chamber="upper", vote_id="ocd-vote/a"),
+            row("nm", "senate passage", dedupe_key=NM_URL.format("2"), chamber="upper", vote_id="ocd-vote/b")]
+    changes, _ = brn.plan(rows, None, None, numbers)
+    assert [(c["id"], c["key"], c["rollcall_num"]) for c in changes] == [
+        ("ocd-vote/a", "senate-rollcall-num", "158"), ("ocd-vote/b", "senate-rollcall-num", "173")]
+
+
+def test_new_mexico_is_left_alone_without_the_pdf_text():
+    changes, counts = planned([row("nm", "senate passage", dedupe_key=NM_URL.format(""), chamber="upper")])
+    assert changes == [] and counts["unread"] == 1
+
+
+def test_a_nebraska_number_already_stored_is_never_changed():
+    changes, counts = planned([row("ne", "x", dedupe_key="12956", chamber="legislature",
+                                   extras={"legislature-rollcall-num": "12956"})])
+    assert changes == [] and counts["already"] == 1
+
+
+def test_a_nebraska_vote_outside_its_one_chamber_is_left_alone():
+    changes, counts = planned([row("ne", "x", dedupe_key="12956", chamber="upper")])
+    assert changes == [] and counts["unread"] == 1
+
+
+def test_the_new_states_are_in_the_jurisdiction_map():
+    assert {brn.JURISDICTIONS[OCD.format(st)] for st in ("ne", "la", "nm")} == {"ne", "la", "nm"}

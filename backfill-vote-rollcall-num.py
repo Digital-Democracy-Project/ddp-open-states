@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Backfill the roll-call number (`house-rollcall-num` / `senate-rollcall-num` in a vote event's extras) on stored
-Washington, Michigan, Virginia and Arizona votes (OPEN-628).
+Backfill the roll-call number (`house-rollcall-num` / `senate-rollcall-num`, or `legislature-rollcall-num` for
+Nebraska, in a vote event's extras) on stored Washington, Michigan, Virginia and Arizona votes (OPEN-628), and
+Nebraska, Louisiana and New Mexico votes (OPEN-685).
 
 The broker reads that key into Motion.rollcall_num, and its scorecard builders order a bill's votes in one chamber by
 date, then roll-call number. These four states store a vote's day without a time, so two votes on one day (a re-vote
@@ -17,7 +18,13 @@ same value the scraper would, from data already stored:
     az  the time of day (HHMMSS) of the roll call's ReportDate; Arizona prints no roll-call number, and a stored vote
         does not keep the time, so it is read from the scrape cache's BillStatusFloorAction answers (--az-cache),
         matched on the vote's billStatusActionId and ReferralNumber.
-    Without its directory, Virginia or Arizona is left as it is.
+    ne  the vote's KeyID on nebraskalegislature.gov, kept as its dedupe key; it rises in the order the votes were
+        taken (LB 48, 2025-05-30: 12956, then 12957). Key `legislature-rollcall-num`.
+    la  the roll call's number, kept in the motion text as "(#N)" (SB 487's House, 2026-05-19: #1393, then #1400).
+    nm  the roll call's RCS number, printed on its PDF. A stored vote keeps only the PDF's address (its dedupe key),
+        so it is read from the PDFs' text saved under --nm-votes (one file per vote: the address, URL-quoted with
+        no safe characters, plus ".txt", holding `pdftotext -layout` of that PDF).
+    Without its directory, Virginia, Arizona or New Mexico is left as it is.
 
 Every write needs --expect N. Only a vote with no roll-call key at all is written; a stored number is never
 changed. A vote whose number cannot be read is left as it is and counted.
@@ -27,7 +34,8 @@ write), --apply-list writes exactly a list's changes, --undo takes a list's keys
 row that no longer matches the list (it gained a number, or holds another one) aborts the run with nothing written.
 
 Usage:
-    python3 backfill-vote-rollcall-num.py --dry-run [--jurisdiction wa] [--az-cache DIR] [--va-votes DIR] --list FILE
+    python3 backfill-vote-rollcall-num.py --dry-run [--jurisdiction wa] [--az-cache DIR] [--va-votes DIR] [--nm-votes DIR]
+        --list FILE
     python3 backfill-vote-rollcall-num.py --apply-list FILE --expect N --list COMMITTED
     python3 backfill-vote-rollcall-num.py --undo COMMITTED --expect N --list UNDONE
 """
@@ -42,6 +50,8 @@ import sys
 import psycopg2
 import psycopg2.extras
 
+from qa_primitives import ocd_jurisdiction_id
+
 # The OCD jurisdiction map and the DB settings come from the classification backfill (OPEN-625), not a third copy.
 _spec = importlib.util.spec_from_file_location(
     "backfill_motion_classification",
@@ -50,9 +60,12 @@ _spec = importlib.util.spec_from_file_location(
 _bmc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_bmc)
 
-STATES = ("wa", "mi", "va", "az")
-JURISDICTIONS = {ocd: key for ocd, key in _bmc.JURISDICTION_MAP.items() if key in STATES}
-KEYS = ("house-rollcall-num", "senate-rollcall-num")
+STATES = ("wa", "mi", "va", "az", "ne", "la", "nm")
+# OPEN-685: the ids come from the manifest itself (qa_primitives), as backfill-motion-classification.py's map does, but
+# without its "has motion rules" filter: New Mexico has no motion rules and still needs its numbers.
+JURISDICTIONS = {ocd_jurisdiction_id(key): key for key in STATES}
+KEYS = ("house-rollcall-num", "senate-rollcall-num", "legislature-rollcall-num")
+CHAMBER_KEYS = {"lower": "house-rollcall-num", "upper": "senate-rollcall-num", "legislature": "legislature-rollcall-num"}
 
 FETCH_SQL = """
     SELECT
@@ -77,7 +90,7 @@ FETCH_SQL = """
 APPLY_SQL = """
     UPDATE opencivicdata_voteevent
     SET extras = extras || jsonb_build_object(%s::text, %s::text)
-    WHERE id = %s AND NOT (extras ? 'house-rollcall-num') AND NOT (extras ? 'senate-rollcall-num')
+    WHERE id = %s AND NOT (extras ?| array['house-rollcall-num', 'senate-rollcall-num', 'legislature-rollcall-num'])
 """
 
 # Guarded: takes the key off only while it still holds the value this backfill wrote.
@@ -96,6 +109,8 @@ _WA_SEQUENCE = re.compile(r"\(#(\d+)\)\s*$")
 _VA_VOTE_ID = re.compile(r"^(\d+)-")
 _AZ_DEDUPE = re.compile(r"billStatusId=(\d+)&billStatusActionId=(\d+)&includeVotes=true(\d+)$")
 _AZ_CACHE_NAME = re.compile(r"billStatusId=(\d+)&billStatusActionId=(\d+)&includeVotes=true")
+_NE_KEY_ID = re.compile(r"^\d+$")
+_NM_RCS = re.compile(r"RCS#\s*(\d+)")  # the scraper's own read (nm/votes.py rollcall_number)
 
 
 def az_report_times(cache_dir):
@@ -136,12 +151,33 @@ def va_vote_times(votes_dir):
     return times
 
 
-def rollcall_num(state, row, az_times, va_times=None):
+def nm_vote_rcs(votes_dir):
+    """{PDF address: RCS number} from saved PDF text: one file per vote, named by its URL-quoted address + ".txt"."""
+    from urllib.parse import unquote
+
+    numbers = {}
+    for name in os.listdir(votes_dir):
+        if not name.endswith(".txt"):
+            continue
+        with open(os.path.join(votes_dir, name), errors="replace") as f:
+            found = _NM_RCS.search(f.read())
+        if found:
+            numbers[unquote(name[: -len(".txt")])] = found.group(1)
+    return numbers
+
+
+def rollcall_num(state, row, az_times, va_times=None, nm_rcs=None):
     """The value the state's scraper writes today, read from the stored row; None when it cannot be read."""
     if state == "mi":
         found = _MI_ROLL_CALL.search(row["motion_text"] or "")
-    elif state == "wa":
+    elif state in ("wa", "la"):
+        # Louisiana's link text ends "(#N)" too: "FINAL PASSAGE (#1400)".
         found = _WA_SEQUENCE.search(row["motion_text"] or "")
+    elif state == "ne":
+        found = _NE_KEY_ID.match(row["dedupe_key"] or "")
+        return found.group(0) if found else None
+    elif state == "nm":
+        return (nm_rcs or {}).get(row["dedupe_key"] or "")
     elif state == "va":
         found = _VA_VOTE_ID.search(row["dedupe_key"] or "")
         if not found or va_times is None:
@@ -155,7 +191,7 @@ def rollcall_num(state, row, az_times, va_times=None):
     return found.group(1) if found else None
 
 
-def plan(rows, az_times, va_times=None):
+def plan(rows, az_times, va_times=None, nm_rcs=None):
     """(changes, counts): one change per vote that has no roll-call key and whose number can be read."""
     changes, counts = [], {"already": 0, "unread": 0}
     for row in rows:
@@ -163,14 +199,14 @@ def plan(rows, az_times, va_times=None):
             counts["already"] += 1
             continue
         state = JURISDICTIONS[row["jurisdiction_id"]]
-        value = rollcall_num(state, row, az_times, va_times)
-        if value is None or row["chamber"] not in ("upper", "lower"):
+        value = rollcall_num(state, row, az_times, va_times, nm_rcs)
+        # "legislature" is Nebraska's one chamber; in any other state it is not a chamber this writes for.
+        if value is None or row["chamber"] not in CHAMBER_KEYS or (row["chamber"] == "legislature") != (state == "ne"):
             counts["unread"] += 1
             continue
         changes.append(dict(
             id=row["id"], jurisdiction=state, bill=row["bill"], date=row["start_date"], chamber=row["chamber"],
-            motion_text=row["motion_text"], key="senate-rollcall-num" if row["chamber"] == "upper" else
-            "house-rollcall-num", rollcall_num=value,
+            motion_text=row["motion_text"], key=CHAMBER_KEYS[row["chamber"]], rollcall_num=value,
         ))
     return changes, counts
 
@@ -235,6 +271,7 @@ def main(argv=None):
     parser.add_argument("--jurisdiction", choices=STATES, help="only this state")
     parser.add_argument("--az-cache", help="scrapelib cache with Arizona's BillStatusFloorAction answers")
     parser.add_argument("--va-votes", help="directory of saved LIS getvotebyidasync answers (JSON)")
+    parser.add_argument("--nm-votes", help="directory of New Mexico roll-call PDF text (URL-quoted address + .txt)")
     parser.add_argument("--list", dest="list_path", help="write the changes (planned, or written) to this CSV")
     parser.add_argument("--apply-list", help="write exactly this list's changes (no reading)")
     parser.add_argument("--undo", help="take this list's keys off again")
@@ -258,13 +295,14 @@ def main(argv=None):
             ids = [ocd for ocd, key in JURISDICTIONS.items() if not args.jurisdiction or key == args.jurisdiction]
             az_times = az_report_times(args.az_cache) if args.az_cache else None
             va_times = va_vote_times(args.va_votes) if args.va_votes else None
+            nm_rcs = nm_vote_rcs(args.nm_votes) if args.nm_votes else None
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(FETCH_SQL, (ids,))
                 rows = cur.fetchall()
-            changes, counts = plan(rows, az_times, va_times)
+            changes, counts = plan(rows, az_times, va_times, nm_rcs)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             print(f"  already numbered: {counts['already']:,}; number not readable, left as they are: "
-                  f"{counts['unread']:,} (Arizona/Virginia: no --az-cache/--va-votes, or not in it)")
+                  f"{counts['unread']:,} (Arizona/Virginia/New Mexico: no --az-cache/--va-votes/--nm-votes, or not in it)")
         per_state = {}
         for c in changes:
             per_state[(c["jurisdiction"], c["key"])] = per_state.get((c["jurisdiction"], c["key"]), 0) + 1
