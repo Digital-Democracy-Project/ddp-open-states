@@ -8,10 +8,21 @@
 #     SYNC_SCRIPT=/path/to/mutant.sh bash test-structure-sync.sh    # mutation checks: expect failures
 #
 # Exits 0 with "ALL PASS", or 1 after listing every failing assertion. Skips (exit 0) when docker is absent.
+#
+# Which Docker (AGENTS-250): on the Mac it runs on the TEST Docker VM (Colima profile `test`, on /Volumes/DDP-HOT),
+# never on the production VM that holds the real replica. ddp-agents' deployment/scripts/colima-test.sh knows where
+# that VM is; when it exists, DOCKER_HOST comes from it (sync-structure.sh, run below, keeps a DOCKER_HOST it is
+# given) and a test VM that is not available skips the run. DDP_COLIMA_TEST_SH overrides the path; empty = off.
 
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SYNC="${SYNC_SCRIPT:-$HERE/ops/postgres-replica/local/sync-structure.sh}"
+COLIMA_TEST_SH="${DDP_COLIMA_TEST_SH-/Users/agentsmith/Developer/repos/ddp-agents/deployment/scripts/colima-test.sh}"
+if [ -n "$COLIMA_TEST_SH" ] && [ -r "$COLIMA_TEST_SH" ]; then
+  WHY="$(bash "$COLIMA_TEST_SH" check 2>&1)" || { echo "SKIPPED: the test Docker VM is not available: $WHY"; exit 0; }
+  DOCKER_HOST="$(bash "$COLIMA_TEST_SH" docker-host)"; export DOCKER_HOST
+  echo "Docker: the test VM ($DOCKER_HOST)"
+fi
 command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 || { echo "SKIPPED: docker is not available"; exit 0; }
 docker image inspect postgres:16 >/dev/null 2>&1 || { echo "SKIPPED: image postgres:16 is not present (docker pull postgres:16)"; exit 0; }
 
