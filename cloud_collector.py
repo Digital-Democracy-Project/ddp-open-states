@@ -18,6 +18,7 @@ Usage:
     python3 cloud_collector.py <source-id> [key=value ...]
     python3 cloud_collector.py mi session=2025-2026
     python3 cloud_collector.py ut session=2025S2 bill_no=HB123
+    python3 cloud_collector.py usa session=118 chamber=lower full=true   # SYNC-181: no start= cutoff
 
 Environment:
     MEMORY_BUCKET          S3 bucket for memory and the working tier (required)
@@ -664,6 +665,15 @@ def main(argv, s3_client=None):
         emit_completion_record(status="failed", mode="full", source=source, run_id=run_id)
         return 1
 
+    # SYNC-181: `full=true` asks for a full collection (no `start=` cutoff) even when a watermark exists: the re-import
+    # of a whole session (ddp-sync's `/trigger/openstates-scrape/<state>?full=true`). It is this runner's own word: it
+    # is never handed to the scraper and is not part of the run's key, so the watermark the run writes is the session's
+    # ordinary one and the next nightly continues from it.
+    full = params.pop("full", None)
+    if full not in (None, "true"):
+        print(f"ERROR: full must be 'true' when given, got {full!r}", file=sys.stderr)
+        emit_completion_record(status="failed", mode="full", source=source, run_id=run_id)
+        return 1
     session = params.get("session")
     scrape_key = derive_scrape_key(source, params)
 
@@ -715,7 +725,7 @@ def main(argv, s3_client=None):
     # only fire once, after which the crash is re-raised so the exit code still reflects it.
     try:
         try:
-            return _collect(source, scrape_key, session, params, run_id, started, memory)
+            return _collect(source, scrape_key, session, params, run_id, started, memory, force_full=full == "true")
         except Exception:
             print(f"ERROR: unhandled exception during {source} collection", file=sys.stderr)
             emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
@@ -725,7 +735,7 @@ def main(argv, s3_client=None):
         lock.release(source)
 
 
-def _collect(source, scrape_key, session, params, run_id, started, memory):
+def _collect(source, scrape_key, session, params, run_id, started, memory, force_full=False):
     with tempfile.TemporaryDirectory() as staging:
         last_run_dir = os.path.join(staging, "last-run")
         cache_dir = os.path.join(staging, "cache")
@@ -807,7 +817,7 @@ def _collect(source, scrape_key, session, params, run_id, started, memory):
             emit_completion_record(status="failed", mode="full", source=source, run_id=run_id,
                                     session=session)
             return 1
-        mode = "incremental" if found_watermark and takes_start else "full"
+        mode = "incremental" if found_watermark and takes_start and not force_full else "full"
 
         # pm-review: a hydrated `.imported` describes what the LAST *import* did. This runner
         # never imports, so it has nothing new to say about it -- carrying the stale file

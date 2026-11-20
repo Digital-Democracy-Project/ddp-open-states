@@ -168,7 +168,7 @@ should reuse rather than reimplement:
 - **`cloud_collector.py` (OPEN-201, 2026-08-29)** — the cloud collection runner, built fresh rather
   than a `run-scrape.sh` port (Ramon's build-fresh decision). Does only what collection needs: read
   memory (`S3Memory`, the same object layout `scraper-memory.sh` computes independently in bash —
-  the two must never drift), decide full vs. incremental, invoke `os-update --scrape`, classify the
+  the two must never drift), decide full vs. incremental (SYNC-181: `full=true` forces full, no `start=`, for a whole-session re-import; it is the runner's own word, never passed to the scraper nor part of the run's key, so the session's ordinary watermark is rewritten; ddp-sync's `/trigger/openstates-scrape/<state>?full=true` sends it; **do not add a second force-full switch**), invoke `os-update --scrape`, classify the
   outcome via `import-summary.sh`'s own unreachable-site matcher (sourced, not reimplemented),
   publish output and a completion marker. `run-scrape.sh` is untouched and keeps running every
   jurisdiction that hasn't moved to this — the two runners coexist for the whole migration.

@@ -250,6 +250,39 @@ def test_main_second_run_is_incremental(tmp_path, monkeypatch, capsys):
     assert "--cachedir" in argv, argv
 
 
+# ── SYNC-181: full=true is a full collection of the session, watermark or not ─────────────────
+
+def test_main_full_true_runs_full_with_no_start_and_keeps_the_sessions_own_key(tmp_path, monkeypatch, capsys):
+    """A re-import: a watermark exists, but `full=true` runs full, hands the scraper no `start=` and not `full=`,
+    and publishes the watermark under the session's ordinary key, so the next nightly continues from it."""
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, bill_files=2, argv_file=argv_file))
+    client = FakeS3Client()
+    client.objects["dev-open201/ut/ut_2025S2/ut_2025S2.ts"] = b"2026-08-28T00:00:00"
+
+    rc = cc.main(["ut", "session=2025S2", "full=true"], s3_client=client)
+    assert rc == 0
+    record = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert (record["status"], record["mode"], record["found"]) == ("ok", "full", 2)
+    argv = argv_file.read_text().splitlines()
+    assert argv == ["ut", "--scrape", "bills", "session=2025S2", "--cachedir", argv[5], "--datadir", argv[7]], argv
+    assert "dev-open201/ut/ut_2025S2/ut_2025S2.ts" in client.put_calls  # the session's own watermark, rewritten
+
+
+def test_main_full_with_any_other_value_is_refused_before_scraping(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    argv_file = tmp_path / "argv.txt"
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path, argv_file=argv_file))
+    for value in ("false", "1", "yes", ""):
+        rc = cc.main(["ut", "session=2025S2", f"full={value}"], s3_client=FakeS3Client())
+        assert rc == 1, value
+        assert not argv_file.exists(), value
+    assert "full must be 'true'" in capsys.readouterr().err
+
+
 # ── OPEN-501: scrape.start_filter from the manifest decides whether start= is passed ─────────
 
 def test_main_start_filter_false_runs_full_without_start(tmp_path, monkeypatch, capsys):
