@@ -23,6 +23,13 @@ pass" is a fail even when the yeas outnumber the nays), else the yeas against th
 majority. It needs no cache (the stored motion text is azleg's Action), and it writes the result
 column only; the list's "field" column says which column a row writes.
 
+Arizona's empty "passage" votes (OPEN-712): --az-empty-passage plans taking "passage" off every stored Arizona vote that
+has no member names and a 0-0 tally (the same "empty" as --result's): procedural voice votes and summary lines (motions
+to reconsider or return a bill, concurrence lines) stored before July's scraper fix, which no longer emits them, so a
+re-scrape never reaches them. On the vote-event basis (BROKER-491) each would become its chamber's most recent passage
+vote and replace the real roll call (SB 1175, 2026). A vote with a tally but no names (SB 1763's two roll calls) is a
+real vote and is left alone. Only "passage" is removed; nothing is deleted. It needs no cache.
+
 A reviewed list is applied where that cache does not exist (production): --list writes the
 changes (dry run or write), --apply-list writes exactly a list's changes, --undo writes a
 list's changes back. Every write is guarded: a row whose stored classification is no longer
@@ -34,6 +41,7 @@ Usage:
     python3 backfill-motion-classification.py --jurisdiction pa --dry-run --list FILE
     python3 backfill-motion-classification.py --jurisdiction az --az-cache DIR --dry-run --list FILE
     python3 backfill-motion-classification.py --result --dry-run --list FILE
+    python3 backfill-motion-classification.py --az-empty-passage --dry-run --list FILE
     python3 backfill-motion-classification.py --apply-list FILE --expect N --list COMMITTED
     python3 backfill-motion-classification.py --undo COMMITTED --list UNDONE
 """
@@ -204,6 +212,24 @@ def plan_results(rows):
     return changes, unclassified
 
 
+def plan_empty_passage(rows):
+    """Arizona's stored votes labelled "passage" with no member names and a 0-0 tally lose "passage" (OPEN-712)."""
+    changes, unclassified = [], 0
+    for row in rows:
+        old = list(row["motion_classification"] or [])
+        empty = not row["voters"] and not row["yes"] and not row["no"]
+        if JURISDICTION_MAP[row["jurisdiction_id"]] != "az" or not empty or "passage" not in old:
+            unclassified += 1
+            continue
+        new = [label for label in old if label != "passage"]
+        changes.append(dict(
+            id=row["id"], jurisdiction="az", bill=row["bill"], date=row["start_date"], chamber=row["chamber"],
+            motion_text=row["motion_text"], floor_step="", voters=row["voters"], yes=row["yes"], no=row["no"],
+            field="motion_classification", old=",".join(old), new=",".join(new),
+        ))
+    return changes, unclassified
+
+
 def read_list(path, undo):
     with open(path, newline="") as f:
         rows = list(csv.DictReader(f))
@@ -268,6 +294,8 @@ def main(argv=None):
     parser.add_argument("--jurisdiction", help="only this short key (az, pa, la, ...): a state with motion rules")
     parser.add_argument("--az-cache", help="scrapelib cache with Arizona's Bill pages (classifies Arizona)")
     parser.add_argument("--result", action="store_true", help="Arizona's result instead of classifications (OPEN-627)")
+    parser.add_argument("--az-empty-passage", action="store_true",
+                        help="Arizona's empty 0-0 votes labelled passage lose it (OPEN-712)")
     parser.add_argument("--list", dest="list_path", help="write the changes (planned, or written) to this CSV")
     parser.add_argument("--apply-list", help="write exactly this list's changes (no classifying)")
     parser.add_argument("--undo", help="write this list's changes back (new -> old)")
@@ -278,6 +306,9 @@ def main(argv=None):
         parser.error("--apply-list and --undo are separate runs")
     if args.result and (args.apply_list or args.undo or args.az_cache or args.jurisdiction not in (None, "az")):
         parser.error("--result plans Arizona's results only; a list is applied with --apply-list alone")
+    if args.az_empty_passage and (args.result or args.apply_list or args.undo or args.az_cache
+                                  or args.jurisdiction not in (None, "az")):
+        parser.error("--az-empty-passage plans Arizona's empty votes only; a list is applied with --apply-list alone")
     if args.jurisdiction and args.jurisdiction not in JURISDICTION_MAP.values():
         parser.error(f"unknown jurisdiction {args.jurisdiction!r}: not in the manifest, or no motion rules for it")
     if not (args.dry_run or args.apply_list or args.undo):
@@ -296,16 +327,23 @@ def main(argv=None):
             changes = read_list(args.apply_list or args.undo, undo=bool(args.undo))
             print(f"{len(changes):,} changes read from {args.apply_list or args.undo}" + (" (undo)" if args.undo else ""))
         else:
-            jurisdiction = "az" if args.result else args.jurisdiction
+            jurisdiction = "az" if (args.result or args.az_empty_passage) else args.jurisdiction
             ids = [j for j, k in JURISDICTION_MAP.items() if not jurisdiction or k == jurisdiction]
             az_steps = az_floor_steps(args.az_cache) if args.az_cache else None
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(FETCH_SQL, (ids,))
                 rows = cur.fetchall()
-            changes, unclassified = plan_results(rows) if args.result else plan(rows, az_steps)
+            if args.result:
+                changes, unclassified = plan_results(rows)
+            elif args.az_empty_passage:
+                changes, unclassified = plan_empty_passage(rows)
+            else:
+                changes, unclassified = plan(rows, az_steps)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             if unclassified:
-                why = "an empty 0-0 roll call" if args.result else "no --az-cache, no voters, or no Bill page"
+                why = ("an empty 0-0 roll call" if args.result
+                       else "not an empty vote labelled passage" if args.az_empty_passage
+                       else "no --az-cache, no voters, or no Bill page")
                 print(f"  left as they are: {unclassified:,} (Arizona: {why})")
         groups = {}
         for c in changes:
