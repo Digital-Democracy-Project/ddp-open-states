@@ -1150,3 +1150,59 @@ nm:
   onboarding:
     epic: OPEN-618
     evidence: notes/probe-vtnm-20261031/nm/report.md
+
+# written by new-jurisdiction from notes/probe-all-20261031/wy/result.json (ops-handoff branch) on 2026-11-20 (OPEN-461, OPEN-662)
+wy:
+  name: Wyoming
+  status: probing
+  scraper_module: wy      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:wy/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no wy-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no wy-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean (10 bills in 11.3 s)
+    fargate_safe: true  # the 2026-10-31 Fargate probe reached Wyoming's API and scraped 10 bills
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW (decided by the text checks, OPEN-662 line 10)
+  chambers:  # NEEDS HUMAN REVIEW (OPEN-662 line 2b: wyoleg.gov renders by script; names not yet read from the legislature's own site)
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-662
+    evidence: notes/probe-all-20261031/wy/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-662
