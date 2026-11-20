@@ -718,6 +718,13 @@ step matters — a newer pip breaks one of the pinned deps' build.
   image `ddp-openstates-api:pre-open484`, `DROP INDEX opencivicdata_bill_latest_action_desc_idx`. The endpoint itself needed no schema change, so no `ensure`
   or refresh; it needed a new api image on both hosts. **Live on both:** the Mac (refreshed 2026-10-31 23:20 UTC) and the EC2 host (23:31 UTC, prod agent
   report `2a588e6`). The broker's Explore list is the consumer (BROKER-373).
+- **The sitemap's bill list lives in api-v3's `GET /ddp/sitemap/bills`, once (OPEN-715, 2026-11-20; api-v3 PR #75, not merged).**
+  Every bill of one jurisdiction (`jurisdiction` required, `after` cursor, `limit` up to 1000), each with its bare id, session, number,
+  title, `latest_action_date`, `latest_vote_date` (newest vote event `start_date`, as stored) and `has_votes`; `next_after` is null exactly
+  at the end. It pages like `/ddp/embedding/ledger` (bill id order, reads `limit + 1`) and costs two queries a page (the bills, one grouped
+  vote query). Measured on the Mac copy: US 39,382 bills in 40 pages, about 4 s. The consumer is the broker's sitemap listing
+  (BROKER-558), which decides which bills have content. **Do not** build a sitemap from `/bills` (20 bills with votes a call) or add a
+  second per-jurisdiction bill list.
 
 - **The bill list's page size lives in api-v3's pagination, once (OPEN-493, 2026-11-04; api-v3 PR #51, merged 2026-11-05 as `b7adb9a3`; **live on production since 2026-11-05 00:58 UTC and measured** (prod agent, `notes/ops-handoff` `1f0e965`): one call of 50 is about 110 ms against about 263 ms for three of 20, the same 50 ids, total 87,489).**
   `GET /bills` (`api/bills.py`, `BillPagination`) allows up to **50 bills a page when the request has no `include=`** and keeps **20 with an
