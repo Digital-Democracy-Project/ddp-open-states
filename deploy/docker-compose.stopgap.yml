@@ -22,7 +22,7 @@ services:
       WEB_CONCURRENCY: "3"
       FORWARDED_ALLOW_IPS: "*"
     ports:
-      - "0.0.0.0:8002:80"
+      - "127.0.0.1:8002:80"   # the Mac only, like docker-compose.ddp.yml (AGENTS-251)
     networks:
       - ddp-agents_default
     healthcheck:
