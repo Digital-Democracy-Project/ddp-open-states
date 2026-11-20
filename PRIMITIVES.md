@@ -1444,6 +1444,16 @@ functions, layered on top of the ordering work above rather than changing it.
   apply. Measured 2026-11-18 on the Mac replica: 44 of 3,411 Arizona votes change, all "failed to pass" stored "pass"
   (41 third, 3 final readings), each matching azleg's answer in the scrape cache. **Do not** derive a vote's outcome
   from yeas > nays anywhere else for Arizona; import `vote_result()`.
+  **Arizona's empty "passage" votes (OPEN-712): `--az-empty-passage`** plans taking `passage` off every stored Arizona
+  vote with no member names *and* a 0-0 tally (the same "empty" as `--result`'s): procedural voice votes and summary
+  lines stored before July's scraper fix (`497c9ea35`), which no longer emits them, so a re-scrape never reaches them.
+  On the vote-event basis (BROKER-491) each would become its chamber's latest passage vote and replace the real roll
+  call (SB 1175, 2026). Only `passage` comes off; nothing is deleted; no cache is needed. A vote with a tally but no
+  names (SB 1763's two roll calls) is a real vote and keeps `passage`. Measured 2026-11-20 on the Mac replica: 419 of
+  3,411 Arizona votes (413 "Passed", 6 "failed to pass"). The same-day merge caveat above does not bite here: on a
+  throwaway broker copy with all 2,188 Arizona bills re-imported, this cleanup on today's rule changed no scorecard
+  position, tally or score (only which merged motion's internal id is shown), so it may run on its own before
+  BROKER-491's switch. It must run before that switch: on the vote-event basis the labelled lines would count.
 - **Same-day vote order: the `house-rollcall-num` / `senate-rollcall-num` extras key** (OPEN-628). The broker reads any
   vote extras key ending in `rollcall-num` into `Motion.rollcall_num`, and its scorecard builders order a bill's votes in
   one chamber by date, then that number. WA, VA, MI and AZ store a vote's day without a time, so the key is how two

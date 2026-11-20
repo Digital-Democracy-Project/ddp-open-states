@@ -192,6 +192,68 @@ def test_a_stale_result_aborts_the_whole_write(tmp_path):
     assert conn.stored == {"ocd-vote/10": "pass", "ocd-vote/11": "fail"}
 
 
+# OPEN-712: real 2026 rows from the Mac replica. SB 1175's Senate line returning the bill to the House for
+# reconsideration (6/12, a voice vote stored 0-0 with no names); SB 1763's two roll calls are stored with their tallies
+# (32-18 House, 29-1 Senate) but no names; HB 2758's third reading has its names.
+def empty_row(vote_id, classification, yes=0, no=0, voters=0, text="Passed", jurisdiction=AZ, bill="SB 1175"):
+    return dict(row(vote_id, 0, text, classification, jurisdiction=jurisdiction, bill=bill), result="pass", yes=yes,
+                no=no, voters=voters)
+
+
+def test_arizona_empty_votes_labelled_passage_lose_it():
+    changes, unclassified = bmc.plan_empty_passage([
+        empty_row("ocd-vote/20", ["passage"]),
+        empty_row("ocd-vote/21", ["passage", "reading-3"], text="failed to pass", bill="SB 1100"),
+    ])
+    assert unclassified == 0
+    assert [(c["id"], c["field"], c["old"], c["new"]) for c in changes] == [
+        ("ocd-vote/20", "motion_classification", "passage", ""),
+        ("ocd-vote/21", "motion_classification", "passage,reading-3", "reading-3"),
+    ]
+
+
+def test_a_vote_with_a_tally_or_names_keeps_passage():
+    tally_only = empty_row("ocd-vote/22", ["passage"], yes=32, no=18, bill="SB 1763")
+    one_nay = empty_row("ocd-vote/23", ["passage"], yes=0, no=1, bill="SB 1763")
+    named = empty_row("ocd-vote/24", ["passage"], yes=32, no=24, voters=60, bill="HB 2758")
+    names_without_tally = empty_row("ocd-vote/27", ["passage"], voters=60, bill="HB 2758")
+    assert bmc.plan_empty_passage([tally_only, one_nay, named, names_without_tally]) == ([], 4)
+
+
+def test_a_vote_with_no_tally_rows_is_empty_but_one_count_keeps_it():
+    # FETCH_SQL's sum() gives NULL when a vote has no count rows; NULL and 0 both mean no tally.
+    no_rows = empty_row("ocd-vote/28", ["passage"], yes=None, no=None)
+    nays_only = empty_row("ocd-vote/29", ["passage"], yes=None, no=5, bill="SB 1763")
+    changes, unclassified = bmc.plan_empty_passage([no_rows, nays_only])
+    assert ([c["id"] for c in changes], unclassified) == (["ocd-vote/28"], 1)
+
+
+def test_empty_votes_without_passage_and_other_states_are_left_alone():
+    unlabelled = empty_row("ocd-vote/25", [])
+    us = empty_row("ocd-vote/26", ["passage"], jurisdiction="ocd-jurisdiction/country:us/government")
+    assert bmc.plan_empty_passage([unlabelled, us]) == ([], 2)
+
+
+def test_empty_passage_list_writes_and_undoes(tmp_path):
+    changes, _ = bmc.plan_empty_passage([empty_row("ocd-vote/20", ["passage"])])
+    conn = _Conn({"ocd-vote/20": ["passage"]})
+    bmc.write(conn, changes, str(tmp_path / "committed.csv"))
+    assert conn.stored == {"ocd-vote/20": []}
+    assert all("SET motion_classification = %s WHERE id = %s AND motion_classification = %s" in s for s in conn.sql)
+    bmc.write(conn, bmc.read_list(str(tmp_path / "committed.csv"), undo=True), None)
+    assert conn.stored == {"ocd-vote/20": ["passage"]}
+
+
+@pytest.mark.parametrize("argv", [
+    ["--az-empty-passage", "--result", "--dry-run"], ["--az-empty-passage", "--apply-list", "x.csv"],
+    ["--az-empty-passage", "--jurisdiction", "pa", "--dry-run"], ["--az-empty-passage"],
+])
+def test_empty_passage_only_plans_arizona(monkeypatch, argv):
+    monkeypatch.setattr(bmc.psycopg2, "connect", lambda *a, **k: pytest.fail("connected"))
+    with pytest.raises(SystemExit):
+        bmc.main(argv)
+
+
 def test_a_list_without_a_field_column_writes_classifications(tmp_path):
     # OPEN-625's reviewed list predates the "field" column.
     path = tmp_path / "open625.csv"
