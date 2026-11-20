@@ -28,8 +28,10 @@ changes (dry run or write), --apply-list writes exactly a list's changes, --undo
 list's changes back. Every write is guarded: a row whose stored classification is no longer
 the list's "old" aborts the run with nothing written.
 
+A run that classifies is always a dry run (OPEN-661): every write is a reviewed list.
+
 Usage:
-    python3 backfill-motion-classification.py [--dry-run]
+    python3 backfill-motion-classification.py --jurisdiction pa --dry-run --list FILE
     python3 backfill-motion-classification.py --jurisdiction az --az-cache DIR --dry-run --list FILE
     python3 backfill-motion-classification.py --result --dry-run --list FILE
     python3 backfill-motion-classification.py --apply-list FILE --expect N --list COMMITTED
@@ -57,19 +59,26 @@ DB_CONFIG = {
     "password": os.getenv("OPENSTATES_DB_PASSWORD", "openstates_dev"),
 }
 
-# Map OpenStates jurisdiction IDs to the short keys used by classify_motion.
-# ocd-jurisdiction/country:us/government → us
-# ocd-jurisdiction/country:us/state:az/government → az
-JURISDICTION_MAP = {
-    "ocd-jurisdiction/country:us/government": "us",
-    "ocd-jurisdiction/country:us/state:az/government": "az",
-    "ocd-jurisdiction/country:us/state:ut/government": "ut",
-    "ocd-jurisdiction/country:us/state:fl/government": "fl",
-    "ocd-jurisdiction/country:us/state:mi/government": "mi",
-    "ocd-jurisdiction/country:us/state:ma/government": "ma",
-    "ocd-jurisdiction/country:us/state:wa/government": "wa",
-    "ocd-jurisdiction/country:us/state:va/government": "va",
-}
+
+# OCD jurisdiction id -> the short key classify_motion uses. OPEN-661: built from the manifest (jurisdictions.yaml,
+# validated, the one state list) and the motion rules (motion_classification.yaml), not typed here: a state is covered
+# when the manifest has it AND the rules have a block for it. A state with no rule block is left out on purpose:
+# classify_motion() returns [] for it, which would wipe its stored labels. The id comes from
+# qa_primitives.ocd_jurisdiction_id(), as in quality_check.py's OCD_TO_CODE.
+def _jurisdiction_map():
+    from classify_motion import _config  # the rules classify_motion() reads
+    from qa_primitives import MANIFEST_PATH, ocd_jurisdiction_id
+    from validate_jurisdictions import load_and_validate
+
+    manifest, errors = load_and_validate(MANIFEST_PATH)
+    if errors:
+        raise SystemExit(
+            "backfill-motion-classification.py: jurisdictions.yaml is not usable:\n  " + "\n  ".join(errors))
+    ruled = set(_config["jurisdictions"])
+    return {ocd_jurisdiction_id(code): code for code in manifest if code in ruled}
+
+
+JURISDICTION_MAP = _jurisdiction_map()
 
 FETCH_SQL = """
     SELECT
@@ -256,7 +265,7 @@ def _write_list(path, rows):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true", help="Print changes without writing")
-    parser.add_argument("--jurisdiction", help="only this short key (az, us, ut, ...)")
+    parser.add_argument("--jurisdiction", help="only this short key (az, pa, la, ...): a state with motion rules")
     parser.add_argument("--az-cache", help="scrapelib cache with Arizona's Bill pages (classifies Arizona)")
     parser.add_argument("--result", action="store_true", help="Arizona's result instead of classifications (OPEN-627)")
     parser.add_argument("--list", dest="list_path", help="write the changes (planned, or written) to this CSV")
@@ -270,7 +279,13 @@ def main(argv=None):
     if args.result and (args.apply_list or args.undo or args.az_cache or args.jurisdiction not in (None, "az")):
         parser.error("--result plans Arizona's results only; a list is applied with --apply-list alone")
     if args.jurisdiction and args.jurisdiction not in JURISDICTION_MAP.values():
-        parser.error(f"unknown jurisdiction {args.jurisdiction!r}")
+        parser.error(f"unknown jurisdiction {args.jurisdiction!r}: not in the manifest, or no motion rules for it")
+    if not (args.dry_run or args.apply_list or args.undo):
+        # OPEN-661: the map now holds every manifest state with motion rules (16), not eight, and a plan can hold rows
+        # nobody wants written (Louisiana's 31 `amendment` labels, kept by Ramon's 2026-11-17 decision). So a run that
+        # classifies is a dry run, and every write is a reviewed list: plan with --dry-run --list, cut the list, then
+        # write it with --apply-list (production already works this way, OPEN-625).
+        parser.error("plan with --dry-run --list FILE, review the list, then write it with --apply-list FILE")
     if args.list_path and os.path.exists(args.list_path):
         parser.error(f"{args.list_path} already exists; an earlier list is never overwritten")
 
