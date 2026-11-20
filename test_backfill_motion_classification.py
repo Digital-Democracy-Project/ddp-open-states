@@ -206,3 +206,73 @@ def test_a_list_without_a_field_column_writes_classifications(tmp_path):
 def test_an_unknown_field_in_a_list_is_refused():
     with pytest.raises(ValueError, match="unknown field"):
         bmc.write(_Conn({}), [dict(id="ocd-vote/1", field="updated_at", old="a", new="b")], None)
+
+
+# OPEN-661: the states come from the manifest and the motion rules, not a typed list of eight.
+OLD_EIGHT = {
+    "ocd-jurisdiction/country:us/government": "us",
+    "ocd-jurisdiction/country:us/state:az/government": "az",
+    "ocd-jurisdiction/country:us/state:ut/government": "ut",
+    "ocd-jurisdiction/country:us/state:fl/government": "fl",
+    "ocd-jurisdiction/country:us/state:mi/government": "mi",
+    "ocd-jurisdiction/country:us/state:ma/government": "ma",
+    "ocd-jurisdiction/country:us/state:wa/government": "wa",
+    "ocd-jurisdiction/country:us/state:va/government": "va",
+}
+
+
+def test_the_old_eight_keep_their_ids():
+    for ocd_id, code in OLD_EIGHT.items():
+        assert bmc.JURISDICTION_MAP[ocd_id] == code
+
+
+def test_pennsylvania_and_louisiana_are_covered():
+    assert bmc.JURISDICTION_MAP["ocd-jurisdiction/country:us/state:pa/government"] == "pa"
+    assert bmc.JURISDICTION_MAP["ocd-jurisdiction/country:us/state:la/government"] == "la"
+
+
+def test_a_manifest_state_without_motion_rules_is_left_out():
+    # New Mexico is in the manifest but has no motion rules: classify_motion() would return [] and wipe its labels
+    from classify_motion import _config
+
+    assert "nm" not in _config["jurisdictions"]
+    assert "nm" not in bmc.JURISDICTION_MAP.values()
+
+
+def test_every_covered_state_is_in_the_manifest_and_has_rules():
+    from classify_motion import _config
+    from validate_jurisdictions import load_and_validate
+
+    manifest, errors = load_and_validate(os.path.join(HERE, "jurisdictions.yaml"))
+    assert not errors
+    assert set(bmc.JURISDICTION_MAP.values()) == set(manifest) & set(_config["jurisdictions"])
+
+
+@pytest.mark.parametrize("key", ["nm", "xx"])
+def test_an_uncovered_jurisdiction_is_refused(key):
+    with pytest.raises(SystemExit):
+        bmc.main(["--jurisdiction", key, "--dry-run"])
+
+
+@pytest.mark.parametrize("argv", [[], ["--jurisdiction", "la"], ["--jurisdiction", "pa"], ["--result"]])
+def test_a_run_that_classifies_never_writes(monkeypatch, argv):
+    # OPEN-661: refused before any database connection; Louisiana's dry run plans 31 removals of the `amendment`
+    # labels Ramon decided to keep, so a classifying run may only plan, and a write is a reviewed list
+    monkeypatch.setattr(bmc.psycopg2, "connect", lambda *a, **k: pytest.fail("connected"))
+    with pytest.raises(SystemExit):
+        bmc.main(argv)
+
+
+@pytest.mark.parametrize("argv", [
+    ["--jurisdiction", "la", "--dry-run"], ["--apply-list", "reviewed.csv"], ["--undo", "committed.csv"],
+])
+def test_dry_runs_and_reviewed_lists_still_reach_the_database(monkeypatch, argv):
+    class Reached(Exception):
+        pass
+
+    def connect(*a, **k):
+        raise Reached
+
+    monkeypatch.setattr(bmc.psycopg2, "connect", connect)
+    with pytest.raises(Reached):
+        bmc.main(argv)
