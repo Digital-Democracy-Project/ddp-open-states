@@ -742,7 +742,9 @@ def test_open555_the_real_manifest_carries_todays_constants():
     assert {c: v for c, v in speakers.items() if v is not None} == {
         "ma": {"192nd": "Ronald Mariano", "193rd": "Ronald Mariano", "194th": "Ronald Mariano"},
         "id": {"2026": "Mike Moyle"},  # OPEN-664: scrapers/id/voter_names.py
-        "ms": {s: "Jason White" for s in ("2024", "20241E", "20242E", "2025", "20251E", "2026", "20261E")}}  # OPEN-731
+        "ms": {s: "Jason White" for s in ("2024", "20241E", "20242E", "2025", "20251E", "2026", "20261E")},  # OPEN-731
+        "mo": {"2023": "Dean Plocher", "2024": "Dean Plocher",  # OPEN-738: scrapers/mo/voter_names.py
+               **{s: "Jonathan Patterson" for s in ("2025", "2025S1", "2025S2", "2026")}}}
     bare = {c: e["votes"]["bare_key_session"] for c, e in data.items()}
     assert {c: v for c, v in bare.items() if v is not None} == {"nc": "2025"}
     assert {c: e["scraper_module"] for c, e in data.items() if e["scraper_module"] != c} == {"us": "usa"}
