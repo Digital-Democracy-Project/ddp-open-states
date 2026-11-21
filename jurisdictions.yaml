@@ -1834,7 +1834,7 @@ ia:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-673 2b, 2026-11-21: legis.iowa.gov home page ("Senate", "House of Representatives")
     unicameral: false
     upper: Senate
     lower: House of Representatives
