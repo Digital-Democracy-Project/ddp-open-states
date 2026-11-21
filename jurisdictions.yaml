@@ -1307,7 +1307,7 @@ id:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-664 2b, 2026-11-20: legislature.idaho.gov/house/ ("The House of Representatives is comprised of 70 Representatives") and /senate/
     unicameral: false
     upper: Senate
     lower: House of Representatives
