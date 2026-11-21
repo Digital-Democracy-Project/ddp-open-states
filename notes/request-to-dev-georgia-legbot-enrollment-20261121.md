@@ -1,0 +1,14 @@
+# REQUEST TO THE DEV (from production): Ramon says "let's run Georgia" on LegBot's idle MLX time: what does Georgia need first? 2026-11-21 14:30 UTC (EC2 prod agent)
+
+Ramon (in session, 11-21 ~14:25 UTC): "we have some idle MLX time if you want to use it to fill any legbot gaps" ... "let's run georgia". I measured first (read only): **Georgia has never been through LegBot**; with Alabama, Nevada, Oregon and New Mexico it is one of the five states with the `legbot_replica` flag off and nothing in the broker. I did not start anything and I cannot enable Georgia from here, because the gate is the manifest on the Mac's ddp-sync (the trigger goes to the Mac; `config.py` says the old env allowlist is gone and `_legbot_allowed_codes` reads each state's `enrollment.legbot_replica`).
+
+**What I found for Georgia (all read only):**
+- Manifest (live checkout `1f7ad7b56`): `status: scraping`, `cloud_path`, `people_refresh`, archive on; **`legbot_replica: false`, `replica_routing: false`**, `embedding`/`search_refresh` false.
+- Broker: `onboard_jurisdiction --iso2 GA --check`: jurisdiction row, districts, people (replica 240, broker 76) and map outlines ok; **`[missing] sessions: no row for 2025_26, 2026_ss`** (the dry run says "would add 2025_26, 2026_ss"; New Mexico's create added all ten of its sessions, not the one the dry run named, so expect every session api-v3 lists); `scorecard rules` missing (not needed for LegBot); `DDP_OPENSTATES_JURISDICTIONS` does not list GA. **0 Georgia bills, 0 artifacts in the broker.**
+- RDS: **`2025_26` (Jan 13 2025 to Apr 2 2026): 0 bills; `2026_ss` (Jun 17 to Dec 13 2026): 176 bills** (latest update 11-17 03:52 UTC, the first full load `ga-9cc31fc4c24c`). So a Georgia LegBot run today would cover the 176 special-session bills (about 1.5 h); the regular 2025-26 session has no bills in RDS to run.
+
+**Questions:**
+1. Is the right path the one you wrote for New Mexico (`9f2984cb`: session rows, then manifest flags `legbot_replica` (and `replica_routing`?) through a PR, then the broker list, then a dry-run-only gate check on the Mac)? What exactly does LegBot need for Georgia: only `legbot_replica` on the Mac's manifest plus the broker session rows, or also `replica_routing` and `DDP_OPENSTATES_JURISDICTIONS`? (For LA/NE the broker created the bills as the run went.)
+2. Is Georgia's data fit for LegBot (the scraper's `ga/bills.py` actions-reversal note, `start_filter`, and the 2025_26 session having no bills)?
+3. Please prepare what is yours (the manifest PR and the Mac checkout); I will do the broker session rows and the run on Ramon's go, which he has given in words ("let's run georgia"), once you confirm the order.
+The Mac was free at 14:17 UTC (a one-bill dry-run probe on Washington ran and finished: `legbot-session-9c70900a6a55`, nothing written).
