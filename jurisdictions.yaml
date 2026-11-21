@@ -86,7 +86,7 @@
 #     in the env still wins for mi) and fl's waf.max_attempts / cooldown_after_failures / cooldown_s (scrapers/fl/bills.py).
 #     Null for a state with no WAF profile; the validator requires the first two for a state with one.
 #   - scrape.session_list_attempts / session_list_backoff_s (ut only, scrapers/ut/__init__.py).
-#   - votes.house_speaker_by_session (ma, id, ms: scrapers/<state>/voter_names.py; add a session here when a new Speaker
+#   - votes.house_speaker_by_session (ma, id, ms, mo: scrapers/<state>/voter_names.py; add a session here when a new Speaker
 #     is elected)
 #     and votes.bare_key_session (nc, scrapers/nc/bills.py).
 # Every reader still keeps its old constant as the fallback (a host or image whose manifest lacks the field, or a state
@@ -1713,7 +1713,21 @@ mo:
     upper: Senate
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
-    house_speaker_by_session: null
+    # OPEN-738: read by scrapers/mo/voter_names.py ('MR SPEAKER' on House roll calls); the 102nd and 103rd General
+    # Assemblies. Source, read 2026-11-21: the House's own journals, documents.house.mo.gov/billtracking/bills{code}/
+    # jrnpdf/ (house.mo.gov answers 403). bills231/jrn001.pdf (Jan 4 2023): nominations cease and Representative Plocher
+    # "be elected by acclamation", "Speaker Plocher assumed the Chair"; bills241/jrn001.pdf (Jan 3 2024): "Speaker
+    # Plocher in the Chair"; bills251/jrn001.pdf (Jan 8 2025): "The Chair ruled that Representative Patterson was
+    # elected Speaker of the House" (nominated as "Representative Jonathan Patterson"); bills253/jrn003.pdf (2025S1)
+    # and bills261/jrn001.pdf (Jan 7 2026): "Speaker Patterson in the Chair"; bills254/jrn001.pdf (2025S2, Sep 3
+    # 2025): a letter signed "Jonathan Patterson, Speaker of the House".
+    house_speaker_by_session:
+      '2023': Dean Plocher
+      '2024': Dean Plocher
+      '2025': Jonathan Patterson
+      2025S1: Jonathan Patterson
+      2025S2: Jonathan Patterson
+      '2026': Jonathan Patterson
     bare_key_session: null
   api_keys: []
   onboarding:

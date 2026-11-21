@@ -978,6 +978,10 @@ functions, layered on top of the ordering work above rather than changing it.
   versions. Built 2026-11-04 (api-v3 PR #49, not merged, not deployed; the test workflow was also red on every PR until #50 pins
   `ubuntu-24.04`). **Deploy after OPEN-492's column exists and a state has been recomputed**, on the Mac and EC2 (prod agent); after a
   recompute the bill search index may need a `--full` refresh, because the flag change does not touch `updated_at`.
+- **OPEN-641 — api-v3 serves each related bill's `related_bill_id` and, when present, its `label` (core `ddp_relation_label`, migration data.0052); an unknown one is left out (exclude-none).**
+  Same column check as OPEN-422/540: `relation_label_column_present()` in `api-v3/api/bill_version_flag.py` (`_column_present` now takes a
+  table); the model column is `deferred` and `BillPagination.select_or_noload` undefers it in the related-bills select-in query only when
+  the column exists. **Do not** add another per-column existence check: call `_column_present(bind, column, table=...)`.
 - **OPEN-642 — Florida's own companion links, read in the scraper** (`openstates-scrapers/scrapers/fl/bills.py`,
   openstates-scrapers #187). `BillDetail.process_related_bills()` reads the bill page's "Related Bills" table ("Identical" →
   `companion`; "Similar", "Compare", "Linked", anything else → `related`; the word kept as the label) and
@@ -1909,7 +1913,7 @@ scope line was deliberate, not an oversight.
 - **Per-state values moved out of code (OPEN-555, PLAN-state-specific-handling Phase 4, 2026-11-18).** Required on
   every entry: `scraper_module` and `ocd_id`; `waf.requests_per_minute`, `max_consecutive_blocks`, `max_attempts`,
   `cooldown_after_failures`, `cooldown_s` (null without a WAF profile; the first two required with one);
-  `scrape.session_list_attempts` / `session_list_backoff_s` (ut); `votes.house_speaker_by_session` (ma) and
+  `scrape.session_list_attempts` / `session_list_backoff_s` (ut); `votes.house_speaker_by_session` (ma, id, ms, mo) and
   `votes.bare_key_session` (nc). Readers: here, `validate_jurisdictions.scraper_module_for()` /
   `code_for_scraper_module()` (cloud_collector.py, verify-jurisdiction, probe-on-fargate),
   `qa_primitives.ocd_jurisdiction_id()` (quality_check.py, verify-jurisdiction, new-jurisdiction) and os-status's
