@@ -1778,7 +1778,7 @@ me:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-672 2b, 2026-11-21: legislature.maine.gov/senate/ ("Maine Senate") and /house/ ("Maine House of Representatives")
     unicameral: false
     upper: Senate
     lower: House of Representatives
