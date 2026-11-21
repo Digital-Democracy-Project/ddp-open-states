@@ -1890,10 +1890,10 @@ md:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-674 2b, 2026-11-21: the lower chamber is the House of Delegates (Maryland Manual, msa.maryland.gov/msa/mdmanual/06hse: "Maryland House of Delegates"; 05sen: "Maryland Senate"; mgaleg.maryland.gov search menu: "House of Delegates")
     unicameral: false
     upper: Senate
-    lower: House of Representatives
+    lower: House of Delegates
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
     bare_key_session: null
