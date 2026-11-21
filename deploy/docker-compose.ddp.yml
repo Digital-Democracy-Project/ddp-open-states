@@ -14,7 +14,11 @@ services:
       POSTGRES_PASSWORD: openstates_dev
       POSTGRES_DB: openstates
     ports:
-      - "0.0.0.0:5433:5432"   # 5432 is CAMS; native scrapers reach this DB on host :5433
+      # 5432 is CAMS; native scrapers reach this DB on host :5433. 127.0.0.1 only (AGENTS-251): under Colima a 0.0.0.0
+      # publish listens on every interface of the Mac (office network, WireGuard). Everything that reads it is on the
+      # Mac (localhost, or host.docker.internal from a container, which reaches the Mac's 127.0.0.1); the RDS
+      # replication is a subscription this database opens to RDS, not a connection in.
+      - "127.0.0.1:5433:5432"
     volumes:
       - os_pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -97,7 +101,10 @@ services:
       FORWARDED_ALLOW_IPS: "*"
       DDP_JURISDICTIONS_MANIFEST: "/app/manifest/jurisdictions.yaml"
     ports:
-      - "0.0.0.0:8002:80"
+      # 127.0.0.1 only (AGENTS-251): ddp-sync, LegBot, the dev broker and VoteBot's dev copy all call it on the Mac.
+      # Production (ddp-api, ddp-sync, the broker, VoteBot) uses the EC2 broker host's own api-v3 (10.0.0.11:8002,
+      # deploy/docker-compose.rds.yml), never this one.
+      - "127.0.0.1:8002:80"
     networks:
       - default
       - ddp-agents_default

@@ -605,7 +605,9 @@ step matters — a newer pip breaks one of the pinned deps' build.
   `docker-compose.ddp.yml` (live stack, build context → `../api-v3`), `Dockerfile.ddp` (adds
   `psycopg2-binary==2.9.9` for Postgres-16 SCRAM auth on arm64 — the stock pin links an old
   libpq that can't do `scram-sha-256`), `docker-compose.stopgap.yml` (pinned rollback target,
-  points at the old CAMS-shared DB on :5432), `Dockerfile.ddp.dockerignore`.
+  points at the old CAMS-shared DB on :5432), `Dockerfile.ddp.dockerignore`. Both Mac files publish
+  on `127.0.0.1` only (AGENTS-251; every caller is on the Mac), `docker-compose.rds.yml` (EC2) keeps
+  `0.0.0.0:8002`; `test-compose-ports.sh` checks all three.
 - **`refresh-api-v3.sh`** (OPEN-101, repo root) — the repeatable pull/rebuild/redeploy cycle
   api-v3 never had one of (unlike `apply-local-patches.sh` for `openstates-core`/
   `openstates-scrapers`): `git pull origin main` in the production `api-v3` checkout, then
