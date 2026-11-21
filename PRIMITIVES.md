@@ -978,6 +978,14 @@ functions, layered on top of the ordering work above rather than changing it.
   versions. Built 2026-11-04 (api-v3 PR #49, not merged, not deployed; the test workflow was also red on every PR until #50 pins
   `ubuntu-24.04`). **Deploy after OPEN-492's column exists and a state has been recomputed**, on the Mac and EC2 (prod agent); after a
   recompute the bill search index may need a `--full` refresh, because the flag change does not touch `updated_at`.
+- **OPEN-642 — Florida's own companion links, read in the scraper** (`openstates-scrapers/scrapers/fl/bills.py`,
+  openstates-scrapers #187). `BillDetail.process_related_bills()` reads the bill page's "Related Bills" table ("Identical" →
+  `companion`; "Similar", "Compare", "Linked", anything else → `related`; the word kept as the label) and
+  `add_companions_named_in()` reads the bill's own "companion bill(s) passed, see …" history lines (→ `companion`, label
+  "companion bill(s) passed"). The table writes "S 318" without the type, so `scrape()` first reads the session's identifiers
+  (`BillIdList`, keyed by `_fl_bill_key()`: chamber + number, unique per Florida session). **Do not** add a second Florida
+  companion matcher here or in the broker: this is the ETL copy of the broker's `_match_related_bill_in_text`, which
+  BROKER-553 removes once every live state reads its own lines.
 - **OPEN-498 — Massachusetts: the bill's title decides whether a document is a real bill version, because the note cannot.**
   Massachusetts files agency reports and letters (HD/SD numbers), study, extension and "Order relative to ..." orders, amendment
   papers, messages and rules under the same kind of bill number as real bills, and every one has the note "Bill Text", so the
