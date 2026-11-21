@@ -1035,6 +1035,23 @@ functions, layered on top of the ordering work above rather than changing it.
     (`_DOCUMENT_ORDERED_JURISDICTIONS`); the stage breaks a tie. Georgia's own `Version` field (`_version_id`) is not an order.
   * **Where:** openstates-core PR #115. api-v3 imports these rules (OPEN-538), so it follows when its core pin moves.
   * **Do not** order Georgia by stage or by `_version_id`, or add a second Georgia list; a new Georgia name goes in the same shapes.
+- **OPEN-720: the US's and Michigan's agreed, passed and adopted texts have a stage**, so they can be a bill's latest text.
+  * **Stages** (`note_stage()` in openstates-core `utils/version_ordering.py`, exact names, last in the function):
+    * chamber passage: US "Agreed to Senate", "Received in Senate", "Considered and Passed Senate" / "... House"; Michigan
+      "House Adopted Resolution", "Senate Adopted Resolution", "As Adopted by the House" / "... Senate";
+    * enacted: US "Private Law", Michigan "Local Act".
+  * **Measured** (Mac replica, 2026-11-21):
+    * only these 10 names change stage, in every jurisdiction;
+    * the latest placed version changes on 1,050 US bills (836 had no placed version at all) and 334 Michigan bills;
+    * US SRES 866 and SRES 662 now end on "Agreed to Senate", Michigan HR 10 on "House Adopted Resolution".
+  * **Still unknown, on purpose:** the US's procedural reprints ("Reference Change Senate", "Laid on Table in House",
+    "Held at Desk Senate", "Committee Discharged House", "Returned to the House by Unanimous Consent"; 13 versions).
+  * **Release:** the scrapers image at this core; api-v3 rebuilt at it on both hosts; `recompute-diff-order us` and `mi`
+    (stored comparisons); then the broker's `refresh_bill_version_order --jurisdiction US` / `MI`.
+    * Dry runs on the Mac replica, 2026-11-21: **mi corrected=915** (diff_baseline_id set=914 changed=106);
+      **us corrected=999** (set=752 changed=316).
+    * Main's core on the same data: mi 0, us 2. So the US's 2 were already pending, and the rest is this change.
+  * **Do not** add a second list of these names anywhere; a new name goes in the same block.
 - **OPEN-593: Virginia's substitutes are ordered by LIS file number** (openstates-core #113, not yet live).
   * **Core:** `document_number()` in `utils/version_ordering.py` also reads Virginia's LIS file number
     (`lis.blob.core.windows.net/files/<n>.PDF`, the **largest** of a version's files) as `version_sort_key`'s last
