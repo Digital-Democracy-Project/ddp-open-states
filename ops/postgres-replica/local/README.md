@@ -4,6 +4,32 @@ Part of the [OPEN-269](https://digitaldemocracyproject.atlassian.net/browse/OPEN
 building `PLAN-rds-local-postgres-replication.md`. These scripts run ON the Mac Studio (unlike
 `ops/postgres-replica/rds/`, which needs RDS admin access this session doesn't have).
 
+## The RDS certificate (OPEN-740)
+
+Everything in `ddp-openstates-postgres-1` that talks to RDS verifies RDS's certificate (`sslmode=verify-full`):
+- the subscription (`ddp_legbot_subscription`, `sslrootcert=/tmp/rds-global-bundle.pem`);
+- `sync-structure.sh` and `compare-schema.sh` (libpq's default `/root/.postgresql/root.crt`).
+
+**Where it comes from:** `deploy/rds-global-bundle.pem`, AWS's public RDS bundle
+(`https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem`, no secret). `deploy/docker-compose.ddp.yml`
+mounts it read-only at both paths, so a recreate keeps it.
+
+**Why:** until OPEN-740 both files lived only inside the container. Any recreate (2026-11-21, for AGENTS-251's
+port change) deleted them. From then on:
+- replication stopped silently: `root certificate file "/tmp/rds-global-bundle.pem" does not exist` every 5 s;
+- the structure check alerted on `/root/.postgresql/root.crt`.
+
+**Check after a recreate** (`docker compose -f deploy/docker-compose.ddp.yml up -d --force-recreate postgres`):
+- `docker exec ddp-openstates-postgres-1 ls -l /tmp/rds-global-bundle.pem /root/.postgresql/root.crt` lists both
+  files.
+- Within a minute, `select pid is not null from pg_stat_subscription` (in the database that holds the
+  subscription) is `t`.
+- `docker logs ddp-openstates-postgres-1` shows no new `root certificate file` line.
+- The structure check's next run (`logs/replica-check.log`) shows no certificate error.
+
+**When AWS changes its CAs:** download the bundle again over `deploy/rds-global-bundle.pem` in a PR, then
+recreate the container. Never weaken `verify-full`.
+
 ## `network-check.sh` (OPEN-270)
 
 Confirms the Mac's real network path to RDS. Read-only, no side effects. See
@@ -270,11 +296,11 @@ RDS_HOST=<rds-endpoint> RDS_CA_BUNDLE_PATH=<path to the RDS CA bundle> \
   ./setup-subscription-and-readonly-role.sh <new-database-name>
 ```
 
-**Prerequisite, confirmed missing on this Mac**: the RDS CA bundle `sslmode=verify-full` needs.
-AWS publishes it at `https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem` — fetch
-it and pass its path as `RDS_CA_BUNDLE_PATH`. Neither this bundle nor an equivalent exists inside
-`ddp-openstates-postgres-1` right now (checked directly) — this is a real prerequisite to fetch
-before running for real, not assumed to already be there.
+**The RDS CA bundle `sslmode=verify-full` needs is in the repo (OPEN-740):** `deploy/rds-global-bundle.pem`,
+AWS's public bundle from `https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem` (no secret).
+Inside `ddp-openstates-postgres-1` it is at `/tmp/rds-global-bundle.pem`, so pass
+`RDS_CA_BUNDLE_PATH=/tmp/rds-global-bundle.pem`. (Before OPEN-740 it was copied in by hand; see "The RDS
+certificate" below.)
 
 **Tested end-to-end against a real, fully isolated logical-replication loopback** — not just
 syntax-checked. Since neither RDS nor the Mac's own local Postgres has `wal_level=logical`

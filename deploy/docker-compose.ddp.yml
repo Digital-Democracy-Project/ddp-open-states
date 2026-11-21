@@ -21,6 +21,13 @@ services:
       - "127.0.0.1:5433:5432"
     volumes:
       - os_pg_data:/var/lib/postgresql/data
+      # OPEN-740: AWS's public RDS certificate bundle (deploy/rds-global-bundle.pem, no secret), mounted read-only so a
+      # recreate keeps it. Two paths, one file: the subscription to RDS names sslrootcert=/tmp/rds-global-bundle.pem, and
+      # a psql run in this container against RDS with sslmode=verify-full and no sslrootcert (sync-structure.sh,
+      # compare-schema.sh) uses libpq's default, root's ~/.postgresql/root.crt. Without them both stop at "root
+      # certificate file ... does not exist".
+      - ./rds-global-bundle.pem:/tmp/rds-global-bundle.pem:ro
+      - ./rds-global-bundle.pem:/root/.postgresql/root.crt:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U openstates"]
       interval: 5s

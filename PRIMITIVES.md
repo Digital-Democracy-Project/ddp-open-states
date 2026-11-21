@@ -409,6 +409,13 @@ credential file) is readable**, so a test of this script must set it and `REPLIC
 in any `env -i` case; `test-replica-monitoring.sh` refuses to start otherwise and puts tripwire `docker`/`psql`/`curl` first
 on PATH (OPEN-631). Copy that preamble, do not write a second one. Operator doc: `ops/postgres-replica/local/README.md` → "OPEN-312".
 
+## `deploy/rds-global-bundle.pem` — the RDS certificate the Mac replica verifies with (OPEN-740)
+
+AWS's public RDS CA bundle (no secret). `deploy/docker-compose.ddp.yml` mounts it read-only in `ddp-openstates-postgres-1`
+at `/tmp/rds-global-bundle.pem` (the subscription's `sslrootcert`) and `/root/.postgresql/root.crt` (libpq's default, used by
+`sync-structure.sh` and `compare-schema.sh`), so a recreate keeps both. **Do not `docker cp` a certificate into the container
+or weaken `verify-full`;** refresh this one file in a PR when AWS changes its CAs. README "The RDS certificate".
+
 ## `ops/postgres-replica/local/sync-structure.sh` — the Mac replica follows RDS's table structure by itself (OPEN-314)
 
 Logical replication never carries structure, so a new column on a published table used to stall the Mac's apply worker
