@@ -982,6 +982,14 @@ functions, layered on top of the ordering work above rather than changing it.
   Same column check as OPEN-422/540: `relation_label_column_present()` in `api-v3/api/bill_version_flag.py` (`_column_present` now takes a
   table); the model column is `deferred` and `BillPagination.select_or_noload` undefers it in the related-bills select-in query only when
   the column exists. **Do not** add another per-column existence check: call `_column_present(bind, column, table=...)`.
+- **OPEN-642 — Florida's own companion links, read in the scraper** (`openstates-scrapers/scrapers/fl/bills.py`,
+  openstates-scrapers #187). `BillDetail.process_related_bills()` reads the bill page's "Related Bills" table ("Identical" →
+  `companion`; "Similar", "Compare", "Linked", anything else → `related`; the word kept as the label) and
+  `add_companions_named_in()` reads the bill's own "companion bill(s) passed, see …" history lines (→ `companion`, label
+  "companion bill(s) passed"). The table writes "S 318" without the type, so `scrape()` first reads the session's identifiers
+  (`BillIdList`, keyed by `_fl_bill_key()`: chamber + number, unique per Florida session). **Do not** add a second Florida
+  companion matcher here or in the broker: this is the ETL copy of the broker's `_match_related_bill_in_text`, which
+  BROKER-553 removes once every live state reads its own lines.
 - **OPEN-498 — Massachusetts: the bill's title decides whether a document is a real bill version, because the note cannot.**
   Massachusetts files agency reports and letters (HD/SD numbers), study, extension and "Order relative to ..." orders, amendment
   papers, messages and rules under the same kind of bill number as real bills, and every one has the note "Bill Text", so the
