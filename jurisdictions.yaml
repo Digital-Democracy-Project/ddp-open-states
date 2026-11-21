@@ -1589,7 +1589,7 @@ ms:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-669 2b, 2026-11-21: legislature.ms.gov ("Senate") and its 2026 bill list billstatus.ls.state.ms.us ("members of the Mississippi House of Representatives and Senate")
     unicameral: false
     upper: Senate
     lower: House of Representatives
