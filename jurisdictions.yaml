@@ -1420,7 +1420,7 @@ ok:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-666 2b, 2026-11-21: okhouse.gov ("Oklahoma House of Representatives") and oklegislature.gov ("Senate")
     unicameral: false
     upper: Senate
     lower: House of Representatives
