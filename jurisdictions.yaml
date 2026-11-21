@@ -86,7 +86,8 @@
 #     in the env still wins for mi) and fl's waf.max_attempts / cooldown_after_failures / cooldown_s (scrapers/fl/bills.py).
 #     Null for a state with no WAF profile; the validator requires the first two for a state with one.
 #   - scrape.session_list_attempts / session_list_backoff_s (ut only, scrapers/ut/__init__.py).
-#   - votes.house_speaker_by_session (ma, scrapers/ma/voter_names.py: add a session here when a new Speaker is elected)
+#   - votes.house_speaker_by_session (ma, id, ms: scrapers/<state>/voter_names.py; add a session here when a new Speaker
+#     is elected)
 #     and votes.bare_key_session (nc, scrapers/nc/bills.py).
 # Every reader still keeps its old constant as the fallback (a host or image whose manifest lacks the field, or a state
 # with no entry). The constants are deleted only after both hosts and the scrapers image run this manifest (the plan's
@@ -1593,7 +1594,14 @@ ms:
     upper: Senate
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
-    house_speaker_by_session: null
+    house_speaker_by_session:   # OPEN-731: read by scrapers/ms/voter_names.py ('Mr. Speaker' on House roll calls).
+      '2024': Jason White       # Every session the ms scraper defines in the 2024-2027 term. Source, read 2026-11-21:
+      '20241E': Jason White     # billstatus.ls.state.ms.us/members/hr_membs.xml (the legislature's House member list:
+      '20242E': Jason White     # "Speaker of the House: Jason White", "TERM 2024-2027"), and legislature.ms.gov's
+      '2025': Jason White       # home page ("Speaker Jason White"). Add '2027' when the scraper defines that session.
+      '20251E': Jason White
+      '2026': Jason White
+      '20261E': Jason White
     bare_key_session: null
   api_keys: []
   onboarding:
