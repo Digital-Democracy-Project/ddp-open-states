@@ -978,6 +978,10 @@ functions, layered on top of the ordering work above rather than changing it.
   versions. Built 2026-11-04 (api-v3 PR #49, not merged, not deployed; the test workflow was also red on every PR until #50 pins
   `ubuntu-24.04`). **Deploy after OPEN-492's column exists and a state has been recomputed**, on the Mac and EC2 (prod agent); after a
   recompute the bill search index may need a `--full` refresh, because the flag change does not touch `updated_at`.
+- **OPEN-641 — api-v3 serves each related bill's `related_bill_id` and, when present, its `label` (core `ddp_relation_label`, migration data.0052); an unknown one is left out (exclude-none).**
+  Same column check as OPEN-422/540: `relation_label_column_present()` in `api-v3/api/bill_version_flag.py` (`_column_present` now takes a
+  table); the model column is `deferred` and `BillPagination.select_or_noload` undefers it in the related-bills select-in query only when
+  the column exists. **Do not** add another per-column existence check: call `_column_present(bind, column, table=...)`.
 - **OPEN-498 — Massachusetts: the bill's title decides whether a document is a real bill version, because the note cannot.**
   Massachusetts files agency reports and letters (HD/SD numbers), study, extension and "Order relative to ..." orders, amendment
   papers, messages and rules under the same kind of bill number as real bills, and every one has the note "Bill Text", so the
