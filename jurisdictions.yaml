@@ -1652,7 +1652,7 @@ mt:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-670 2b, 2026-11-21: legmt.gov ("Senate"; /house/: "House of Representatives The House is made up of 100 members")
     unicameral: false
     upper: Senate
     lower: House of Representatives
