@@ -1206,3 +1206,676 @@ wy:
   onboarding:
     epic: OPEN-662
     evidence: notes/probe-all-20261031/wy/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-662
+
+# written by new-jurisdiction from notes/probe-all-20261031/nd/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+nd:
+  name: North Dakota
+  status: probing
+  scraper_module: nd      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:nd/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nd-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nd-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-663 2b, 2026-11-20: Century Code ch. 54-03 (ndlegis.gov/cencode/t54c03.pdf) names "the senate" and "the house of representatives"
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-663
+    evidence: notes/probe-all-20261031/nd/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-663
+
+# written by new-jurisdiction from notes/probe-all-20261031/id/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+id:
+  name: Idaho
+  status: probing
+  scraper_module: id      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:id/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no id-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no id-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-664 2b, 2026-11-20: legislature.idaho.gov/house/ ("The House of Representatives is comprised of 70 Representatives") and /senate/
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session:   # OPEN-664: read by scrapers/id/voter_names.py ('Mr. Speaker')
+      '2026': Mike Moyle
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-664
+    evidence: notes/probe-all-20261031/id/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-664
+
+# written by new-jurisdiction from notes/probe-all-20261031/ri/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+ri:
+  name: Rhode Island
+  status: probing
+  scraper_module: ri      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:ri/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ri-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ri-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-665
+    evidence: notes/probe-all-20261031/ri/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-665
+
+# written by new-jurisdiction from notes/probe-all-20261031/ok/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+ok:
+  name: Oklahoma
+  status: probing
+  scraper_module: ok      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:ok/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ok-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ok-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-666
+    evidence: notes/probe-all-20261031/ok/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-666
+
+# written by new-jurisdiction from notes/probe-all-20261031/ky/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+ky:
+  name: Kentucky
+  status: probing
+  scraper_module: ky      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:ky/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ky-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ky-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-667
+    evidence: notes/probe-all-20261031/ky/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-667
+
+# written by new-jurisdiction from notes/probe-all-20261031/hi/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+hi:
+  name: Hawaii
+  status: probing
+  scraper_module: hi      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:hi/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no hi-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no hi-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-668
+    evidence: notes/probe-all-20261031/hi/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-668
+
+# written by new-jurisdiction from notes/probe-all-20261031/ms/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+ms:
+  name: Mississippi
+  status: probing
+  scraper_module: ms      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:ms/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ms-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ms-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-669
+    evidence: notes/probe-all-20261031/ms/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-669
+
+# written by new-jurisdiction from notes/probe-all-20261031/mt/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+mt:
+  name: Montana
+  status: probing
+  scraper_module: mt      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:mt/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no mt-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no mt-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-670
+    evidence: notes/probe-all-20261031/mt/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-670
+
+# written by new-jurisdiction from notes/probe-all-20261031/mo/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+mo:
+  name: Missouri
+  status: probing
+  scraper_module: mo      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:mo/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no mo-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: true   # OPEN-696 (#147) registered MOVoteScraper after the 10-31 probe
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no mo-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-671
+    evidence: notes/probe-all-20261031/mo/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-671
+
+# written by new-jurisdiction from notes/probe-all-20261031/me/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+me:
+  name: Maine
+  status: probing
+  scraper_module: me      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:me/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no me-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: false           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no me-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-672
+    evidence: notes/probe-all-20261031/me/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-672
+
+# written by new-jurisdiction from notes/probe-all-20261031/ia/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+ia:
+  name: Iowa
+  status: probing
+  scraper_module: ia      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:ia/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ia-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: true           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ia-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-673
+    evidence: notes/probe-all-20261031/ia/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-673
+
+# written by new-jurisdiction from notes/probe-all-20261031/md/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
+md:
+  name: Maryland
+  status: probing
+  scraper_module: md      # OPEN-555: the openstates-scrapers module
+  ocd_id: "ocd-jurisdiction/country:us/state:md/government"
+  scrape:
+    allow_duplicates: false
+    timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no md-specific entry in ddp-sync yet
+    session_arg: null                # ALWAYS null (OPEN-24 resolution)
+    votes_scraper: true           # probe gate B: "votes scraper registered"
+    start_filter: false            # probe gate B: "bills scraper accepts start="
+    sweep_import: false            # SYNC-157: ddp-sync's import-as-you-go sweep
+    full_walk: false               # SYNC-157: periodic forced full walk
+    retry: false                   # SYNC-157: bounded retry (never with a WAF)
+    cadence_escalation: true       # SYNC-157: dynamic cadence may raise it
+    fargate_max_wait_s: null       # SYNC-157: null = ddp-sync's shared ceiling
+    load_on_fargate: false       # OPEN-633: false = ddp-sync's local load
+    session_list_attempts: null    # OPEN-555: only ut retries its session list
+    session_list_backoff_s: null
+  archive:
+    enabled: false
+    timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no md-specific entry in ddp-sync yet
+  enrollment:
+    people_refresh: false
+    search_refresh: false
+    embedding: false
+    cloud_path: false
+    api_smoke_test: false
+    qa_sweep: false
+    replica_routing: false
+    legbot_replica: false
+    broker_bill_event_signal: false
+  waf:
+    profile: none  # NEEDS HUMAN REVIEW
+    fargate_safe: true  # NEEDS HUMAN REVIEW
+    scrapebot_fallback: false    # SYNC-157: ScrapeBot cookie mint before scrape and archive
+    requests_per_minute: null    # OPEN-555: fetch limits, only with a WAF profile
+    max_consecutive_blocks: null
+    max_attempts: null
+    cooldown_after_failures: null
+    cooldown_s: null
+  quality:
+    diff_cleaner: none  # NEEDS HUMAN REVIEW
+  chambers:  # NEEDS HUMAN REVIEW
+    unicameral: false
+    upper: Senate
+    lower: House of Representatives
+  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
+    house_speaker_by_session: null
+    bare_key_session: null
+  api_keys: []
+  onboarding:
+    epic: OPEN-674
+    evidence: notes/probe-all-20261031/md/report.md   # on notes/ops-handoff; Mac half 2026-11-20 on OPEN-674
