@@ -2,6 +2,8 @@
 
 This **updates** `7822bf0` (OPEN-685 request 2, `notes/request-open685-2-backfill-ne-la-nm-20261120.md`) and **`c7be369` Part B** (B1 OPEN-627, B2 OPEN-628). Their steps are unchanged; what changes is the image they wait for (v74) and the counts, re-measured tonight. `c7be369` Part A (v67) and OPEN-685 request 1 (the image) are done by v74.
 
+**Added 2026-11-20 (after `b85ce25`): unaffected by OPEN-640.** openstates-core #135 (migration `data.0052`) merged afterwards as `1c367db5`. v74 is built at core **`83584c48`**, before that merge, so nothing here needs the new column and nothing here changes. The 0052 release has its own request: `notes/request-migration-0052-relation-label-open640-20261120.md`.
+
 ## Gates (all parts)
 * **The image.** Confirm from ECS that the current scrapers task definitions are **v74**: `ddp-scrapers:76` and `ddp-scrapers-db:3`, core `83584c48`, scrapers `ad33d76b`. This note's author has not seen a prod note for v74; it comes from the PM session, which says Ramon registered it tonight.
   * v74 carries the scraper side of all three: OPEN-685's NE/LA/NM numbers (scrapers #140, `bcaf1447`), OPEN-627's results (`7fa39511`) and OPEN-628's AZ/VA keys (`78df858a`). All are checked as ancestors of `ad33d76b`.
