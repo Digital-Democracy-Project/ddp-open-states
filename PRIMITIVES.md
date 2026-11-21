@@ -2134,6 +2134,24 @@ without it. Two pieces make that impossible now:
   yaml lists or any host; those are separate rows of the 2026-11-03 friction audit (OPEN-328, SYNC-142).
 - Do not hand-edit those flags in a status flip any more; run this and commit the diff.
 
+## Bill links: the legislature's own word, `RelatedBill.ddp_relation_label` (core, OPEN-640)
+
+Each legislature names its bill links in its own words ("Identical bill", "Procedurally related", "Similar", "Compare",
+"companion bill(s) passed"). **`opencivicdata_relatedbill.ddp_relation_label`** (core migration `data.0052`, nullable,
+max 100) keeps that word **beside** `relation_type`, which stays DDP's two-value rule: only what the legislature calls a
+companion is `companion` (Ramon, PLAN-companion-lineage D1: "Identical only" for Congress and Florida; everything else
+is `related`).
+
+- **Written by the scraper:** `bill.add_related_bill(identifier, session, relation_type, label="Identical bill")`. The
+  scraped link always carries the key (`None` without a label), because core's importer compares only the keys a
+  scraped link has: a re-scrape with another word, or with none, replaces or clears the stored one.
+- **Null** on links saved before the column existed, and for a scraper that passes no label. A null is "not known",
+  never "not a companion": `relation_type` still decides that.
+- **Read by:** api-v3 (OPEN-641 serves it with each related bill), then the broker and the site (BROKER-554). The Mac
+  replica picks the column up through `sync-structure.sh` (above).
+- **Do not** derive the word from `relation_type`, store it anywhere else, or map it to a second set of types
+  downstream; each state's scraper (OPEN-642 to OPEN-658) passes its legislature's own word.
+
 ## Cross-cutting conventions (don't reinvent these)
 
 - **DB connection defaults** — every Python script here defaults to
