@@ -648,9 +648,10 @@ def test_the_real_manifest_names_each_legislatures_chambers():
     assert [c for c, e in data.items() if e["chambers"]["unicameral"]] == ["ne"]
     assert names["ne"] == ("Legislature", None)
     assert names["va"] == ("Senate", "House of Delegates")
+    assert names["md"] == ("Senate", "House of Delegates")  # OPEN-674: Maryland Manual, mgaleg.maryland.gov
     assert names["nv"] == ("Senate", "Assembly")
     house = {c for c, (upper, lower) in names.items() if (upper, lower) == ("Senate", "House of Representatives")}
-    assert house == set(data) - {"ne", "va", "nv"}
+    assert house == set(data) - {"ne", "va", "nv", "md"}
 
 
 # --- OPEN-555: per-state values moved out of code (scraper_module, ocd_id, fetch limits, vote-reading values) ---------
