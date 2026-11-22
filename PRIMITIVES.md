@@ -503,6 +503,14 @@ the top of the script (OPEN-611: wa "Hunt" 673, ma "Garcia" 8, mi "Myers-Phillip
 after people #27 loads, nc "Helfrich" 807 after people #22 loads, nc "Tillett" 5, whose source fix is NC's session end date, OPEN-765); a new case goes to the source first (people or scraper), then a line there, not a new
 script. Each state's commit is under the scorecard gate.
 
+**Core's vote importer now does the same date check, but only for ties (OPEN-767, openstates-core #138, not live
+until a new image).** When a roll-call name matches several people over the session and the current-role tie-break
+cannot choose, `resolve_person()` keeps only the people who held a matching seat on the vote's own date, under a
+name in use that day (an `other_names` entry's start/end dates count). If one is left, the vote links to them; if not,
+it stays blank. A match that already gives one person is never re-decided, so a dated `other_names` entry only matters
+between people who both match the name. This covers Nebraska "Meyer" (Glen and Fred) and Louisiana "Henry" (Chance and
+Dana). New imports link these votes on their own; stored blank rows still need this script or a re-import.
+
 Still at the repo root:
 
 - **Stale rows the scraper no longer writes** (a different family: this one deletes whole vote events, not
