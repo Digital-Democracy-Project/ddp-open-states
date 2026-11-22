@@ -500,7 +500,7 @@ matching the name (name, other name or family name, as core's `resolve_person()`
 chamber on the vote's own date, and never twice on one roll call. Dry run by default; `--commit` needs `--list`
 (the per-vote record the scorecard gate reviews; it takes its name only after the commit). Its cases are a list at
 the top of the script (OPEN-611: wa "Hunt" 673, ma "Garcia" 8, mi "Myers-Phillips" 9 of 11, fl "Garcia" 469
-after people #27 loads, nc "Helfrich" 807 after people #22 loads); a new case goes to the source first (people or scraper), then a line there, not a new
+after people #27 loads, nc "Helfrich" 807 after people #22 loads, nc "Tillett" 5, whose source fix is NC's session end date, OPEN-765); a new case goes to the source first (people or scraper), then a line there, not a new
 script. Each state's commit is under the scorecard gate.
 
 Still at the repo root:
