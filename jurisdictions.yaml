@@ -785,8 +785,8 @@ pa:
     search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
+    qa_sweep: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-478, Ramon 2026-11-07)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-478, Ramon 2026-11-07)
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
@@ -841,8 +841,8 @@ ne:
     search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
+    qa_sweep: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
@@ -897,8 +897,8 @@ la:
     search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
+    qa_sweep: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
