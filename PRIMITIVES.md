@@ -1920,7 +1920,8 @@ scope line was deliberate, not an oversight.
 - **Per-state values moved out of code (OPEN-555, PLAN-state-specific-handling Phase 4, 2026-11-18).** Required on
   every entry: `scraper_module` and `ocd_id`; `waf.requests_per_minute`, `max_consecutive_blocks`, `max_attempts`,
   `cooldown_after_failures`, `cooldown_s` (null without a WAF profile; the first two required with one);
-  `scrape.session_list_attempts` / `session_list_backoff_s` (ut); `votes.house_speaker_by_session` (ma, id, ms, mo) and
+  `scrape.session_list_attempts` / `session_list_backoff_s` (ut); `votes.house_speaker_by_session` (ma, id, ms, mo, la),
+  `votes.senate_president_by_session` (la, OPEN-764: who "Mr. President" is on a Senate roll call, same shape) and
   `votes.bare_key_session` (nc). Readers: here, `validate_jurisdictions.scraper_module_for()` /
   `code_for_scraper_module()` (cloud_collector.py, verify-jurisdiction, probe-on-fargate),
   `qa_primitives.ocd_jurisdiction_id()` (quality_check.py, verify-jurisdiction, new-jurisdiction) and os-status's

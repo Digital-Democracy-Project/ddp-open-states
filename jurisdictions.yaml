@@ -86,8 +86,9 @@
 #     in the env still wins for mi) and fl's waf.max_attempts / cooldown_after_failures / cooldown_s (scrapers/fl/bills.py).
 #     Null for a state with no WAF profile; the validator requires the first two for a state with one.
 #   - scrape.session_list_attempts / session_list_backoff_s (ut only, scrapers/ut/__init__.py).
-#   - votes.house_speaker_by_session (ma, id, ms, mo: scrapers/<state>/voter_names.py; add a session here when a new Speaker
-#     is elected)
+#   - votes.house_speaker_by_session (ma, id, ms, mo, la: scrapers/<state>/voter_names.py; add a session here when a new
+#     Speaker is elected), votes.senate_president_by_session (la, OPEN-764: the same for "Mr. President" on a Senate roll
+#     call)
 #     and votes.bare_key_session (nc, scrapers/nc/bills.py).
 # Every reader still keeps its old constant as the fallback (a host or image whose manifest lacks the field, or a state
 # with no entry). The constants are deleted only after both hosts and the scrapers image run this manifest (the plan's
@@ -194,6 +195,7 @@ us:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: ["CONGRESS_GOV_API_KEY"]   # optional -- degrades (events only) if absent, never fails
   onboarding:
@@ -255,6 +257,7 @@ fl:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -311,6 +314,7 @@ wa:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -368,6 +372,7 @@ va:
     lower: House of Delegates
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: ["VA_API_KEY"]              # required; scrape-time failure with a good message if
                                          # absent (VA already carries upstream's own good-failure
@@ -431,6 +436,7 @@ mi:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -487,6 +493,7 @@ ut:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -544,6 +551,7 @@ az:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -619,6 +627,7 @@ ma:
       192nd: Ronald Mariano    # only sessions with one Speaker throughout; add the session when a new Speaker is elected
       193rd: Ronald Mariano
       194th: Ronald Mariano
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -688,6 +697,7 @@ nc:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: "2025"   # the one session whose stored votes keep a bare roll-call key (scrapers/nc/bills.py, OPEN-397)
   api_keys: []                          # gate A/D passed cleanly, no missing credential
   onboarding:
@@ -749,6 +759,7 @@ al:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -807,6 +818,7 @@ pa:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -863,6 +875,7 @@ ne:
     lower: null
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -918,7 +931,35 @@ la:
     upper: Senate
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
-    house_speaker_by_session: null
+    # OPEN-764: read by scrapers/la/voter_names.py ("Mr. Speaker" on House roll calls, "Mr. President" on Senate ones);
+    # the sessions of the 2024-2028 term. Sources, read 2026-11-22. Elections, the organizational session's 1st-day
+    # journals (Jan 8 2024): House, house.louisiana.gov/H_Journals/H_Journals_All/2024_OS/24OS - HJ 0108 1.PDF
+    # ("Acting Speaker Thompson moved Rep. DeVillier be duly elected Speaker of the House", "Speaker DeVillier in the
+    # Chair"); Senate, senate.la.gov/Journals/2024/OS/24OS - SJ 0108 1.PDF ("Senator Henry was elected", "Senate
+    # President Henry in the Chair"). Each session's own 1st-day journals (the session's journal page on legis.la.gov
+    # SessionInfo.aspx?sid=...): the House "called to order ... by the Honorable Phillip DeVillier, Speaker of the House"
+    # in 24RS (HJ 0311 1), 241ES (HJ 0115 1), 242ES (HJ 0219 1), 243ES (HJ 1106 1), 25RS (HJ 0414 1), 251ES (HJ 1023 1)
+    # and 26RS (HJ 0309 1); the Senate "called to order ... by the Honorable J. Cameron Henry Jr., President of the
+    # Senate" in 24RS (SJ 0311 1), 241ES (SJ 0115 1), 242ES (SJ 0219 1), 243ES (SJ 1106 1), 25RS (SJ 0414 1), 251ES
+    # (SJ 1023 1, "by Hon. J. Cameron Henry, Jr., President of the Senate") and 26RS (SJ 0309 1). Still in office:
+    # house.louisiana.gov/H_PDFDocs/HouseLeadership.pdf ("2024 - Present Phillip R. DeVillier") and senate.la.gov
+    # ("Senate President J. Cameron Henry, Jr."). Names as the people repo has them (Phillip DeVillier, Cameron Henry).
+    house_speaker_by_session:
+      '2024': Phillip DeVillier
+      2024s1: Phillip DeVillier
+      2024s2: Phillip DeVillier
+      2024s3: Phillip DeVillier
+      '2025': Phillip DeVillier
+      2025s1: Phillip DeVillier
+      '2026': Phillip DeVillier
+    senate_president_by_session:
+      '2024': Cameron Henry
+      2024s1: Cameron Henry
+      2024s2: Cameron Henry
+      2024s3: Cameron Henry
+      '2025': Cameron Henry
+      2025s1: Cameron Henry
+      '2026': Cameron Henry
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -976,6 +1017,7 @@ ga:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1033,6 +1075,7 @@ nv:
     lower: Assembly
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1090,6 +1133,7 @@ or:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1146,6 +1190,7 @@ nm:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values the scraper reads (fallback: its old constant)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1202,6 +1247,7 @@ wy:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1258,6 +1304,7 @@ nd:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1315,6 +1362,7 @@ id:
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session:   # OPEN-664: read by scrapers/id/voter_names.py ('Mr. Speaker')
       '2026': Mike Moyle
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1371,6 +1419,7 @@ ri:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1427,6 +1476,7 @@ ok:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1483,6 +1533,7 @@ ky:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1539,6 +1590,7 @@ hi:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1602,6 +1654,7 @@ ms:
       '20251E': Jason White
       '2026': Jason White
       '20261E': Jason White
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1658,6 +1711,7 @@ mt:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1728,6 +1782,7 @@ mo:
       2025S1: Jonathan Patterson
       2025S2: Jonathan Patterson
       '2026': Jonathan Patterson
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1784,6 +1839,7 @@ me:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1840,6 +1896,7 @@ ia:
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -1896,6 +1953,7 @@ md:
     lower: House of Delegates
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
