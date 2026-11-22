@@ -1196,7 +1196,7 @@ wy:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW (decided by the text checks, OPEN-662 line 10)
-  chambers:  # NEEDS HUMAN REVIEW (OPEN-662 line 2b: wyoleg.gov renders by script; names not yet read from the legislature's own site)
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-662 2b, 2026-11-22: Wyoming Constitution art. 3 sec. 1, read on statutes.wyoleg.gov ("vested in a senate and house of representatives")
     unicameral: false
     upper: Senate
     lower: House of Representatives
@@ -1365,7 +1365,7 @@ ri:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-665 2b, 2026-11-22: Rhode Island Constitution on rilegislature.gov/riconstitution (art. VII "Of the House of Representatives", art. VIII "Of the Senate")
     unicameral: false
     upper: Senate
     lower: House of Representatives
@@ -1533,7 +1533,7 @@ hi:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-668 2b, 2026-11-22: capitol.hawaii.gov/house.aspx ("House of Representatives") and /senate.aspx ("Senate")
     unicameral: false
     upper: Senate
     lower: House of Representatives
@@ -1708,7 +1708,7 @@ mo:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
-  chambers:  # NEEDS HUMAN REVIEW
+  chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-671 2b, 2026-11-22: senate.mo.gov ("Missouri Senate", and its link to the "Missouri House of Representatives"; house.mo.gov refused the browser, 403)
     unicameral: false
     upper: Senate
     lower: House of Representatives
