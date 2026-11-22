@@ -1,0 +1,674 @@
+state,session,vote_event,bill,date,motion,option,voter_name,person_id,person_name
+wa,2025-2026,ocd-vote/96b528d2-7d02-4cb8-b893-fc04f63e762a,HR 4607,2025-01-24,10  Connors  Pg 11 Ln 15 (#1),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d509d037-8cf7-4ffc-8b52-8b2a2473ad20,HR 4607,2025-01-24,11  Connors  Pg 16 Ln 27 (#2),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2011f4eb-da61-4de0-88e6-46e2e876bdb8,HR 4607,2025-01-24,Adoption as Amended (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f6ac70aa-4b9c-4858-9238-896c1b44cadd,HB 1112,2025-01-30,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c230f7a4-1557-437a-8f0b-980016a7a24f,HB 1075,2025-01-30,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/31bb3782-ea90-4aef-a79d-43d866d31ca7,HB 1006,2025-01-30,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/65156cb1-4feb-40c3-96af-175adce61bb2,HB 1126,2025-01-30,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/699c4402-0c6b-47b2-aaaa-7a8932f6ec04,HB 1190,2025-01-30,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7becc14b-4468-4723-bc1b-869823983c4f,HB 1157,2025-01-30,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/75e1b9ba-6d43-4eba-ab3b-d8d33adf898c,HB 1009,2025-01-30,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f36a7765-9d9a-49ad-b139-ab629c6f355e,HB 1012,2025-01-30,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c2ddde9a-42b2-4ce8-a2fe-66d6f50d7316,HB 1013,2025-01-30,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d0014f19-036e-487e-a37a-d2b4c55d8879,HB 1046,2025-01-30,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8b3148c8-1e7b-4c23-aab1-7ace8b316920,HB 1234,2025-02-06,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fc9fee98-3917-4db3-ac28-0ec243a55ebf,HB 1003,2025-02-06,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7672b383-f934-49ab-812e-a6a5b77f7bc3,HB 1018,2025-02-06,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/981c2f92-dec5-41ed-948c-053984baa922,HB 1270,2025-02-06,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/23e9bebc-e7c6-41fe-9179-8c8cde806abf,HB 1028,2025-02-06,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/514cdaf4-80ee-4950-a128-0c91574a7684,HB 1349,2025-02-06,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/148468dd-5876-430c-a0ab-76afe48f33f8,HB 1069,2025-02-06,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fd64a9ee-bcc7-4eca-8415-be3461e7d34e,HB 1300,2025-02-06,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bd65badb-1448-481a-9ce8-c3cf557a3260,HB 1209,2025-02-06,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/03731ca7-fd27-49a6-947b-99836411f0bf,HB 1142,2025-02-06,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/09327587-4629-4a9e-855d-a03378d84a3f,HB 1253,2025-02-06,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ed59093-2039-44ce-bbc0-e43c1ae95a0e,HB 1149,2025-02-12,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7b55b53e-cbc4-4491-8378-901444bc4268,HB 1066,2025-02-12,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/76cf48aa-8718-4257-96ee-1582c7865628,HB 1371,2025-02-12,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f4667995-9a86-4515-b119-7c6ea0b409fa,HB 1054,2025-02-12,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/71bfdc33-4832-40ab-ac81-6fd95526204a,HB 1269,2025-02-13,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/412da0b9-0a42-4e5b-b9b8-504502937c32,HB 1052,2025-02-13,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/390b6dea-351a-4ede-ad35-410b3065a2e1,HB 1287,2025-02-13,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a016fbc7-dcbe-4f6f-85c9-a8181cb4a1ba,HB 1039,2025-02-13,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/62631c57-789a-47c9-a729-d470f4eba7f1,HB 1007,2025-02-13,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d45dcaa7-29c8-4e20-a92d-14445d8f526c,HB 1222,2025-02-13,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1a2f8b25-a338-4b05-89f2-99c5a4eeb609,HB 1302,2025-02-13,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9ed75dc9-bbfe-480b-a1f3-3d952332472e,HB 1304,2025-02-13,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/883f0f73-3aa7-4b91-b2ab-040106a305e6,HB 1215,2025-02-13,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c362bcab-e537-41c8-a645-47e450b9c92a,HB 1759,2025-02-17,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/70609a8b-2297-4473-a5fd-36cc829b6111,HB 1325,2025-02-20,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/63997bae-0d55-4c89-8f4b-5f8050511e64,HB 1540,2025-02-20,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ac5647d3-6db9-41ec-a063-5b396eae0767,HB 1484,2025-02-20,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9325cac1-588c-44e8-9854-45fd155ac1cd,HB 1616,2025-02-20,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1ad5c63b-56d3-40fd-b568-a2aff378ab57,HB 1156,2025-02-20,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a5b71aab-92ae-4d4b-8e36-9bb397345c2e,HB 1372,2025-02-20,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/20865dd2-099a-44ba-bf76-3e0e9b0d08e3,HB 1720,2025-02-20,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/812d1a3e-f93e-4131-91fa-0742039fa18d,HB 1347,2025-02-20,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1444ade7-6b1e-4b3c-a4d1-bcd7b72cd15e,HB 1130,2025-02-20,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ffd873ba-2405-4f94-9fe8-eb6e75608ba3,HB 1543,2025-02-20,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5f9186b0-8739-4f85-bbed-67db2da5a184,HB 1457,2025-03-03,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/38c5a4f0-6411-4df9-8db3-6edb67d172a6,HB 1390,2025-03-03,Final Passage on Reconsideration (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c7f3d443-42b7-40c7-bb18-c10c7bb3ddfa,HB 1171,2025-03-03,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d8b1b112-b67a-475a-bc6a-bf9295e21523,HB 1080,2025-03-03,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c96ea621-ef5a-417e-a64b-70cce3aa555c,HB 1670,2025-03-03,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/90f6cbef-98cf-45ee-95c0-62822bd0305a,HB 1628,2025-03-03,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/903f1282-53c1-49ed-b069-5fe0d25595d4,HB 1244,2025-03-03,Final Passage on Reconsideration (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/60808f5c-8827-49b3-bb2c-d08352a7814b,HB 1068,2025-03-03,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/46c5e5c8-40c4-481b-8d84-e2526470a2b9,HB 1488,2025-03-03,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/88c26657-b69a-455b-a21b-167145c6bd25,HB 1621,2025-03-03,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/be18062b-6ad0-49c9-b545-e7dda58e261d,HB 1244,2025-03-03,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/35fcf614-3532-4400-afa3-698cefd9e606,HB 1605,2025-03-03,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6f7600ff-9cf1-4509-b348-ca3a2829d24b,HB 1606,2025-03-03,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/94a03dd9-84d1-474b-932f-3fe4c70200a7,HB 1177,2025-03-03,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/295b1d2e-524a-4ce7-95bd-b0d72722177f,HB 1061,2025-03-03,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9231139a-1d98-4ff2-9de2-7f1acae67208,HB 1430,2025-03-03,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e74619f0-2c54-4823-8960-00c011e32a67,HB 1539,2025-03-03,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/17ed6c58-6e1e-4090-bd0a-c87cbbff4b84,HB 1874,2025-03-03,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3a8dd243-c7cc-489f-a416-4014061776ce,HB 1291,2025-03-03,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/17167bca-5eb5-4b63-bd7b-32f3b4a3553b,HB 1024,2025-03-03,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/28664170-9337-478c-b646-3da381b5352a,HB 1191,2025-03-03,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3fe05185-dde0-468d-80ec-842a09f65e9b,HB 1390,2025-03-03,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/afcdc3f0-f79c-408e-a30b-3f2369df0efa,HB 1275,2025-03-04,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1b45143e-b980-4289-aa21-b96eb6890701,HB 1201,2025-03-04,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a307286f-09bd-4c55-9de8-6119a0a1b16f,HB 1081,2025-03-04,3rd Reading & Final Passage (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/89c5a390-274e-4600-a9d5-e53adede4ca5,HB 1811,2025-03-04,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/db7c7a79-1130-4470-a490-65f9b1df7bdc,HB 1461,2025-03-04,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/58a9e522-dc9d-498a-b9bb-84b12d1d3dc4,HB 1185,2025-03-04,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fc78fbed-529b-46c8-a866-ed206e2e0612,HB 1827,2025-03-04,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/54b1382c-646e-42ff-8a04-bb2a252e97dd,HB 1631,2025-03-04,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0fd103f0-c713-4528-ae52-7ad90a690b11,HB 1774,2025-03-04,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/63e62e7a-3e60-4c24-9eec-3a5ea43db727,HJM 4002,2025-03-04,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2a574fa2-2fbd-4e42-8cea-634e41dcdd16,HB 1105,2025-03-04,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2f1ea57f-868d-4f8b-b316-dfb711ffdff6,HB 1186,2025-03-04,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/064ee096-4b7d-4a6e-af5b-f1b028e53712,HB 1393,2025-03-04,3rd Reading & Final Passage (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c1d64934-d901-4264-9430-b02741f54f4c,HB 1272,2025-03-04,3rd Reading & Final Passage (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ba06fd4-84c0-497f-8b79-f03024ee5427,HB 1511,2025-03-04,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cef3c6aa-a13e-4b69-bb0d-c1d069c5a1b8,HB 1353,2025-03-04,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2927ca8e-73ff-4c6c-bd4a-86cb3b821d88,HB 1135,2025-03-04,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6bfcc77c-5c21-4c4c-a7da-4560c120d523,HB 1351,2025-03-04,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9caba29d-2907-488a-ba6c-4dae37aea21c,HB 1439,2025-03-04,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/db6c4afd-c187-485d-8ef5-e9a3c0499e7b,HB 1698,2025-03-04,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/97d741aa-bf8e-4dcf-ade3-9f2703a67cd3,HB 1205,2025-03-04,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0a95f782-e179-42f6-9772-5f7c620a854a,HB 1824,2025-03-04,3rd Reading & Final Passage (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/df6ee806-6143-4aef-8d0d-da78abdfa420,HB 1934,2025-03-04,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cc955b04-5f04-435b-8580-2ce9e24e2aee,HB 1706,2025-03-04,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b7e3d68d-86d9-42cf-b275-f961b1af5caa,HB 1394,2025-03-04,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6df1ab20-98c3-416e-a1cd-b178ddce71a2,HB 1483,2025-03-04,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c66fb9df-52b0-4817-8f0f-40606497e42a,HB 1562,2025-03-04,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a4ec327a-12ae-42e2-be63-6715d4305c70,HB 1879,2025-03-04,3rd Reading & Final Passage (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a5bdb2fc-6399-47eb-a0c7-6e099e45ec51,HB 1172,2025-03-04,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/67cf356a-1a7a-4246-8e68-3cff41fd5f45,HB 1899,2025-03-04,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8d0054fa-a88c-4760-af0e-fd0dcf459f73,HB 1537,2025-03-04,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c99072ad-3c4f-4796-b360-df10406b72f4,HB 1114,2025-03-04,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ddbe73d-ed56-4b0b-8026-fac246502e18,HB 1361,2025-03-05,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b40b4e81-f1fe-45c5-aa7d-8069bf2e1623,HB 1784,2025-03-05,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/afe2c37b-ba12-447d-9d2e-3abddadfb278,HB 1788,2025-03-05,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/519dcfd0-a5f0-4194-867e-83faf8eb1c38,HB 1731,2025-03-05,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eb6805ea-78f5-456d-9991-728a8d7a6ecd,HB 1162,2025-03-05,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5d33c669-7751-4e75-8eb7-8da490aaab1c,HB 1551,2025-03-05,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9b699de3-09a5-449d-95b1-2ee0fc4b1bc5,HB 1285,2025-03-05,3rd Reading & Final Passage (#40),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/48faca6d-7af2-469e-b798-5f43837658e0,HB 1491,2025-03-05,3rd Reading & Final Passage (#33),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/41368988-a70c-4f30-9a2d-8369ce1eea2d,HB 1833,2025-03-05,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/af66810e-5399-4382-9d82-3ffe1b69ba29,HB 1418,2025-03-05,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cffe8310-cde1-4767-ae24-f16968cc9f67,HB 1314,2025-03-05,3rd Reading & Final Passage (#38),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/155d793e-78ab-40be-850a-a2ee687b0e00,HB 1980,2025-03-05,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/66a19897-b5ce-49a4-a668-b8f59ea79f36,HB 1633,2025-03-05,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e90639a6-37ac-40f4-8081-dc2ff3f67c05,HB 1264,2025-03-05,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/054d57e6-f7f1-42f1-9bc3-72a76c72d3df,HB 1359,2025-03-05,3rd Reading & Final Passage (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1076b5f9-57dd-4199-87be-ca3eab22efd0,HB 1556,2025-03-05,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8b2f3bec-3f74-4053-8aa6-3e37234240b1,HB 1494,2025-03-05,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dbdd6e74-e8cd-4b9d-9156-fa4c706fab31,HB 1385,2025-03-05,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f2c790a4-9806-4001-ad9d-4eaeadf9f2ff,HB 1391,2025-03-05,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/786e67d9-93d0-4489-9cec-c52f6ea3f000,HB 1553,2025-03-05,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3a018e9c-e764-4c09-9e73-28a9000806c6,HB 1281,2025-03-05,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3847a7d1-7efb-4525-baa7-2905d3f9d1ee,HB 1154,2025-03-05,3rd Reading & Final Passage (#37),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d044c46b-1454-49db-a649-3e67e993e2d6,HB 1079,2025-03-05,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b9c82dad-32ec-45eb-93ae-07ae8c8802e6,HB 1294,2025-03-05,3rd Reading & Final Passage (#36),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c338cece-e04d-432e-8c13-8cb6795883ac,HB 1829,2025-03-05,3rd Reading & Final Passage (#34),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ef5e2f2d-97f3-469c-9159-20e1cfe0e941,HB 1064,2025-03-05,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/872a2925-12d2-4630-8767-2226083a69fe,HB 1260,2025-03-05,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bd5254ae-e179-4144-8cb9-adecebe70afd,HB 1102,2025-03-05,3rd Reading & Final Passage (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/75e5585b-5796-49f4-90cc-e1f03d896580,HB 1640,2025-03-05,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c0092813-f49a-4797-8c5d-f09c8fb0e09b,HB 1936,2025-03-05,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fa9218b1-5cba-4547-a8f6-60097e85a042,HB 1757,2025-03-05,3rd Reading & Final Passage (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a5a40961-af29-4257-9fcc-ed17824f67b9,HB 1970,2025-03-05,3rd Reading & Final Passage (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/604c8a8d-9b5f-4567-9b28-8f9299a78ec9,HB 1233,2025-03-05,3rd Reading & Final Passage (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ac8c0d67-3e7f-48f1-b756-16232f226ec4,HB 1382,2025-03-05,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/88eea8c1-f993-4719-9620-5c06fa496d63,HB 1524,2025-03-05,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5f92805b-04b2-444e-b5fc-e8b8aade5649,HB 1440,2025-03-05,3rd Reading & Final Passage (#35),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/225f0303-8e82-4b1a-90b0-621036365fc8,HB 1167,2025-03-05,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fbf76024-cc12-4a12-82bc-ce67f5764d67,HB 1462,2025-03-05,3rd Reading & Final Passage (#39),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/19062969-b9ad-4ba3-9610-bda3bc8d00fb,HB 1760,2025-03-05,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4973b754-7c17-4a12-b56f-52ec0e48c854,HB 1174,2025-03-05,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/031bf87a-9f2d-418c-8781-f8856043099e,HB 1791,2025-03-06,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4f9c4a51-bcc5-4aec-bcbf-1497cb11e0c2,HB 1230,2025-03-06,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8596ec25-3144-41c1-a932-c27afc472bcd,HB 1490,2025-03-06,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/24b7a9e1-04d1-47ef-afb7-734567097f83,HB 1060,2025-03-06,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6ae8c911-8461-442f-bf04-25a8de34c92e,HB 1293,2025-03-06,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cd0be098-cdee-404c-a349-66f407b8f6b9,HB 1705,2025-03-06,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c3993245-8bdd-49b7-bab8-3fdb70589266,HB 1096,2025-03-06,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5b3b0662-6911-4e54-b4a4-bbdb784113d5,HB 1648,2025-03-06,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/99b8d562-24f2-4f59-a807-32eafb1f6ad5,HB 1875,2025-03-06,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/45faeece-1a86-402e-88c2-586253d11888,HB 1688,2025-03-06,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b1304586-22fb-4701-95c7-9b2440108d46,HB 1696,2025-03-06,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d41daf6b-9526-4540-961b-94ff2102c94f,HB 1688,2025-03-06,Final Passage on Reconsideration (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/78ae6d39-2f01-4e55-8aeb-46998f202531,HB 1647,2025-03-06,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a70f2c45-107c-40bd-8f28-19debea8e87a,HB 1696,2025-03-06,192  Griffey  Pg 3 Ln 4 (#14),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/48c5e1e0-c754-4b75-8265-66f32877daee,HB 1696,2025-03-06,173  Couture  Pg 7 Ln 18 (#15),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/42066c12-a2d1-4941-a4df-1821069496b8,HB 1715,2025-03-06,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d83ba87f-51c4-4e6b-ac1d-56a9b29d2b1c,HB 1279,2025-03-07,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/135bb16f-de68-437f-9311-138448df9897,HB 1131,2025-03-07,Final Passage on Reconsideration (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/437f6927-2e25-4bb8-91f6-178a71ba429a,HB 1923,2025-03-07,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/91987530-f0f1-41d1-9a95-044883d49c27,HB 1261,2025-03-07,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9c122dbc-349c-4986-9875-9e06df0a1159,HB 1308,2025-03-07,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/117bb65c-3122-4f1a-8055-55dba5b7aeff,HJM 4001,2025-03-07,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d04e39ad-640f-47f3-9909-d3fe9e2ff96d,HB 1232,2025-03-07,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a854c53c-7595-48ad-9704-ad5d133a686e,HB 1131,2025-03-07,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2c8d67dd-11f1-43c8-a1c1-25bba952d3be,HB 1610,2025-03-07,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ecb70530-9cc7-4713-a504-3f9d19435b99,HB 1423,2025-03-07,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/630c2953-bd3f-4499-98af-e027750ee17b,HB 1173,2025-03-07,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/79cc5033-da65-4778-abc6-e2c487b392eb,HB 1573,2025-03-07,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/49016655-f50b-4d40-9e7b-c98c6d0d584c,HB 1522,2025-03-07,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/433b91cc-0f06-4209-a7af-19f844933cd1,HB 1023,2025-03-07,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6e7a7f63-b1ac-4f7d-bd14-ec4e518c8937,HB 1651,2025-03-07,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2ee2d945-7b19-496d-8dd5-c5fbb66f2395,HB 1563,2025-03-07,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6ff4926f-81c5-40cd-830d-c82538dfa358,HB 1497,2025-03-07,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8c2c7195-04d6-4ef6-a33d-f149bc502feb,HB 1023,2025-03-07,Final Passage on Reconsideration (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e2899ee4-e879-4119-b7ae-696cfeab5398,HB 1821,2025-03-07,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a9ec3d10-3cbe-44c5-90b9-ea3f7f72b9b6,HB 1515,2025-03-08,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b3eb9eef-c0d3-404b-92a5-fbe107073d53,HB 1531,2025-03-08,501  Abbarno  Pg 1 Ln 20 (#15),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1102a99c-ec1e-4c94-b0a1-9b4fca017a6b,HB 1971,2025-03-08,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/aa8a1435-a4df-4b65-b7e4-cd9bcf3c4960,HB 1947,2025-03-08,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/348f41b4-f509-457e-8800-ea61ab581362,HB 1113,2025-03-08,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eafb8ce5-c684-450a-ae0e-0cbae523f321,HB 1620,2025-03-08,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9cc3a9a5-3ecf-41a7-8d5d-6723610413df,HB 1722,2025-03-08,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4dfe4e31-8927-4b22-8139-28dfbf5c8661,HB 1163,2025-03-08,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f2188786-bd93-4f07-95a5-b8e162adf802,HB 1814,2025-03-08,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/88eb27f0-9c97-4f09-bf09-46640a9f025f,HB 1531,2025-03-08,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a1adaacc-3b71-43b0-a3e5-c1876acfa5c1,HB 1622,2025-03-08,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/62319118-53ec-40ab-8ffc-ed3d65cef16f,HB 1755,2025-03-08,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f73878ce-067a-45e7-8ac5-6489a5dcadca,HB 1969,2025-03-08,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2890884f-2195-45c9-8352-226906ddee02,HB 1718,2025-03-08,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/90bb130f-ed31-4f36-baa1-929ae05e0390,HB 1589,2025-03-08,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b5dd276b-37a5-4232-8532-d931afdc1897,HB 1587,2025-03-08,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5501c81a-4468-460e-985f-ed70d69e955a,HB 1327,2025-03-08,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e6221b80-2491-4c68-a5db-d80029fbde29,HB 1273,2025-03-10,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c6fcb4ea-db8b-4bab-b24b-119b9c33ebdc,HB 1902,2025-03-10,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/546b0e35-4f5e-462b-8c32-5974dbebbb1a,HB 1602,2025-03-10,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/75bb40a6-8c36-446f-a61d-3f7ea4079668,HB 1503,2025-03-10,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/73d6e00e-17cb-405a-afba-4e2d01484d69,HB 1133,2025-03-10,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/81898f4a-6ecf-4eaa-ac00-7840d08a9a18,HB 1514,2025-03-10,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/32541070-07ca-47a4-8031-6d441f45b53a,HB 1213,2025-03-10,715  Jacobsen  Pg 14 Ln 20 (#26),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/16e961a9-a1ae-461e-9b4c-66bbbcee70a9,HB 1389,2025-03-10,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d3061b7b-c6b4-4c3a-819c-6c36437e6113,HB 1341,2025-03-10,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d67c2be5-22bd-4c89-a5a5-1f1ec8d19da0,HB 1409,2025-03-10,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d642ca45-f8ec-4978-ae85-6eb88c095482,HB 1615,2025-03-10,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c6624026-2319-48b8-a89b-4748cef6eb30,HB 1758,2025-03-10,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6549fc5f-f77d-47b8-bd80-b53780b34f4c,HB 1686,2025-03-10,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dbda62a1-2d69-4354-8ec1-2c5d66e9288e,HB 1549,2025-03-10,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fed72f57-c862-4dd6-8029-faa93c056c93,HB 1121,2025-03-10,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ef4be4ac-85ed-4786-89a2-e236d4450ada,HB 1858,2025-03-10,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ebe577bd-8126-429b-b3c6-74a051c0913d,HB 1321,2025-03-10,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a3856424-7c2e-4a44-94b5-0eb020715d07,HB 1576,2025-03-10,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2110861c-503f-48d8-944c-d43b7698f1cb,HB 1796,2025-03-10,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/954cd779-e40e-4fce-99b6-fda1ea70b8aa,HB 1217,2025-03-10,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c773e0b2-a7f2-4fd2-b9d5-a4c968c24226,HB 1546,2025-03-10,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/73746128-8a4e-4cfc-b533-e3fe7f356aec,HB 1975,2025-03-10,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f9d58287-cf08-48a2-bfb8-eb015ef15d2e,HB 1329,2025-03-10,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/354ba032-de60-4ee6-b9fb-fa621c1d6970,HB 1990,2025-03-10,3rd Reading & Final Passage (#6),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/efad83ff-f874-4ee3-b5b7-1e66856af178,HB 1644,2025-03-10,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/436f28aa-cc38-4170-a4a1-05ff6b6dc875,HB 1309,2025-03-10,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d7ffb52c-8772-43f3-b0a7-7d4a4878532e,HB 1733,2025-03-11,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3a289597-9106-49a4-9885-9f362bbca89c,HB 1509,2025-03-11,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/474a52ac-afad-4f69-ad28-c3983e008c9f,HB 1935,2025-03-11,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ae3b5be1-db48-4384-9186-a5fc0b246804,HB 1709,2025-03-11,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a12020c8-e742-4f3c-a308-89af77fc75f2,HB 1747,2025-03-11,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6b099d3a-af4e-47a9-8f53-cf80d33b2eff,HB 2015,2025-03-11,517  Orcutt  Pg 3 Ln 28 (#11),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/23930c0c-6dec-4a28-a5bd-6e21ca93009f,HB 1609,2025-03-11,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ea066441-03cb-43d1-a4d3-6ce70dfb0d2e,HB 1403,2025-03-11,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7e9e56a4-9082-40e0-ad40-37dee38aae72,HB 1486,2025-03-11,3rd Reading & Final Passage (#34),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/308adaae-5bb0-41b4-80b1-ef480675b4cf,HB 2015,2025-03-11,547  Couture  Pg 4 Ln 17 (#13),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/33280808-cf6b-4d15-baf8-20e37e5fdf06,HB 1516,2025-03-11,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/720ac320-8fe9-4355-842c-a6f720fd3a28,HB 1460,2025-03-11,3rd Reading & Final Passage (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8df94aa3-0a23-48ee-86da-09ee2f1cc3e2,HB 1636,2025-03-11,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c736cc58-e199-4240-816c-f57b482435a5,HB 1967,2025-03-11,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/24c0641e-91d3-421d-af93-90f8e721717d,HB 2015,2025-03-11,558  Abell  Pg 3 Ln 37 (#12),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/469463ed-cefd-4aa6-affc-28183d7baed5,HB 1271,2025-03-11,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/82328e5b-1c7b-4c50-9b23-bffdb94c9a6d,HB 1210,2025-03-11,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/35b39e16-31a3-4537-a2df-0abe3744a3fa,HB 1842,2025-03-11,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0a3f4a8a-9aed-42e7-a0be-34a0e4c8ed61,HB 1014,2025-03-11,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/03bf3fcf-42d7-4c4f-8fb9-c2dd453f9c20,HB 1258,2025-03-11,3rd Reading & Final Passage (#35),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/de7fa437-fe8f-471a-b746-e7bad186eede,HB 1541,2025-03-11,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6bcb6171-87a7-474a-ae00-85ee92bf5b50,HB 1332,2025-03-11,3rd Reading & Final Passage (#33),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/86168d4c-504b-46cd-80d2-657b48811096,HB 1109,2025-03-11,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9450c815-e2da-49cd-bd3d-51c1fbf2d326,HB 1427,2025-03-11,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/52f79da5-cf33-418f-aaa6-281aaef557fc,HB 1183,2025-03-11,3rd Reading & Final Passage (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4c034af3-d4c0-4c5a-a79a-e870ac880b6a,HB 1402,2025-03-11,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/21ad51a5-70ae-4bf8-a4fa-4e856a6eaa7f,HB 1600,2025-03-11,3rd Reading & Final Passage (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7cced88a-8932-47c3-9f9a-f2705738ba18,HB 1432,2025-03-11,3rd Reading & Final Passage (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/254b7994-9365-4034-8f5b-d803d40ae1f7,HB 2015,2025-03-11,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/173c4508-86e5-45d1-a5d5-08c90c2616a0,HB 1596,2025-03-11,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a36d4ebd-b590-4c07-95d9-a0408398780a,HB 1533,2025-03-11,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8cbc8f61-1ec0-4655-9473-d5c726b9b924,HB 1213,2025-03-11,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c86d145e-4545-4ae6-9210-0f37a6f4baa3,HB 1878,2025-03-11,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/701e572d-39ac-46fb-bc4a-eaa06dd5c15e,HB 1108,2025-03-11,3rd Reading & Final Passage (#36),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/09db4202-c333-4c8b-8b16-b6047e45d006,HB 1141,2025-03-11,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c0feb597-4976-4e05-8d5f-40f7710335f1,HB 1813,2025-03-11,3rd Reading & Final Passage (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/38b1b027-a688-4a7c-bfd9-10889dc63b04,HB 1650,2025-03-12,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f26cf7a5-b71b-45de-b6a5-94bcdd1e2445,HB 1296,2025-03-12,435  Marshall  Pg 10 Ln 1 (#19),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4c6db774-93c6-46ff-8977-cf164f250f69,HB 1296,2025-03-12,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b5871d10-dc17-4583-a2e0-7b2a9539492c,HB 1296,2025-03-12,420  Steele  Pg 10 Ln 13 (#22),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/257d2a93-a73e-434c-9da8-d5d3ef525714,HB 1296,2025-03-12,383  Keaton  Pg 14 Ln 9 (#28),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/88ad0510-a3de-433d-adf8-5181d03adef2,HB 1106,2025-03-12,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/43ca2105-000c-4ede-a085-e793198e3ed7,HB 1296,2025-03-12,448  Caldier  Pg 10 Ln 13 (#23),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dea5ed74-b39e-456c-94b2-f402f60b1116,HB 1414,2025-03-12,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b0357dea-07b4-4f20-a90c-21653393d5ff,HB 1296,2025-03-12,442  Marshall  Pg 10 Ln 1 (#20),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/42f53de3-3f81-4b0a-bd48-324d1e05f275,HB 1819,2025-03-12,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bdfb4589-622d-4257-81b1-2b646b302da8,HB 1822,2025-03-12,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/abbff48c-6c16-4db4-96a1-d2bbeff43bc3,HB 1857,2025-03-12,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a6028807-9169-41a3-8cb4-bdda847be802,HB 1218,2025-03-12,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/76d683b6-c8b9-43a7-abd0-8c29683a59da,HB 1219,2025-03-12,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dbb3168f-768a-41aa-9bd2-267b85c81bf2,HB 1296,2025-03-12,428  Couture  Pg 10 Ln 34 (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/73672733-f024-40db-bd78-682fae2f71b9,HB 1572,2025-03-12,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7651cf7e-3ab4-4d4b-9af2-46950ce74e0f,HB 1296,2025-03-12,382  Burnett  Pg 8 Ln 31 (#18),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b8067d65-0388-4fa3-a1df-f3e3747c87dd,HB 1296,2025-03-12,384  Schmidt  Pg 14 Ln 7 (#29),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9829e52f-88dd-4ddb-a0c9-56fc300194cc,HB 1837,2025-03-12,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/286cd562-8ca3-4b65-b042-eea69daa8945,HB 1094,2025-03-12,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4ce0f231-ba89-41a3-8fe3-e1085eb4d3e8,HB 1395,2025-03-12,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4e48cb76-c4fe-477b-8ff4-f8b59bdee9de,HB 1912,2025-03-12,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cf475309-4479-4e6d-a404-e741930e95a8,HB 1574,2025-03-12,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/98613468-1bdc-4bcc-99cc-979a468273d7,HB 1296,2025-03-12,396  Walsh  Pg 10 Ln 13 (#21),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2d50a331-3e50-48a0-a942-b2f7dda68379,HB 1296,2025-03-12,444  Couture  Pg 10 Ln 38 (#25),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/48d2a6b9-a6c3-41b2-9356-43e2b155e37c,HB 1296,2025-03-12,462  Barkis  Pg 13 Ln 10 (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3c7b10c4-0205-4fd5-af2c-8a5100184c76,HB 1296,2025-03-12,437  Ley  Pg 11 Ln 11 (#26),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dac28919-a118-4963-9398-bbd8f9dd5143,HB 1669,2025-03-12,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ca764dbe-b723-4b2d-8976-89c72aba2614,HB 1815,2025-03-12,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/51ab1fbc-3235-4ede-8847-02c4ab7bbf65,HB 1946,2025-03-12,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/836be1e1-4ed7-47c3-8a6c-1c98d3533b49,HB 1355,2025-03-20,Final Passage on Reconsideration (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5c9daf34-6672-4ba0-8e8e-6b243af3eb6f,HB 1355,2025-03-20,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a3260401-a9f0-409f-ba1a-6139e4577b00,HB 1392,2025-03-20,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7628b74a-7595-4451-b25f-e8e06309e805,SB 5006,2025-03-26,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a636e728-d676-4e7f-9a28-ccc721760bac,SB 5084,2025-03-26,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/436ac124-bb43-4cd4-a3cf-af2bca80d332,SB 5122,2025-03-26,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d587e8d4-de5d-4d9c-8ddd-2f2658f07d1c,SB 5025,2025-03-26,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3f14f0b3-1f84-4eef-aea4-b3407f08a55f,SB 5051,2025-03-26,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7c7a8a2b-231b-4042-bb02-a11326f1e82a,SB 5118,2025-03-26,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d1656406-3f80-4f7a-9339-8b631e512341,SB 5004,2025-03-26,Final Passage as Amended by the House (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7001e59c-4878-4c05-b55e-e42a7e11e27d,SB 5462,2025-03-27,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/127850d8-b232-4e36-bffd-e9ce960f46cf,SB 5128,2025-03-27,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5b6fb437-80e3-466c-b962-4e97f550773e,SB 5244,2025-03-27,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9d04ea30-f8a0-4ee4-8911-256bab0fd515,SB 5577,2025-03-27,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/50978551-a07c-4342-b5da-ab2c8f0e7624,SB 5457,2025-03-27,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/019a4a8b-2a45-4c1f-9515-be93de2c8234,SB 5167,2025-03-31,924  Couture  Pg 308 Ln 30 (#6),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/77693f0f-36b3-4ab9-ba03-ba7ec2b0b462,SB 5316,2025-03-31,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/59f8bf18-14b9-4c31-9e03-1477076074af,SB 5167,2025-03-31,937  Couture  Pg 99 Ln 10 (#5),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a126bd4f-d4ff-4d7e-a17a-370c882786a7,SB 5167,2025-03-31,930  Couture  Pg 389 Ln 5 (#7),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/600a34c4-1798-4d2f-b077-fb4f9a63b425,SB 5106,2025-03-31,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/19a74c41-422d-4496-8f1a-157dd102e2c4,SB 5141,2025-03-31,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6e1e9e51-27d3-4c20-baa5-836706ac2a2e,SB 5167,2025-03-31,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5fe7e040-8899-4a9f-9de0-9fcfdd5e8ac1,SB 5209,2025-03-31,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d6c11a25-99d4-4532-9723-9613dd673705,SB 5161,2025-04-02,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/32514db4-73fd-4193-9ef0-54a84d6ac342,SB 5764,2025-04-09,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c4c5e7a4-9310-44eb-be34-1cbdd12f5d36,SB 5157,2025-04-09,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bf444b9c-7079-463f-9e77-98089c9f893d,SB 5498,2025-04-09,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/853bd439-f24d-4afc-9c10-71ddc3d846a5,SB 5239,2025-04-09,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ccc2daa4-1e9e-4828-a41b-952ea1857679,SB 5142,2025-04-09,Final Passage as Amended by the House (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e7f32e0e-b521-438e-9313-33c1620681df,SB 5655,2025-04-09,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d7a031a3-a1b3-4a65-9f47-05c419dc24ee,SB 5298,2025-04-09,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f026c9aa-3969-414c-ac4a-e86a334efcdc,SB 5480,2025-04-09,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7865b516-1d82-48d0-bc9f-9c2bdb54699c,SB 5065,2025-04-09,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/28d11b79-0844-4625-82ea-07b2ea54f1a3,SB 5493,2025-04-09,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/47d8085b-a118-410d-b03d-1ef64d9fc29e,HB 1422,2025-04-09,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/055e8ad2-2a9a-4713-b1bb-25ae76c9ab25,SB 5391,2025-04-09,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8c48f017-5055-4cda-8e00-c67609fa40b5,SB 5202,2025-04-09,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4012acf0-44b7-42a5-911c-6f7e352463df,SJM 8008,2025-04-09,3rd Reading & Final Passage (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e12e8adf-6329-4635-80bf-f6ff55b3bdbc,SB 5662,2025-04-09,Final Passage as Amended by the House (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e501f8fa-0ba8-4a3b-bed7-e19e626f26f0,SB 5093,2025-04-09,Final Passage as Amended by the House (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c306e028-93ed-4658-a02e-1aa7c67cc22a,SB 5641,2025-04-09,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bad8e9b7-7eca-4f4b-8086-3069c765dbec,SB 5288,2025-04-09,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9e00a7d9-46da-40a4-8939-f60c9b69d99b,SB 5525,2025-04-09,Final Passage as Amended by the House (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/185fbf7b-4ac0-4f03-a0c4-9b98f66be1e3,SB 5696,2025-04-09,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/86165a4d-664e-4dce-89db-15d09fa5c0f6,SB 5306,2025-04-09,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7c6ba481-0267-4174-a383-966225f51777,SB 5076,2025-04-09,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9d434b0b-29d2-4226-9524-4e88ff60b903,SB 5414,2025-04-09,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/89c37ece-5aff-4b70-8593-e0da2f67d8c1,SB 5656,2025-04-09,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fcdd6a94-5376-4a7a-831a-76d9ed4f6d2f,SB 5029,2025-04-09,Final Passage as Amended by the House (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/21c02d32-c47a-46f2-9707-ae616ba84621,SB 5021,2025-04-09,3rd Reading & Final Passage (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c51f8194-14f6-4cf1-ab05-62764434c643,SB 5501,2025-04-09,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b1d336ff-ff00-44a8-af8b-8462b0ad623c,SB 5074,2025-04-09,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f75b16f1-9c74-4883-accb-c25d5a87804e,SB 5545,2025-04-10,3rd Reading & Final Passage (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3527e02a-7ac5-4181-87a4-2087f026eb29,SB 5129,2025-04-10,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/741f7b1e-d1b8-42e6-b3ec-c9fd8db95660,SB 5492,2025-04-10,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/548b93e5-bdaf-4349-9e4a-8def64101a97,SB 5303,2025-04-10,Final Passage as Amended by the House (#33),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/df340256-4d60-4c06-b5a6-37ba59e8b8d3,SB 5175,2025-04-10,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f1a3f288-18f5-4371-a88f-7dc80700e1c6,SB 5486,2025-04-10,Final Passage as Amended by the House (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a65f8e26-e252-4c17-a57c-4cc57ee79a83,SB 5651,2025-04-10,Final Passage as Amended by the House (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2a15a98c-33df-4268-9e21-5066de0d41f6,SB 5714,2025-04-10,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/33f94afc-c993-444f-9c12-ad2c3132c095,SB 5528,2025-04-10,Final Passage as Amended by the House (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/890f0bc3-73a9-4b74-97fa-e91e7b237d25,SB 5459,2025-04-10,Final Passage on Reconsideration (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b35e017f-65c4-4970-964d-d13ead7e68c8,SB 5033,2025-04-10,Final Passage as Amended by the House (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/318f88e1-d729-4844-a2ad-45709128cd49,SB 5168,2025-04-10,Final Passage as Amended by the House (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/482f5ee3-8b19-4d9d-820a-8aaae30c8835,SB 5459,2025-04-10,3rd Reading & Final Passage (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0ffae0dd-af44-4998-906a-3f9645c259c1,SB 5265,2025-04-10,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d859201d-c748-44b5-9a3b-37717bb2a3c2,SB 5139,2025-04-10,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5b3221b7-f867-4f44-958c-b6543d783b88,SB 5030,2025-04-10,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5dc1e45a-ed9d-4d0d-8de2-b418b13955f8,SB 5200,2025-04-10,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/50c2a32a-f91b-4283-acb5-49c797bc37b9,SB 5182,2025-04-10,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8299fb88-1b88-49a3-9c3d-c113b1e7de70,SB 5149,2025-04-10,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/08a1723a-d356-4ca8-ab52-5c9bcb834007,SB 5212,2025-04-10,Final Passage as Amended by the House (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/726e4140-f062-4970-bc33-b37861d4d6e4,SB 5509,2025-04-10,3rd Reading & Final Passage (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a19a48c0-884d-401d-a351-1488f2aaed5e,SB 5163,2025-04-10,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4061c7ee-ccfc-487f-8430-ee623e4d6cc4,SB 5714,2025-04-10,973  Walsh  Pg 1 Ln 7 (#15),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2147a31d-5259-4761-a611-ba1127960f1c,SB 5358,2025-04-10,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b4d762b9-6d38-4981-b450-2d097da21904,SB 5579,2025-04-10,Final Passage as Amended by the House (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1243b938-9dad-43dc-a264-2578994db086,SB 5221,2025-04-10,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f70add43-1876-4214-a55f-654b15293b54,SB 5559,2025-04-10,Final Passage as Amended by the House (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/31d93c5d-7318-47f3-a284-79606069bde5,SB 5036,2025-04-10,Final Passage as Amended by the House (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/186ebddc-b25c-43f1-baa9-eae96392f6f2,SB 5543,2025-04-10,3rd Reading & Final Passage (#34),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/978c54f6-84a7-46cf-a9b4-142a5863d9a1,SB 5037,2025-04-10,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2ec68e4c-6ccc-42ef-8fab-bbe9a142f8e1,SB 5611,2025-04-10,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0f2f611a-3541-416f-8cd1-6d3cd1a6f2f7,SB 5558,2025-04-10,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/283fd490-9299-413c-aee1-9cd55139ff79,SB 5355,2025-04-10,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/17fa92a4-086d-495c-a1be-98bf65ccdfbe,SB 5214,2025-04-10,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e549eba1-9ab1-4df8-a3a6-745395636e72,SB 5032,2025-04-11,Final Passage as Amended by the House (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5ed887ac-2529-46ce-b280-54520d81da10,SB 5291,2025-04-11,Final Passage as Amended by the House (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6ea86e79-f4e2-483d-94b3-c91fffd7c77a,SB 5351,2025-04-11,3rd Reading & Final Passage (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/94c59d0b-08b0-48db-9c82-a6053b0ce5c7,SB 5049,2025-04-11,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/441c14e4-87f3-49d1-86d4-342ddeff4d02,SB 5716,2025-04-11,3rd Reading & Final Passage (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a7e810ea-2fbc-4de2-b35d-ea2b4b716251,SB 5314,2025-04-11,Final Passage as Amended by the House (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/45c32afb-4bc1-4afe-8ccf-0bcbfa656a65,SB 5494,2025-04-11,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7fd9e2a2-c2fc-4d98-ad5e-21e0fd56e4f7,SB 5571,2025-04-11,Final Passage as Amended by the House (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4c8d5b56-ef31-49e1-a8a3-4b373eb9e522,SB 5595,2025-04-11,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/303bddea-00f5-43e9-ad5f-f1a2980f03ac,SB 5691,2025-04-11,Final Passage as Amended by the House (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d4f392ff-2d96-4d4e-8bd1-8aa4f6556bc5,SB 5557,2025-04-11,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4be2d98e-9dd9-49ff-bb03-b67181832531,SB 5375,2025-04-11,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/79c500f6-99c8-4fc4-89a8-6ed7823ae042,SB 5365,2025-04-11,Final Passage as Amended by the House (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/01f0a908-4b23-493e-93bd-a4752d0f728c,SB 5680,2025-04-11,Final Passage as Amended by the House (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a47e0abe-b1d9-4e8d-b7be-3ddf8535b395,SB 5184,2025-04-11,Final Passage as Amended by the House (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/462984dd-1265-4ad9-8999-67b62e7714da,SB 5077,2025-04-11,Final Passage as Amended by the House (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/658b1a1a-c01e-4b1f-b9b0-92cdd3df3026,SB 5388,2025-04-11,Final Passage as Amended by the House (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d0689bee-6629-49c4-9671-5446788fcc1b,SB 5199,2025-04-11,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f7a41785-f83e-44b9-b8d0-8f76daab589e,SB 5079,2025-04-11,Final Passage as Amended by the House (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/44c20fb9-f3bc-48bf-9aa2-76a46d795651,SB 5191,2025-04-11,3rd Reading & Final Passage (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/da7e8d47-1840-431f-8634-519677a74627,SB 5165,2025-04-11,3rd Reading & Final Passage (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fa8921c6-f186-41de-b6d6-923ccfb08474,SB 5102,2025-04-11,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/60e3a46e-ca3d-4764-8ae4-45d6d1c70069,SJR 8201,2025-04-11,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ee99b04-2d8a-45fe-b1d2-fac418bba700,SB 5403,2025-04-11,Final Passage as Amended by the House (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eaa45d71-7681-4ef0-9e70-405ace7f8a86,SB 5556,2025-04-11,Final Passage as Amended by the House (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9239f57a-1b72-47d4-85b7-6ba435fa876a,SB 5677,2025-04-11,Final Passage as Amended by the House (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2eaa5808-81c0-4264-b8a4-0fa3b2afa020,SB 5356,2025-04-11,3rd Reading & Final Passage (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f16dac6a-0393-4f50-886f-ab5040708cf6,SB 5079,2025-04-11,Final Passage as Amended by the House on Reconsideration (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/48ea2d4e-1a78-4bdf-b2f8-da0ede647822,SB 5463,2025-04-11,Final Passage as Amended by the House (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fcd74b81-2781-47fb-a77b-3fdf31a9686c,SB 5745,2025-04-11,3rd Reading & Final Passage (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d7b9d824-7e34-4ba2-b8c6-b933140070d5,SB 5219,2025-04-11,Final Passage as Amended by the House (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/465f283e-5f8a-48ff-9584-90a64b0ddbdd,SB 5627,2025-04-11,Final Passage as Amended by the House (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b953e1a3-0273-42e8-9b84-74372d26762b,SB 5253,2025-04-12,Final Passage as Amended by the House (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b8c23bca-6330-4fca-9672-c3acb98ebe28,SB 5110,2025-04-12,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8bede13e-8420-4118-aee0-841f6f386642,SB 5471,2025-04-12,Final Passage as Amended by the House (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/162c76ea-e4bd-45b6-a598-75604f81a84e,SB 5138,2025-04-12,Final Passage as Amended by the House (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/778769bb-2e64-41a0-8c6b-458575d025b9,SB 5041,2025-04-12,Final Passage as Amended by the House (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8420047d-05b3-47b8-a526-9011df3291eb,SB 5632,2025-04-12,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/805ed3d1-36b3-4371-947a-72059e2da27b,SB 5040,2025-04-12,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/82b651a9-5603-477a-9d6e-b29ec072037b,SB 5284,2025-04-14,1106  Abell  Pg 13 Ln 37 (#34),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/397e05af-be52-4395-97da-935d962cd5ca,SB 5323,2025-04-14,Final Passage as Amended by the House (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dfbf0cb3-cbf9-4047-943a-0ee1f6c24753,SB 5232,2025-04-14,Final Passage as Amended by the House (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a8c508c3-0985-4a17-85d8-6fa146df99f0,SB 5181,2025-04-14,Demand the Previous Question (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/781d3a9f-64e1-4a1d-9229-a25a32f3260e,SB 5284,2025-04-14,1110  Walsh  Pg 17 Ln 13 (#36),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c671d4db-48ba-4668-b196-37ed3f3dd2b7,SB 5104,2025-04-14,3rd Reading & Final Passage (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/723006dc-a2dd-4928-aff8-ae8ff236bdd1,SB 5317,2025-04-14,Final Passage as Amended by the House (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5e0c7b32-614c-4e9a-9fd2-f8423ec92d0b,SB 5181,2025-04-14,Final Passage as Amended by the House (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4a9784cc-0390-47f9-ad60-113cd2da223a,SB 5284,2025-04-14,1181  Couture  Pg 1 Ln 3 (#30),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8c1dc964-3bdd-45f8-a466-5eaa4e40c07a,SB 5284,2025-04-14,1180  Corry  Pg 9 Ln 23 (#33),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fb8153a6-9962-43e9-922e-df2d78dfa24a,SB 5616,2025-04-14,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c55e6e01-7eb8-47e2-aec5-b3e737218755,SB 5181,2025-04-14,Postpone Indefinitely (#12),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f1097267-2f3f-4898-9dc7-831098141e50,SB 5412,2025-04-14,Final Passage as Amended by the House (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d7c4a0e0-86e7-45b8-9fa0-72b4dfa582ce,SB 5284,2025-04-14,1111  Walsh  Pg 17 Ln 13 (#44),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/518af10e-cd3a-4342-af6d-551e8ffb77e8,SB 5473,2025-04-14,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ba0ad424-9d90-4f50-aa00-f9f5978e64bf,SB 5284,2025-04-14,1104  Barnard  Pg 53 Ln 33 (#42),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7c5ddd50-150e-4d01-a1d4-1c384c376d94,SB 5284,2025-04-14,1101  Dye  Pg 2 Ln 9 (#31),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c13d9445-4d54-451a-8dec-bf3f04759c71,SB 5284,2025-04-14,Final Passage as Amended by the House (#46),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/491b9fd0-57d8-461b-b991-4f8fd3f99f02,SB 5284,2025-04-14,1179  Couture  Pg 1 Ln 3 (#28),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/45f60e0e-fa57-42d2-bdba-c21e7fe86be0,SB 5284,2025-04-14,1105  Ley  Pg 21 Ln 4 (#38),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a93659df-5bb4-46a7-a030-731e90d689a0,SB 5284,2025-04-14,1108  Engell  Pg 13 Ln 37 (#35),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dd9a2a65-7591-415a-9385-4e427585d1a7,SB 5284,2025-04-14,1182  Dye  Pg 1 Ln 25 (#27),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3d295ae6-03cc-4559-9b00-3abb82ecbb8e,SB 5284,2025-04-14,1074  Fey  Pg 1 Ln 3 (#45),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bf8a9521-2ab3-495a-af15-e70cddc9148c,SB 5343,2025-04-14,Final Passage as Amended by the House (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/57e364b0-7a8e-4bb5-b195-3a6232fd3abb,SB 5337,2025-04-14,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a77903c0-1398-4501-8b08-a199d5f16d18,SB 5009,2025-04-14,Final Passage as Amended by the House (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c1e062e8-73e3-4c7f-bad2-74488f783dba,SB 5284,2025-04-14,1107  Dufault  Pg 57 Ln 37 (#43),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3f550b69-b6aa-40d4-be69-16bec16614c2,SB 5284,2025-04-14,1103  Stuebe  Pg 17 Ln 27 (#37),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4e9efe56-5400-41f6-ac07-559b291bb35e,SB 5672,2025-04-14,Final Passage as Amended by the House (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cf3c47b8-26a2-4dc0-8674-02f80e4de02b,SB 5181,2025-04-14,Motion to Place Measure on Final Passage as Amended by the House (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e3ad426d-2cfb-4f69-b8e6-2b1062db0c38,SB 5148,2025-04-14,Final Passage as Amended by the House (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/43875abb-e696-4a4d-8e01-93d74a5ba283,SB 5284,2025-04-14,1183  Couture  Pg 3 Ln 39 (#32),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c2f92aaa-2232-4b34-a53f-fe2cf269db7c,SB 5284,2025-04-14,1102  Dye  Pg 47 Ln 2 (#40),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/046c50a0-e543-4b68-85ec-9c69db3a1daf,SB 5284,2025-04-14,1122  Reeves  Pg 1 Ln 25 (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9884066d-3654-42de-abc3-2753847e10c2,SB 5181,2025-04-14,1153  Volz  Pg 4 Ln 14 (#13),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3907dede-4149-40f0-998f-4e8f555a1295,SB 5181,2025-04-14,COM  Education  Striker (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3cfa3bea-7311-4d5f-b152-d37a11770077,SB 5485,2025-04-14,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b1fa1697-30c9-4df7-b694-5cc8d4c24f75,SB 5181,2025-04-14,Demand the Previous Question (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ab69f254-4ed8-43aa-aea9-537beef4013d,SB 5478,2025-04-14,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b49e217a-f645-4898-a78d-0ce6cc64d9a8,SB 5217,2025-04-14,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/32fd28e6-1db7-4b2d-8bf8-95bfeed77778,SB 5419,2025-04-14,Final Passage as Amended by the House (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c666f9b3-c015-436b-bd56-49194f83823e,SB 5245,2025-04-14,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e7b37832-8d5a-4c6f-9319-458612906b96,SB 5721,2025-04-14,Final Passage as Amended by the House (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a66e4f25-616c-4135-996a-4f2d0e8858e1,SB 5284,2025-04-14,1100  Klicker  Pg 47 Ln 2 (#39),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/05116270-2009-4841-9423-2d8bb56d21bb,SB 5284,2025-04-14,1112  Dye  Pg 48 Ln 24 (#41),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c355af54-5ee7-4437-946c-c641ce96d14d,SB 5455,2025-04-15,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a2a7eeaa-d7a3-4229-a976-0ed3b7ef915f,SB 5445,2025-04-15,Final Passage as Amended by the House (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d2cf3ad3-ea24-4b8a-873b-eecde41f7318,SB 5669,2025-04-15,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8ea5bb07-9a2d-42be-85a0-2734dc105871,SB 5702,2025-04-15,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/89c8f307-3500-4657-aca7-9e4612610993,SB 5224,2025-04-15,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/18a38689-48b8-4910-85c3-11125f2401b0,SB 5435,2025-04-15,3rd Reading & Final Passage (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a8b95305-0e4c-4b3a-bd55-6ceda10470eb,SB 5101,2025-04-15,3rd Reading & Final Passage (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/69537748-52e7-4be5-900b-50afd97613ca,SJM 8004,2025-04-15,3rd Reading & Final Passage (#25),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b374659b-151b-4dec-aef3-9668686e0b56,SB 5281,2025-04-15,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/383b0b5e-037b-40b7-9996-050e8ed50e57,SB 5568,2025-04-15,Final Passage as Amended by the House (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ce57d9b6-a8fa-4afc-b512-5048d02e34ba,SB 5506,2025-04-15,Final Passage as Amended by the House (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/625d1b3d-cde1-4a4e-8a95-c05a79674630,SB 5408,2025-04-15,Final Passage as Amended by the House (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/54999c3f-6fc2-433f-a0ca-99e1158d71c2,SB 5689,2025-04-15,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f1199139-e542-41ef-b907-46730a0edd25,SB 5361,2025-04-15,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/56511b27-53b1-4733-852e-136253703442,SB 5294,2025-04-15,3rd Reading & Final Passage (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7995aa45-9348-41b4-a7ca-df45bd0ee3db,SB 5503,2025-04-15,Final Passage as Amended by the House (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d9325462-2a6a-4339-81ce-a9af7b78c64a,SB 5127,2025-04-15,Final Passage as Amended by the House (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/953446c5-b18c-48ea-ab0a-dc061470885d,SB 5143,2025-04-15,Final Passage as Amended by the House (#9),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/39694d0a-56d2-46a1-9099-d9fa9a41dd5e,SB 5143,2025-04-15,Final Passage as Amended by the House on Reconsideration (#12),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/94761859-7261-4803-8780-9d3da25d1e7a,SB 5529,2025-04-15,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5b8e4477-e5c0-4e2c-9112-cc11ae356589,SB 5313,2025-04-15,Final Passage as Amended by the House (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/97b3d0f4-64f8-498c-9eb0-81fafa175cc9,SB 5334,2025-04-15,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0ab6fbee-5659-45a2-9227-b5bd7e9c3a77,SB 5628,2025-04-15,Final Passage as Amended by the House (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/43751027-27c8-4c51-a560-1dd1d5531850,SB 5189,2025-04-15,Final Passage as Amended by the House (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7b4f277c-1bdf-4fa4-8844-ad254bbc69a9,SB 5653,2025-04-15,Final Passage as Amended by the House (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6a8342c8-405d-470e-93c8-d44e923d8175,SB 5014,2025-04-16,Final Passage as Amended by the House (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bacfc497-b904-47bd-9436-88430c24e20e,SB 5319,2025-04-16,Final Passage as Amended by the House (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/02c21817-cdb7-4b3d-a9eb-3a7b342eb562,SB 5192,2025-04-16,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6b68e24f-0134-4735-a589-6ac7083cd72a,SB 5682,2025-04-16,3rd Reading & Final Passage (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/718b1e9a-c830-4bb9-9745-41e83bb03a23,SB 5516,2025-04-16,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a1c70b7e-818b-4f12-a38f-dfed2cc6dc3e,SB 5370,2025-04-16,Final Passage as Amended by the House (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eca0f72d-b8c1-4994-bd4b-230722cbd7dd,SB 5315,2025-04-16,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c646be49-62dc-44be-aaea-10d0084275d2,SB 5263,2025-04-16,Final Passage as Amended by the House (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3bf0df13-2c2f-48d1-af28-fd62f7109957,SB 5587,2025-04-16,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c100ede9-c5b5-4c5e-819d-257a97010d49,SB 5431,2025-04-16,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e271663d-8efd-4cbd-9586-e0b471867418,SB 5206,2025-04-16,Final Passage as Amended by the House (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/db439a4e-2a97-4b99-9d31-f241284c6076,SB 5262,2025-04-16,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d07ec185-699e-4beb-96eb-6eca9429ee6e,HB 1207,2025-04-17,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/65312af6-24bd-4c06-ad8b-b1f8cf54c071,HB 1046,2025-04-17,Final Passage as Amended by the Senate (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5f634afa-310c-4973-9ecc-a5bbd528fde4,HB 1308,2025-04-17,Final Passage as Amended by the Senate (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d3b305dc-e4de-4810-a302-7b30376fe248,HB 2040,2025-04-17,Final Passage on Reconsideration (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/af67426e-76c6-4700-bf97-2597f7e6cb81,HB 2020,2025-04-17,Final Passage on Reconsideration (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f1e92054-9056-42e5-8699-f1ebb46cd49b,HB 1173,2025-04-17,Final Passage as Amended by the Senate (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/31cdda70-4dfa-44c4-9a3c-13055aa3b7b2,HB 1403,2025-04-17,Final Passage as Amended by the Senate (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ccd6e90f-2263-473c-80f8-d72ba108d755,HB 2020,2025-04-17,3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2510c0cd-8554-4747-a385-3ef91bb86c1f,HB 1483,2025-04-17,Final Passage as Amended by the Senate (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cf7832dd-428a-48db-8014-fab250006779,HB 1372,2025-04-17,Final Passage as Amended by the Senate (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/04f73b6a-b73c-4410-bc33-3bdf7873d414,HB 2040,2025-04-17,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7290a0f4-592a-481b-9169-2c22bf8db8c6,HB 1473,2025-04-17,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7e6162de-5adf-419c-a9f5-1579888aa0c7,HB 1533,2025-04-17,Final Passage as Amended by the Senate (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ca35798-a278-4203-9332-25e80812e03c,HB 2041,2025-04-17,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eb3b22a5-4465-4e67-b5a4-c8ae65324054,HB 1171,2025-04-17,Final Passage as Amended by the Senate (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d27fed7f-8663-43ee-8fcb-2dec46e2da12,HB 2051,2025-04-17,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8b645b67-8693-4ba8-8efa-47690c7307f2,HB 2039,2025-04-17,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5ad6f4d0-43a5-4495-bab1-93ca7cbba256,HB 1149,2025-04-17,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/42b1b714-459c-4472-8dff-c43caf8d74af,HB 1043,2025-04-17,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/15913ed8-8fcc-4e13-9da5-0d2f450cba6c,HB 1332,2025-04-17,Final Passage as Amended by the Senate (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/86287ec5-1f22-4f03-b703-de0cf7ad2a72,HB 2047,2025-04-17,3rd Reading & Final Passage (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4ad4674f-3637-4fbc-befc-a7d2e5891407,HB 1829,2025-04-18,Final Passage as Amended by the Senate (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2c59934b-0bae-4837-a596-7b4a57afc5c5,HB 1468,2025-04-18,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/23e086c6-0fff-4ba1-b72a-b3a41c1637c6,HB 1848,2025-04-18,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/32756081-f2f1-436c-a95f-54117a16e4d4,HB 1395,2025-04-18,Final Passage as Amended by the Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1037965e-fd35-46fd-9d7c-6a613910d9b2,HB 1874,2025-04-18,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/659b1a84-3eb6-4da3-afcf-1ecd64612203,HB 1628,2025-04-18,Final Passage as Amended by the Senate (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dfc6322f-241e-4d91-a088-717dac7a567b,HB 1052,2025-04-18,Final Passage as Amended by the Senate (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4d18b542-021f-4d38-bf04-3cc7c7971937,HB 1539,2025-04-18,Final Passage as Amended by the Senate (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/62777ac9-8307-4aaf-adca-90836e1a6239,HB 1815,2025-04-18,Final Passage as Amended by the Senate (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f6adda1f-e983-48ce-b24d-5ec2978605a0,HB 1488,2025-04-18,Final Passage as Amended by the Senate (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ac93bcb8-5186-4d01-a57d-936aa3ae7886,HB 1757,2025-04-18,Final Passage as Amended by the Senate (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bfed091e-76da-4d64-ae09-d8a3782d3366,HB 1958,2025-04-18,3rd Reading & Final Passage (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b31d319c-071d-4c34-bc9f-0cf58452bcc7,HB 2003,2025-04-18,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4207e2b7-1ff3-48c3-b3f6-a811878b35ea,HB 1119,2025-04-18,3rd Reading & Final Passage (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1b4702e7-df2a-41b6-8f18-eeaee22d85be,HB 1620,2025-04-18,Final Passage as Amended by the Senate (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f3e121a9-689b-409d-aa06-812b2cd6cb50,HB 2061,2025-04-18,3rd Reading & Final Passage (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1aeee416-974a-4f5e-98bf-8c4e28ab50fc,HB 1552,2025-04-19,3rd Reading & Final Passage (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a3cbea28-93c5-4237-91b3-bccc68256aae,HB 1106,2025-04-19,Final Passage as Amended by the Senate (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/00fabefd-fff9-4195-a720-ce8fa0cf3d86,HB 1392,2025-04-19,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7ba3f5ce-b96f-4135-9b34-04727d1f3ea1,HB 1258,2025-04-19,Final Passage as Amended by the Senate (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f64e7e2d-b361-44a7-ab73-4756521291f4,HB 1562,2025-04-19,Final Passage as Amended by the Senate (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e2c5e795-e662-4dd0-aa94-adf3ae2f264c,HB 1576,2025-04-19,Final Passage as Amended by the Senate (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/ac35802f-7874-4c71-b5b1-8f5924dd7031,HB 1418,2025-04-19,Final Passage as Amended by the Senate (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c178da0f-4e7b-447d-8375-0a4ad8df1d13,HB 1009,2025-04-19,Final Passage as Amended by the Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a3e38ea5-f53b-4b1b-84f3-51e5ec0290a0,HB 2044,2025-04-19,3rd Reading & Final Passage (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4028383a-a07a-4366-bd25-2ed6c9e1b028,HB 1023,2025-04-19,Final Passage as Amended by the Senate (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cd94b82e-a759-404d-bca4-58c13c559583,HB 1253,2025-04-19,Final Passage as Amended by the Senate (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bd601771-ec90-4815-b05d-bdfb26f9ef6b,HB 1213,2025-04-19,Final Passage as Amended by the Senate (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8b502efb-8e7f-4da9-9fe7-056bab86e6db,HB 2050,2025-04-19,3rd Reading & Final Passage (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c1b4c706-87f4-44d5-b60e-a6e1c7722de6,HB 1573,2025-04-19,Final Passage as Amended by the Senate (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b55018e3-bfcc-48c5-8a29-0a345f57c71e,HB 1382,2025-04-19,Final Passage as Amended by the Senate (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4cee38ef-51cc-4d80-a315-81090e414a0b,HB 1587,2025-04-19,Final Passage as Amended by the Senate (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8fa2d694-655a-452e-9e80-d4eec353a547,HB 1079,2025-04-19,Final Passage as Amended by the Senate (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9aeb5463-75e5-4564-acdc-ae2a4f4b2059,HB 1039,2025-04-19,Final Passage as Amended by the Senate (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7f125ab7-c82e-4255-be9b-83da2a5f4f12,HB 1018,2025-04-19,Final Passage as Amended by the Senate (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d708b709-df34-4b33-8568-2a6ce44d2206,HB 2049,2025-04-21,1363  Penner  Pg 1 Ln 6 (#28),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4544e24c-c7fb-42da-8ef6-45ff3fbbc017,HB 2049,2025-04-21,1362  Caldier  Pg 6 Ln 29 (#29),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8ccfae40-28a3-4c7b-9f76-76f851ba2f7a,HB 1102,2025-04-21,Final Passage as Amended by the Senate (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/860fb7c6-efb6-4b73-8f22-99d79eb7d0b3,HB 2049,2025-04-21,1357  Couture  Pg 10 Ln 7 (#30),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c602e7af-3ade-4145-92c6-dba94d6c803a,HB 1621,2025-04-21,Final Passage as Amended by the Senate (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dc2977e2-7f0b-4ec7-a9c6-a4abbd0c31a1,HB 1990,2025-04-21,Final Passage as Amended by the Senate (#18),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/45434580-0021-4faf-afec-b13b6570700b,HB 1130,2025-04-21,Final Passage as Amended by the Senate (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a870707a-9e2a-4c75-831f-580f4184bd8b,HB 1271,2025-04-21,Final Passage as Amended by the Senate (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e859d304-86d7-4f6d-858b-4aa7cea4d0cc,HB 1409,2025-04-21,Concur in Senate Amendment(s) (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/751c5b91-ce03-4cc2-9576-0e37243d52e7,HB 1167,2025-04-21,Final Passage as Amended by the Senate (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/401dd11b-71cd-4547-9f92-45950352f137,HB 1946,2025-04-21,Final Passage as Amended by the Senate (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6127ad51-2307-4e6d-8445-a3a0945399b3,HB 1878,2025-04-21,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d81ff5c8-78b8-454c-b3c6-754def003904,HB 1498,2025-04-21,3rd Reading & Final Passage (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/71a1a8a0-ea1d-4d93-b863-33d3263ccd8b,HB 1651,2025-04-21,Concur in Senate Amendment(s) (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fd84b9ba-0691-481e-b9b5-5bb0b6051366,HB 2049,2025-04-21,1354  Couture  Pg 1 Ln 27 (#27),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f60d7135-e1ff-4b1e-b18c-b632531cea9c,HB 2081,2025-04-21,1334  Manjarrez  Pg 21 Ln 40 (#34),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a976e370-dd10-4f60-b63c-5ae2d00d94d3,HB 1264,2025-04-21,Final Passage as Amended by the Senate (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/43cf6485-3a73-487e-b5f3-4cf62f69dcfc,HB 2081,2025-04-21,1336  Griffey  Pg 12 Ln 30 (#33),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c722407e-9dc8-4512-b532-5b48f25a720f,HB 1811,2025-04-21,Final Passage as Amended by the Senate (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c579c481-7afd-45eb-9873-68cd3dd27b2e,HB 1596,2025-04-21,Final Passage as Amended by the Senate (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/552ed17e-a8b4-49c7-a565-48b8a0fbfa17,HB 2049,2025-04-21,1355  Abell  Pg 1 Ln 5 (#24),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d9adcf0c-ae35-40a7-84cf-1baa81df33d8,HB 1186,2025-04-21,Final Passage as Amended by the Senate (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5ee6f22f-3a94-463c-bffe-63046f811492,HB 1409,2025-04-21,Final Passage as Amended by the Senate (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6e3e8913-3db3-4a3b-9926-f8026286b3b8,HB 1970,2025-04-21,Final Passage as Amended by the Senate (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/503b36a6-da11-4a30-aa73-087ea3b6c0db,HB 1219,2025-04-21,Final Passage as Amended by the Senate (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/458ef16b-a22f-43d7-b1a6-1d3f15ac0f1f,HB 2081,2025-04-21,1332  Connors  Pg 31 Ln 8 (#35),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/858b19ac-025b-4d69-887c-11803b975e99,HB 1651,2025-04-21,Final Passage as Amended by the Senate (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2a20749b-2ddf-4010-9c43-bcb0a5eb1fc7,HB 1813,2025-04-21,Final Passage as Amended by the Senate (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6f2e4d14-eabd-4fc0-b40a-55b50a120b86,HB 1837,2025-04-21,Final Passage as Amended by the Senate (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b0dff20c-6cd8-436b-ba06-2d01cbe5b263,HB 1109,2025-04-21,Final Passage as Amended by the Senate (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/677db5e9-56cf-4aa2-b130-96679286a58e,HB 2081,2025-04-21,1333  Waters  Pg 12 Ln 7 (#32),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5ea0f2bc-731e-4656-bf3a-193b8342e52e,HB 2049,2025-04-21,1356  Keaton  Pg 1 Ln 5 (#25),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/53a3ac25-7783-417b-8352-2151f3447748,HB 2049,2025-04-21,1352  Rude  Pg 1 Ln 27 (#26),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5b91cd57-c453-40c5-8684-98f7d101b4a2,HB 1154,2025-04-21,Final Passage as Amended by the Senate (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8328cb57-8846-4fe4-ad50-e27b0801125b,HB 2081,2025-04-21,1331  Caldier  Pg 9 Ln 16 (#31),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/18210769-9034-4a21-83b8-dd168d3c1daf,HB 1515,2025-04-22,Final Passage as Amended by the Senate (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8cd0a598-ec7b-40e8-8576-663415f4e468,HB 1491,2025-04-22,Final Passage as Amended by the Senate (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e0a57495-b58b-4e9a-b089-3d4b1f17b70e,SB 5769,2025-04-22,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c012f7db-ae8f-4597-90c5-4b224aa7a201,HB 1497,2025-04-22,Final Passage as Amended by the Senate (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f887f2b5-99dd-430a-8fc7-d69ed30f3238,HB 1432,2025-04-22,Final Passage as Amended by the Senate (#23),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8e59e678-daac-4934-80c4-aa2477ca8289,HB 1514,2025-04-22,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/08ba3bfe-9104-4f6a-85fd-3a0a4f3fddfc,SB 5390,2025-04-22,Final Passage as Amended by the House (#27),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6d1502dd-bc27-440c-8465-07433958b984,HB 1543,2025-04-22,Final Passage as Amended by the Senate (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/520ae327-bca1-4b3b-acb9-0494dc16a818,HB 1731,2025-04-22,Final Passage as Amended by the Senate (#30),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b63c20cd-30da-4796-b129-b5b4d7e346ae,HB 1359,2025-04-22,Final Passage as Amended by the Senate (#22),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8d46b15e-f093-434a-84d6-b1b39c9646ff,HB 1163,2025-04-22,Final Passage as Amended by the Senate (#37),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/17698dd5-38a6-4630-be3e-6ec6121d8c9a,HB 1462,2025-04-22,Final Passage as Amended by the Senate (#33),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/76010262-e5b8-4374-a7b3-8132c3782f39,HB 1709,2025-04-22,Final Passage as Amended by the Senate (#28),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7d343c80-32d4-413f-8ccd-e0c0ab11851f,HB 1371,2025-04-22,Final Passage as Amended by the Senate (#32),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1707fcca-3f90-4694-b8f5-395dd0df0989,HB 1351,2025-04-22,Final Passage as Amended by the Senate (#21),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9e38fda2-fcf5-43d8-921b-f51143e3e398,HB 1774,2025-04-22,Final Passage as Amended by the Senate (#19),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8a94bb57-4e0e-4c83-bf9a-e7469fc78a42,HB 2049,2025-04-22,3rd Reading & Final Passage (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/907258c3-3e63-40ab-93b9-d3f899009536,HB 1934,2025-04-22,Final Passage as Amended by the Senate (#24),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fe60617c-d7ba-493c-96bd-0b30fbcf98ac,SB 5083,2025-04-22,Final Passage as Amended by the House (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f91a95f6-fc92-4627-b481-d6a4e1f59c17,HB 1460,2025-04-22,Final Passage as Amended by the Senate (#34),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/49ef8513-e7e2-486c-b1e3-eeef4e3ac580,HB 1670,2025-04-22,Final Passage as Amended by the Senate (#29),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/745811a1-9797-42e5-8126-250fd8cf4a32,HB 2081,2025-04-22,Motion to Place Measure on 3rd Reading & Final Passage (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9a4f5876-025e-4128-b07e-7e667346ef5a,HB 2081,2025-04-22,3rd Reading & Final Passage (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2417a7c1-5777-47a7-8cbb-821102a82d46,SB 5761,2025-04-22,Final Passage as Amended by the House (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/9d5a4bf8-5a49-4ef0-935f-3816d7e531ed,HB 2015,2025-04-22,Final Passage as Amended by the Senate (#31),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2931fbe9-45ae-4331-b339-ad7973457f44,HB 1131,2025-04-22,Final Passage as Amended by the Senate (#35),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/94091c76-b47e-4f89-905d-3640820f4d0a,HB 1329,2025-04-22,Final Passage as Amended by the Senate (#20),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e10bff9d-28c2-4b1b-a85e-3c53667c7b7c,HB 2077,2025-04-22,3rd Reading & Final Passage (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/1281d192-9330-4222-8b10-b28c3e1ddd21,HB 1975,2025-04-22,Final Passage as Amended by the Senate (#36),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c2f44319-d7d2-4140-9ffb-98b0ca6af26e,SB 5394,2025-04-22,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/86c11b9a-87f4-466b-b86a-65de672df93a,HB 2077,2025-04-22,Motion to Place Measure on 3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0a28bd41-9054-4c49-aed5-368cafaacc4d,HB 1648,2025-04-22,Final Passage as Amended by the Senate (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0cdc5b2e-8cf8-44e5-83ef-a4f1942e4fa5,HB 2081,2025-04-22,1330  Abell  Pg 41 Ln 39 (#2),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c9ec9743-c190-42b5-a0c5-d46df6b7d26e,HB 1162,2025-04-22,Final Passage as Amended by the Senate (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f3f69200-485a-487b-87d9-5739bc788205,SB 5390,2025-04-22,1090  Engell  Pg 7 Ln 2 (#26),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/95415064-1cee-47ea-a48e-c2fe8c769574,SB 5390,2025-04-22,1071  Couture  Pg 2 Ln 28 (#25),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/47e8e3f5-4124-4725-89cf-22e818eacd7e,HB 2081,2025-04-22,1349  Dent  Pg 31 Ln 25 (#1),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/63899617-4c73-4bcf-97dc-ba4baba83bf6,SB 5143,2025-04-23,Final Passage as Amended by the House (#8),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/4ccb4786-822c-4f78-89b4-6cc6f3e94fa5,SB 5571,2025-04-23,Final Passage as Amended by the House (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/267821a8-e8e8-49f7-ac86-696e36c6faed,SB 5813,2025-04-23,Final Passage as Amended by the House (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f2d9da8a-354c-4403-b303-f30572c91507,SB 5752,2025-04-23,Final Passage as Amended by the House (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/5df01ca4-f485-430d-a396-d403d87a27a0,SB 5041,2025-04-23,Grant Conference (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a8c1a736-8135-4b56-a4ec-64a38d3f6efb,SB 5794,2025-04-23,Final Passage as Amended by the House (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8cbb9474-bef8-4e5b-9215-7ac44fede215,SB 5583,2025-04-23,3rd Reading & Final Passage (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/c7edda0a-b639-4327-8b21-b8078ffcb269,SB 5814,2025-04-23,Final Passage as Amended by the House (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d0768115-54c9-4b17-a8f5-9098097a742f,SB 5752,2025-04-23,Final Passage as Amended by the House on Reconsideration (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e8d3354c-c1b8-486b-8f42-ca04e6fcfc3b,HB 1217,2025-04-23,Concur in Senate Amendment(s) (#1),no,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6f92e7ca-597b-460a-9f40-f371d4c8a6c8,SB 5686,2025-04-23,Final Passage as Amended by the House (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a221fe00-5e06-4d6e-9364-edc77f9714db,SB 5357,2025-04-23,Final Passage as Amended by the House on Reconsideration (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/68e6898d-bea5-4ecd-aa71-9a62bc0bb742,SB 5357,2025-04-23,Final Passage as Amended by the House (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/dab8a3f9-cc28-469a-b87b-fd8b139f364d,HB 1902,2025-04-24,Final Passage as Amended by the Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e25f8012-a647-4706-a913-c3e118e0e42d,SB 5801,2025-04-24,Final Passage as Amended by the House (#18),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3c997083-23ec-4d5a-ad90-b912e2d2275a,SB 5786,2025-04-24,Final Passage as Amended by the House (#15),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b9b62e67-5235-45fc-bdd0-c0cf8ec8f8d2,SB 5263,2025-04-24,Final Passage as Amended by the House (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/7f7ca662-7b2c-4885-b20c-e6ad255a88ab,SB 5807,2025-04-24,3rd Reading & Final Passage (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/be292bb8-d324-42d7-aac5-39d130922542,HB 1440,2025-04-24,Final Passage as Amended by the Senate (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/269efebf-a124-4486-9bcc-dea05645e426,HB 1733,2025-04-24,Final Passage as Amended by the Senate (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d9723ad4-d81b-4b27-b0a4-55ee47e76a73,HB 1633,2025-04-24,Final Passage as Amended by the Senate (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e534c4ca-a66c-4a32-b420-643d7e2ddbae,HB 1296,2025-04-24,Concur in Senate Amendment(s) (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a3252e16-9d8d-4568-aba7-b63b121f6007,SB 5802,2025-04-24,Final Passage as Amended by the House (#16),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e8ffeed7-3595-4db0-9936-bb1b4c519965,HB 1296,2025-04-24,Final Passage as Amended by the Senate (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a8edec60-b9b6-4135-a429-15c32ca1fae7,HB 1936,2025-04-24,Final Passage as Amended by the Senate (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/fd17b7c2-a0d8-44a1-af5b-c44c2fa6bf13,SB 5790,2025-04-24,3rd Reading & Final Passage (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/bcdf4891-1f2f-4f28-a250-c51667982a77,SB 5785,2025-04-24,Final Passage as Amended by the House (#14),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/626c0732-be53-4a1f-8a47-6437a3583c3e,HB 1912,2025-04-24,Final Passage as Amended by the Senate (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/693cdd89-fdbf-401a-97cb-3e8c0e6b0bd7,SB 5444,2025-04-24,Final Passage as Amended by the House (#17),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e4277bc8-13ba-4c29-a374-f497b7ba78ce,HB 1217,2025-04-25,Grant Conference (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/2ce23bcc-075c-4852-8214-a3a87cbd7b83,SB 5041,2025-04-25,Final Passage as Recommended by the Conference Committee (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/3ab0f21a-163d-4e6b-86f1-0f042a2dceed,SB 5041,2025-04-25,Adoption as Recommended by the Conference Committee (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b13113d1-cb65-4759-8feb-1ceaa4b6dc66,SB 5041,2025-04-25,Motion to Immediately Transmit to Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8da6e1f1-9e0d-4ae7-81b4-83b9d71814fb,HB 2047,2025-04-26,Final Passage as Amended by the Senate (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0811155c-3a9f-4742-b6ee-7d25e4a8d645,HB 1498,2025-04-26,Final Passage as Amended by the Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b10e2500-9ab0-4c1d-9469-4869e8b08fbe,HB 2050,2025-04-26,Final Passage as Amended by the Senate (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/d755ccdc-abfc-4019-befb-fe5477116c2e,HB 1207,2025-04-26,Final Passage as Amended by the Senate (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/f40e24de-bc57-4313-b1f2-01ebd20677f1,SB 5393,2025-04-26,Final Passage as Amended by the House (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/a5311e6b-6088-41ca-a84c-1edfd50b152d,HB 2003,2025-04-26,Final Passage as Amended by the Senate (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/cc49ab5a-7aca-431e-b45c-316539dfd7f0,SB 5167,2025-04-27,Motion to Immediately Transmit to Senate (#3),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/746515e1-dd55-4075-a8df-4691fdab1009,HB 1096,2025-04-27,Final Passage as Amended by the Senate (#7),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/0845c5ce-4d53-45f3-b583-1884a287f225,SB 5161,2025-04-27,Final Passage as Recommended by the Conference Committee (#11),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/8c162014-97e7-4fb8-aaa4-1b55436bb6be,SB 5167,2025-04-27,Final Passage as Recommended by the Conference Committee (#2),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/901c0d03-6352-4f5c-97c8-cb7cf63ec966,SB 5167,2025-04-27,Adoption as Recommended by the Conference Committee (#1),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/eaa9a389-6c20-4864-88af-ced519aa0e07,HB 1217,2025-04-27,Adoption as Recommended by the Conference Committee (#4),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/e624107a-cee2-46a1-9ad5-de7b4f48b91e,SB 5161,2025-04-27,Adoption as Recommended by the Conference Committee (#10),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/b9a00184-30ad-4bf4-b142-8e6f20b36a62,SB 5195,2025-04-27,Final Passage as Amended by the House (#13),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/aaa9b8de-8c84-4fb0-8929-114ea5f55d3e,HB 1217,2025-04-27,Motion to Immediately Transmit to Senate (#6),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/04ea780e-3a85-461a-a0de-bafd7a1ea35b,HB 1108,2025-04-27,Final Passage as Amended by the Senate (#8),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6475629c-0b19-48ef-b310-fb8fc8989b9f,HB 1293,2025-04-27,Final Passage as Amended by the Senate (#9),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/6040b4c1-7153-4862-bcac-cdd6f720956d,SB 5194,2025-04-27,Final Passage as Amended by the House (#12),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt
+wa,2025-2026,ocd-vote/242e5fdd-2134-4b5d-81da-689f70ff3926,HB 1217,2025-04-27,Final Passage as Recommended by the Conference Committee (#5),yes,Hunt,ocd-person/74dcb0ee-cec8-4a8f-be68-954b2c0fa5f7,Victoria Hunt

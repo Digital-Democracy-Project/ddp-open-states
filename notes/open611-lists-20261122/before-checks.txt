@@ -1,0 +1,93 @@
+OPEN-611 BEFORE checks, production broker 7ce53986, started 19:52:12 UTC (read only)
+=== validate_scorecards --jurisdiction WA --all
+Chamber/text check: 0 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 0 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 161 of 161 scorecards...
+Results: 161 legislators, 3672 votes checked, 0 eligible DB votes missing from scorecards, 0 scored votes that are not up-or-down votes
+✓ All scorecards validated — no discrepancies found.
+=== validate_scorecards --jurisdiction MA --all
+Chamber/text check: 0 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 0 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 11 of 11 scorecards...
+Results: 11 legislators, 1995 votes checked, 0 eligible DB votes missing from scorecards, 0 scored votes that are not up-or-down votes
+✓ All scorecards validated — no discrepancies found.
+=== validate_scorecards --jurisdiction MI --all
+Chamber/text check: 0 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 0 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 165 of 165 scorecards...
+Results: 165 legislators, 7434 votes checked, 0 eligible DB votes missing from scorecards, 0 scored votes that are not up-or-down votes
+✓ All scorecards validated — no discrepancies found.
+=== validate_scorecards --jurisdiction FL --all
+Chamber/text check: 0 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 27 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 229 of 229 scorecards...
+Results: 229 legislators, 27376 votes checked, 0 eligible DB votes missing from scorecards, 0 scored votes that are not up-or-down votes
+✓ All scorecards validated — no discrepancies found.
+=== validate_scorecards --jurisdiction NC --all
+Chamber/text check: 0 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 0 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 20 of 20 scorecards...
+Results: 20 legislators, 2949 votes checked, 0 eligible DB votes missing from scorecards, 0 scored votes that are not up-or-down votes
+✓ All scorecards validated — no discrepancies found.
+=== validate_scorecards --jurisdiction US --all
+Chamber/text check: 26 motions with a House/Senate-prefixed text checked
+✓ No chamber/text mismatches found.
+Undecided-motion check: 3 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+=== validate_scorecards --bills --all
+    - [Utah] motion 1014 on bill HB32: text='House/ passed 3rd reading' recorded_chamber='upper'
+    - [Utah] motion 1004 on bill HB479: text='House/ passed 3rd reading' recorded_chamber='upper'
+    - [Utah] motion 1008 on bill HB136: text='House/ passed 3rd reading' recorded_chamber='upper'
+    - [Utah] motion 1010 on bill HB136: text='House Conference Committee - Final Passage [Senate President]' recorded_chamber='upper'
+    - [Utah] motion 1006 on bill SB194: text='Senate/ passed 3rd reading' recorded_chamber='lower'
+    - [Utah] motion 1007 on bill SB194: text='House/ passed 3rd reading' recorded_chamber='upper'
+    - [Utah] motion 1011 on bill SB234: text='Senate/ passed 3rd reading' recorded_chamber='lower'
+    - [Utah] motion 1002 on bill SB189: text='Senate/ passed 3rd reading' recorded_chamber='lower'
+    - [Utah] motion 1034 on bill HB247: text='House/ passed 3rd reading' recorded_chamber='upper'
+
+Undecided-motion check: 33 motion(s) with eligible_for_scorecard NULL, 0 of them a passage vote the old fallback scored on a bill the scoring rule allows
+✓ No undecided passage vote on a scorable bill.
+Validating 859 of 859 bill scorecards...
+Results: 859 bills, 131898 votes checked
+✓ All bill scorecards validated — no discrepancies found.
+=== reconcile_scorecards --jurisdiction WA
+Scanned 859 bill scorecards and 161 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 0 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ Legislator and bill scorecards agree on every recorded vote.
+=== reconcile_scorecards --jurisdiction MA
+Scanned 859 bill scorecards and 11 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 0 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ Legislator and bill scorecards agree on every recorded vote.
+=== reconcile_scorecards --jurisdiction MI
+Scanned 859 bill scorecards and 165 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 0 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ Legislator and bill scorecards agree on every recorded vote.
+=== reconcile_scorecards --jurisdiction FL
+Scanned 859 bill scorecards and 229 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 2 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ No unexplained mismatches. 2 pair(s) set aside above as later revotes — the scorecards do not literally agree on those; see BROKER-120.
+=== reconcile_scorecards --jurisdiction NC
+Scanned 859 bill scorecards and 20 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 0 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ Legislator and bill scorecards agree on every recorded vote.
+=== reconcile_scorecards --jurisdiction US
+Scanned 859 bill scorecards and 0 legislator scorecards.
+Vote counts (yes/no, distinct bills): 0 missing from legislator scorecards, 0 missing from bill scorecards.
+Set aside: 0 legislator/bill pair(s) where the chamber voted again later and the legislator's earlier vote is the one on their scorecard (BROKER-120 — a known, benign shape, not proof both sides are right; use --verbose to list).
+✓ Legislator and bill scorecards agree on every recorded vote.
+DONE 20:04:55 UTC

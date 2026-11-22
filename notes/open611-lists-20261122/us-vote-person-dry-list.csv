@@ -1,0 +1,16 @@
+personvote_id,voteevent_id,date,session,bill,voter_name,option,identifier,person_id,person_name
+056d9bd4-acd7-4ab8-804f-da27b3e95942,ocd-vote/98b2f06b-2523-4f0e-a8f2-ee3c8182738b,2025-01-03T22:54:00+00:00,119,HRES 5,Waltz,yes,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+14dfecbc-81cc-4d05-970e-eb2eb8cb0ff1,ocd-vote/855dd40f-0d09-4c8b-a5e0-c964461f2d60,2025-01-03T23:01:00+00:00,119,HRES 5,Waltz,no,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+b95c7988-f7e0-4395-bb0b-6289e76734b1,ocd-vote/a1cbd756-cb69-4be5-b226-673b0d985731,2025-01-03T23:08:00+00:00,119,HRES 5,Waltz,yes,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+fbd15adf-61e9-41a8-9114-f091d5e6f6e0,ocd-vote/9661dea2-9e0e-4c41-9f01-bb9b0e1ff490,2025-01-07T18:27:00+00:00,119,HR 29,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+2a92e9d7-4489-4576-b765-2456e96d0f5d,ocd-vote/15a087fa-7a6c-41ae-9d51-adfbd0ce382e,2025-01-09T18:37:00+00:00,119,HR 23,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+18c0235f-8b94-4cff-8529-0561e82af81a,ocd-vote/ed73fce4-8c93-4e6f-8135-d6482c91750c,2025-01-13T23:53:00+00:00,119,HR 192,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+c864f974-0040-4973-a12f-ce1df354c7fb,ocd-vote/5f79d616-040d-446a-9c2c-ae125a597f58,2025-01-14T00:00:00+00:00,119,HR 152,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+14d8eade-67f1-4d24-9b27-8478826fed94,ocd-vote/f600fcf8-b878-4ebf-a0da-a8e02f03354c,2025-01-14T19:28:00+00:00,119,HR 153,Waltz,yes,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+fbae9c60-f135-49d5-b65a-815e45117496,ocd-vote/835dd968-45e3-4b9d-bf72-5576d0e5d98e,2025-01-14T19:34:00+00:00,119,HR 28,Waltz,no,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+37cefa07-f262-4d6b-a840-e2c132f9675f,ocd-vote/c5de18bd-22e1-41aa-a28a-328974d4b78f,2025-01-14T19:42:00+00:00,119,HR 28,Waltz,yes,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+b1b82fec-5161-454c-beff-38e307570aea,ocd-vote/302055f7-57d2-49be-9332-84a4ab06d44d,2025-01-15T21:27:00+00:00,119,HR 164,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+f7b08858-1a26-4fb7-954b-5048affaa956,ocd-vote/cddbc406-8c97-4345-859a-9c02a1af2610,2025-01-15T21:34:00+00:00,119,HR 144,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+b7b620f3-3e67-4859-a9b4-54ff08cedf09,ocd-vote/3d467c57-38bd-43e2-b3f4-6c1082000760,2025-01-15T21:41:00+00:00,119,HR 33,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+623e3699-14df-4e68-8f11-56f89916efe8,ocd-vote/30f2e1b1-3eb2-4afe-9697-1588011ea44f,2025-01-16T15:50:00+00:00,119,HR 30,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz
+50a85538-24ac-42af-9bf1-82492a50375c,ocd-vote/7b31292e-d017-43de-a1fe-8957c483dac4,2025-01-16T16:00:00+00:00,119,HR 30,Waltz,not voting,W000823,ocd-person/f335088b-3b7b-5009-9dd9-f389ffe59cdb,Michael Waltz

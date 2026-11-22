@@ -1,0 +1,820 @@
+state,session,vote_event,bill,date,motion,option,voter_name,person_id,person_name
+nc,2025,ocd-vote/e7569847-4b33-4e90-9e7c-8a896b9d4e68,HR 1,2025-01-08,R2 For Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4bbd8720-3dfe-437e-8cdb-7dce5220d5aa,SJR 2,2025-01-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/463fdeeb-a5d6-4b78-865b-e49ba92e6b17,HR 19,2025-01-29,R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/59f2cf11-8fc0-4862-99a0-2192a9347181,HB 47,2025-02-25,A1 Bell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2adda9ac-d079-473e-90de-a785474a01b7,HB 47,2025-02-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/63311b0c-0954-4254-86df-4cce4c95fd88,HB 48,2025-02-25,A1 Longest Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/daceff11-323b-4059-ba93-51fcc2e44bd0,HB 48,2025-02-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6481e79a-571f-4496-9ebd-1bc8cab3478c,HJR 157,2025-02-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6426794a-12eb-472e-9abc-0d621f8b2d36,SB 115,2025-02-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ff098d11-4eb9-4e97-9179-2623c36e3757,HB 48,2025-02-26,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2b849e07-b32a-43f4-a025-a1e006436da0,HB 40,2025-02-26,A1 Davis Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7baa011f-d0de-4bd1-abdc-0077ce8bf26d,HB 40,2025-02-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2b529167-2beb-41f9-9ff6-3beb1a8c4cbe,HB 44,2025-02-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/43a84a80-15c6-444d-bfc4-538562346943,HB 74,2025-03-04,Second Reading M8 Re-Refer Appropriations,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cb6bd5ea-6b81-462f-9404-00935983144c,HB 74,2025-03-04,A1 Turner Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/840f8faa-e532-4842-90b2-d79157c348d0,HB 74,2025-03-04,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5e7a63b3-c657-4609-ad3f-5d5e7b263f04,HB 34,2025-03-04,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/79fbe827-00ac-4fd3-8485-280b805ab517,HB 42,2025-03-04,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0ed02d5f-8af0-4a71-a5ee-5d3fd4dbeac4,HB 74,2025-03-05,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/70d5b4d0-e93d-4d83-80e9-b55cfcf12e29,HB 2,2025-03-05,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f9080fa0-4103-4af0-a50b-fe8d144b7be0,HB 47,2025-03-11,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ab99a16b-5e1b-47d7-b2ef-a0ca24b069bf,HB 116,2025-03-11,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7bbce786-82b5-46bc-9cb5-27b8c365d5f4,HB 105,2025-03-11,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e7c477ae-d13c-4a36-ba91-f9cb18e69bc5,HB 136,2025-03-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d2b929b4-773a-4958-8b2f-0fe874891be1,HB 43,2025-03-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b0a067eb-efb3-4c9a-af1b-6d2960f380ce,HB 52,2025-03-11,A1 Rubin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/032246d1-5251-4011-a93e-ee1336f2779a,HB 52,2025-03-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d14a27c1-0f55-4037-a0cb-dd90b30142ef,HB 182,2025-03-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c3347a42-dccc-43a7-9350-3bd70dd01130,HB 223,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eff7bc0c-b65d-4557-91fc-4c6c6c243f8c,HB 21,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8c2b72c0-023c-4706-b437-085483549882,HB 28,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0f83aaa1-2220-4746-a879-024a3908dc4a,HB 35,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/53f29828-e7ce-4f4d-b9f3-b2b87d132f10,HB 37,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3eb29cb-ff50-42e5-9c6b-5cf31a1d0028,HB 91,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d05cc9d4-195d-4ac7-94e4-6220dc3a0e07,HB 124,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/95485108-580d-45d1-8a62-b06c7e44e8d4,HB 125,2025-03-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a8f36ff2-1522-4260-9f81-9c8235eadce5,HB 47,2025-03-18,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a4357996-c307-4eaf-9575-ef8488c2e192,HB 95,2025-03-19,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/103e508b-90d8-43a9-9e8e-dfa4cfd1b9f9,HB 184,2025-03-19,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1073608e-43c8-482d-be3e-b046c4d2dd9a,HB 186,2025-03-19,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b9db5a9d-8281-47a1-8ecc-15a4f9e09bcf,HB 198,2025-03-19,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/059494af-04df-4728-a3f1-94bec9f8d2e9,HB 240,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0e81e46e-b672-4b1e-9cfa-49fa6ce394ef,HB 16,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/89358d28-9efc-4048-9645-83acce961a0e,HB 134,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/289c9006-cc2e-464f-926d-78fe8d5fbf55,HB 162,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b938f76-a2c8-49ca-8976-03a15cd520c6,HB 236,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a75522c0-ccdc-43d3-bd19-79872b7926be,HB 330,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eddba8f5-bf1f-4410-82aa-bb00f1b90a0f,HB 87,2025-03-25,A1 Cotham Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8479cd2b-f63e-4f49-84f4-ea4a7cd3206c,HB 87,2025-03-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/135fd539-0e42-4b62-a9ac-f97f7f674603,HB 58,2025-03-26,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5f97d122-4544-42b0-9450-97ce016ebede,HB 240,2025-03-26,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f2872942-be58-4b5c-8ad0-dfc3f77574c0,HB 294,2025-03-26,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/727d13ff-bb0b-493b-9c60-c61435174051,HB 268,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0693d6c3-3a61-469c-9bbd-36a327dfe2e7,HB 23,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bf087095-8a89-4526-97ce-cd381c346b2e,HB 187,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d36df107-93ac-40e0-b52d-b223556e02c7,HB 247,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/721285b4-1d1f-4ea6-a8fc-ae4cb2e00daa,HB 275,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e76e69ae-d2ed-4c8e-85ea-e68d4260e5d9,HB 315,2025-03-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/de09a519-e978-4b35-aa89-3cd361600449,HB 173,2025-04-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a1b02bc4-95c9-4ed6-be17-ede061272952,HB 302,2025-04-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cecc4a2b-99cd-480b-8159-8e6a6a5ff41b,HB 268,2025-04-01,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4bc32f18-3812-4862-9db3-0aeebfec95a2,HB 50,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/657945ab-231b-419f-8bea-3e278b9dfdc7,HB 67,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/175ebd11-2b91-4d24-963a-b4359e09c083,HB 71,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d08862f1-7987-461e-9033-ac0dcf847584,HB 231,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/da58c337-dc90-4924-8de8-76daf82f294b,HB 251,2025-04-01,A1 Hastings Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0ca15308-2d13-44f4-a708-abc0c6fadfb2,HB 251,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e300c4ff-7b60-4dae-b170-9ea756e5c26f,HB 295,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cdbcdf88-894a-4cd1-984a-a6a0ce3aceb5,HB 331,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2240f8e6-b9c1-4523-8c61-b95803f02ba2,HB 355,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8b716ff0-a5f5-40fe-877f-10830c4adb23,HB 370,2025-04-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c2644127-2a00-4afb-93b8-80d5e65e3f1c,HR 563,2025-04-01,A1 Butler R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8aad06ce-7259-46a8-8fdc-c8f11a488f34,HR 563,2025-04-01,A2 Harrison R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4e4deba3-cdd2-4ef8-89b6-f623775d619b,HR 563,2025-04-01,A3 Morey R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ec502bdf-7722-4d87-aa47-fe695a94289f,HR 563,2025-04-01,A4 Morey R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7013730d-7d70-4790-9c73-dfd4f0342dda,HR 563,2025-04-01,R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0a98a4a0-35a3-4de4-baa6-bfd66f092da5,HB 15,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4955ee46-7e90-442b-a15a-6ce73b5a07a7,HB 83,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/09a40b62-a762-4abd-8922-85dd5720a948,HB 96,2025-04-02,A1 Howard Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4e9aa728-e682-426c-8cc3-e4507004ac65,HB 96,2025-04-02,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1ee2faf2-51ef-4907-9a94-0eda081b2f3c,HB 141,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/776dffed-a763-453f-b681-84503777f42b,HB 189,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9edec543-b3d4-4102-bee4-35b95740b6db,HB 206,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/013b0596-0ae0-4dd6-838e-8eef99a54f00,HB 352,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/982df0d8-7e0f-4bab-bb19-afbcae210b13,HB 382,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dae3a06f-3ef1-4783-b81e-1610f2e62a8f,HB 388,2025-04-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/51ada076-a939-445f-9164-60b40858a297,HB 160,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0dc82632-2b54-4a40-aad6-51e4688bdb3d,HB 227,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9e83c783-07b3-4018-8a6e-cab3a7d80f47,HB 63,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/875999a7-4acf-4ebf-8b3c-32e33a9d253b,HB 26,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9664c376-2c0a-4f03-a41a-92728d35c2b0,HB 147,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4085ec79-b3f6-4c08-8a15-9a8b08f99697,HB 143,2025-04-08,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5eb577b2-c5c1-443a-a8a4-89c1f428d1bd,HB 63,2025-04-09,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3f0dcdda-0fd0-4861-82d7-85d7c8d41a19,HB 26,2025-04-09,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f43f09b9-d746-4616-beaf-a35bcbf386b5,HB 147,2025-04-09,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/53637ac9-b550-49ec-9ead-c808dc4fa652,HB 143,2025-04-09,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3b514d36-201c-47ce-8602-27be96efe2b7,HB 53,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d7ef8df-e0d0-4f71-8290-4b44ae046f5b,HB 123,2025-04-09,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f694eb23-9576-4ec8-b275-dd3d7d050009,HB 149,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a7d7ae1b-19f1-467b-8d1d-c90603aca737,HB 258,2025-04-09,A1 Crawford Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/af0feca3-5aaa-49f9-be56-68afe3f438a3,HB 258,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0348f0e4-c080-48b8-b6de-47c2a59b8c92,HB 266,2025-04-09,A1 Goodwin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ca6ef19c-6617-4b46-8b8d-ab6d4735d62a,HB 266,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5ea04ba0-1fd2-4697-a5a3-1c844142d373,HB 308,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8fdd8e7f-ad90-47d3-897e-8717edaf1285,HB 354,2025-04-09,A1 Pyrtle Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cfa7c34c-b877-40a0-b8e3-866c8df02a93,HB 354,2025-04-09,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9525e6b0-98dd-439a-b3f9-65d080d8d342,HB 358,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/034d3b2d-7c9e-44fe-9459-c80bdbd09177,HB 377,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0d8c0864-d75b-4cdf-8ad4-1a3a36660170,HB 389,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b4e6550c-41b6-4e6c-9bc6-2ed353924d07,HB 397,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7157d0f6-2ae5-413c-9f93-bd205270cc3e,HB 481,2025-04-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4e95b20e-2b14-4142-b3b4-59d9014d96bd,HB 69,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/da0f2a2e-25f1-4980-bc51-acab8c667fac,HB 211,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d7244c0b-f24a-4ea0-b53a-583994bed000,HB 213,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d63ccab7-102e-4f6e-a9c5-85643dd3af41,HB 218,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/457f2055-0d0d-44d8-bbd9-fd28ebf30111,HB 246,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/51e656f4-b46d-416f-aa54-aaf08a42f517,HB 272,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1d41c0a8-666c-494c-870e-79942f720897,HB 309,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/146eb0a2-44c7-4a77-8aca-c3ca1d5ee47f,HB 349,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bc0b921c-7781-4cd8-9afb-a7137a6c1b0c,HB 373,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3154b507-e4c6-4739-abda-b58ccaede0ba,HB 378,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a40e8bb8-0466-4447-93f9-84809a2e1bd2,HB 412,2025-04-15,A1 Arp Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cc6014fb-7e58-4f94-914e-0b921f5dd8ff,HB 412,2025-04-15,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f83ba2ce-55b7-4ee2-bc6e-3f861d0e8791,HB 437,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/51d46fb1-cb53-44ab-9469-179a970b226d,HB 479,2025-04-15,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/207f9653-f858-4cac-8b18-f60f182e4bc5,HB 133,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8fb983ec-692f-44c8-bb2b-aa3d003120a2,HB 244,2025-04-16,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/de6c040e-62d6-4088-b96b-0f8767f5e6b9,HB 328,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/49c6406e-19ec-42ef-9ae8-26b380ab6573,HB 329,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6bf2469b-18f8-4804-aa17-cd59e66594e7,HB 390,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cd87f959-f59a-4437-b000-ef3f89119f7a,HB 402,2025-04-16,A1 Harrison Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c837d134-79ef-4919-9e7d-288babbeb623,HB 402,2025-04-16,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5d2fce8c-15c2-480f-bcd0-7995bdd701ce,HB 402,2025-04-16,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26295f5b-f455-4303-8e19-871d09dc90da,HB 432,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/175d2131-66de-4ba2-ac6e-9f8614ea89bb,HB 557,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/03f83764-bcc0-472d-b488-b9a412210485,HB 485,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/145eef01-0294-4ad4-a64d-4556c0675e0a,HB 537,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e76009ed-5d34-4bf0-875d-47fd8f2f7aef,HB 559,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c8f44b46-f9cc-49e9-b8eb-18b1971a32c0,HB 574,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9d7109f2-0f28-4277-ae49-079bbf9c3dc4,HB 592,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/88d7432a-3baa-4c10-97ab-083ef3a0edb7,HB 610,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4243ebb2-caa2-43b0-8706-54f7e3ef5938,HB 734,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e9e18962-0e7a-4458-8d88-64375beed32e,HJR 1007,2025-04-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e58d55bf-b148-4c46-9391-7d170330de83,HB 636,2025-04-16,A1 Quick Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e588f14a-4c05-418f-af17-48f7d49b2525,HB 636,2025-04-16,Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0de3f7d7-396d-418a-b3d0-ab89c681d480,HB 636,2025-04-16,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fbbcf5d8-0c77-4fed-91a5-8ec6e4752383,HR 904,2025-04-29,R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7069f9a1-0702-46f6-9c2c-65fa332dd921,HB 38,2025-04-29,A1 Pyrtle Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/775c757a-44e6-48bd-b434-f07587fbf054,HB 38,2025-04-29,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/131146ed-895c-4996-88f8-d032d19651c0,HB 107,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7a253183-e6d7-4355-8f65-bcec3d3d4e06,HB 126,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/393e82c3-d926-4e46-88b0-9d5e21f12ea8,HB 152,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/de5a516a-a094-4650-816f-8385a28bedc6,HB 163,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0838bf19-0f21-452b-8e30-78876e229230,HB 217,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/987c93a8-08d2-4068-a1d3-9a29ee41bee5,HB 250,2025-04-29,A1 Carver Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b21d29f3-f318-4a47-bc29-b9613af62fa7,HB 250,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a3f15141-2ac1-4745-bbe8-c11d71d4aadf,HB 288,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/28d13a38-5bd7-4083-86fe-2aec4a469959,HB 298,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/67106b95-2d05-4d1b-9fd2-b6f068c39d0e,HB 318,2025-04-29,A1 Echevarria Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/aa43447b-e9db-4620-bea8-4626bb12b0d2,HB 318,2025-04-29,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cdb8a6eb-b4ce-4131-8c62-5922f486d821,HB 368,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6d3da937-6980-4d6f-b59c-3398c12be51b,HB 372,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7fcae6de-dba8-4093-a72f-5bc862e60f8c,HB 476,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/658d8ebc-74df-429a-b21e-03065974558a,HB 506,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6a290aa7-62fc-433a-8671-3ec8f393d554,HB 477,2025-04-29,"A1 Smith, Carson Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3f4c566e-eb56-42db-8ae0-9b9d3b8a3ae8,HB 477,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c84cfd8a-c775-4da9-80b1-25d5ad36937e,HB 568,2025-04-29,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a6f1fd06-931c-4127-b5f1-6380b77a80a8,HB 570,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b4a72191-e3bc-4911-a2c8-af9db1b56374,HB 649,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6c14806f-b987-4f4b-abb9-517dc5fb7612,HB 620,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1ea26a73-4c85-41c8-b42e-1b6347976662,HB 648,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f6a46352-398b-4ffb-834d-6bf16450224d,HB 694,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4b01b696-22d3-457a-9707-9274c65af696,HB 771,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9c102374-0239-4bd1-b3f1-14ad6045eb23,HB 822,2025-04-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b754ff6-8c97-4d66-a767-79c84e73b9a6,HB 279,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bf2b3bd8-c744-4b0a-83f3-d8c266a9e60a,HB 92,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bb090cb8-1c6e-4258-9612-51d053da54a0,HB 140,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a928c9cf-1826-4bb9-b084-25384e43c550,HB 146,2025-04-30,A1 Campbell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/40fbdea9-5a54-4884-8f0d-32b9eff453be,HB 146,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/289621d9-ce33-4a1c-b344-f446840fe4d8,HB 156,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/34f611f9-e345-43a8-be5f-b00c64a02f22,HB 171,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4275fee2-a0f7-402b-ade5-7de94aede68b,HB 210,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4b2c07d9-3697-41c3-b716-c9d96bb217bc,HB 254,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/219f657e-d5e9-45eb-b4b9-5b9faa214f7f,HB 261,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ac836045-e776-47c4-adb3-193ffc0a3ffe,HB 307,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c45c6f2c-05a5-4913-9c37-f71619c743ee,HB 376,2025-04-30,A1 Brody Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/37b41975-fcde-4c5b-8635-2dcc5c5c0fae,HB 376,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/58a0ba96-3249-4c33-b0ab-a2db4c258c20,HB 381,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fcb89339-80fd-4790-b2e1-a0b82a8f478f,HB 434,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/83202792-d74a-4f4c-8590-33c8ca2390c2,HB 439,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8fba468c-7034-4ad0-bcfb-1abcbf9b8b7d,HB 512,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f87bd47d-74da-4a18-a9de-72960e95ab6d,HB 565,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/742ed32a-e9d7-4485-8d78-93be502aa924,HB 575,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dce2e890-17ac-4bcc-9333-6324b343d015,HB 576,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/13e466b1-f60c-42e8-bf72-303df7aa684a,HB 605,2025-04-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/97a88f47-b320-4daf-b774-70f7eba948ff,HB 614,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/40d54ec3-9819-420a-beff-2d037f3e45a2,HB 637,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0073f736-8149-4155-a1ee-2bf295f07c6a,HB 717,2025-04-30,A1 Humphrey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b8bb209-a24f-45fd-a238-ae4e21891cd9,HB 717,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4d55bc27-f652-4921-9d32-ada75bfdff9c,HB 720,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/066d55b0-61a3-42c9-af94-45517f0785e8,HB 737,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4989f7a3-afa3-42c7-a230-38496a7c4ae8,HB 762,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/380895b2-11ca-42dc-901b-6e58655e89a0,HB 763,2025-04-30,A1 Zenger Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ecfce347-880e-4eb1-92e5-08dd2fce0236,HB 763,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/16b7995d-827a-4cb1-acab-bb1383601cbf,HB 797,2025-04-30,A1 Howard Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/679981d2-1103-4490-b6c9-16cea36b732f,HB 797,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/893f696b-92d0-4457-9416-c19c90742f93,HB 801,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6d78485c-e961-49b4-a118-e332911a7a82,HB 975,2025-04-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2e622025-47e8-41ae-9667-4916a0b06a2c,HB 56,2025-05-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b041ddb1-dc5c-407b-9083-d6c5c4c7a466,HB 57,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/235dd26c-81ed-4b15-81f5-45319cb6a317,HB 97,2025-05-01,A1 Clampitt Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/18477d5c-f052-4cdf-b771-b00d028f3e2d,HB 97,2025-05-01,"A2 Pierce, R. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0424483f-a77a-4a8c-84c5-7ec166ad583a,HB 97,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/176e8b60-a3f4-47c4-8b9c-3407351fdfd8,HB 139,2025-05-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/687cf0d1-4d34-4cba-aefb-1e8174fcce6a,HB 193,2025-05-01,Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ecc7a3ba-7a3a-412c-bf92-ac504029acde,HB 193,2025-05-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/73b26c8e-8334-4b9d-95a1-d028c42c85f2,HB 406,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/94ba0caa-c225-4c79-be35-8fdbb2d9e0fd,HB 421,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cb3f9c0d-d93a-43f7-9121-c65ce26468db,HB 472,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cf5ec420-a795-4517-b105-c9145f7df2e8,HB 483,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26ccc456-3b2d-45f4-9d4f-d987ec4a92c9,HB 578,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1f37e6e1-653e-499a-9a8d-228396d8d7ce,HB 768,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3176398b-ad70-4916-add4-0ac45b41d04a,HB 773,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a2c5b001-502a-433e-aa0d-195363768fa0,HB 789,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9224fe7b-c554-42e6-a5fc-c8636dc2608a,HB 832,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/927c3eed-6134-462b-acbe-4e7451f036f0,HB 866,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d713ffed-b490-4d2f-811a-81d9d6ed8bfe,HB 875,2025-05-01,A1 von Haefen Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/73cf3792-7568-425d-a2cf-1234faec9111,HB 875,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5e36036a-ac42-4b9a-b7cf-ef14044bbef0,HB 908,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/39bd507d-2f4f-402a-aeec-bee821939901,HB 913,2025-05-01,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d9d5fbc6-4add-44a5-a520-c22a011eefe4,HB 971,2025-05-01,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26bac5dd-a0c8-4c1c-92c7-79652a5c448f,HB 121,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0a963b22-4645-42bb-b379-56148fde5300,HB 212,2025-05-06,A1 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e406ff0f-96ae-43dc-9f5e-5dd11f51b962,HB 212,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7e57ad9d-92e0-43da-b7af-a73f58710a97,HB 301,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/96f971b1-51ac-4c57-adf8-aa2a8c1790c0,HB 346,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2c25ee0e-da0f-4f32-a109-7b57226f7c6d,HB 414,2025-05-06,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b2ab8bd0-d869-4964-b3a9-06edb39b0d56,HB 433,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/25a61a93-e89a-4acd-9445-80d227e643d9,HB 489,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/87f75005-a28a-4fef-8d13-6ef10291d359,HB 519,2025-05-06,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d0e3dffc-a8a5-4e26-9d6a-91c899a6d341,HB 546,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b403e415-de3f-40d7-ac88-7a92a030897f,HB 549,2025-05-06,"A1 Jones, B. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e7eadef2-45a3-4140-8be8-7159e4ff0def,HB 549,2025-05-06,A2 Longest Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fee9501f-6705-4dbe-b5a3-a2f427fe34c6,HB 549,2025-05-06,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c00bad79-8c65-49a9-a009-fcb968fdd667,HB 562,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b1f367b4-c941-45fe-ae5f-570127f13591,HB 572,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1ca4148-3531-460e-ba34-ee0a03d03b55,HB 606,2025-05-06,A1 Harrison Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/58a30396-5ba9-4d71-b0b1-38fff16a8306,HB 606,2025-05-06,A2 Stevens Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d2ad96e1-167e-45d0-b278-c61dfc105bf8,HB 606,2025-05-06,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7d782d31-8b71-493b-9f16-1d5a5c4d3eb0,HB 615,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/66d59e36-e424-44ff-b4f0-0b8393f42900,HB 652,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a48b14a0-7bca-4bbb-bded-1786141d5673,HB 696,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/00aaa2b3-4163-40c3-812d-1c60a6f921ee,HB 741,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/39c80fee-2c15-494a-9200-5efe8f098c48,HB 772,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/af17b457-d82a-4ee4-9072-a57ea2c4af29,HB 782,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b11ba115-914a-4af3-8b15-be0110ea1cd8,HB 841,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3d0eebf-760e-4078-9245-483301ecfcca,HB 847,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/36972784-d735-42b6-8877-6b7a240b2762,HB 850,2025-05-06,A1 Adams Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a412a044-663b-4c62-93c5-e8500be56c03,HB 850,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2aa68d68-d30d-4c00-af14-6469fe825aee,HB 870,2025-05-06,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/459e745c-d999-4d60-8410-b9fcb8d44add,HB 906,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/92d1f90b-b0b4-4c61-9bc2-f51a2eab804b,HB 918,2025-05-06,A1 Blackwell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2cfd84e3-4aac-4eb2-b3f1-0635b1618b4f,HB 918,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7b1fb29b-4882-4af7-9eed-3e37e2aad4fa,HB 928,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e0f35a0d-b32e-404e-adab-88588f39c379,HB 1003,2025-05-06,"A1 Jones, B. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0c3c737d-59cf-44b3-a7e5-11d99635d1c4,HB 1003,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/64763f0b-567c-49fc-85df-b533016d87ff,HB 612,2025-05-06,A1 Stevens Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b75f6804-cf2c-43f8-8261-a53daf9b5364,HB 612,2025-05-06,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3636967a-b6bc-4983-ba41-6699d6f0f19f,HB 305,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/98c0e09f-e63c-48d1-80ab-0648addc9ccd,HB 4,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/aea2d62f-81f4-4613-94a7-7e83c9843a0e,HB 94,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7b40fff7-50e6-48eb-8f33-268cb6f6de88,HB 283,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/35668779-dd78-4483-8f8d-1dfaedf74409,HB 297,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7a2fe193-5678-47c8-b95d-be8affae454e,HB 356,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e6264902-071d-4a9a-b11c-3bb9ab7e7ed7,HB 364,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7298c883-5d41-40b8-9ab8-56aefa8e2e25,HB 515,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/62c03d81-4be8-4599-8502-84552deaa097,HB 520,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a8d6bcb3-86a9-4e8c-a8aa-6a61017c9fbf,HB 535,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f214216b-11cf-4fed-8e7c-40127357b1e6,HB 547,2025-05-07,A1 Chesser Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7c47e932-b52f-4bd1-ac1a-c1cbb9b468b7,HB 547,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d7f990a0-0400-47a1-a2cd-818e18628027,HB 74,2025-05-07,R2 Ruled Mat'l M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/202dbeee-0865-4a76-8864-67f40190b2e3,HB 552,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0643cdeb-e86d-4cb8-86ee-915da12a0b36,HB 567,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e5c9e8d2-96be-48c8-82a2-ceb9b92788ef,HB 616,2025-05-07,"A1 Jones, B. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6801b1ac-cfea-4833-ae97-1f9bf4fa71e5,HB 616,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fc23801b-565b-48d7-bd16-73fb4996eaa4,HB 618,2025-05-07,A1 Clark Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b6ebd77-1770-4def-b1f2-5f3d840c7a0e,HB 618,2025-05-07,Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3920fca-fcce-4f48-b8d3-2072b9d79bca,HB 618,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/710747c5-bb65-4739-80f9-4970e6bd4862,HB 681,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c8abed42-29b6-4839-b557-5ba6d8c74425,HB 681,2025-05-07,A1 Crawford Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3d60def-beb3-424e-bfcd-3f633b452aea,HB 727,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a299de16-544f-4521-8089-f4d3ed211542,HB 851,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f5468211-1399-4d73-a084-ceb1aede4b5b,HB 795,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/61757c25-55cd-4d93-9e23-a37d237d5476,HB 894,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eab7dc7d-7bc3-436c-9ae1-5b4f71798000,HB 894,2025-05-07,A1 Adams Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9216d756-192b-4374-9882-8c375e1288d9,HB 896,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4e27bdeb-fbfb-4cd4-8f48-fa0154ca8299,HB 909,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a00df97c-794a-4764-8811-1c3aa7cb4780,HB 936,2025-05-07,A1 Greene Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0b7199d9-eb19-4dcc-b2d0-ff33a0f7d6c7,HB 936,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0693ff74-d7f8-4e07-bb20-58ef68ae092c,HB 953,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c3523a85-cb37-4127-af89-6e820c17e469,HB 992,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/757dfbe7-adea-407a-ba4d-afe50b1d6502,HB 150,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5ee58898-699f-4933-a96b-4f12be354f47,HB 183,2025-05-07,A1 Gillespie Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7c99b8a6-294d-421a-a254-7fa9eb7f5dcb,HB 183,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6b095cdd-c199-4145-bae4-15479b49e3b7,HB 185,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/149daef4-b8a9-418c-a460-3a1b94d001af,HB 214,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/13477a9b-4c4c-4b02-80e0-26059f40b210,HJR 379,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2a3c75bd-d92b-4b24-95e9-5eb9f949d10a,HB 188,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/866e943c-b078-4e7d-a0ba-f08c59780b2b,HB 441,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d922d771-bba0-464e-922e-9faddbfae830,HB 442,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5e978551-d1fc-4b3c-a317-16b0d1c13997,HB 597,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d69e985-d8c9-4237-8b59-3ea5db604b50,HB 602,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8ce9aa50-f6ee-4b8b-a689-7c0931ac821b,HB 415,2025-05-07,A1 von Haefen Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3ef51f11-e71a-4378-b409-0987b7588f51,HB 415,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/efd51f69-fd2f-47ab-81ec-fa60a95c4313,HB 674,2025-05-07,A1 Adams Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7e27c498-2d68-4ac7-8b16-9a278c490f02,HB 674,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3b598103-f904-4344-925e-5553bc27f5cd,HB 690,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5fb750ce-7acc-469a-8ba2-4921ed6e7a42,HB 698,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8552beb6-5f60-4f5b-8d4b-c3873f40954b,HB 701,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6b3b2a66-da32-41a7-950d-48c2eb7100b6,HB 754,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1e9907be-ca8e-4797-acd5-eff28b466429,HB 781,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0afd3538-340d-4fb5-bc04-2a9dcc9231c0,HB 805,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8daeae05-781d-440e-a538-b1922d5ff33e,HB 818,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fc79913e-0500-4342-91c8-d16fcec37b0c,HB 854,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5f87e33f-96d2-4e2e-bea6-f976932fa997,HB 859,2025-05-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7cbaa9a3-d577-4851-845d-de4eb4ebee1b,HB 305,2025-05-07,Second Reading M6 Reconsider,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c5c49f48-6226-4da2-beaf-f45ecc3914a6,HB 886,2025-05-07,A1 Gable Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/20ea8d61-0808-4304-94b6-7f27e0f7914f,HB 886,2025-05-07,A2 Howard Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9c04cf84-544e-4190-834f-0f948602701c,HB 886,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/281cce09-a2f5-4b19-a87a-77ef83dfc1dd,HB 959,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1000d676-adfd-4289-b83e-d632184fd1c2,HB 569,2025-05-07,"A1 Jones, B. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1f43518c-67c4-47fe-8a9f-a7950f18eec1,HB 569,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8db53be7-20bb-4754-9d2b-7f68e3a78e39,HB 981,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2c46764c-4927-4f71-afa0-e3a584a7df56,HB 997,2025-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1c7ca4e7-a926-4ef8-97fa-1c2119021421,HB 74,2025-05-13,R3 Ruled Mat'l M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6d848552-f0e3-4bfc-afa7-df20e91c2902,HB 834,2025-05-14,A1 Almond Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a1dfdc19-0608-4418-b2bc-9c5071e8283e,HB 834,2025-05-14,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/04c2a217-7250-42de-80bd-1108e56450b2,HB 271,2025-05-14,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b6b2a8e-f787-46d8-a491-1ae674f98198,SJR 763,2025-05-21,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/61c77dab-3442-4f5b-bc2e-cdbc1bb72ff6,SJR 764,2025-05-21,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26a6aaad-311b-4581-88db-46ba1ca06065,SJR 765,2025-05-21,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e46552ed-e2fa-46a6-921f-03238b898e80,SB 257,2025-05-21,A1 Belk Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bcef5e14-aad0-43bb-9808-42138db092ab,SB 257,2025-05-21,A2 Belk Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/35164c1a-e399-482f-aa62-6da4efe36911,SB 257,2025-05-21,"A3 Brown, G. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/766a44ab-99bc-4a61-a114-f2cc44d5fac0,SB 257,2025-05-21,"A4 Brown, T. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/97818265-a987-4e2c-bf0f-6c8f2ce26435,SB 257,2025-05-21,A5 Buansi Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/85018958-a1bc-4069-8eef-2cc53788b360,SB 257,2025-05-21,A6 Butler Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/71e22e59-bebe-417e-a436-d066dc16b2ff,SB 257,2025-05-21,A7 Cervania Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1ad281c3-357a-41d0-a16d-1ef995123af2,SB 257,2025-05-21,A8 Cervania Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/87cf1d14-dd70-4c62-839e-5ebf35e007f6,SB 257,2025-05-21,A9 Clark Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8a90b250-6bc5-4291-a86a-d48b7c410874,SB 257,2025-05-21,A10 Crawford Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e8263032-b159-4461-a657-fdd9cbb2e619,SB 257,2025-05-21,A12 Ball Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5ce99642-c0c8-456c-a564-3eb1d1ad9b6e,SB 257,2025-05-21,A13 Belk Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9aa05a57-c7de-4610-80ae-6dd8aff5f35e,SB 257,2025-05-21,A14 Dahle Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1d80f9d3-72d3-4ad5-8e46-104b01919556,SB 257,2025-05-21,A15 Greenfield Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b89343ab-0e52-4686-a4fe-5a1026625795,SB 257,2025-05-21,A17 Harrison Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/75874100-50d3-4505-b49a-17604991cd82,SB 257,2025-05-21,A11 Ball Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ff8e7ada-7157-4bf9-a9f8-69ce7ae4b556,SB 257,2025-05-21,A16 Greenfield Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b6c0d5a3-702a-40e0-bbf7-319fb48818e2,SB 257,2025-05-21,A18 Cervania Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/da25fdef-6273-4d04-b6a7-505b022bf1e0,SB 257,2025-05-21,A19 Cervania Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f2698e0e-4ab5-4cc1-b2df-ef933ac19be9,SB 257,2025-05-21,A20 Hawkins Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6373e86a-7e37-4f51-a364-3d20c87508a9,SB 257,2025-05-21,A21 Hawkins Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a582c820-7666-4411-b590-301f6be6881b,SB 257,2025-05-21,A24 Logan Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8a790405-84a6-493a-a8fc-02d66c0cff97,SB 257,2025-05-21,A25 Logan Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c13a8715-7590-4517-a509-a1db89e1dd21,SB 257,2025-05-21,A26 Logan Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/55d1c228-4786-4b62-bc13-fa5b36a83236,SB 257,2025-05-21,A27 Longest Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/87a1fddc-f9b7-4fa1-a789-2fb10d52608b,SB 257,2025-05-21,A28 Lopez Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/656a3536-f449-4ced-8aa8-2b275284f3e7,SB 257,2025-05-21,A29 Lopez Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/66c05429-1fca-4591-a063-7d5132feeff0,SB 257,2025-05-21,A30 Lopez Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/49570e5e-7759-43d4-94f9-ceb34c0271e9,SB 257,2025-05-21,A31 Lopez Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8f391378-2642-40ed-8ecc-c2a3ac11219c,SB 257,2025-05-21,A32 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9f9edae0-1a12-4cb1-8650-7f667f856908,SB 257,2025-05-21,A33 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/44971709-889f-4b6f-bbfc-2f91c6b9aa5e,SB 257,2025-05-21,A34 Prather Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cd76bb14-be23-407a-a3dc-b57c3881499b,SB 257,2025-05-21,A34 Prather Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b9eb9c2a-feb5-4859-9e9f-0144b400802c,SB 257,2025-05-21,A35 Prather Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/485f045f-a950-4e33-b6f5-ffbde6ccc55d,SB 257,2025-05-21,A36 Prather Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/395a7127-9026-4be3-9abe-d1442f6a1f15,SB 257,2025-05-21,A37 Prather Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/09b8b75e-dc63-4620-b0be-a9e8bd37ecd0,SB 257,2025-05-21,A38 Price Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e23253cb-b4ee-43c2-a756-160d2bc3a19e,SB 257,2025-05-21,A39 Rubin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6e974d8a-d349-4224-8abf-9ee194eef533,SB 257,2025-05-21,A40 Rubin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1c85b945-1a79-4fd6-af03-a59615b87b8d,SB 257,2025-05-21,A41 Rubin Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/64d08fd1-89e5-4b28-b870-68f6fc52182c,SB 257,2025-05-21,A42 Rubin Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b93c27ba-0f37-487a-89b5-4547ab258bb3,SB 257,2025-05-21,A43 Schietzelt Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5a4b6f69-ba7c-4942-9680-d4c1d6e9b6ba,SB 257,2025-05-21,A44 von Haefen Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3b53a2c8-5518-4558-8be1-4a352b7a68f8,SB 257,2025-05-21,A45 von Haefen Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26da7ce8-0834-49e3-8fce-0ba97d0c8945,SB 257,2025-05-21,A23 Lambeth Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2e6c65ba-2026-4a9c-b403-aa781f7fc557,SB 257,2025-05-21,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8071e264-bfcd-42f5-900f-adf4554e32ff,SB 257,2025-05-22,A46 Arp Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4d9b68f4-df55-452d-84aa-b560be80d1c6,SB 257,2025-05-22,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0d1f9b39-933a-4fbb-8bd2-8b633a8d5716,HB 1012,2025-05-22,A1 Greene Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/16327d28-1fc2-4fae-ab07-87798c64d932,HB 1012,2025-05-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4b82775b-34ba-44b7-a4db-d9712260282e,HB 17,2025-06-03,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1334125-f848-469e-9d30-3f1f952847cc,HB 116,2025-06-03,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/daf9ebc4-1338-46f3-bdab-d9b5b19ceb8f,HB 477,2025-06-03,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8a31e679-61d7-4f44-b2a8-8aed80684aa6,HB 506,2025-06-03,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7a8ec848-dce3-4ceb-b3c3-615c3a6a6e3d,HB 169,2025-06-04,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1784798f-c077-405f-8f4f-6e1fec6e3962,HB 332,2025-06-04,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/368b1230-b1ae-45d9-90dc-3b44fd3b02f0,SB 153,2025-06-04,A1 Logan Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/40ea7aae-104d-4175-a6e2-e185edb4df72,SB 153,2025-06-04,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/127b1f74-abde-4238-a7fd-5eea57fdc78e,SB 248,2025-06-04,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/03e23153-03e8-4827-8af3-5e8efc677968,HR 1013,2025-06-04,R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/36280cb8-3a6a-4e92-b92d-8b5a8a5f85f4,HB 309,2025-06-10,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/db9a90bf-8b76-42fb-ac1b-bc340be704fc,HB 412,2025-06-10,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c0a42083-f26e-42e9-8b39-463fc22f393c,HB 169,2025-06-10,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7df9bff7-0a2c-45fc-baae-a8b08c234ea7,HB 332,2025-06-10,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d141b880-48b5-4152-b4ad-036f0723b7a5,SB 266,2025-06-10,A1 Arp Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/222d9ebf-86d4-488b-bad9-dff22397d3af,SB 266,2025-06-10,A2 Harrison Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b9fcd90a-78f8-4642-ba3f-d8fa23d16b5a,SB 266,2025-06-10,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7c900281-4791-4784-a164-a68e194c7018,SB 477,2025-06-10,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d127ade8-151b-4b49-91bd-487432a51098,SB 477,2025-06-10,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/05118996-a70c-4901-9b2e-013e3461096e,HB 318,2025-06-10,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b015fd18-c951-4940-98be-f542eee22f79,HB 226,2025-06-11,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2e6ddeae-145a-4650-9154-939bf1788e8c,HB 336,2025-06-11,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/51c12451-acc4-4c9c-8492-7f1be26d06e1,HB 357,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/83acdd63-9a21-4362-a5ba-452de5da6010,HB 959,2025-06-11,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2b07f547-01c1-4399-8a2e-9b6709fd477f,HB 429,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/49bd9239-f738-4b9d-a9e2-0388b41afc25,HB 435,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/01830d47-8821-4e2a-90bb-1b27619f9daf,HB 536,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9eb7727f-1536-4be1-9c0e-6805b1b2dd65,SB 125,2025-06-11,A1 Blackwell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5981b652-c89f-4ce9-a8c8-d5cacb7e6d79,SB 125,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/64cf1bf0-4aae-44de-9cd8-8a3273291921,SB 171,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/544cd27d-c808-48aa-a573-2639e4947672,SB 50,2025-06-11,A1 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5f7ca86c-8345-440e-a15e-13eaee09b88b,SB 50,2025-06-11,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8ef6b478-a83a-43c1-863e-585534167671,HB 811,2025-06-11,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/097ec232-6547-4669-b70b-8c257601eaa2,HB 183,2025-06-17,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/17ea022a-8ab2-4741-919a-e8206ee0115b,HB 251,2025-06-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ea3f2431-7b80-417b-9beb-cc11a22c8da7,HB 402,2025-06-17,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bce48ea0-3a40-4aae-b153-6f59493152ad,HB 434,2025-06-17,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f654a684-3991-4763-b99e-0a89c628fd45,HB 476,2025-06-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b133bbfd-aaad-43a9-909b-369a1e4acdc6,HB 568,2025-06-17,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/966c05f3-61b9-4ac3-b4d7-bb69b5f4a502,HB 226,2025-06-17,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/70c76620-c216-43f3-a0bf-0d3c9e7c6956,HB 336,2025-06-17,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d8b1c31e-228a-4998-ac4b-18948cc98ffa,HB 305,2025-06-17,A1 Blust Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0d6d1f41-077c-4d1c-b62f-a03d74096746,HB 305,2025-06-17,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2f7272be-351c-427a-96b0-2cd18cb0d84a,SB 118,2025-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3665d374-7617-4f5d-af14-88820597c257,SB 124,2025-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/25acf7d6-0eeb-448d-ab29-85ceee6b67d0,SB 133,2025-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dc60731e-e6d2-4b97-b74f-25e2978782eb,SB 449,2025-06-17,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4278fc60-8f93-405e-8b17-931190dee8dc,HB 23,2025-06-17,M11 Not Concur,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3ebef793-2d8f-4020-abc1-5d4dcacf6db7,HB 26,2025-06-18,R2 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3a8c9a5e-0ab0-4814-a3c5-415070b32b48,HB 40,2025-06-18,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/03b79999-8f93-4573-a937-1402e6301612,HB 91,2025-06-18,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6f763b30-5027-44fe-b804-d0818ce8a4e9,HB 247,2025-06-18,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3c00e8ed-0fc7-4049-af82-d8f437ffde4b,HB 421,2025-06-18,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e02196eb-2982-4567-addd-893682e3dc89,SB 295,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3f39a868-7228-4410-89ff-12c1378df472,HB 661,2025-06-18,A1 Kidwell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8553d136-3654-4875-ae7a-d250dff54685,HB 661,2025-06-18,"A2 Jones, B. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/28fcac2a-0f0d-4992-94df-dd8a2994c1e9,HB 661,2025-06-18,A3 Budd Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d4ee1e1-928d-4a2a-b2d5-aff929bc43a0,HB 661,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9b54befb-6085-42d3-9a11-7eb5a4ec1242,HB 948,2025-06-18,A1 McNeely Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cdee498b-6fcd-4041-958b-b42d47621959,HB 948,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4b048628-1898-4514-92a2-ba2ef18cbd80,SB 77,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dc2ea874-9c2a-482a-b9de-50f4b3d9fd0d,SB 254,2025-06-18,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5573af84-9126-453c-8407-af38e2ac2be1,SB 311,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/300b396f-825d-4bc2-a402-81dc105d714c,SB 344,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7d7d382a-d336-47d2-bb26-58f5c357da18,SB 400,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d056695b-7065-4410-8572-438f925bb16b,SB 423,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c1c4c0f2-5767-4769-81c0-0a5600b9bf50,SB 442,2025-06-18,A1 Blackwell Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ec68bd97-1632-45aa-a9f7-7ee7c823a1a2,SB 442,2025-06-18,A2 Crawford Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f28d507d-6a00-46f4-9e45-3465137f1b65,SB 442,2025-06-18,A3 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/aa159317-a6df-4da8-95e3-09428464e7b9,SB 442,2025-06-18,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9758b800-691a-47e5-8c9a-81f1e3fa42a1,SB 479,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/57a38427-7f98-4482-8d40-0aaca8d252e1,SB 655,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f576c612-5b09-41a6-8819-3d76ba97c5e5,HB 926,2025-06-18,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8abe9787-ffa7-4acd-8f54-c9114807a30c,HB 612,2025-06-18,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d29ac373-a186-47b5-b2b0-ddda26cde850,HB 948,2025-06-24,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0376603e-3cfd-43b0-b52f-11175918f0d4,HB 26,2025-06-24,R3 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9ce11546-7e5d-42bc-aa82-6d6f7ce17044,HB 3,2025-06-24,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dc1823ef-ea61-48b4-9830-33bdaa73ede7,HB 546,2025-06-24,R2 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fa78dec4-85ff-4c26-975e-2ba037df249a,HB 67,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/de12d096-5315-403f-b2a3-45e3e8c8beca,HB 537,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/638e5056-a7dc-4d84-9a86-8759c2d0783d,HB 549,2025-06-24,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/46c77086-bc79-4ca1-aeef-8758abf29a0d,HB 737,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cfdc371b-ee18-44d3-a0b0-18cf4bceab85,HB 762,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/19e7fe30-e344-4090-b99a-3dc07b716bae,HB 975,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/20a8d3d3-3ac6-4760-9bd0-20bbef6fa9e0,HB 378,2025-06-24,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2dc5fe72-877b-46a1-bf40-21c32b3cdc6d,SB 600,2025-06-24,A1 Reeder Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e2d055f7-81bc-43ab-bf2f-420a84ff80e5,SB 600,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/895e5696-314e-4c13-9140-423cc7ed9687,HB 696,2025-06-24,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/013918b0-8f8e-4dd5-881c-1946fd02d9ae,HB 768,2025-06-24,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/99e8e63e-b704-4a70-9f08-6ed11c49ff8f,HB 768,2025-06-24,M6 Reconsider,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/15353cb1-a60c-4588-97aa-531ab2d9821e,HB 768,2025-06-24,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2e3f6d10-26bf-4a57-9fa6-62dd6dfda547,HB 1012,2025-06-24,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ce653e8a-aba0-496e-a3e2-f03e86f57dd7,HB 959,2025-06-24,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/41c01214-46e1-4c44-8a1a-71c69ef56191,SB 321,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7e58a835-0c21-41ae-a78e-a1c6bee3a8b9,SB 387,2025-06-24,"A1 Hall, K. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/af7f749e-5369-4210-8e63-b9d3c44feaf5,SB 387,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c319b203-029a-4f40-b533-81578226c6bd,SB 690,2025-06-24,A1 Stevens Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5a456694-e8cc-4ff1-8276-2a57a6a7a893,SB 690,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/61dc1c8e-9e63-4c5c-a761-73f217b879d6,SB 710,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/577e083e-9382-47a2-8b2e-33e3b8e82e70,SB 472,2025-06-24,"A1 Smith, Carson Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6cba3c73-ccf7-4ce8-9146-89c2622b3c45,SB 472,2025-06-24,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/57cdf92e-33f3-4f21-8f19-00f4738c0074,SB 69,2025-06-24,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c8f197fa-27c5-4be8-9a8b-cd9b540991a9,HB 412,2025-06-24,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9fc91e16-36ea-41b0-a4fc-4a24fba140d9,SB 595,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1212dbd9-d3f4-4d90-ac55-dc685554f59a,HB 747,2025-06-24,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d6a3f8ca-02e1-4b8d-ae09-ec076506792f,HB 926,2025-06-24,A1 Riddell Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/408bb4fd-31ab-4f13-b89d-2127651aaee9,HB 926,2025-06-24,"A2 Hall, K. Third Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9a879b85-2618-449c-816e-783f21c3aafc,HB 926,2025-06-24,"A3 Hall, K. Third Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/14e93f39-752d-463e-9e86-f6f75425d336,HB 926,2025-06-24,A4 Cairns Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f0e1330d-e7be-4b23-a44a-f4b954f838fb,HB 926,2025-06-24,"A5 Brown, G. Third Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5d35a45e-925c-4f68-9d38-8e990f26c1fc,HB 926,2025-06-24,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1db3304-ad94-4c10-9ae4-b4d57e48d862,HB 173,2025-06-25,R2 Ruled Mat'l M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b5512c29-0f95-4b2a-ba36-34af4230f4d0,HB 546,2025-06-25,R3 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5f039df3-3339-4145-8e21-c13ad0a8e085,HB 388,2025-06-25,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/25f490c4-48da-4f83-b3fd-53fe800e1874,HB 763,2025-06-25,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5fab1280-c0e6-4e35-a201-379fcab8008b,HB 183,2025-06-25,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fac8a1e1-6054-4814-ba4e-418dcd31b843,SB 595,2025-06-25,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/22313be3-1dbc-4886-9f18-4d8271f10b24,HB 480,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2844f219-ba42-405c-9b69-3dd6c4c19d33,HB 819,2025-06-25,A1 Johnson Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b6377036-45a8-44e1-81b9-b59eb735d532,HB 819,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ec26a439-6822-4234-9093-4d59e16f5b20,SB 227,2025-06-25,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0c1a8b58-20b1-4e45-a6f6-c220cfe8de27,SB 307,2025-06-25,A1 Schietzelt Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3d1ea00-38d6-4d7e-b126-af08fa3ec785,SB 307,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7df89b59-605c-414b-addd-25b925183874,SB 429,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1ffe27b0-1967-43c2-adfb-53f09e448099,SB 429,2025-06-25,A1 Morey Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/33602814-de90-4ae8-9f78-45f0f81e76dc,HB 192,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/56c320ab-561b-4563-960a-79cffb2dbdeb,SB 558,2025-06-25,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/074e2f15-3f47-4d52-bd3c-044f9fdeaf88,SB 664,2025-06-25,A1 Pickett Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bab1c99d-af4d-4f8e-abc1-2df2cd7258dc,SB 664,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/80c0c1c1-08b8-4106-8fdc-a96fec44a444,HB 369,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fb0be745-e47f-4c29-b999-11777e75fc41,HB 517,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1ad159cb-61ed-4f7a-b00a-fbe3526dd4a5,HB 697,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fcaefa73-2921-4cab-9e31-711c0c09d8bc,SB 101,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4008522c-615b-4f05-8a5d-645e01b0584a,SB 177,2025-06-25,A1 Blackwell Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/75eccb47-0095-4913-97f3-10b69ef9b2b6,SB 177,2025-06-25,A2 Rubin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c54ab140-e03c-4d7b-8479-015881d6bebb,SB 177,2025-06-25,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/233b77fa-b887-4afb-983f-fc4f62e7b6aa,SB 391,2025-06-25,A1 Winslow Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/435743dd-8cc2-4eb6-8445-fde6ff6df305,SB 391,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e383b1ee-3092-4313-a204-eaca315b6c04,SB 416,2025-06-25,A1 Morey Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e00d467d-c65a-4a68-8db1-cc5320184c75,SB 416,2025-06-25,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1f5504f-3794-4f9d-81d8-99b9299bacdb,SB 488,2025-06-25,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/09b4f2ae-1f5b-4292-91d0-03118b2cd8f2,SB 488,2025-06-25,A1 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8ee0ea3f-4b60-413d-945b-e1f20448e94e,HB 590,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1ced51d-d429-49da-8216-b834dcd4382f,SB 375,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1b9afa31-b157-4113-b04a-40469d2fa004,SB 328,2025-06-25,A1 Pyrtle Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/49b8c2ac-3069-4554-a59f-3a802de3de0b,SB 328,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/729410d3-cb9c-4827-bd68-0ce334116746,SB 706,2025-06-25,A1 Pickett Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e86d78f5-28d1-4bb1-96b7-51d06c3604ae,SB 706,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e8496fce-dc59-457e-ae36-4375aa1a9c3e,HB 559,2025-06-25,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7162f1fb-1054-45a3-8ae5-0ee368c0f690,HB 805,2025-06-25,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7784e08e-c887-489d-80da-e5d28c100b65,SB 391,2025-06-25,Third Reading M6 Reconsider,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3cc66c34-9e0d-46ce-8853-4731f224501b,SB 401,2025-06-25,A1 McNeely Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2e677e1a-70fb-481f-b46a-05b20b010fc3,SB 401,2025-06-25,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7aba39e3-4570-4a53-a2a1-3594435a772c,SB 391,2025-06-25,A2 Arp Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ef0dba41-1e43-4f2e-ab9a-3939f25ec0a4,SB 391,2025-06-25,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a97e5cd0-8fd3-4c9b-a598-8696b648385c,SB 254,2025-06-25,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e3c89d49-0b05-496a-9622-aa4d03b9a103,SB 118,2025-06-25,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dd34dd4a-9a07-445e-b0dc-3ae27d707821,SB 770,2025-06-26,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3dd472c6-d6af-4903-8e25-3131f4abe238,SJR 768,2025-06-26,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a4e18a88-797e-4191-bf45-609de0df2878,HB 96,2025-06-26,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/207f507a-9bd9-4e43-b846-b0c9f22e9120,HB 210,2025-06-26,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/887c5d69-f6cd-4dec-967b-d576f717630d,HB 620,2025-06-26,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/05269809-8d5d-49e8-a223-83529041cad2,HB 694,2025-06-26,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/59a29715-5de8-4153-a41b-5fb9ba08ae22,HB 850,2025-06-26,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/24ce863d-0f16-4672-bfd6-81498e50c7eb,HB 992,2025-06-26,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/755f12cc-9660-489b-9460-5d13c782ee92,HB 576,2025-06-26,M11 Concur Sen. Amd. 1,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bb89fec1-8e19-47c4-8f49-967b1cc52b75,HB 1003,2025-06-26,M11 Concur Sen. Amd. 1,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b98444c4-13c3-48e6-ac48-c29d1462edaa,HB 173,2025-06-26,R3 Ruled Mat'l M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fe148400-1f72-4b1b-ab6c-49f6ee100105,HB 171,2025-06-26,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4bddf729-9d8c-4428-8904-706d21ee7b68,HB 193,2025-06-26,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/91fe8dd4-0452-4e23-9ab9-3c28826cb5d0,SB 311,2025-06-26,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ac887be1-a853-43a7-b628-b03b4675c210,HB 23,2025-06-26,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c1903090-15f8-425e-860d-26e0a6320a50,SB 479,2025-06-26,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a053fb7e-2003-48c3-b2cf-c15d09249732,HB 125,2025-06-26,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c786c1bc-4ab1-44d2-a895-b8c9c04f2051,HB 948,2025-06-26,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0c8b743c-d59a-4a0f-a85a-4143f7766665,HB 309,2025-06-26,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a04fe91d-99d9-4940-962c-49577176484d,HB 1012,2025-06-26,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b1368bda-cf73-41be-9b28-5b20d2f3eb52,SB 416,2025-06-26,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3fa67104-3a1a-4714-8d63-4ba7e4a80a0e,HB 96,2025-06-26,M6 Reconsider,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0a2e889d-2d59-426a-bee6-9a9eba669002,HB 96,2025-06-26,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3008673d-456a-45d9-a77e-cd93546079f2,HB 193,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/116bbc84-8fe5-41ce-899c-19d48e627ad3,HB 193,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9605bfce-d0ca-49a6-bd3b-de82fee72588,HB 318,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5aebd5c2-25cf-4008-92f4-8f431a9d6834,HB 318,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5207960d-5668-4f35-ace7-a8c63511a3ae,HB 402,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/829ac4a9-eda8-4747-8587-6b5733d18a0c,HB 402,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/48d71cc4-2e02-476c-8bf4-814e9e0773ec,HB 549,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4d911e57-2b05-4f79-a49b-b46a0c6cf444,HB 549,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b23c43a8-b978-4b39-82f5-ba5e72dcc045,HB 805,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cdd32b40-5763-4e19-a943-920704f096d2,HB 805,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/df2736ed-f8d8-461d-a80a-38334278a0f4,SB 266,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ec311508-6779-40a9-9199-7ccc0fc214c2,SB 266,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/429f77eb-329a-46f7-b73c-b3c22533955c,SB 416,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/46a0b2cc-4c7f-4269-86d3-4665c7efed37,SB 416,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/633176a7-c843-447d-99a1-cb3775671858,SB 254,2025-07-29,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d7016901-bd10-497b-8c29-d67255d89f01,SB 254,2025-07-29,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d5b1fc9-43a7-4329-9f77-d67656706158,HB 305,2025-07-29,R2 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e32f1874-62c8-4c17-af6e-aa4f417d8c82,SB 214,2025-07-29,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/60e12a41-c28c-4691-8b97-fd26268abebb,HB 8,2025-07-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/de00900a-1f7b-4cf7-86db-4bb1ccf476d8,HB 1015,2025-07-29,A1 Bell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/345281fd-56a1-4335-9d8b-812347224e55,HB 1015,2025-07-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a4e17650-7d6a-4809-8eee-0fdfc5184113,SB 55,2025-07-29,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ff6793a2-6e87-4107-a6f9-9673b6affa9d,SJR 772,2025-07-29,A1 Bell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/73c5f572-1fe8-4e7c-9166-9e7bd5cb9801,SJR 772,2025-07-29,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fddf757c-b50d-4609-9ae0-d20b23b82d32,HB 305,2025-07-30,R3 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b0a4dca7-56a7-44b0-bfd2-0b569e168ac4,HB 87,2025-07-30,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/75ce7b81-f713-4709-b038-0ed45a8c32d7,HB 125,2025-07-30,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/96bed726-0d81-4c86-ae4f-35199924cced,SB 214,2025-07-30,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d0dd0082-eb96-4053-8d6c-fbf5a19cbae9,SB 245,2025-07-30,A1 Lambeth Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8da1d780-ff63-43e2-9c1a-024d5cebdcbc,SB 245,2025-07-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1e03ec17-eb73-4a17-946c-9ca5336f6cf8,HB 307,2025-09-23,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/49ae568e-3ff6-4eb8-9f64-f07de8239016,SB 13,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/87ecc615-4f37-45a1-b8c0-9ed290e9e187,HB 358,2025-09-23,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b2ac8113-d699-4d02-a1e5-313eb546bf6c,HB 926,2025-09-23,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ba320327-ae3b-46f9-9a7d-e7729277cbc2,HB 693,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/385d06e8-86bf-43ee-a3f8-c6fddd3d60b5,SJR 773,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ce6bc544-691e-4a94-8714-795e76b274ef,SB 775,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/abd5047c-c50f-486e-932f-0c636d68fc32,SJR 774,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f46e9189-7ab4-44b3-a7c0-ddc66c4bd7c8,HB 775,2025-09-23,A1 Hawkins Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8820d36b-a153-483d-a56d-07d039d4aa09,HB 775,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/12e3ef13-8a56-4819-8bb7-314053cc1b4a,SB 403,2025-09-23,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/39a8c64f-f6d0-48e7-b2ae-847f98929f7b,SJR 776,2025-09-23,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d2571534-6f74-4d3f-887c-0a982409c3a0,SB 449,2025-10-21,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/60d844b7-fd6d-45f7-a162-96ed1b3fd1f6,SB 249,2025-10-22,A1 Morey Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/502d9a82-ed11-4dc2-b845-ac3422afe2af,SB 249,2025-10-22,Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8792ac13-9e38-4e99-9cfa-525ad4388a72,SB 249,2025-10-22,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/05709577-1a3f-4f8a-9328-bfa6d305dd6d,HB 491,2025-10-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ac413992-916a-4dae-b0a6-339fbfcfaa58,SB 777,2025-10-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a021c8b1-cb30-4144-ae10-9d1162615c18,HJR 1016,2025-10-22,A1 Bell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4ebecf10-d7ba-44b4-9fce-b9ea0b243ed2,HJR 1016,2025-10-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5ed50a6a-501a-4b28-aaa9-592252bf1da2,SB 405,2025-10-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/94c4abcf-80c4-42db-bac8-978e17a8e29e,SB 599,2025-10-22,A1 Paré Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bacddbe4-e865-48c8-9d27-f6e3cd738761,SB 599,2025-10-22,A2 Paré Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ee40fc4f-4fc0-4dcf-94e3-3702d1240fb6,SB 599,2025-10-22,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/88e8a436-aabc-44fc-b510-ca6444d8d855,SB 378,2025-10-22,Second Reading Motion 12/Appeal Ruling of Chair,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6ec372fa-dc75-4c47-8ff5-df8cc7fd2cc5,SB 378,2025-10-22,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/975a8177-16a7-4c1e-85d2-8eff949afe04,HB 56,2026-04-21,M11 Not Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b359ea1f-9a2e-4e84-bf38-42b6b238236a,HB 268,2026-04-21,M11 Not Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4ab637d7-6e90-408a-92dc-88b8ffb2684d,HB 328,2026-04-21,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4fbe55cf-486c-4bfd-82c3-6bb400672d0e,HB 562,2026-04-21,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f7e86e38-909c-4b9a-a5e9-bcbc775c88ae,HB 832,2026-04-21,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4d313b9c-911a-4642-8d37-94e338f4fd24,HB 696,2026-04-22,C RPT Adoption R2 Ruled Mat'l,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/369707d4-783d-4ae6-bc20-f903dddacb40,HB 696,2026-04-28,R3 Ruled Mat'l C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a3f06080-0936-4a9e-918c-ebde2b0a4b2a,SB 214,2026-04-29,R2 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eeefd699-7624-4b38-8e48-0e90ca7c17bf,SB 214,2026-05-06,R3 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7868f438-d3bc-4bf8-8e74-8c3940af9e0c,HB 1025,2026-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/595e6d79-754b-462e-8e36-ed7b9a71507b,HB 1034,2026-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/26e8ee84-27bc-4acf-88f1-ad3ce6aa39e8,HB 1035,2026-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d7488dfe-c6c7-4730-937c-55ade6b32a1e,HB 1067,2026-05-07,"A1 Hall, K. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ca23f227-7b71-48a6-896f-e8506be9dc0a,HB 1067,2026-05-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/70046e77-33c7-4d58-83a0-bbe4e2b8e240,HB 433,2026-05-07,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cff05adc-953f-4a05-8f67-9ce6f6775e7e,HB 117,2026-05-12,A1 Iler Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3f76a3e0-8b5e-4703-8ea4-33e01180c6b1,HB 117,2026-05-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/09ccc50b-8f9d-44c1-a818-cd797327aadf,HB 1123,2026-05-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f0080b8c-8ff7-43a0-a4b4-70f8f23aa334,HB 1219,2026-05-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fd63f1bb-0bb0-4b29-861b-784afea1e5c0,HB 1220,2026-05-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b694437d-dd82-4a36-95e7-75ad689a34ca,HB 1222,2026-05-12,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a6b8b2b8-99a0-4667-9b94-72d21b2a9bbd,HB 1019,2026-05-13,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/14a80601-c457-4d64-815b-5f5bfe9e6172,HB 1123,2026-05-19,A1 Arp Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/449b0201-97bf-4b60-bf50-e34534ce5d09,HB 1123,2026-05-19,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8f4ec72c-aacc-4a5b-ad9b-6ce7820e696b,HB 1042,2026-05-19,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e8714786-1f83-4ce0-9940-e626441cfef2,HB 87,2026-05-20,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/531f837c-3ff3-469d-bc2a-ad7c7b0889f5,HB 1042,2026-05-20,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/50847bcf-9e9e-43fe-8b1d-48721154cf9b,HB 443,2026-05-20,"A1 Smith, Charles Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1455286f-cd69-45e3-8bd2-ef106032af7b,HB 443,2026-05-20,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f79d43b0-2858-4d2c-aed2-15c28f59ab30,HB 443,2026-05-20,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8e237045-929b-46c7-b080-eea21542226a,HB 1089,2026-05-20,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/52e5b1d2-2146-4cdb-8b3b-eeee1af54aed,HB 1089,2026-05-20,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7b269a75-e71c-4c31-b961-1aa34df8d7c0,SB 1080,2026-05-20,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/80f21948-9fc7-4c9e-b885-f96d5f0f8204,SB 1080,2026-05-20,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/34f8ac6b-3bad-4650-9b48-4a3289daa37f,SB 484,2026-06-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bc9291d2-d095-411f-a8f1-1b7699ee5a25,HB 1218,2026-06-02,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dce9a42f-fb90-4fdb-9d9d-aab00c736a35,HB 1126,2026-06-02,Second Reading Motion 12/Appeal Ruling of the Chair,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cce5c766-7ed1-4861-b3ca-6c4ddbfef43e,HB 1126,2026-06-02,"A1 Jones, B. Second Reading",no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f5c1ef89-9e7b-4886-aa0f-4fab88c9f528,HB 1126,2026-06-02,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bf309970-bdb5-4ec0-8224-18e865b2f08a,SB 809,2026-06-03,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ddd574e4-b5fc-4b7d-a868-58cce60a92ce,HB 1094,2026-06-03,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0e476f11-97af-4e41-b50e-c5287b1db0a2,HB 1109,2026-06-03,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c9f9fad5-64ab-4ab6-a1e8-d8858807732a,HB 1104,2026-06-03,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d0a3881d-0747-4630-bcd0-63838b5900da,SB 445,2026-06-03,A1 Riddell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/74705a81-fdcc-447f-af73-4f532ad19025,SB 445,2026-06-03,A2 Adams Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7d1c2cfc-6dcc-4936-9edb-fe044c171199,SB 445,2026-06-03,A3 Adams Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b4f7b094-d1d8-4ee3-9efe-770f8fd6c8b7,SB 445,2026-06-03,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5e846051-96c9-4624-ae88-6ec01bb32ef4,SB 730,2026-06-03,A1 Arp Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/228b5a26-461e-497a-a121-0f52b3fb6036,SB 730,2026-06-03,A2 Ager Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/60ddef65-22e8-4910-88b9-aa1fff0be1cd,SB 730,2026-06-03,A3 Cervania Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4e308a39-cccb-411c-83f7-1dcd82bdba90,SB 730,2026-06-03,A4 Cervania Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d67eb48-0b52-4bf4-a1d3-8c5c02000831,SB 730,2026-06-03,A5 Longest Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cd175184-4950-4086-87d7-88e3a17875a0,SB 730,2026-06-03,A6 Rubin Second Reading M3 To Lay On The Table,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3ee0e6e6-f7a6-48f5-8b78-d4ad17528427,SB 730,2026-06-03,Second Reading Motion 12/Divide,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/48b1515f-5e4a-40b8-9bca-f50795218e11,SB 730,2026-06-03,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fa0c3d53-013e-459d-bb3c-b099bda23ac4,HB 920,2026-06-09,A1 Longest Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/dbe7b13c-5124-47f9-aaae-b1fc417ffe36,HB 920,2026-06-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/17e5e91d-a91c-43a1-aa14-e11fc277cfd0,SB 809,2026-06-09,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ca1f9c6e-fd87-4bfd-a7ab-328f9ed49af6,HB 1029,2026-06-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/719fbd9d-384e-45f6-83cc-a137d9276f2e,SB 889,2026-06-09,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4f3d1f28-ea4d-43ff-ae0d-20fde3160061,HB 1114,2026-06-09,A1 Davis Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c802c453-6dd0-457b-8dd7-2b7aac474171,HB 1114,2026-06-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0ccf35e2-ba13-4c88-b9f0-22c14aa32390,HB 1115,2026-06-09,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/32365211-abd7-42c4-aa98-e5b0c99cbe4c,HB 1173,2026-06-10,A1 Rubin Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ba001153-e54e-4ee4-acec-fd73398ea188,HB 1173,2026-06-10,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b7176c21-85a5-4a89-9cc7-a74a151a15a1,SB 587,2026-06-10,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/67ae6c8c-6244-4c95-b3a1-4f8373c2c072,SB 695,2026-06-10,"A1 Jackson, N. Second Reading",yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0c6c44ef-14da-4d8a-b387-a9ab01f74428,SB 695,2026-06-10,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1d2a1d4a-c81f-47c4-aedf-22275ade551d,HB 315,2026-06-10,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0edb235c-e2ca-40ed-ba03-a912ab9f8e7c,SB 401,2026-06-10,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b4b0f811-57b3-4a27-8b92-d612b6cc0e55,SB 811,2026-06-10,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eb114928-46bf-44a8-a264-ad9b720f061b,SB 889,2026-06-10,Third Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/009d51b4-b37b-409e-bf2c-5cf67b74c21d,SB 474,2026-06-10,A1 Blust Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1dfc6d3-22a1-4eb7-9437-a2b8d55eab4c,SB 811,2026-06-16,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9ace02d0-c4d4-4dc2-9840-5aafb158928e,SB 474,2026-06-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/019c8daf-15f4-4a4c-a049-c5c3d1ebc5af,SB 648,2026-06-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/cbc62aa3-3a7a-42d0-8ded-aaed91a9d735,SB 528,2026-06-16,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/96c7f742-580e-472a-8fea-08f3dbea16a2,SB 876,2026-06-16,A1 Warren Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7b80bfc9-e3a0-48d9-b984-981e99633c5b,SB 876,2026-06-16,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8d420543-59e8-44bc-965a-a9117907073d,HB 258,2026-06-16,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/13d59752-6169-48ca-aa9e-7409c8d436f0,HB 240,2026-06-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a21cb281-3cf0-45f4-9287-c10cd368faab,HB 536,2026-06-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b46d7fb1-bea1-4ce5-a0f9-04824303a214,HB 1040,2026-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/182015b9-1f32-4e87-9fcd-e6b02f6c6dfd,SB 474,2026-06-17,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f3c33feb-4213-4ab2-98f1-241e8663958e,SB 858,2026-06-17,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a737c81f-3fd7-4d9a-a6e9-c96544a9e17e,HB 1123,2026-06-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8450a629-0b53-4d4c-9eb5-9385d6cb9542,SB 675,2026-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/676c5f8c-9bfd-44a5-9e52-38395e0cf62f,SB 280,2026-06-17,A1 Chesser Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4364c4e6-4b2e-4c71-9b7f-bd2d355ce36d,SB 280,2026-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a17b2bc0-eb3a-4d2a-aede-d4830d2bfdea,HB 1237,2026-06-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/66c1f358-e1a7-4ebf-a769-36cddea5bed5,HR 1238,2026-06-23,R2 For Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f1d23ce3-7559-44e2-ab90-64534f343071,HB 83,2026-06-23,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b3a6c27d-3a57-4e0d-b38d-d6084e68f5f8,HB 301,2026-06-23,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c2edadbd-9aae-4318-90d1-ed2cbaa852be,HB 481,2026-06-23,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/622aed6a-1319-4a8e-9948-f4b3b13a6055,SB 595,2026-06-23,R2 Ruled Mat'l C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f0e0c183-945d-47f8-bf14-12463a6418ec,HB 936,2026-06-23,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b5d6bd1f-9639-4b42-bf55-5db5bd8e9540,HB 1040,2026-06-23,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a6f19aa2-b2de-437c-baa5-3ce7e242afdb,HB 198,2026-06-23,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/22e5026f-334a-4373-a003-38c2d6c103bc,HB 1035,2026-06-23,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ca7e58f4-80a3-4f04-abea-b332222db801,HR 1239,2026-06-24,R2 For Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eeb95a48-6116-4e74-88d5-bb886a6d8fed,HB 376,2026-06-24,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f6b3481e-ea3a-4199-9ab1-c71d69ba4556,SB 595,2026-06-24,R3 Ruled Mat'l C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7ecf3264-f5dd-4916-a9f6-72fa36fc781b,HB 171,2026-06-24,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/053c22fb-298a-4d84-bde7-f772f9677288,HB 171,2026-06-24,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e2d06366-5bd5-41d5-bbee-434072785916,SB 153,2026-06-24,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/f64fc630-2a1b-4b55-8506-c590c5bb57e8,SB 153,2026-06-24,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b9c98c7-bec8-4b33-a3ef-48b7c913fa31,SB 227,2026-06-24,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/89c999bf-a6e7-47a7-a343-5d0bd505fd46,SB 227,2026-06-24,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/152110e0-9e6b-476f-ac44-4aa61baba140,SB 558,2026-06-24,Veto Override M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5696190f-d843-4c71-9717-ab391dc377d8,SB 558,2026-06-24,Veto Override,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0600f51f-d43d-44e5-9e6e-b47557f4ecfd,HJR 1241,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/83431788-3733-4cfb-9ca0-b1441bc22f6a,HB 1220,2026-06-30,R2 Ruled Mat'l M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/03f5bc4d-535f-430f-9cab-f3fa01f12c64,HB 133,2026-06-30,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/76a6a497-1f08-402b-8b0b-cee1fa39318a,HB 162,2026-06-30,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/e08659cd-9185-4466-b428-86c1e4fd094a,HB 206,2026-06-30,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/7fbd2d84-1fa3-417e-8bd9-4f7e8c59b9f3,HB 308,2026-06-30,M11 Not Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b544bf0e-7021-44d6-856b-3c723fd5ac9c,HB 372,2026-06-30,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b3f8f676-00ad-4a18-9205-6d14cf5f9a76,HB 377,2026-06-30,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5158d01e-8cba-48d5-a363-4333aafc4d85,HB 437,2026-06-30,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d4652883-b647-4660-990b-631786dea853,HB 517,2026-06-30,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2afe85eb-7a92-483f-a523-5a418c20d3ec,HB 1094,2026-06-30,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d337886-66eb-4077-a5a2-bfe1a1ecdbd8,HB 1215,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/1e756191-75f9-40e8-8a09-59581844b257,SB 1076,2026-06-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/52ba6179-fc09-45d5-bb34-1f40756e98f0,SB 474,2026-06-30,R2 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2c5facfa-df74-4ea1-a61d-39aadfe661b5,HB 958,2026-06-30,A1 Blackwell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/97332577-367d-40a7-bc2f-95e6cd14d483,HB 958,2026-06-30,A2 Blackwell Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/0f1b495f-c46c-4ad7-bd39-2ca0ac16b714,HB 958,2026-06-30,A3 Dahle Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/492a840f-89fd-451a-90ac-2f745f818c48,HB 958,2026-06-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ab42e6e1-ca70-448d-b6b3-90bbf2a0b0b2,HB 356,2026-06-30,M11 Not Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/5b89630d-7993-4456-9a41-974d943aed82,SB 1074,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b8d03a5d-0a4e-4ea7-afdd-095ca0cb03ac,HB 1126,2026-06-30,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6d638ff7-f434-4391-b593-5b1ebc1e96a6,SB 355,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/730512ce-de72-4e54-a80f-5fb3ba033328,SB 675,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/27fab518-d3b1-4cf3-82e9-a0f1094065b5,SB 857,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8d63b940-7b34-4fd4-b290-a28ba5d1292a,HB 1083,2026-06-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ce0bd34f-f0d5-43e8-af7a-783ce08f7f0a,HB 1200,2026-06-30,A1 Chesser Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b37eeae2-f168-4f92-a660-63dedb8c90e8,HB 1200,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/200f8724-65d5-4197-a44a-629b6c2ac7b2,SB 1041,2026-06-30,A1 Loftis Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/00a7cf93-22c9-4473-8774-977d36249736,SB 1041,2026-06-30,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3ebc7dde-beb0-4965-a669-3e768827fbc6,HB 925,2026-06-30,A1 Eddins Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b082ec95-b3a7-44a4-95bb-8b285ffdd20f,HB 925,2026-06-30,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9a436480-4e62-407b-a1ae-beec714983fb,SB 876,2026-06-30,R2 Ruled Mat'l C RPT Adoption M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2cfa7dca-71b5-4d18-8101-6b5035c9b307,SB 876,2026-06-30,R2 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/77c38f8b-ae01-4e9b-b208-dee8515430c2,SB 474,2026-07-01,R3 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b7dbbb2b-616f-43f2-8754-11441bbda770,SB 876,2026-07-01,R3 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ba9c8ca4-f79b-4fbd-a1a5-f122c8365a62,SB 1074,2026-07-01,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9e924b23-719c-4834-9441-5b1713b30b3d,HB 920,2026-07-01,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ad6adf2f-27e4-46d2-bee0-1a01912bb81b,HB 1104,2026-07-01,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fda32e73-d7c9-461c-a766-283bd4377fa6,SB 257,2026-07-01,R2 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4b40c117-1605-4239-b936-d1a8408bfdbd,HB 1222,2026-07-01,M11 Concur Sen. Amd. 1,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d1156021-4539-41a9-ac1d-7078e65f7ca0,HB 747,2026-07-01,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/44b476f0-2ed9-4752-af77-c6becb1d4bdd,HB 332,2026-07-02,M11 Concur,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/78ab74ee-dc55-4566-abdd-389917c68124,SB 257,2026-07-02,R3 Ruled Mat'l C RPT Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d1af8eff-acae-428e-9650-e043edc7d293,HB 116,2026-07-02,R2 Ruled Mat'l C RPT Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/3b77b8b7-91eb-405d-801a-9863344209b0,HB 1220,2026-07-02,C RPT Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9b1a6dea-37d0-4a5c-ac68-0a28c33a7b16,HB 1094,2026-07-02,C RPT Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/fc7ac56d-bfbd-4b97-a1de-325b427ed860,SJR 1088,2026-07-02,Second Reading,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a60d4c00-0fd1-4519-85ba-17cdfaab043e,SJR 1089,2026-07-02,Second Reading,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/72246046-7f0b-4584-b973-588b3709410b,SJR 1090,2026-07-02,Second Reading,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/bfe894f1-5048-465c-b219-2dfea2f953ba,HB 199,2026-07-02,Second Reading,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/25677444-d651-44ba-bfec-b8d6e3911d33,HB 56,2026-07-02,C RPT Adoption,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ad610e8c-ba75-4b3d-b48b-07cc279b6e13,HJR 1244,2026-07-02,Second Reading,absent,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2ba38f30-b0ec-4915-be4f-13c4aa5c8d47,HB 147,2026-08-04,R2 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/73cc59d7-3b5b-4cb6-85ee-769fac96e74e,HB 116,2026-08-04,R3 Ruled Mat'l C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b1d1759e-bbc6-498c-a762-199318ccd540,HB 268,2026-08-04,R2 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/df54a249-cd1f-49c7-934f-476f157cbcc7,HB 562,2026-08-04,C RPT Adoption,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2d1ff43a-1f4e-4a5c-9844-3c67b4c28eef,SB 445,2026-08-04,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8c3f4297-0d7c-45df-90dd-dc617c806af5,HB 199,2026-08-04,Third Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/15e54cf1-d512-43bb-84b8-cb8a43567dd5,SB 1092,2026-08-04,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/2bcf9de7-cef5-4bb5-a0c4-92a58fd7b2b0,HB 834,2026-08-04,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/303e06e6-3aa2-4696-9006-68ef4e425d37,HB 958,2026-08-04,M11 Concur,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/ab785885-4460-4518-b0fb-7a6a073a5978,HB 147,2026-08-05,R3 Ruled Mat'l M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/9f2e8d06-2aef-4422-a1c9-0870054dc36f,HB 268,2026-08-05,R3 Ruled Mat'l C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/c8dd88aa-02bf-40b1-a4c9-5ac3c893e388,HB 377,2026-08-05,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/df675ef0-5ef9-479a-b831-56a82e6e1251,SJR 1091,2026-08-05,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025E1,ocd-vote/2e0a8305-ae08-4357-b43c-af3ae9e6e404,HR 1,2026-10-07,R2 For Adoption M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025E1,ocd-vote/25c1d317-273a-42ec-a7af-4f69ba11d161,HR 1,2026-10-07,R2 For Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025E1,ocd-vote/db4b111c-9436-451b-b62a-1e95d0f0ba3f,HB 3,2026-10-07,Second Reading M4 Previous Question,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025E1,ocd-vote/32882762-5dad-4730-b91d-06bdfad0319b,HB 3,2026-10-07,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025E1,ocd-vote/980d3db3-c1da-42da-a422-ef6e7d77f365,HJR 2,2026-10-07,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/97816ec7-fabf-467f-9eb3-ab27e52364a3,SB 177,2026-11-17,C RPT Adoption,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/d6d90e05-208c-4df1-b70f-dbafea3503f8,HB 1249,2026-11-17,A1 Campbell Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/4476b1c3-9f4f-4f39-a592-70f573d3aab6,HB 1249,2026-11-17,Second Reading,no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/a8bb208c-fb5f-4405-a6a7-122f0159bb09,HB 1249,2026-11-17,"A2 Jones, B. Second Reading",no,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/b91a804d-29a3-4260-9eee-dabe7aff5a4b,HJR 1247,2026-11-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/8aca5dcd-a9aa-4d0b-86d4-d84e4fda9c34,HJR 1248,2026-11-17,Second Reading,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/eff7f3d2-e625-49ce-b055-41f79e32946f,HB 169,2026-11-17,M11 Concur,yes,Helfrich,ocd-person/cf469ccf-d24e-4ccd-a2fb-041806933b93,Beth Gardner Helfrich
+nc,2025,ocd-vote/6a0da39e-f51f-43a1-98bb-2758796edd89,SR 1093,2026-11-17,Motion 8 To Adopt,yes,Tillett,ocd-person/de679003-a07a-4f53-bb87-fd9bab0af532,Jerry Tillett
+nc,2025,ocd-vote/986ef5c0-93d6-480d-8664-1edc70f386dd,SB 177,2026-11-17,Conference Report Motion 8 To Adopt,yes,Tillett,ocd-person/de679003-a07a-4f53-bb87-fd9bab0af532,Jerry Tillett
+nc,2025,ocd-vote/3dbab6c6-d5a6-4247-800f-093a9eff321f,HB 1249,2026-11-17,Second Reading with unengrossed H Amends,yes,Tillett,ocd-person/de679003-a07a-4f53-bb87-fd9bab0af532,Jerry Tillett
+nc,2025,ocd-vote/b1a35cdf-0239-4754-803e-f38190427e61,HJR 1247,2026-11-17,Second Reading,yes,Tillett,ocd-person/de679003-a07a-4f53-bb87-fd9bab0af532,Jerry Tillett
+nc,2025,ocd-vote/2249ed0c-c0c0-431b-82c8-4d51b993440e,HJR 1248,2026-11-17,Second Reading,yes,Tillett,ocd-person/de679003-a07a-4f53-bb87-fd9bab0af532,Jerry Tillett
