@@ -758,7 +758,7 @@ al:
 # written by new-jurisdiction from notes/probe-pa-20261031/result.json on 2026-11-02 (OPEN-461)
 pa:
   name: Pennsylvania
-  status: scraping
+  status: live
   scraper_module: pa   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:pa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -782,8 +782,8 @@ pa:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
+    embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
     api_smoke_test: false
     qa_sweep: false
@@ -816,7 +816,7 @@ pa:
 # written by new-jurisdiction from notes/probe-ne-20261031/result.json on 2026-11-02 (OPEN-461)
 ne:
   name: Nebraska
-  status: scraping
+  status: live
   scraper_module: ne   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:ne/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -838,8 +838,8 @@ ne:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ne-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
+    embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
     api_smoke_test: false
     qa_sweep: false
@@ -872,7 +872,7 @@ ne:
 # written by new-jurisdiction from notes/probe-la-20261031/result.json on 2026-11-02 (OPEN-461)
 la:
   name: Louisiana
-  status: scraping
+  status: live
   scraper_module: la   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:la/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -894,8 +894,8 @@ la:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
+    embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
     api_smoke_test: false
     qa_sweep: false
