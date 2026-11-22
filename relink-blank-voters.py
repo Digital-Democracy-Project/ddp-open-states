@@ -22,6 +22,11 @@ Cases (OPEN-611, read on the production replica 2026-11-17):
   nc lower "Helfrich"        807  Beth Gardner Helfrich (House since 2025-01-01; 2025: 802, 2025E1: 5); needs people #22
                                   (OPEN-233, "Helfrich" other name) loaded first, else 0 fill. Added 2026-11-17 (Ramon:
                                   "Fold into OPEN-611")
+  nc upper "Tillett"           5  Jerry Tillett (Senate since 2026-09-03; the 2026-11-17 votes of session 2025). No
+                                  people change: his family name matches. The import skipped him because session
+                                  2025's stored end date (2026-07-01) is before his start; the source fix is that
+                                  date (OPEN-765). Commit only after OPEN-765 is live: a re-import under the old date
+                                  blanks them again. Added 2026-11-22 (Ramon: "Yes, build it", "Yes, fix the end date")
 US Congress votes are not here: they carry the member's id, and backfill-vote-person-resolution.py fills them.
 
 Scorecards: a filled row starts counting on that legislator's scorecard. Each state's commit needs the scorecard gate
@@ -56,6 +61,7 @@ CASES = [
     ("mi", "lower", "Myers-Phillips"),
     ("fl", "lower", "Garcia"),
     ("nc", "lower", "Helfrich"),
+    ("nc", "upper", "Tillett"),
 ]
 
 
