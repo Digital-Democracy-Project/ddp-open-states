@@ -72,6 +72,7 @@ def _valid_entry():
         },
         "votes": {
             "house_speaker_by_session": None,
+            "senate_president_by_session": None,
             "bare_key_session": None,
         },
         "api_keys": [],
@@ -659,7 +660,11 @@ def test_the_real_manifest_names_each_legislatures_chambers():
 OPEN555_FIELDS = ["scraper_module", "ocd_id", "votes", "scrape.session_list_attempts", "scrape.session_list_backoff_s",
                   "waf.requests_per_minute", "waf.max_consecutive_blocks", "waf.max_attempts",
                   "waf.cooldown_after_failures", "waf.cooldown_s", "votes.house_speaker_by_session",
-                  "votes.bare_key_session"]
+                  "votes.senate_president_by_session", "votes.bare_key_session"]
+
+
+# OPEN-764: Louisiana's sessions of the 2024-2028 term, as scrapers/la/__init__.py names them
+LA_2024_TERM = ("2024", "2024s1", "2024s2", "2024s3", "2025", "2025s1", "2026")
 
 
 @pytest.mark.parametrize("dotted", OPEN555_FIELDS)
@@ -680,6 +685,9 @@ def test_open555_fields_are_required_on_every_entry(dotted):
     ("scrape.session_list_backoff_s", True),
     ("votes.bare_key_session", 2025), ("votes.bare_key_session", " "), ("votes.house_speaker_by_session", []),
     ("votes.house_speaker_by_session", {"194th": ""}), ("votes.house_speaker_by_session", {"194th": None}),
+    ("votes.senate_president_by_session", []), ("votes.senate_president_by_session", "Cameron Henry"),
+    ("votes.senate_president_by_session", {"2026": " "}), ("votes.senate_president_by_session", {"2026": None}),
+    ("votes.senate_president_by_session", {2026: "Cameron Henry"}),
 ])
 def test_open555_fields_reject_a_wrong_value(dotted, value):
     entry = _valid_entry()
@@ -745,7 +753,11 @@ def test_open555_the_real_manifest_carries_todays_constants():
         "id": {"2026": "Mike Moyle"},  # OPEN-664: scrapers/id/voter_names.py
         "ms": {s: "Jason White" for s in ("2024", "20241E", "20242E", "2025", "20251E", "2026", "20261E")},  # OPEN-731
         "mo": {"2023": "Dean Plocher", "2024": "Dean Plocher",  # OPEN-738: scrapers/mo/voter_names.py
-               **{s: "Jonathan Patterson" for s in ("2025", "2025S1", "2025S2", "2026")}}}
+               **{s: "Jonathan Patterson" for s in ("2025", "2025S1", "2025S2", "2026")}},
+        "la": {s: "Phillip DeVillier" for s in LA_2024_TERM}}  # OPEN-764: scrapers/la/voter_names.py
+    presidents = {c: e["votes"]["senate_president_by_session"] for c, e in data.items()}
+    assert {c: v for c, v in presidents.items() if v is not None} == {
+        "la": {s: "Cameron Henry" for s in LA_2024_TERM}}  # OPEN-764
     bare = {c: e["votes"]["bare_key_session"] for c, e in data.items()}
     assert {c: v for c, v in bare.items() if v is not None} == {"nc": "2025"}
     assert {c: e["scraper_module"] for c, e in data.items() if e["scraper_module"] != c} == {"us": "usa"}

@@ -182,6 +182,7 @@ CHAMBERS_FIELDS = {
 # OPEN-555: per-state values a scraper uses to read votes, each falling back to its old constant in the scraper.
 VOTES_FIELDS = {
     "house_speaker_by_session": (dict, type(None)),  # ma: who "Mr. Speaker" is, per session (OPEN-474)
+    "senate_president_by_session": (dict, type(None)),  # la: who "Mr. President" is, per session (OPEN-764)
     "bare_key_session": (str, type(None)),           # nc: the session whose votes keep a bare roll-call key (OPEN-397)
 }
 
@@ -369,12 +370,14 @@ def validate(data):
 
         if isinstance(entry.get("votes"), dict):
             _check_block(entry["votes"], VOTES_FIELDS, f"{code}.votes", errors)
-            speakers = entry["votes"].get("house_speaker_by_session")
-            if isinstance(speakers, dict):
-                for session, name in speakers.items():
-                    if not isinstance(session, str) or not isinstance(name, str) or not name.strip():
-                        errors.append(f"{code}.votes.house_speaker_by_session: each entry must be a session name "
-                                      f"and the Speaker's name, got {session!r}: {name!r}")
+            for field, officer in (("house_speaker_by_session", "Speaker"),
+                                   ("senate_president_by_session", "Senate President")):
+                officers = entry["votes"].get(field)
+                if isinstance(officers, dict):
+                    for session, name in officers.items():
+                        if not isinstance(session, str) or not isinstance(name, str) or not name.strip():
+                            errors.append(f"{code}.votes.{field}: each entry must be a session name "
+                                          f"and the {officer}'s name, got {session!r}: {name!r}")
             bare = entry["votes"].get("bare_key_session")
             if isinstance(bare, str) and not bare.strip():
                 errors.append(f"{code}.votes.bare_key_session: must be a session name or null, got an empty string")

@@ -75,6 +75,7 @@ pa:
     lower: House of Representatives
   votes:
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:
@@ -131,6 +132,7 @@ ne:
     lower: House of Representatives
   votes:
     house_speaker_by_session: null
+    senate_president_by_session: null
     bare_key_session: null
   api_keys: []
   onboarding:

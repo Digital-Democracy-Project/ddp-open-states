@@ -233,7 +233,8 @@ def compose_entry(data, gate_b_facts):
         "quality": {"diff_cleaner": "none"},
         # OPEN-556: the most common names, never read from the probe; a human checks them against the legislature's site
         "chambers": {"unicameral": False, "upper": "Senate", "lower": "House of Representatives"},
-        "votes": {"house_speaker_by_session": None, "bare_key_session": None},  # OPEN-555: none for a new state
+        "votes": {"house_speaker_by_session": None, "senate_president_by_session": None,
+                  "bare_key_session": None},  # OPEN-555: none for a new state
         "api_keys": gate_b_facts["api_keys"],
         "onboarding": {
             "epic": None,
@@ -328,6 +329,7 @@ def render_block(code, entry, needs_human, source_desc):
         f"    lower: {_scalar(entry['chambers']['lower'])}",
         "  votes:                       # OPEN-555: per-state vote-reading values (none for a new state)",
         f"    house_speaker_by_session: {_scalar(entry['votes']['house_speaker_by_session'])}",
+        f"    senate_president_by_session: {_scalar(entry['votes']['senate_president_by_session'])}",
         f"    bare_key_session: {_scalar(entry['votes']['bare_key_session'])}",
         "  api_keys: [" + ", ".join(json.dumps(k) for k in entry["api_keys"]) + "]",
         "  onboarding:",
