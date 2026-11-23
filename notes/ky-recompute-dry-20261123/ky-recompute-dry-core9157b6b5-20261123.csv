@@ -1,0 +1,832 @@
+doc_id,bill_id,identifier,session,version_note,version_date,media_type,comparison,old_diff_baseline_id,old_comparison_made_against,new_diff_baseline_id,baseline_note,baseline_date,baseline_media_type
+253163,ocd-bill/4bd32d38-62b3-4fa3-b828-fb47b16b0d8d,SB 20,2026RS,Current/Final,,application/pdf,new,,,253161,Introduced,,application/pdf
+253162,ocd-bill/4bd32d38-62b3-4fa3-b828-fb47b16b0d8d,SB 20,2026RS,Acts Chapter 90,,application/pdf,corrected,253161,253161,253163,Current/Final,,application/pdf
+252663,ocd-bill/83b8f8ef-c332-47a2-a68f-bcebf78a369c,SR 251,2026RS,Current/Final,,application/pdf,new,,,252662,Introduced,,application/pdf
+252271,ocd-bill/f6762102-9229-42ab-a0d3-c108f56b4fd4,SB 22,2026RS,Current/Final,,application/pdf,new,,,252270,Introduced,,application/pdf
+250608,ocd-bill/7d417320-a643-436c-a89d-20c25f216b92,SR 34,2026RS,Current/Final,,application/pdf,new,,,250606,Introduced,,application/pdf
+251618,ocd-bill/df07662f-70fe-4913-b79a-f1e7dd9108fb,SR 131,2026RS,Current/Final,,application/pdf,new,,,251616,Introduced,,application/pdf
+250596,ocd-bill/374bbb26-255f-4ba7-8565-ce4365a4225a,HB 794,2026RS,Current/Final,,application/pdf,new,,,250594,Introduced,,application/pdf
+252333,ocd-bill/c52a8f0b-a0e8-4368-a5a8-c55cc1ca71a2,HB 1,2026RS,Current/Final,,application/pdf,new,,,252331,Introduced,,application/pdf
+251396,ocd-bill/cbbedfc8-7d5b-4cc9-9f24-eaa6b7e210f2,HB 774,2026RS,Current/Final,,application/pdf,new,,,251394,Introduced,,application/pdf
+250976,ocd-bill/256077ba-53d5-4697-a8af-4bf292a654eb,SR 260,2026RS,Current/Final,,application/pdf,new,,,250974,Introduced,,application/pdf
+252337,ocd-bill/07282e6c-a0c1-4e2f-a86a-38dcaa329716,SR 227,2026RS,Current/Final,,application/pdf,new,,,252336,Introduced,,application/pdf
+253272,ocd-bill/ff7f6e0a-ef24-4178-a36c-bf8b05db5471,SB 125,2026RS,Current/Final,,application/pdf,new,,,253271,Introduced,,application/pdf
+250444,ocd-bill/de4de76e-2c86-49d2-bd14-f0e0509311d6,SB 124,2026RS,Current/Final,,application/pdf,new,,,250442,Introduced,,application/pdf
+253170,ocd-bill/740c4e4e-4ef4-4ef0-b50d-881595d2bbc6,HB 103,2026RS,Current/Final,,application/pdf,new,,,253169,Introduced,,application/pdf
+252098,ocd-bill/49f73c47-3ebc-49d5-acc4-36cc48b5e59e,SR 162,2026RS,Current/Final,,application/pdf,new,,,252097,Introduced,,application/pdf
+251970,ocd-bill/f5c1d9aa-af21-410a-bf00-4b804a12e1ab,HB 727,2026RS,Current/Final,,application/pdf,new,,,251968,Introduced,,application/pdf
+251969,ocd-bill/f5c1d9aa-af21-410a-bf00-4b804a12e1ab,HB 727,2026RS,Acts Chapter 196,,application/pdf,corrected,251968,251968,251970,Current/Final,,application/pdf
+251849,ocd-bill/0443b93f-5df5-4152-9013-0195812cf7ed,SR 234,2026RS,Current/Final,,application/pdf,new,,,251848,Introduced,,application/pdf
+250440,ocd-bill/d24e6963-bf8f-4c35-809f-2fdc3c311690,SR 43,2026RS,Current/Final,,application/pdf,new,,,250438,Introduced,,application/pdf
+252578,ocd-bill/23222053-b23b-45a6-9dd3-6338eaa38b89,HB 67,2026RS,Current/Final,,application/pdf,new,,,252576,Introduced,,application/pdf
+252577,ocd-bill/23222053-b23b-45a6-9dd3-6338eaa38b89,HB 67,2026RS,Acts Chapter 129,,application/pdf,corrected,252576,252576,252578,Current/Final,,application/pdf
+251550,ocd-bill/a99b8f90-d452-4e22-b7b0-bbcb221061ed,HB 518,2026RS,Current/Final,,application/pdf,new,,,251546,Introduced,,application/pdf
+251548,ocd-bill/a99b8f90-d452-4e22-b7b0-bbcb221061ed,HB 518,2026RS,Acts Chapter 44,,application/pdf,corrected,251546,251546,251550,Current/Final,,application/pdf
+251180,ocd-bill/f79d9a0b-41d8-49ff-a1c8-c914b3554968,HR 134,2026RS,Current/Final,,application/pdf,new,,,251178,Introduced,,application/pdf
+250894,ocd-bill/2f874caf-0072-4587-8064-4c2a1e5d1ea1,SR 298,2026RS,Current/Final,,application/pdf,new,,,250891,Introduced,,application/pdf
+251756,ocd-bill/de0f0adf-b474-4a73-b8c6-ca3e38e963fa,HB 762,2026RS,Current/Final,,application/pdf,new,,,251754,Introduced,,application/pdf
+251755,ocd-bill/de0f0adf-b474-4a73-b8c6-ca3e38e963fa,HB 762,2026RS,Acts Chapter 136,,application/pdf,corrected,251754,251754,251756,Current/Final,,application/pdf
+252370,ocd-bill/c1bfe212-016a-4d8b-806a-8bbaf0a2a410,HR 5,2026RS,Current/Final,,application/pdf,new,,,252369,Introduced,,application/pdf
+251586,ocd-bill/c50e9a89-8c74-4580-a97a-3665a01723c4,SB 343,2026RS,Current/Final,,application/pdf,new,,,251582,Introduced,,application/pdf
+251584,ocd-bill/c50e9a89-8c74-4580-a97a-3665a01723c4,SB 343,2026RS,Acts Chapter 61,,application/pdf,corrected,251582,251582,251586,Current/Final,,application/pdf
+252073,ocd-bill/e914f561-c261-468d-8231-bd630c67a659,SR 160,2026RS,Current/Final,,application/pdf,new,,,252072,Introduced,,application/pdf
+251466,ocd-bill/5ae2f7f0-faef-464d-ab53-928827dd0e3f,HB 584,2026RS,Current/Final,,application/pdf,new,,,251464,Introduced,,application/pdf
+251076,ocd-bill/c21e928c-8406-4024-9d23-c63343d51e15,SR 253,2026RS,Current/Final,,application/pdf,new,,,251074,Introduced,,application/pdf
+249945,ocd-bill/c40058ec-7ef6-4e61-8593-1f9f0526b01d,SB 149,2026RS,Current/Final,,application/pdf,new,,,249941,Introduced,,application/pdf
+252282,ocd-bill/f0395bca-5a0b-484c-969e-7f153d24a94c,HR 95,2026RS,Current/Final,,application/pdf,new,,,252281,Introduced,,application/pdf
+250508,ocd-bill/26f192fe-418d-4721-a7ba-69b437c9bacc,HB 648,2026RS,Current/Final,,application/pdf,new,,,250504,Introduced,,application/pdf
+250506,ocd-bill/26f192fe-418d-4721-a7ba-69b437c9bacc,HB 648,2026RS,Acts Chapter 83,,application/pdf,corrected,250504,250504,250508,Current/Final,,application/pdf
+251354,ocd-bill/0d2b478e-929b-4e8d-b5c7-1acc0040df5f,SB 53,2026RS,Current/Final,,application/pdf,new,,,251352,Introduced,,application/pdf
+251993,ocd-bill/7f755923-df28-4b91-a5e0-3e305250e913,SB 48,2026RS,Current/Final,,application/pdf,new,,,251992,Introduced,,application/pdf
+252365,ocd-bill/d360a667-8fd3-4503-a587-e064e670e74a,HB 900,2026RS,Current/Final,,application/pdf,new,,,252363,Introduced,,application/pdf
+252364,ocd-bill/d360a667-8fd3-4503-a587-e064e670e74a,HB 900,2026RS,Acts Chapter 142,,application/pdf,corrected,252363,252363,252365,Current/Final,,application/pdf
+251935,ocd-bill/694c364e-6ee0-415f-b4e1-e3b61a68b790,SR 49,2026RS,Current/Final,,application/pdf,new,,,251934,Introduced,,application/pdf
+252345,ocd-bill/703cb541-535a-44dd-aed6-1b880eaa3673,SR 203,2026RS,Current/Final,,application/pdf,new,,,252344,Introduced,,application/pdf
+253265,ocd-bill/31a89efa-f652-44e7-9bde-159f40de8812,SB 222,2026RS,Current/Final,,application/pdf,new,,,253263,Introduced,,application/pdf
+253264,ocd-bill/31a89efa-f652-44e7-9bde-159f40de8812,SB 222,2026RS,Acts Chapter 55,,application/pdf,corrected,253263,253263,253265,Current/Final,,application/pdf
+250933,ocd-bill/da85c29d-9fbc-49e4-882d-58042e5c0fd1,HB 335,2026RS,Current/Final,,application/pdf,new,,,250932,Introduced,,application/pdf
+251933,ocd-bill/14627c08-59df-485f-aef2-966fa790016d,SR 157,2026RS,Current/Final,,application/pdf,new,,,251932,Introduced,,application/pdf
+251268,ocd-bill/e87ce768-84a0-4234-a126-40f8149218b4,SB 183,2026RS,Current/Final,,application/pdf,new,,,251264,Introduced,,application/pdf
+251266,ocd-bill/e87ce768-84a0-4234-a126-40f8149218b4,SB 183,2026RS,Acts Chapter 10,,application/pdf,corrected,251264,251264,251268,Current/Final,,application/pdf
+251298,ocd-bill/f9e3b7f7-40fe-4c64-9f10-842f2e98c0ba,HB 416,2026RS,Current/Final,,application/pdf,new,,,251296,Introduced,,application/pdf
+252264,ocd-bill/3b165498-e47b-4a66-9ec8-53f3f83a33a2,SR 120,2026RS,Current/Final,,application/pdf,new,,,252263,Introduced,,application/pdf
+249959,ocd-bill/20336473-4cc6-47b7-bd33-8fb1e40eb21c,SB 40,2026RS,Current/Final,,application/pdf,new,,,249955,Introduced,,application/pdf
+249957,ocd-bill/20336473-4cc6-47b7-bd33-8fb1e40eb21c,SB 40,2026RS,Acts Chapter 13,,application/pdf,corrected,249955,249955,249959,Current/Final,,application/pdf
+251170,ocd-bill/e410fd65-20e2-4809-9225-435dd0efc511,SB 11,2026RS,Current/Final,,application/pdf,new,,,251166,Introduced,,application/pdf
+251168,ocd-bill/e410fd65-20e2-4809-9225-435dd0efc511,SB 11,2026RS,Acts Chapter 5,,application/pdf,corrected,251166,251166,251170,Current/Final,,application/pdf
+252741,ocd-bill/2a02652c-3d50-410e-b810-41d3a907cda2,SB 191,2026RS,Current/Final,,application/pdf,new,,,252740,Introduced,,application/pdf
+252286,ocd-bill/cd49c949-f0fd-4817-bdc9-eca7ecad807d,HR 2,2026RS,Current/Final,,application/pdf,new,,,252285,Introduced,,application/pdf
+252468,ocd-bill/f3093448-da3a-4ad7-8a10-cc22f81c43fa,SB 72,2026RS,Current/Final,,application/pdf,new,,,252467,Introduced,,application/pdf
+250276,ocd-bill/6e7a2dbf-23bf-4a1e-acc4-6107190b9066,SB 52,2026RS,Current/Final,,application/pdf,new,,,250274,Introduced,,application/pdf
+251998,ocd-bill/3390e216-b228-462c-a2ec-b27fb2f97801,SR 15,2026RS,Current/Final,,application/pdf,new,,,251997,Introduced,,application/pdf
+251218,ocd-bill/4b2a2eb4-0b98-41d2-949f-9df3f7447e6e,HB 214,2026RS,Current/Final,,application/pdf,new,,,251216,Introduced,,application/pdf
+249877,ocd-bill/a97d9c23-62cf-4726-a499-93cff7135d71,HB 414,2026RS,Current/Final,,application/pdf,new,,,249875,Introduced,,application/pdf
+250774,ocd-bill/27026379-426d-432c-a27a-7ccd1d5e154e,HR 35,2026RS,Current/Final,,application/pdf,new,,,250771,Introduced,,application/pdf
+253048,ocd-bill/c91693a3-587c-43a6-ba13-945868fd20b0,SB 70,2026RS,Current/Final,,application/pdf,new,,,253047,Introduced,,application/pdf
+252172,ocd-bill/f60e1ebe-4bb5-42b2-8e63-1c07bb00fdde,SB 157,2026RS,Current/Final,,application/pdf,new,,,252170,Introduced,,application/pdf
+251338,ocd-bill/7fb8a30b-b119-485b-8096-f2184a6dfbd4,SR 70,2026RS,Current/Final,,application/pdf,new,,,251336,Introduced,,application/pdf
+252378,ocd-bill/3e1e0e61-afdb-4c80-ad83-6b2d178f1467,SB 262,2026RS,Current/Final,,application/pdf,new,,,252377,Introduced,,application/pdf
+252874,ocd-bill/3adab5b4-e3a3-4591-9799-dfa8e1581330,SR 164,2026RS,Current/Final,,application/pdf,new,,,252873,Introduced,,application/pdf
+250436,ocd-bill/09f3f02b-669d-44ed-a066-6f52e42619ec,SR 197,2026RS,Current/Final,,application/pdf,new,,,250434,Introduced,,application/pdf
+250946,ocd-bill/65e8630d-d896-4e68-9e1c-2f933fdabb70,HJR 76,2026RS,Current/Final,,application/pdf,new,,,250942,Introduced,,application/pdf
+250944,ocd-bill/65e8630d-d896-4e68-9e1c-2f933fdabb70,HJR 76,2026RS,Acts Chapter 143,,application/pdf,corrected,250942,250942,250946,Current/Final,,application/pdf
+252081,ocd-bill/41e51455-0801-4a35-bc7a-4a7b68670850,SR 198,2026RS,Current/Final,,application/pdf,new,,,252080,Introduced,,application/pdf
+251897,ocd-bill/1f1d636f-219f-4e4f-a89b-27fbd42a6922,HB 144,2026RS,Current/Final,,application/pdf,new,,,251895,Introduced,,application/pdf
+251896,ocd-bill/1f1d636f-219f-4e4f-a89b-27fbd42a6922,HB 144,2026RS,Acts Chapter 100,,application/pdf,corrected,251895,251895,251897,Current/Final,,application/pdf
+250153,ocd-bill/9454594c-30a1-4fe1-8f71-1e7deb037db1,HB 885,2026RS,Current/Final,,application/pdf,new,,,250151,Introduced,,application/pdf
+252805,ocd-bill/ee2653ae-f247-4ef1-a222-52a6aa180b93,SB 195,2026RS,Current/Final,,application/pdf,new,,,252803,Introduced,,application/pdf
+252804,ocd-bill/ee2653ae-f247-4ef1-a222-52a6aa180b93,SB 195,2026RS,Acts Chapter 97,,application/pdf,corrected,252803,252803,252805,Current/Final,,application/pdf
+250408,ocd-bill/4feceb46-cb45-41c7-ae44-3dfe5cf8818d,HB 4,2026RS,Current/Final,,application/pdf,new,,,250403,Introduced,,application/pdf
+250406,ocd-bill/4feceb46-cb45-41c7-ae44-3dfe5cf8818d,HB 4,2026RS,Acts Chapter 65,,application/pdf,corrected,250403,250403,250408,Current/Final,,application/pdf
+251666,ocd-bill/5eaf9336-8add-4387-a16c-b5a9cfd66e7a,SB 251,2026RS,Current/Final,,application/pdf,new,,,251662,Introduced,,application/pdf
+251664,ocd-bill/5eaf9336-8add-4387-a16c-b5a9cfd66e7a,SB 251,2026RS,Acts Chapter 181,,application/pdf,corrected,251662,251662,251666,Current/Final,,application/pdf
+252866,ocd-bill/3b5d7258-554f-4f2a-b2ef-ff8aa10ddd1e,SB 104,2026RS,Current/Final,,application/pdf,new,,,252864,Introduced,,application/pdf
+252865,ocd-bill/3b5d7258-554f-4f2a-b2ef-ff8aa10ddd1e,SB 104,2026RS,Acts Chapter 96,,application/pdf,corrected,252864,252864,252866,Current/Final,,application/pdf
+251056,ocd-bill/26d7e016-180f-44ee-9803-62659978117f,SB 39,2026RS,Current/Final,,application/pdf,new,,,251052,Introduced,,application/pdf
+251054,ocd-bill/26d7e016-180f-44ee-9803-62659978117f,SB 39,2026RS,Acts Chapter 93,,application/pdf,corrected,251052,251052,251056,Current/Final,,application/pdf
+253063,ocd-bill/49f698b9-eb22-434c-a000-1f849c8f40d0,SB 12,2026RS,Current/Final,,application/pdf,new,,,253062,Introduced,,application/pdf
+250049,ocd-bill/638abf2e-dd69-43dd-86ed-06e1434c318e,HR 30,2026RS,Current/Final,,application/pdf,new,,,250047,Introduced,,application/pdf
+250267,ocd-bill/2b0b94ac-56d9-48cc-96d8-203f5162116e,HR 120,2026RS,Current/Final,,application/pdf,new,,,250265,Introduced,,application/pdf
+249847,ocd-bill/b283ff42-5c89-4930-83bd-2fe12547d577,HB 619,2026RS,Current/Final,,application/pdf,new,,,249843,Introduced,,application/pdf
+249845,ocd-bill/b283ff42-5c89-4930-83bd-2fe12547d577,HB 619,2026RS,Acts Chapter 164,,application/pdf,corrected,249843,249843,249847,Current/Final,,application/pdf
+250338,ocd-bill/5b191620-f653-4534-a695-24828cc87b08,HJR 24,2026RS,Current/Final,,application/pdf,new,,,250334,Introduced,,application/pdf
+250169,ocd-bill/13b979be-127b-4d68-8ab4-b15cd6ae1ac1,SR 163,2026RS,Current/Final,,application/pdf,new,,,250167,Introduced,,application/pdf
+252464,ocd-bill/27275fc7-f36e-4eb4-93b7-97754ae85a0e,HB 485,2026RS,Current/Final,,application/pdf,new,,,252463,Introduced,,application/pdf
+251280,ocd-bill/77427435-a356-4815-959d-c71692b9b4c4,SB 192,2026RS,Current/Final,,application/pdf,new,,,251275,Introduced,,application/pdf
+251278,ocd-bill/77427435-a356-4815-959d-c71692b9b4c4,SB 192,2026RS,Acts Chapter 91,,application/pdf,corrected,251275,251275,251280,Current/Final,,application/pdf
+251938,ocd-bill/9fea48ab-4760-4dff-9c91-4c432379a7c7,HB 280,2026RS,Current/Final,,application/pdf,new,,,251936,Introduced,,application/pdf
+251937,ocd-bill/9fea48ab-4760-4dff-9c91-4c432379a7c7,HB 280,2026RS,Acts Chapter 75,,application/pdf,corrected,251936,251936,251938,Current/Final,,application/pdf
+250418,ocd-bill/bbe41575-9270-45e6-8988-2436888ee6ab,SB 333,2026RS,Current/Final,,application/pdf,new,,,250416,Introduced,,application/pdf
+252604,ocd-bill/e4d8e7b4-3f61-4a21-b8c3-471666f02f1f,SB 199,2026RS,Current/Final,,application/pdf,new,,,252602,Introduced,,application/pdf
+252603,ocd-bill/e4d8e7b4-3f61-4a21-b8c3-471666f02f1f,SB 199,2026RS,Acts Chapter 11,,application/pdf,corrected,252602,252602,252604,Current/Final,,application/pdf
+252884,ocd-bill/d5562781-b8b5-4f8a-9baf-95360faf2bf4,SR 3,2026RS,Current/Final,,application/pdf,new,,,252883,Introduced,,application/pdf
+252395,ocd-bill/ec5216e0-7acb-4928-a810-148e908376be,HR 60,2026RS,Current/Final,,application/pdf,new,,,252394,Introduced,,application/pdf
+253067,ocd-bill/092b1b18-e4c2-4b81-825e-71ea3f57e37f,SR 21,2026RS,Current/Final,,application/pdf,new,,,253066,Introduced,,application/pdf
+251412,ocd-bill/6191e496-1a53-4c35-928f-d50f0513ea32,SB 136,2026RS,Current/Final,,application/pdf,new,,,251408,Introduced,,application/pdf
+251410,ocd-bill/6191e496-1a53-4c35-928f-d50f0513ea32,SB 136,2026RS,Acts Chapter 123,,application/pdf,corrected,251408,251408,251412,Current/Final,,application/pdf
+250372,ocd-bill/a4c677be-0d74-4bf5-a8dc-3d9a52d5689f,SR 29,2026RS,Current/Final,,application/pdf,new,,,250370,Introduced,,application/pdf
+253025,ocd-bill/1ac441f4-fac4-4573-ba69-c0d191be19a4,HB 657,2026RS,Current/Final,,application/pdf,new,,,253023,Introduced,,application/pdf
+253024,ocd-bill/1ac441f4-fac4-4573-ba69-c0d191be19a4,HB 657,2026RS,Acts Chapter 6,,application/pdf,unchanged,253023,253023;253025,253025,Current/Final,,application/pdf
+252851,ocd-bill/ceb7e516-2153-4137-9d08-d8a7bcd5ec8f,SR 82,2026RS,Current/Final,,application/pdf,new,,,252850,Introduced,,application/pdf
+251819,ocd-bill/8bc03c3e-b2d2-46e9-a76c-514e4c055a7c,SR 293,2026RS,Current/Final,,application/pdf,new,,,251818,Introduced,,application/pdf
+250304,ocd-bill/f49764ee-c5e7-4997-b67d-a4a04cbe8402,SR 88,2026RS,Current/Final,,application/pdf,new,,,250302,Introduced,,application/pdf
+250831,ocd-bill/88a666b6-5bb9-406d-bc9e-4ba41d21bb49,SB 38,2026RS,Current/Final,,application/pdf,new,,,250829,Introduced,,application/pdf
+252535,ocd-bill/fc9298eb-ab57-4890-9b30-d04209586b43,HB 190,2026RS,Current/Final,,application/pdf,new,,,252534,Introduced,,application/pdf
+252253,ocd-bill/afb9b38c-545c-46b1-9885-e78a738add2c,SR 231,2026RS,Current/Final,,application/pdf,new,,,252252,Introduced,,application/pdf
+253301,ocd-bill/460a1d0b-c0ea-491b-b8d0-bb6267887b4b,SJR 23,2026RS,Current/Final,,application/pdf,new,,,253299,Introduced,,application/pdf
+253300,ocd-bill/460a1d0b-c0ea-491b-b8d0-bb6267887b4b,SJR 23,2026RS,Acts Chapter 124,,application/pdf,corrected,253299,253299,253301,Current/Final,,application/pdf
+252955,ocd-bill/997bd82e-432b-4573-8849-74e8632f8ae6,SR 194,2026RS,Current/Final,,application/pdf,new,,,252954,Introduced,,application/pdf
+250093,ocd-bill/80d2ad46-ae4a-4b57-8b1a-b305539e4b74,SB 28,2026RS,Current/Final,,application/pdf,new,,,250091,Introduced,,application/pdf
+250259,ocd-bill/899fa48e-692d-43d9-a123-884aa7ee0d44,SB 223,2026RS,Current/Final,,application/pdf,new,,,250257,Introduced,,application/pdf
+252055,ocd-bill/da6d8245-37be-4147-ba6e-f01edd02cb62,HB 111,2026RS,Current/Final,,application/pdf,new,,,252053,Introduced,,application/pdf
+252697,ocd-bill/0d69cd4b-25f8-40ce-b53c-9c6e6fb6fd81,SR 159,2026RS,Current/Final,,application/pdf,new,,,252696,Introduced,,application/pdf
+251724,ocd-bill/2375b5f0-ffc8-4e4f-83cc-1fcf15882a09,HB 486,2026RS,Current/Final,,application/pdf,new,,,251722,Introduced,,application/pdf
+251002,ocd-bill/47806c50-b6f4-4c18-801c-42e33191a5cc,SR 63,2026RS,Current/Final,,application/pdf,new,,,251000,Introduced,,application/pdf
+251952,ocd-bill/fe0d4473-7ad5-43cb-bcf3-5ed365462b17,HB 246,2026RS,Current/Final,,application/pdf,new,,,251951,Introduced,,application/pdf
+252207,ocd-bill/ba4bed5b-bd0f-44ef-be45-8e6c17ce0122,SJR 134,2026RS,Current/Final,,application/pdf,new,,,252206,Introduced,,application/pdf
+252569,ocd-bill/7e4f32b8-d929-4c32-9ae0-4213197902ba,SR 145,2026RS,Current/Final,,application/pdf,new,,,252568,Introduced,,application/pdf
+252473,ocd-bill/6281d538-0f15-4a62-8f05-90d5e7b13081,SB 29,2026RS,Current/Final,,application/pdf,new,,,252471,Introduced,,application/pdf
+252472,ocd-bill/6281d538-0f15-4a62-8f05-90d5e7b13081,SB 29,2026RS,Acts Chapter 86,,application/pdf,corrected,252471,252471,252473,Current/Final,,application/pdf
+253225,ocd-bill/e96ce627-7ddf-456e-8bd9-8309537d53a6,SR 144,2026RS,Current/Final,,application/pdf,new,,,253224,Introduced,,application/pdf
+252862,ocd-bill/ddc77a83-2c7f-4647-a63d-c4df0eb81657,SB 110,2026RS,Current/Final,,application/pdf,new,,,252860,Introduced,,application/pdf
+252861,ocd-bill/ddc77a83-2c7f-4647-a63d-c4df0eb81657,SB 110,2026RS,Acts Chapter 135,,application/pdf,corrected,252860,252860,252862,Current/Final,,application/pdf
+253000,ocd-bill/36898a32-fedc-4cbe-9bd1-52d210d0c544,SR 297,2026RS,Current/Final,,application/pdf,new,,,252999,Introduced,,application/pdf
+249927,ocd-bill/1cf9fe42-d14d-43cb-ae2f-1385707466b5,HR 7,2026RS,Current/Final,,application/pdf,new,,,249925,Introduced,,application/pdf
+251448,ocd-bill/488630e0-15d1-41c4-8f1e-ea250b2f07b3,HB 281,2026RS,Current/Final,,application/pdf,new,,,251444,Introduced,,application/pdf
+251446,ocd-bill/488630e0-15d1-41c4-8f1e-ea250b2f07b3,HB 281,2026RS,Acts Chapter 30,,application/pdf,unchanged,251444,251444;251448,251448,Current/Final,,application/pdf
+249871,ocd-bill/f85c4c25-8b80-47ab-89c0-5aeb251b68e2,SB 85,2026RS,Current/Final,,application/pdf,new,,,249867,Introduced,,application/pdf
+249869,ocd-bill/f85c4c25-8b80-47ab-89c0-5aeb251b68e2,SB 85,2026RS,Acts Chapter 18,,application/pdf,unchanged,249867,249867;249871,249871,Current/Final,,application/pdf
+252135,ocd-bill/5cdd120f-80c4-4643-8c48-a4c8297d522c,SR 146,2026RS,Current/Final,,application/pdf,new,,,252134,Introduced,,application/pdf
+252732,ocd-bill/fd1cd821-8258-43ea-8867-72bb303e0d41,SR 158,2026RS,Current/Final,,application/pdf,new,,,252731,Introduced,,application/pdf
+252044,ocd-bill/72535970-b34a-479b-b6d7-2097dbbb3423,SR 170,2026RS,Current/Final,,application/pdf,new,,,252043,Introduced,,application/pdf
+251804,ocd-bill/beb69ab8-2141-48d3-a36d-5e89ad93005e,SB 37,2026RS,Current/Final,,application/pdf,new,,,251802,Introduced,,application/pdf
+251803,ocd-bill/beb69ab8-2141-48d3-a36d-5e89ad93005e,SB 37,2026RS,Acts Chapter 200,,application/pdf,corrected,251802,251802,251804,Current/Final,,application/pdf
+252466,ocd-bill/263b6400-32c8-4d34-9490-a0883e318fed,SR 196,2026RS,Current/Final,,application/pdf,new,,,252465,Introduced,,application/pdf
+250107,ocd-bill/296afa9e-9510-427a-8e45-c8f360e02d03,SB 132,2026RS,Current/Final,,application/pdf,new,,,250105,Introduced,,application/pdf
+249949,ocd-bill/6ec125e5-8385-400d-9d5a-1d79a572a6f1,SR 61,2026RS,Current/Final,,application/pdf,new,,,249947,Introduced,,application/pdf
+252323,ocd-bill/4f6e0f89-3086-4d98-87a6-da297ffedcf4,SR 104,2026RS,Current/Final,,application/pdf,new,,,252322,Introduced,,application/pdf
+252359,ocd-bill/f02f587b-6a68-4f96-ae5a-7836036e6ce2,SB 278,2026RS,Current/Final,,application/pdf,new,,,252357,Introduced,,application/pdf
+252358,ocd-bill/f02f587b-6a68-4f96-ae5a-7836036e6ce2,SB 278,2026RS,Acts Chapter 60,,application/pdf,unchanged,252357,252357;252359,252359,Current/Final,,application/pdf
+252292,ocd-bill/4313badd-af8c-452b-a48e-ce0b3514fc5a,SJR 75,2026RS,Current/Final,,application/pdf,new,,,252291,Introduced,,application/pdf
+253298,ocd-bill/ef7231a5-daa5-48fa-8ce5-ad8a15163b12,SR 165,2026RS,Current/Final,,application/pdf,new,,,253297,Introduced,,application/pdf
+252694,ocd-bill/eb66a645-b412-4779-ae27-65a8df0db709,SB 145,2026RS,Current/Final,,application/pdf,new,,,252692,Introduced,,application/pdf
+252693,ocd-bill/eb66a645-b412-4779-ae27-65a8df0db709,SB 145,2026RS,Acts Chapter 3,,application/pdf,corrected,252692,252692,252694,Current/Final,,application/pdf
+250320,ocd-bill/e1d1cc33-4371-4d4f-8c0c-0272ec9b973d,HB 290,2026RS,Current/Final,,application/pdf,new,,,250315,Introduced,,application/pdf
+250317,ocd-bill/e1d1cc33-4371-4d4f-8c0c-0272ec9b973d,HB 290,2026RS,Acts Chapter 76,,application/pdf,corrected,250315,250315,250320,Current/Final,,application/pdf
+250970,ocd-bill/c8069f8a-f246-4310-8e6a-cabe0bd67286,HB 307,2026RS,Current/Final,,application/pdf,new,,,250965,Introduced,,application/pdf
+250967,ocd-bill/c8069f8a-f246-4310-8e6a-cabe0bd67286,HB 307,2026RS,Acts Chapter 35,,application/pdf,corrected,250965,250965,250970,Current/Final,,application/pdf
+253221,ocd-bill/9bc373a4-7135-4a36-9b2f-90b271fb4e56,HB 685,2026RS,Current/Final,,application/pdf,new,,,253220,Introduced,,application/pdf
+252789,ocd-bill/0d522761-9b86-4865-aaac-3c9392890512,SR 45,2026RS,Current/Final,,application/pdf,new,,,252788,Introduced,,application/pdf
+251315,ocd-bill/d40cb6d3-fab9-4385-9521-c098392532f8,SR 244,2026RS,Current/Final,,application/pdf,new,,,251313,Introduced,,application/pdf
+250029,ocd-bill/6be8b82b-dc31-45fd-b845-08b020d87a76,SR 19,2026RS,Current/Final,,application/pdf,new,,,250027,Introduced,,application/pdf
+252491,ocd-bill/3ed77f88-01a1-4f45-aebb-aa6cb7003fce,HB 732,2026RS,Current/Final,,application/pdf,new,,,252490,Introduced,,application/pdf
+253035,ocd-bill/cdc11b37-6b73-4924-869d-74fd10d38b3c,SB 173,2026RS,Current/Final,,application/pdf,new,,,253033,Introduced,,application/pdf
+253034,ocd-bill/cdc11b37-6b73-4924-869d-74fd10d38b3c,SB 173,2026RS,Acts Chapter 159,,application/pdf,corrected,253033,253033,253035,Current/Final,,application/pdf
+253115,ocd-bill/c10a1e5d-71f0-4caf-8ea6-5a1d9f9b6b56,HR 63,2026RS,Current/Final,,application/pdf,new,,,253114,Introduced,,application/pdf
+252917,ocd-bill/d1ad7952-06b4-4aa3-bd88-fd11f415a174,SR 219,2026RS,Current/Final,,application/pdf,new,,,252916,Introduced,,application/pdf
+250131,ocd-bill/b51525b9-c157-44da-9ff9-8faba703f8c0,SR 92,2026RS,Current/Final,,application/pdf,new,,,250129,Introduced,,application/pdf
+252929,ocd-bill/83cbe71a-95c3-4c05-a313-0b200df13593,HB 576,2026RS,Current/Final,,application/pdf,new,,,252927,Introduced,,application/pdf
+252928,ocd-bill/83cbe71a-95c3-4c05-a313-0b200df13593,HB 576,2026RS,Acts Chapter 82,,application/pdf,corrected,252927,252927,252929,Current/Final,,application/pdf
+252855,ocd-bill/91c85cba-fa14-4a21-bd58-4f24f8c02f5d,SR 187,2026RS,Current/Final,,application/pdf,new,,,252854,Introduced,,application/pdf
+252214,ocd-bill/f1b23a71-545d-4ad6-a6df-17a5315eed49,SR 268,2026RS,Current/Final,,application/pdf,new,,,252213,Introduced,,application/pdf
+250751,ocd-bill/b0a6e38b-81a2-4b98-ac2a-91684b78ea77,HB 258,2026RS,Current/Final,,application/pdf,new,,,250750,Introduced,,application/pdf
+250648,ocd-bill/3c770462-1203-4858-9442-14a27d17ea7f,HB 66,2026RS,Current/Final,,application/pdf,new,,,250646,Introduced,,application/pdf
+252470,ocd-bill/1399f017-34eb-404e-b1da-d7b16fa9eb34,SR 79,2026RS,Current/Final,,application/pdf,new,,,252469,Introduced,,application/pdf
+252613,ocd-bill/6e2bf13f-8823-4166-922a-cfebd846c881,SR 301,2026RS,Current/Final,,application/pdf,new,,,252612,Introduced,,application/pdf
+252921,ocd-bill/a60184d4-0d11-4b7b-a27e-a1fa949542eb,HB 601,2026RS,Current/Final,,application/pdf,new,,,252920,Introduced,,application/pdf
+250215,ocd-bill/d4299e36-b632-495b-a16a-2a195318ea49,HB 194,2026RS,Current/Final,,application/pdf,new,,,250213,Introduced,,application/pdf
+252411,ocd-bill/095907f3-c7e8-4ff0-b75a-49581c5143d2,SR 171,2026RS,Current/Final,,application/pdf,new,,,252410,Introduced,,application/pdf
+251350,ocd-bill/d1e1aae8-b85c-4e47-b72d-2cdbebc7b4dc,SB 181,2026RS,Current/Final,,application/pdf,new,,,251348,Introduced,,application/pdf
+250430,ocd-bill/c0aeed22-f417-4262-ad70-89a788468321,HB 628,2026RS,Current/Final,,application/pdf,new,,,250428,Introduced,,application/pdf
+252389,ocd-bill/92ba7da6-b716-462f-baec-a1a355a7356e,HB 338,2026RS,Current/Final,,application/pdf,new,,,252388,Introduced,,application/pdf
+253022,ocd-bill/5998fe68-6391-4827-a793-c258a945d5f3,HB 220,2026RS,Current/Final,,application/pdf,new,,,253020,Introduced,,application/pdf
+253021,ocd-bill/5998fe68-6391-4827-a793-c258a945d5f3,HB 220,2026RS,Acts Chapter 189,,application/pdf,corrected,253020,253020,253022,Current/Final,,application/pdf
+251491,ocd-bill/e09925e4-3e2c-4de4-b461-80ebf3e055bd,HB 627,2026RS,Current/Final,,application/pdf,new,,,251488,Introduced,,application/pdf
+251490,ocd-bill/e09925e4-3e2c-4de4-b461-80ebf3e055bd,HB 627,2026RS,Acts Chapter 149,,application/pdf,corrected,251488,251488,251491,Current/Final,,application/pdf
+252060,ocd-bill/016e34d5-b190-4fc2-8814-cf71ec2769a4,SR 238,2026RS,Current/Final,,application/pdf,new,,,252059,Introduced,,application/pdf
+253280,ocd-bill/b757b06a-53db-4c63-8e6a-fdb701d9e018,HB 621,2026RS,Current/Final,,application/pdf,new,,,253279,Introduced,,application/pdf
+251831,ocd-bill/cb50bc0a-f5dc-4131-ace0-5644bb753544,SB 129,2026RS,Current/Final,,application/pdf,new,,,251829,Introduced,,application/pdf
+251830,ocd-bill/cb50bc0a-f5dc-4131-ace0-5644bb753544,SB 129,2026RS,Acts Chapter 188,,application/pdf,corrected,251829,251829,251831,Current/Final,,application/pdf
+251827,ocd-bill/c4ac9e4f-3f2b-433a-b3dc-4d004110dfe8,SB 66,2026RS,Current/Final,,application/pdf,new,,,251825,Introduced,,application/pdf
+251826,ocd-bill/c4ac9e4f-3f2b-433a-b3dc-4d004110dfe8,SB 66,2026RS,Acts Chapter 193,,application/pdf,corrected,251825,251825,251827,Current/Final,,application/pdf
+253200,ocd-bill/20f748ea-fce7-4a89-9424-3a5278630797,SR 25,2026RS,Current/Final,,application/pdf,new,,,253199,Introduced,,application/pdf
+252131,ocd-bill/1a438829-703f-405c-a3ab-19563161d12a,HB 305,2026RS,Current/Final,,application/pdf,new,,,252129,Introduced,,application/pdf
+252242,ocd-bill/70063e24-5889-49b4-b6f2-855550c281a6,SR 241,2026RS,Current/Final,,application/pdf,new,,,252241,Introduced,,application/pdf
+251606,ocd-bill/46a3ddd4-3a90-4c17-8a34-5bc4dc94fba4,SR 161,2026RS,Current/Final,,application/pdf,new,,,251604,Introduced,,application/pdf
+252456,ocd-bill/60c4485e-c442-4874-bc6e-be197153ca50,SR 220,2026RS,Current/Final,,application/pdf,new,,,252455,Introduced,,application/pdf
+252888,ocd-bill/29a206bc-b96b-4d62-abf9-0a2b2e4717fc,HB 320,2026RS,Current/Final,,application/pdf,new,,,252887,Introduced,,application/pdf
+252416,ocd-bill/0a1ad5ed-c2f5-4d28-a6e8-7bca67648f37,SR 52,2026RS,Current/Final,,application/pdf,new,,,252415,Introduced,,application/pdf
+252139,ocd-bill/e32baf27-ed13-466a-97a2-d8f0ff740ad3,HB 731,2026RS,Current/Final,,application/pdf,new,,,252138,Introduced,,application/pdf
+252894,ocd-bill/25791aa4-92e4-4b2e-9aef-c2915ed3949e,SR 304,2026RS,Current/Final,,application/pdf,new,,,252893,Introduced,,application/pdf
+251835,ocd-bill/c8b973bb-f2fa-4c6f-95bf-8aedd68faac2,SB 65,2026RS,Current/Final,,application/pdf,new,,,251833,Introduced,,application/pdf
+251834,ocd-bill/c8b973bb-f2fa-4c6f-95bf-8aedd68faac2,SB 65,2026RS,Acts Chapter 156,,application/pdf,corrected,251833,251833,251835,Current/Final,,application/pdf
+252808,ocd-bill/41644ce9-d2e3-48c9-ae0f-6cdf930e7834,SR 235,2026RS,Current/Final,,application/pdf,new,,,252807,Introduced,,application/pdf
+251226,ocd-bill/042f641c-6b1b-4f01-b05f-f9822b73f0a4,HB 213,2026RS,Current/Final,,application/pdf,new,,,251222,Introduced,,application/pdf
+251224,ocd-bill/042f641c-6b1b-4f01-b05f-f9822b73f0a4,HB 213,2026RS,Acts Chapter 73,,application/pdf,corrected,251222,251222,251226,Current/Final,,application/pdf
+252618,ocd-bill/15337881-ae2f-4f8c-baf6-94d8db80dcc9,SR 278,2026RS,Current/Final,,application/pdf,new,,,252617,Introduced,,application/pdf
+252309,ocd-bill/2a1e8ebd-c899-4aa0-a83e-46d6f9c293d4,SR 300,2026RS,Current/Final,,application/pdf,new,,,252308,Introduced,,application/pdf
+249901,ocd-bill/14b58880-cb9e-44a4-9c72-ce78f39cd889,SB 156,2026RS,Current/Final,,application/pdf,new,,,249899,Introduced,,application/pdf
+252944,ocd-bill/02867b50-c534-413d-b464-825d28a89f7b,SB 122,2026RS,Current/Final,,application/pdf,new,,,252942,Introduced,,application/pdf
+252943,ocd-bill/02867b50-c534-413d-b464-825d28a89f7b,SB 122,2026RS,Acts Chapter 92,,application/pdf,corrected,252942,252942,252944,Current/Final,,application/pdf
+251454,ocd-bill/0f0d4485-319f-43d8-a245-bb1951e9c023,HB 43,2026RS,Current/Final,,application/pdf,new,,,251450,Introduced,,application/pdf
+251452,ocd-bill/0f0d4485-319f-43d8-a245-bb1951e9c023,HB 43,2026RS,Acts Chapter 20,,application/pdf,unchanged,251450,251450;251454,251454,Current/Final,,application/pdf
+251768,ocd-bill/d08022d2-8f51-4567-b4ff-38e7e74731f3,SJR 62,2026RS,Current/Final,,application/pdf,new,,,251767,Introduced,,application/pdf
+252596,ocd-bill/04ee3a34-f0f3-4a79-ad99-79c8b2f320c2,HB 568,2026RS,Current/Final,,application/pdf,new,,,252594,Introduced,,application/pdf
+252595,ocd-bill/04ee3a34-f0f3-4a79-ad99-79c8b2f320c2,HB 568,2026RS,Acts Chapter 141,,application/pdf,corrected,252594,252594,252596,Current/Final,,application/pdf
+252939,ocd-bill/e43aa4f6-af3c-47e1-befa-6996cac1a947,SB 221,2026RS,Current/Final,,application/pdf,new,,,252938,Introduced,,application/pdf
+251747,ocd-bill/4ce31855-828d-4dbb-a8de-a8fe88c0aebd,SR 222,2026RS,Current/Final,,application/pdf,new,,,251746,Introduced,,application/pdf
+251876,ocd-bill/4a72adcf-77d7-472f-81c7-40ce7a123fbe,HB 333,2026RS,Current/Final,,application/pdf,new,,,251874,Introduced,,application/pdf
+251875,ocd-bill/4a72adcf-77d7-472f-81c7-40ce7a123fbe,HB 333,2026RS,Acts Chapter 37,,application/pdf,unchanged,251874,251874;251876,251876,Current/Final,,application/pdf
+252209,ocd-bill/bc5b7625-9ca0-468a-8bc6-1022441862b0,SR 123,2026RS,Current/Final,,application/pdf,new,,,252208,Introduced,,application/pdf
+253202,ocd-bill/92005ee2-76a5-4b20-914b-9c145364c1c5,HB 644,2026RS,Current/Final,,application/pdf,new,,,253201,Introduced,,application/pdf
+253109,ocd-bill/21b14167-26c1-43a0-ab7b-ca91be3dc33f,SR 77,2026RS,Current/Final,,application/pdf,new,,,253108,Introduced,,application/pdf
+251892,ocd-bill/2896dc36-9ced-4d6f-a7a0-0aa998e83039,SR 228,2026RS,Current/Final,,application/pdf,new,,,251891,Introduced,,application/pdf
+252787,ocd-bill/1e219ac6-73d1-43c0-9ecc-cb5aab954254,SR 252,2026RS,Current/Final,,application/pdf,new,,,252786,Introduced,,application/pdf
+253240,ocd-bill/87d2d969-5d2f-4c42-abc8-4f0a41e1db80,SB 102,2026RS,Current/Final,,application/pdf,new,,,253238,Introduced,,application/pdf
+252133,ocd-bill/446124c4-4c5c-4d13-8a2f-5c555fe0833e,SR 46,2026RS,Current/Final,,application/pdf,new,,,252132,Introduced,,application/pdf
+253051,ocd-bill/88dbab0d-9a3a-45f9-b82f-5c8f7f02b792,SR 191,2026RS,Current/Final,,application/pdf,new,,,253050,Introduced,,application/pdf
+252186,ocd-bill/177fbaa6-aed3-4006-b128-5c9f84939e48,SB 155,2026RS,Current/Final,,application/pdf,new,,,252184,Introduced,,application/pdf
+252185,ocd-bill/177fbaa6-aed3-4006-b128-5c9f84939e48,SB 155,2026RS,Acts Chapter 17,,application/pdf,corrected,252184,252184,252186,Current/Final,,application/pdf
+250580,ocd-bill/6a9ccb59-f208-4d5a-9aa0-6fe1d23a888e,SR 240,2026RS,Current/Final,,application/pdf,new,,,250578,Introduced,,application/pdf
+252816,ocd-bill/5e0ec35b-ed56-41ce-b5e2-d3368d7bc3d8,HB 622,2026RS,Current/Final,,application/pdf,new,,,252814,Introduced,,application/pdf
+252815,ocd-bill/5e0ec35b-ed56-41ce-b5e2-d3368d7bc3d8,HB 622,2026RS,Acts Chapter 125,,application/pdf,corrected,252814,252814,252816,Current/Final,,application/pdf
+253234,ocd-bill/a5d169e9-0434-4347-a562-ede4d9a97626,HR 33,2026RS,Current/Final,,application/pdf,new,,,253233,Introduced,,application/pdf
+251518,ocd-bill/1dd2bf4d-1215-4bfc-83c3-21a841cb61d3,HB 468,2026RS,Current/Final,,application/pdf,new,,,251516,Introduced,,application/pdf
+250715,ocd-bill/4a644160-e553-47a6-9265-469d2fc33530,HB 108,2026RS,Current/Final,,application/pdf,new,,,250714,Introduced,,application/pdf
+251122,ocd-bill/e35d45a1-75c5-42cc-ac88-39fb452f11ce,HB 6,2026RS,Current/Final,,application/pdf,new,,,251118,Introduced,,application/pdf
+251120,ocd-bill/e35d45a1-75c5-42cc-ac88-39fb452f11ce,HB 6,2026RS,Acts Chapter 146,,application/pdf,corrected,251118,251118,251122,Current/Final,,application/pdf
+252313,ocd-bill/9c077f82-f568-47f7-aa09-04f8039d74a3,HB 651,2026RS,Current/Final,,application/pdf,new,,,252311,Introduced,,application/pdf
+252312,ocd-bill/9c077f82-f568-47f7-aa09-04f8039d74a3,HB 651,2026RS,Acts Chapter 116,,application/pdf,corrected,252311,252311,252313,Current/Final,,application/pdf
+252718,ocd-bill/a6511af6-a475-4316-97ab-9f1b32373698,SR 31,2026RS,Current/Final,,application/pdf,new,,,252717,Introduced,,application/pdf
+250784,ocd-bill/b5a4f7ef-f011-4512-bde6-befd8230bd9c,SB 141,2026RS,Current/Final,,application/pdf,new,,,250782,Introduced,,application/pdf
+252500,ocd-bill/b9b2946c-5161-46fd-b97f-dad6d3687341,HB 480,2026RS,Current/Final,,application/pdf,new,,,252498,Introduced,,application/pdf
+252499,ocd-bill/b9b2946c-5161-46fd-b97f-dad6d3687341,HB 480,2026RS,Acts Chapter 147,,application/pdf,unchanged,252498,252498;252500,252500,Current/Final,,application/pdf
+253031,ocd-bill/bbd5d0d0-94d5-4a86-ac10-ba702e27cb62,SR 205,2026RS,Current/Final,,application/pdf,new,,,253030,Introduced,,application/pdf
+250220,ocd-bill/9a806496-9a3d-49e4-96c9-420800f475de,HB 826,2026RS,Current/Final,,application/pdf,new,,,250217,Introduced,,application/pdf
+250218,ocd-bill/9a806496-9a3d-49e4-96c9-420800f475de,HB 826,2026RS,Acts Chapter 197,,application/pdf,corrected,250217,250217,250220,Current/Final,,application/pdf
+252709,ocd-bill/e3ce5aa2-d273-453f-9861-c7da62cc3e84,SR 246,2026RS,Current/Final,,application/pdf,new,,,252708,Introduced,,application/pdf
+252443,ocd-bill/662a11a0-eec6-4493-82de-2279cddaf732,HB 583,2026RS,Current/Final,,application/pdf,new,,,252442,Introduced,,application/pdf
+251558,ocd-bill/d7ce5835-9d04-4a15-ba13-3c7ecadbbd7b,SB 118,2026RS,Current/Final,,application/pdf,new,,,251556,Introduced,,application/pdf
+252112,ocd-bill/cbd7d30b-4f77-40d8-a78a-521118a51fda,SR 224,2026RS,Current/Final,,application/pdf,new,,,252111,Introduced,,application/pdf
+251926,ocd-bill/5beae290-b5aa-4679-a922-23d706585187,SR 32,2026RS,Current/Final,,application/pdf,new,,,251925,Introduced,,application/pdf
+252245,ocd-bill/0b9d9fda-0691-4183-b798-23979635d15e,HB 84,2026RS,Current/Final,,application/pdf,new,,,252244,Introduced,,application/pdf
+251799,ocd-bill/63837e7e-96de-4701-9ea0-5b3418b2a199,SB 152,2026RS,Current/Final,,application/pdf,new,,,251798,Introduced,,application/pdf
+250964,ocd-bill/fea68d45-0bda-46ec-9d45-15b7c9858fe0,HB 415,2026RS,Current/Final,,application/pdf,new,,,250962,Introduced,,application/pdf
+252871,ocd-bill/4d3f35b5-4b55-40fa-a94d-9580e4260827,SB 249,2026RS,Current/Final,,application/pdf,new,,,252869,Introduced,,application/pdf
+253086,ocd-bill/169c9960-1d00-4ac5-a563-02a92a47f69d,HB 49,2026RS,Current/Final,,application/pdf,new,,,253084,Introduced,,application/pdf
+253085,ocd-bill/169c9960-1d00-4ac5-a563-02a92a47f69d,HB 49,2026RS,Acts Chapter 22,,application/pdf,unchanged,253084,253084;253086,253086,Current/Final,,application/pdf
+252843,ocd-bill/90702de3-e5f2-463e-b2cd-70376ad93cc5,SR 208,2026RS,Current/Final,,application/pdf,new,,,252842,Introduced,,application/pdf
+252251,ocd-bill/e580e87a-8369-42cb-af11-37e92a28e01d,HB 669,2026RS,Current/Final,,application/pdf,new,,,252249,Introduced,,application/pdf
+252250,ocd-bill/e580e87a-8369-42cb-af11-37e92a28e01d,HB 669,2026RS,Acts Chapter 162,,application/pdf,corrected,252249,252249,252251,Current/Final,,application/pdf
+250633,ocd-bill/0da5e611-261d-4b7d-a0ee-174e9384e4d6,SR 87,2026RS,Current/Final,,application/pdf,new,,,250631,Introduced,,application/pdf
+250662,ocd-bill/b35d249c-2fbd-4341-896e-f4f89d930f6b,HB 139,2026RS,Current/Final,,application/pdf,new,,,250658,Introduced,,application/pdf
+250660,ocd-bill/b35d249c-2fbd-4341-896e-f4f89d930f6b,HB 139,2026RS,Acts Chapter 175,,application/pdf,corrected,250658,250658,250662,Current/Final,,application/pdf
+252046,ocd-bill/b50df945-4be5-467b-a87e-fa600663145c,SB 281,2026RS,Current/Final,,application/pdf,new,,,252045,Introduced,,application/pdf
+250299,ocd-bill/b6e4065c-f600-4ec6-a4f1-f6cf0d9e17da,SR 156,2026RS,Current/Final,,application/pdf,new,,,250297,Introduced,,application/pdf
+252913,ocd-bill/81fe4e8b-dc2b-497d-b85c-9b8e510aa5bd,HR 91,2026RS,Current/Final,,application/pdf,new,,,252912,Introduced,,application/pdf
+252230,ocd-bill/94997edf-6f04-4676-960c-926eb2d5811c,HB 366,2026RS,Current/Final,,application/pdf,new,,,252228,Introduced,,application/pdf
+251498,ocd-bill/77a14288-ab43-47dd-9ba4-095850538b56,HB 134,2026RS,Current/Final,,application/pdf,new,,,251494,Introduced,,application/pdf
+251496,ocd-bill/77a14288-ab43-47dd-9ba4-095850538b56,HB 134,2026RS,Acts Chapter 66,,application/pdf,corrected,251494,251494,251498,Current/Final,,application/pdf
+251708,ocd-bill/f5477e39-0b38-4928-8768-4f4bf8557a62,SR 93,2026RS,Current/Final,,application/pdf,new,,,251706,Introduced,,application/pdf
+253060,ocd-bill/44ead0bc-111e-49c1-8a3d-f06e62319953,SR 215,2026RS,Current/Final,,application/pdf,new,,,253059,Introduced,,application/pdf
+253232,ocd-bill/58f0edb2-18b6-45c6-9489-e53eed836e65,SB 9,2026RS,Current/Final,,application/pdf,new,,,253231,Introduced,,application/pdf
+250232,ocd-bill/8f713d0e-eb2f-475e-a3b7-1e7671db432b,SB 214,2026RS,Current/Final,,application/pdf,new,,,250228,Introduced,,application/pdf
+250230,ocd-bill/8f713d0e-eb2f-475e-a3b7-1e7671db432b,SB 214,2026RS,Acts Chapter 187,,application/pdf,corrected,250228,250228,250232,Current/Final,,application/pdf
+250592,ocd-bill/fcdaa728-0f84-42e1-924b-9b899b066c6c,SR 37,2026RS,Current/Final,,application/pdf,new,,,250589,Introduced,,application/pdf
+251974,ocd-bill/8313e676-acc8-4a3c-9b1a-3a3340671fba,SR 149,2026RS,Current/Final,,application/pdf,new,,,251973,Introduced,,application/pdf
+251093,ocd-bill/3434fff1-d05f-48b1-b333-c0ea3fb393a5,SR 8,2026RS,Current/Final,,application/pdf,new,,,251091,Introduced,,application/pdf
+252188,ocd-bill/e7e69901-7f99-4253-9396-f41764535861,SR 213,2026RS,Current/Final,,application/pdf,new,,,252187,Introduced,,application/pdf
+253210,ocd-bill/e0eebf91-d823-4b36-bb0d-4ae3a8a175f7,SR 14,2026RS,Current/Final,,application/pdf,new,,,253209,Introduced,,application/pdf
+252051,ocd-bill/a1d7335f-85ff-4cda-b8eb-4923e6c9ac23,SB 76,2026RS,Current/Final,,application/pdf,new,,,252050,Introduced,,application/pdf
+250682,ocd-bill/63cda4e6-a5d2-47b6-a5fb-87751fc5691b,HB 355,2026RS,Current/Final,,application/pdf,new,,,250678,Introduced,,application/pdf
+250680,ocd-bill/63cda4e6-a5d2-47b6-a5fb-87751fc5691b,HB 355,2026RS,Acts Chapter 172,,application/pdf,corrected,250678,250678,250682,Current/Final,,application/pdf
+251991,ocd-bill/62ec8d01-eb2e-43da-9926-d5e24e34d023,SR 262,2026RS,Current/Final,,application/pdf,new,,,251990,Introduced,,application/pdf
+252931,ocd-bill/f924773f-4ffd-4dcf-bd11-ed0b02508159,SR 151,2026RS,Current/Final,,application/pdf,new,,,252930,Introduced,,application/pdf
+252039,ocd-bill/e9329844-ea2a-4ec3-a79a-2bcc0f558aa1,SB 197,2026RS,Current/Final,,application/pdf,new,,,252037,Introduced,,application/pdf
+252038,ocd-bill/e9329844-ea2a-4ec3-a79a-2bcc0f558aa1,SB 197,2026RS,Acts Chapter 202,,application/pdf,corrected,252037,252037,252039,Current/Final,,application/pdf
+251791,ocd-bill/4252d27b-ef7e-4b30-b1b1-224a0673cfe0,SR 41,2026RS,Current/Final,,application/pdf,new,,,251790,Introduced,,application/pdf
+253124,ocd-bill/909439e5-3097-4dcb-a8f5-bc3cee251b84,HB 184,2026RS,Current/Final,,application/pdf,new,,,253122,Introduced,,application/pdf
+252747,ocd-bill/9d506c3d-92c6-4873-b71b-4ff028088d80,SB 98,2026RS,Current/Final,,application/pdf,new,,,252745,Introduced,,application/pdf
+250492,ocd-bill/16c2026b-ad93-400a-9102-17ca86f2500f,SR 242,2026RS,Current/Final,,application/pdf,new,,,250490,Introduced,,application/pdf
+252041,ocd-bill/12adba8d-f732-4892-9bda-cd5a4b5dd570,SR 272,2026RS,Current/Final,,application/pdf,new,,,252040,Introduced,,application/pdf
+251125,ocd-bill/37c4a04c-afb9-49b0-a900-ecc7ebaea4ac,SB 47,2026RS,Current/Final,,application/pdf,new,,,251124,Introduced,,application/pdf
+253214,ocd-bill/6efe88e7-9764-41e0-b889-c0b8bebe2874,HB 689,2026RS,Current/Final,,application/pdf,new,,,253212,Introduced,,application/pdf
+253213,ocd-bill/6efe88e7-9764-41e0-b889-c0b8bebe2874,HB 689,2026RS,Acts Chapter 117,,application/pdf,corrected,253212,253212,253214,Current/Final,,application/pdf
+252280,ocd-bill/586781c4-12de-4232-8a57-73d99f4ab69c,SR 261,2026RS,Current/Final,,application/pdf,new,,,252279,Introduced,,application/pdf
+252572,ocd-bill/0341dec6-eebf-4e61-aceb-9c9431bc81a5,HR 3,2026RS,Current/Final,,application/pdf,new,,,252571,Introduced,,application/pdf
+251866,ocd-bill/a276308a-85d9-46ec-b967-1e51e58cea20,SB 172,2026RS,Current/Final,,application/pdf,new,,,251864,Introduced,,application/pdf
+250328,ocd-bill/cfe49cca-12b8-4e8b-857f-6159ad400ce9,SR 113,2026RS,Current/Final,,application/pdf,new,,,250326,Introduced,,application/pdf
+253207,ocd-bill/6f9a6956-8c52-4538-967b-93d553e93494,HB 759,2026RS,Current/Final,,application/pdf,new,,,253206,Introduced,,application/pdf
+251735,ocd-bill/0b3f1ab8-b5bd-4c21-aa52-1a140667bffe,HR 78,2026RS,Current/Final,,application/pdf,new,,,251734,Introduced,,application/pdf
+250746,ocd-bill/1c1b6d12-9894-47ec-ade8-6f93015ce116,HB 456,2026RS,Current/Final,,application/pdf,new,,,250742,Introduced,,application/pdf
+252088,ocd-bill/d25c3101-f0f7-4f83-9e7c-c4cfd15f1fc8,SR 250,2026RS,Current/Final,,application/pdf,new,,,252087,Introduced,,application/pdf
+252792,ocd-bill/c21e965c-ee8b-44f0-93c2-6c4a4c6db5e9,SR 85,2026RS,Current/Final,,application/pdf,new,,,252791,Introduced,,application/pdf
+252995,ocd-bill/4df8e633-1e78-4832-91d6-31248af75703,SB 51,2026RS,Current/Final,,application/pdf,new,,,252994,Introduced,,application/pdf
+252508,ocd-bill/d0eb2c3b-9d44-4df4-963f-dbbee01161e8,SR 30,2026RS,Current/Final,,application/pdf,new,,,252507,Introduced,,application/pdf
+250926,ocd-bill/be5a16c6-4c65-4285-a962-5355442f7a9f,SR 299,2026RS,Current/Final,,application/pdf,new,,,250924,Introduced,,application/pdf
+250386,ocd-bill/b88fa5b1-0b4d-4aee-b798-d5ece1c518d1,HR 34,2026RS,Current/Final,,application/pdf,new,,,250384,Introduced,,application/pdf
+252669,ocd-bill/64fdcbe0-193f-4a80-9d87-cc4e7764194e,SR 135,2026RS,Current/Final,,application/pdf,new,,,252668,Introduced,,application/pdf
+253091,ocd-bill/661860eb-8662-43d5-9e82-dce836d2a166,HB 50,2026RS,Current/Final,,application/pdf,new,,,253090,Introduced,,application/pdf
+250252,ocd-bill/1ec2ff92-1d2b-4f15-b9e9-98c24c1100df,SR 39,2026RS,Current/Final,,application/pdf,new,,,250250,Introduced,,application/pdf
+251981,ocd-bill/fc9ec252-60d8-4770-8e3f-dfe3dfbe219c,SR 264,2026RS,Current/Final,,application/pdf,new,,,251980,Introduced,,application/pdf
+250564,ocd-bill/e58a105c-f617-49f1-9fb3-3f32ab520446,HB 7,2026RS,Current/Final,,application/pdf,new,,,250560,Introduced,,application/pdf
+250562,ocd-bill/e58a105c-f617-49f1-9fb3-3f32ab520446,HB 7,2026RS,Acts Chapter 62,,application/pdf,corrected,250560,250560,250564,Current/Final,,application/pdf
+253154,ocd-bill/016a3082-5cd9-416e-8136-e039a046fe45,HB 168,2026RS,Current/Final,,application/pdf,new,,,253153,Introduced,,application/pdf
+250280,ocd-bill/9d38a1db-6065-4f80-9224-dfd239b1322d,HB 510,2026RS,Current/Final,,application/pdf,new,,,250277,Introduced,,application/pdf
+250279,ocd-bill/9d38a1db-6065-4f80-9224-dfd239b1322d,HB 510,2026RS,Acts Chapter 43,,application/pdf,unchanged,250277,250277;250280,250280,Current/Final,,application/pdf
+252181,ocd-bill/4ec4f5d5-4734-4cd7-844c-b59c5010a3f9,HB 48,2026RS,Current/Final,,application/pdf,new,,,252179,Introduced,,application/pdf
+252180,ocd-bill/4ec4f5d5-4734-4cd7-844c-b59c5010a3f9,HB 48,2026RS,Acts Chapter 36,,application/pdf,corrected,252179,252179,252181,Current/Final,,application/pdf
+250622,ocd-bill/3cf50815-a415-4047-af77-e56d75b9ae23,HB 189,2026RS,Current/Final,,application/pdf,new,,,250618,Introduced,,application/pdf
+250620,ocd-bill/3cf50815-a415-4047-af77-e56d75b9ae23,HB 189,2026RS,Acts Chapter 32,,application/pdf,corrected,250618,250618,250622,Current/Final,,application/pdf
+252564,ocd-bill/2a77a6b9-d031-4046-be03-dd5baea19e5e,HB 611,2026RS,Current/Final,,application/pdf,new,,,252562,Introduced,,application/pdf
+252563,ocd-bill/2a77a6b9-d031-4046-be03-dd5baea19e5e,HB 611,2026RS,Acts Chapter 49,,application/pdf,corrected,252562,252562,252564,Current/Final,,application/pdf
+252764,ocd-bill/bf917263-6325-4f51-80ed-686ae7b67cc3,SR 280,2026RS,Current/Final,,application/pdf,new,,,252763,Introduced,,application/pdf
+252849,ocd-bill/243771ce-e8cb-4f0b-8736-8d6e8674d24f,HR 123,2026RS,Current/Final,,application/pdf,new,,,252848,Introduced,,application/pdf
+251901,ocd-bill/66cfa864-beba-49f3-8692-e3457088413c,SR 72,2026RS,Current/Final,,application/pdf,new,,,251900,Introduced,,application/pdf
+252076,ocd-bill/508fa4b6-259c-4e0a-99a3-b0dc0514dd03,SB 41,2026RS,Current/Final,,application/pdf,new,,,252075,Introduced,,application/pdf
+252813,ocd-bill/9436bb0b-445e-47ac-a6e8-f709410dc004,SR 237,2026RS,Current/Final,,application/pdf,new,,,252812,Introduced,,application/pdf
+251432,ocd-bill/3791bbd9-011c-4089-903f-c0e3bf9a9759,HB 562,2026RS,Current/Final,,application/pdf,new,,,251428,Introduced,,application/pdf
+251430,ocd-bill/3791bbd9-011c-4089-903f-c0e3bf9a9759,HB 562,2026RS,Acts Chapter 15,,application/pdf,corrected,251428,251428,251432,Current/Final,,application/pdf
+252123,ocd-bill/fafb95c0-58bf-42ba-92c5-d85771fdbe26,SR 40,2026RS,Current/Final,,application/pdf,new,,,252122,Introduced,,application/pdf
+252375,ocd-bill/1e947ad8-2f77-4ece-b638-6debd02bf8aa,HB 459,2026RS,Current/Final,,application/pdf,new,,,252373,Introduced,,application/pdf
+252374,ocd-bill/1e947ad8-2f77-4ece-b638-6debd02bf8aa,HB 459,2026RS,Acts Chapter 79,,application/pdf,corrected,252373,252373,252375,Current/Final,,application/pdf
+251242,ocd-bill/9d26ffe2-e4fc-4ee5-9e3b-3eeaad70c9de,HB 455,2026RS,Current/Final,,application/pdf,new,,,251240,Introduced,,application/pdf
+252781,ocd-bill/107afe92-6bab-483a-b273-ebb224004619,HR 32,2026RS,Current/Final,,application/pdf,new,,,252780,Introduced,,application/pdf
+251382,ocd-bill/7a6683e8-1229-4a6a-8a43-66ee1dc4cf83,HB 658,2026RS,Current/Final,,application/pdf,new,,,251380,Introduced,,application/pdf
+250940,ocd-bill/1d3bd8ee-6121-470e-9f7a-7981e422e61e,HB 164,2026RS,Current/Final,,application/pdf,new,,,250936,Introduced,,application/pdf
+250938,ocd-bill/1d3bd8ee-6121-470e-9f7a-7981e422e61e,HB 164,2026RS,Acts Chapter 26,,application/pdf,corrected,250936,250936,250940,Current/Final,,application/pdf
+251787,ocd-bill/e32ad10d-24e3-4366-8236-3d2bf285afa6,HB 502,2026RS,Current/Final,,application/pdf,new,,,251785,Introduced,,application/pdf
+251786,ocd-bill/e32ad10d-24e3-4366-8236-3d2bf285afa6,HB 502,2026RS,Acts Chapter 145,,application/pdf,corrected,251785,251785,251787,Current/Final,,application/pdf
+250079,ocd-bill/acc557c9-c733-48f6-9110-b2ecf7387c22,SB 77,2026RS,Current/Final,,application/pdf,new,,,250075,Introduced,,application/pdf
+250077,ocd-bill/acc557c9-c733-48f6-9110-b2ecf7387c22,SB 77,2026RS,Acts Chapter 158,,application/pdf,corrected,250075,250075,250079,Current/Final,,application/pdf
+252063,ocd-bill/cb2e317c-2fab-41b8-8d8b-dce29e23e4a1,SR 101,2026RS,Current/Final,,application/pdf,new,,,252062,Introduced,,application/pdf
+252926,ocd-bill/39468f2a-45f4-4cbc-b019-1bb463d7ac66,SR 142,2026RS,Current/Final,,application/pdf,new,,,252925,Introduced,,application/pdf
+252476,ocd-bill/4caa6297-6dc0-4fe7-84a5-6b3df729c885,HB 490,2026RS,Current/Final,,application/pdf,new,,,252474,Introduced,,application/pdf
+252475,ocd-bill/4caa6297-6dc0-4fe7-84a5-6b3df729c885,HB 490,2026RS,Acts Chapter 169,,application/pdf,corrected,252474,252474,252476,Current/Final,,application/pdf
+251538,ocd-bill/d7afe99d-f4c0-4896-9092-4e2d2e8549b5,HB 529,2026RS,Current/Final,,application/pdf,new,,,251534,Introduced,,application/pdf
+251536,ocd-bill/d7afe99d-f4c0-4896-9092-4e2d2e8549b5,HB 529,2026RS,Acts Chapter 46,,application/pdf,corrected,251534,251534,251538,Current/Final,,application/pdf
+250712,ocd-bill/ee795959-004f-4931-9910-f7dba758b3b1,HR 15,2026RS,Current/Final,,application/pdf,new,,,250710,Introduced,,application/pdf
+252585,ocd-bill/06b40ef7-207e-4cd8-baa2-4c77af5801f3,HCR 44,2026RS,Current/Final,,application/pdf,new,,,252584,Introduced,,application/pdf
+253194,ocd-bill/7eac5410-3d89-47b8-98fa-4eb1a3f5d0ef,HB 501,2026RS,Current/Final,,application/pdf,new,,,253192,Introduced,,application/pdf
+253193,ocd-bill/7eac5410-3d89-47b8-98fa-4eb1a3f5d0ef,HB 501,2026RS,Acts Chapter 167,,application/pdf,corrected,253192,253192,253194,Current/Final,,application/pdf
+252768,ocd-bill/64121fb0-2301-4da9-b510-a60416456236,SR 153,2026RS,Current/Final,,application/pdf,new,,,252767,Introduced,,application/pdf
+252727,ocd-bill/d204d5f1-4e98-4033-84d1-edc1a7acc60a,HB 660,2026RS,Current/Final,,application/pdf,new,,,252726,Introduced,,application/pdf
+252686,ocd-bill/fcbcd902-9c6f-4e47-a806-a3a362057714,SB 116,2026RS,Current/Final,,application/pdf,new,,,252684,Introduced,,application/pdf
+252685,ocd-bill/fcbcd902-9c6f-4e47-a806-a3a362057714,SB 116,2026RS,Acts Chapter 94,,application/pdf,corrected,252684,252684,252686,Current/Final,,application/pdf
+250790,ocd-bill/578ad4d6-5dc5-45a7-adbf-8778525f6f7b,HB 527,2026RS,Current/Final,,application/pdf,new,,,250786,Introduced,,application/pdf
+250788,ocd-bill/578ad4d6-5dc5-45a7-adbf-8778525f6f7b,HB 527,2026RS,Acts Chapter 45,,application/pdf,corrected,250786,250786,250790,Current/Final,,application/pdf
+250468,ocd-bill/a78cec15-8ec4-4a81-a543-f4ae40783117,SB 323,2026RS,Current/Final,,application/pdf,new,,,250466,Introduced,,application/pdf
+251962,ocd-bill/bf020717-f510-442d-b2b5-f8304ab4fd47,HB 500,2026RS,Current/Final,,application/pdf,new,,,251960,Introduced,,application/pdf
+251961,ocd-bill/bf020717-f510-442d-b2b5-f8304ab4fd47,HB 500,2026RS,Acts Chapter 168,,application/pdf,corrected,251960,251960,251962,Current/Final,,application/pdf
+252107,ocd-bill/ba8bb6ab-2f75-497a-8b7f-389c70ca4718,SR 76,2026RS,Current/Final,,application/pdf,new,,,252106,Introduced,,application/pdf
+252137,ocd-bill/f8963578-c5c3-453d-89d6-15c659bf00b7,SR 121,2026RS,Current/Final,,application/pdf,new,,,252136,Introduced,,application/pdf
+253069,ocd-bill/6754aa07-6958-400e-bf3e-9c8e3c72c89e,HB 497,2026RS,Current/Final,,application/pdf,new,,,253068,Introduced,,application/pdf
+251273,ocd-bill/0c6c6c05-f0c3-4d59-945f-779a7e4a7227,SB 46,2026RS,Current/Final,,application/pdf,new,,,251269,Introduced,,application/pdf
+251271,ocd-bill/0c6c6c05-f0c3-4d59-945f-779a7e4a7227,SB 46,2026RS,Acts Chapter 7,,application/pdf,corrected,251269,251269,251273,Current/Final,,application/pdf
+252707,ocd-bill/7d154dbe-6209-4c36-904a-a07fc5d5c4dc,SR 122,2026RS,Current/Final,,application/pdf,new,,,252706,Introduced,,application/pdf
+252831,ocd-bill/24c14f45-636a-48d1-bac5-30710392fe4f,SR 133,2026RS,Current/Final,,application/pdf,new,,,252830,Introduced,,application/pdf
+250422,ocd-bill/57a37ac4-5bad-48db-b10e-ed1ced0d5ac8,SR 53,2026RS,Current/Final,,application/pdf,new,,,250420,Introduced,,application/pdf
+252713,ocd-bill/a8a29e49-9f54-4048-b68f-05580fef1f54,HB 519,2026RS,Current/Final,,application/pdf,new,,,252712,Introduced,,application/pdf
+252755,ocd-bill/4706a288-9150-4ff6-9923-2d97343ada65,SB 3,2026RS,Current/Final,,application/pdf,new,,,252754,Introduced,,application/pdf
+252774,ocd-bill/c5e6f0ee-d2fe-431f-b96e-1a2b2ce53077,HB 385,2026RS,Current/Final,,application/pdf,new,,,252773,Introduced,,application/pdf
+251654,ocd-bill/1ac4336f-4686-4691-b541-0496a811c37b,HR 58,2026RS,Current/Final,,application/pdf,new,,,251652,Introduced,,application/pdf
+252587,ocd-bill/9bda314d-4659-42b9-849b-08ece7e296f4,HB 442,2026RS,Current/Final,,application/pdf,new,,,252586,Introduced,,application/pdf
+251972,ocd-bill/263de87d-f34a-4db9-bcc9-254d9fb9c825,SR 257,2026RS,Current/Final,,application/pdf,new,,,251971,Introduced,,application/pdf
+249935,ocd-bill/27cd1a5d-b35a-40f2-8baa-50bc7e7cd7fb,SR 184,2026RS,Current/Final,,application/pdf,new,,,249933,Introduced,,application/pdf
+251753,ocd-bill/2acd4ad0-7ef0-4572-90d5-db51101c49af,SR 107,2026RS,Current/Final,,application/pdf,new,,,251752,Introduced,,application/pdf
+251082,ocd-bill/df8205b5-5337-431a-bda2-7da82cc27561,SB 170,2026RS,Current/Final,,application/pdf,new,,,251078,Introduced,,application/pdf
+251080,ocd-bill/df8205b5-5337-431a-bda2-7da82cc27561,SB 170,2026RS,Acts Chapter 69,,application/pdf,corrected,251078,251078,251082,Current/Final,,application/pdf
+252722,ocd-bill/a44567d0-e51b-4b21-a36e-3c66ac1df955,SB 233,2026RS,Current/Final,,application/pdf,new,,,252721,Introduced,,application/pdf
+252525,ocd-bill/1f0910af-cbdf-4aab-9991-5caa7c272556,SR 265,2026RS,Current/Final,,application/pdf,new,,,252524,Introduced,,application/pdf
+252998,ocd-bill/62ede6a7-ff6b-4c7f-890b-49ae1a32c6a0,SB 100,2026RS,Current/Final,,application/pdf,new,,,252996,Introduced,,application/pdf
+252997,ocd-bill/62ede6a7-ff6b-4c7f-890b-49ae1a32c6a0,SB 100,2026RS,Acts Chapter 157,,application/pdf,corrected,252996,252996,252998,Current/Final,,application/pdf
+253257,ocd-bill/25985978-959c-42ed-92b9-085fef1960d8,SB 153,2026RS,Current/Final,,application/pdf,new,,,253255,Introduced,,application/pdf
+253256,ocd-bill/25985978-959c-42ed-92b9-085fef1960d8,SB 153,2026RS,Acts Chapter 54,,application/pdf,corrected,253255,253255,253257,Current/Final,,application/pdf
+252969,ocd-bill/444b3486-283f-45b2-bb4d-75096d44c468,SR 117,2026RS,Current/Final,,application/pdf,new,,,252968,Introduced,,application/pdf
+252426,ocd-bill/d4c518d7-1ec6-4144-9b77-d96cad85f5e0,HB 176,2026RS,Current/Final,,application/pdf,new,,,252424,Introduced,,application/pdf
+252425,ocd-bill/d4c518d7-1ec6-4144-9b77-d96cad85f5e0,HB 176,2026RS,Acts Chapter 102,,application/pdf,corrected,252424,252424,252426,Current/Final,,application/pdf
+250542,ocd-bill/29ec0255-6bde-4f7e-9fbd-6ee20b2111e2,SR 84,2026RS,Current/Final,,application/pdf,new,,,250540,Introduced,,application/pdf
+252436,ocd-bill/e9e7121a-c31c-46e6-aa98-f241abc6bd84,HR 141,2026RS,Current/Final,,application/pdf,new,,,252435,Introduced,,application/pdf
+252881,ocd-bill/bda73487-2f80-4099-83fd-6d38d9cc64f7,SJR 116,2026RS,Current/Final,,application/pdf,new,,,252879,Introduced,,application/pdf
+252880,ocd-bill/bda73487-2f80-4099-83fd-6d38d9cc64f7,SJR 116,2026RS,Acts Chapter 186,,application/pdf,corrected,252879,252879,252881,Current/Final,,application/pdf
+249829,ocd-bill/559b2c1c-72d3-4a94-a285-5acdbd8d1066,HB 778,2026RS,Current/Final,,application/pdf,new,,,249825,Introduced,,application/pdf
+249827,ocd-bill/559b2c1c-72d3-4a94-a285-5acdbd8d1066,HB 778,2026RS,Acts Chapter 68,,application/pdf,corrected,249825,249825,249829,Current/Final,,application/pdf
+250065,ocd-bill/0f1be545-5c46-4fbf-a668-76d465fd389c,HB 96,2026RS,Current/Final,,application/pdf,new,,,250061,Introduced,,application/pdf
+250063,ocd-bill/0f1be545-5c46-4fbf-a668-76d465fd389c,HB 96,2026RS,Acts Chapter 176,,application/pdf,corrected,250061,250061,250065,Current/Final,,application/pdf
+252317,ocd-bill/70863404-95e0-470a-b505-26850601afeb,SR 226,2026RS,Current/Final,,application/pdf,new,,,252316,Introduced,,application/pdf
+250918,ocd-bill/2a7e6d04-326a-464b-8acc-ed822707f242,SR 56,2026RS,Current/Final,,application/pdf,new,,,250916,Introduced,,application/pdf
+252631,ocd-bill/8314a772-3ae5-4a4d-a0d7-6fbf957624b1,SR 296,2026RS,Current/Final,,application/pdf,new,,,252630,Introduced,,application/pdf
+249795,ocd-bill/f8dd4277-7fe4-40ce-a851-8bf253e1c2f0,SR 12,2026RS,Current/Final,,application/pdf,new,,,249793,Introduced,,application/pdf
+252354,ocd-bill/cdc29be6-e3ef-46c1-a29b-53de458662e2,SR 269,2026RS,Current/Final,,application/pdf,new,,,252353,Introduced,,application/pdf
+252165,ocd-bill/94391912-0b77-497a-92b4-1d5443fd8894,HB 869,2026RS,Current/Final,,application/pdf,new,,,252163,Introduced,,application/pdf
+252164,ocd-bill/94391912-0b77-497a-92b4-1d5443fd8894,HB 869,2026RS,Acts Chapter 198,,application/pdf,corrected,252163,252163,252165,Current/Final,,application/pdf
+253029,ocd-bill/3f1ca8e9-eac7-4cec-adfc-50d39d965a2d,HB 212,2026RS,Current/Final,,application/pdf,new,,,253027,Introduced,,application/pdf
+253028,ocd-bill/3f1ca8e9-eac7-4cec-adfc-50d39d965a2d,HB 212,2026RS,Acts Chapter 104,,application/pdf,unchanged,253027,253027;253029,253029,Current/Final,,application/pdf
+252558,ocd-bill/2659e5bd-2bf3-49d7-8ed0-ad859ce48079,SR 204,2026RS,Current/Final,,application/pdf,new,,,252557,Introduced,,application/pdf
+252461,ocd-bill/adea22f7-ae21-46ba-9445-9ed03dff27b6,SR 211,2026RS,Current/Final,,application/pdf,new,,,252460,Introduced,,application/pdf
+252447,ocd-bill/cc058a1d-844b-4aac-b1c9-edc738e3f29e,SR 282,2026RS,Current/Final,,application/pdf,new,,,252446,Introduced,,application/pdf
+252724,ocd-bill/31080b9f-30e7-4275-a48c-934fdac13f33,SR 44,2026RS,Current/Final,,application/pdf,new,,,252723,Introduced,,application/pdf
+252821,ocd-bill/1fd44733-6e76-480d-9f45-9db0cc9f1241,HB 136,2026RS,Current/Final,,application/pdf,new,,,252819,Introduced,,application/pdf
+252820,ocd-bill/1fd44733-6e76-480d-9f45-9db0cc9f1241,HB 136,2026RS,Acts Chapter 25,,application/pdf,corrected,252819,252819,252821,Current/Final,,application/pdf
+252635,ocd-bill/db5759f4-4de2-4e99-9647-9bc1ea12f7ae,HB 448,2026RS,Current/Final,,application/pdf,new,,,252633,Introduced,,application/pdf
+252634,ocd-bill/db5759f4-4de2-4e99-9647-9bc1ea12f7ae,HB 448,2026RS,Acts Chapter 42,,application/pdf,unchanged,252633,252633;252635,252635,Current/Final,,application/pdf
+252510,ocd-bill/b56ac767-e4dc-44d4-b0c0-fe21bff49c85,HB 141,2026RS,Current/Final,,application/pdf,new,,,252509,Introduced,,application/pdf
+252984,ocd-bill/60fada93-4279-4c86-9c81-e45aeadb1ad8,HB 299,2026RS,Current/Final,,application/pdf,new,,,252983,Introduced,,application/pdf
+253183,ocd-bill/f8f5675d-bbc8-4853-b385-cb798e976d3e,SR 183,2026RS,Current/Final,,application/pdf,new,,,253182,Introduced,,application/pdf
+251899,ocd-bill/14a2f474-20d2-49f0-8bc1-3fd15354a4af,HB 283,2026RS,Current/Final,,application/pdf,new,,,251898,Introduced,,application/pdf
+253219,ocd-bill/fe685411-2b2b-44f2-95d7-28f0d3845cd2,SR 108,2026RS,Current/Final,,application/pdf,new,,,253218,Introduced,,application/pdf
+252405,ocd-bill/a4ac073d-ff11-4307-8886-79c779848973,HB 767,2026RS,Current/Final,,application/pdf,new,,,252403,Introduced,,application/pdf
+252404,ocd-bill/a4ac073d-ff11-4307-8886-79c779848973,HB 767,2026RS,Acts Chapter 137,,application/pdf,corrected,252403,252403,252405,Current/Final,,application/pdf
+252892,ocd-bill/96c7e8e7-6ebe-4999-8729-213ab0c4319b,HB 293,2026RS,Current/Final,,application/pdf,new,,,252890,Introduced,,application/pdf
+252891,ocd-bill/96c7e8e7-6ebe-4999-8729-213ab0c4319b,HB 293,2026RS,Acts Chapter 31,,application/pdf,unchanged,252890,252890;252892,252892,Current/Final,,application/pdf
+250127,ocd-bill/e65a6726-5844-4fac-a469-73fd47fb03a2,HR 133,2026RS,Current/Final,,application/pdf,new,,,250125,Introduced,,application/pdf
+251524,ocd-bill/c396424f-a937-422e-bb9f-bb4058fb8580,SB 261,2026RS,Current/Final,,application/pdf,new,,,251520,Introduced,,application/pdf
+251522,ocd-bill/c396424f-a937-422e-bb9f-bb4058fb8580,SB 261,2026RS,Acts Chapter 192,,application/pdf,corrected,251520,251520,251524,Current/Final,,application/pdf
+253045,ocd-bill/51b8aeea-de8e-4168-9401-923de5ddc7f0,SB 245,2026RS,Current/Final,,application/pdf,new,,,253043,Introduced,,application/pdf
+253044,ocd-bill/51b8aeea-de8e-4168-9401-923de5ddc7f0,SB 245,2026RS,Acts Chapter 70,,application/pdf,corrected,253043,253043,253045,Current/Final,,application/pdf
+252666,ocd-bill/ca368127-d1d9-42e3-b3f8-63fd5e3fe02d,SR 69,2026RS,Current/Final,,application/pdf,new,,,252665,Introduced,,application/pdf
+250085,ocd-bill/34c8c95a-f50b-41e6-a27f-2abfb62563d4,HB 257,2026RS,Current/Final,,application/pdf,new,,,250081,Introduced,,application/pdf
+250083,ocd-bill/34c8c95a-f50b-41e6-a27f-2abfb62563d4,HB 257,2026RS,Acts Chapter 138,,application/pdf,corrected,250081,250081,250085,Current/Final,,application/pdf
+251958,ocd-bill/7dd7e063-e288-4edb-b249-b2c41e2ae94b,HB 816,2026RS,Current/Final,,application/pdf,new,,,251956,Introduced,,application/pdf
+251957,ocd-bill/7dd7e063-e288-4edb-b249-b2c41e2ae94b,HB 816,2026RS,Acts Chapter 119,,application/pdf,corrected,251956,251956,251958,Current/Final,,application/pdf
+252506,ocd-bill/2de39d0d-92d1-4135-a3e5-25c6c596adf7,HB 692,2026RS,Current/Final,,application/pdf,new,,,252504,Introduced,,application/pdf
+252505,ocd-bill/2de39d0d-92d1-4135-a3e5-25c6c596adf7,HB 692,2026RS,Acts Chapter 118,,application/pdf,corrected,252504,252504,252506,Current/Final,,application/pdf
+252454,ocd-bill/6f0192d5-c5db-4496-8fd4-751b4527ad3b,HB 253,2026RS,Current/Final,,application/pdf,new,,,252452,Introduced,,application/pdf
+252453,ocd-bill/6f0192d5-c5db-4496-8fd4-751b4527ad3b,HB 253,2026RS,Acts Chapter 74,,application/pdf,corrected,252452,252452,252454,Current/Final,,application/pdf
+251842,ocd-bill/bce7d42d-1083-441d-bba9-08ef3770ad3b,HCR 137,2026RS,Current/Final,,application/pdf,new,,,251841,Introduced,,application/pdf
+249839,ocd-bill/8236c7c1-a816-48df-a7a4-9d7228a16d49,HB 312,2026RS,Current/Final,,application/pdf,new,,,249835,Introduced,,application/pdf
+249837,ocd-bill/8236c7c1-a816-48df-a7a4-9d7228a16d49,HB 312,2026RS,Acts Chapter 173,,application/pdf,corrected,249835,249835,249839,Current/Final,,application/pdf
+251704,ocd-bill/570d5f8d-6951-451b-a4d1-5498f7dc19e8,SR 291,2026RS,Current/Final,,application/pdf,new,,,251702,Introduced,,application/pdf
+252628,ocd-bill/d4337aef-c265-4824-9e15-979046d19cfa,SB 162,2026RS,Current/Final,,application/pdf,new,,,252627,Introduced,,application/pdf
+251715,ocd-bill/93797fed-6973-4db9-921f-232f4b86beaf,SR 119,2026RS,Current/Final,,application/pdf,new,,,251714,Introduced,,application/pdf
+250071,ocd-bill/e47e2e7e-ac87-43c6-b1f7-51e7daf9f578,SR 266,2026RS,Current/Final,,application/pdf,new,,,250069,Introduced,,application/pdf
+250382,ocd-bill/09966d33-f8c8-47c3-b5b0-bbff891ec34b,HB 780,2026RS,Current/Final,,application/pdf,new,,,250380,Introduced,,application/pdf
+251810,ocd-bill/eb48f45f-cd39-4b57-9a2e-ce2d3803c424,HB 392,2026RS,Current/Final,,application/pdf,new,,,251808,Introduced,,application/pdf
+251809,ocd-bill/eb48f45f-cd39-4b57-9a2e-ce2d3803c424,HB 392,2026RS,Acts Chapter 39,,application/pdf,corrected,251808,251808,251810,Current/Final,,application/pdf
+252868,ocd-bill/1bbcd45c-6d97-49f8-9f3d-39be603cabb1,SR 287,2026RS,Current/Final,,application/pdf,new,,,252867,Introduced,,application/pdf
+252495,ocd-bill/e606704b-1ad5-409c-ba22-c433323c2c22,SB 159,2026RS,Current/Final,,application/pdf,new,,,252494,Introduced,,application/pdf
+250376,ocd-bill/ffe15f56-749c-4482-9276-8d48b016943d,SR 270,2026RS,Current/Final,,application/pdf,new,,,250374,Introduced,,application/pdf
+252729,ocd-bill/c23c9bb3-3a1e-4f7e-888b-b7f03e176be9,SR 230,2026RS,Current/Final,,application/pdf,new,,,252728,Introduced,,application/pdf
+250534,ocd-bill/e069df7f-d66e-4ff8-ba43-30fe708c4bb6,SB 193,2026RS,Current/Final,,application/pdf,new,,,250532,Introduced,,application/pdf
+249805,ocd-bill/ec2a7514-82ce-4f25-b08c-da48ef49aac8,SR 199,2026RS,Current/Final,,application/pdf,new,,,249803,Introduced,,application/pdf
+250880,ocd-bill/60fd6fb8-77d3-4de8-8b45-39e70a291797,HB 273,2026RS,Current/Final,,application/pdf,new,,,250877,Introduced,,application/pdf
+252592,ocd-bill/13281330-affa-4e75-963b-1abbe5400b7e,HB 143,2026RS,Current/Final,,application/pdf,new,,,252591,Introduced,,application/pdf
+249953,ocd-bill/50753073-abc4-4925-9edb-efa3a1b3e4d2,HB 686,2026RS,Current/Final,,application/pdf,new,,,249951,Introduced,,application/pdf
+253295,ocd-bill/1f14d90e-b1c8-4c88-be75-b4ae54b916ff,HB 642,2026RS,Current/Final,,application/pdf,new,,,253293,Introduced,,application/pdf
+253294,ocd-bill/1f14d90e-b1c8-4c88-be75-b4ae54b916ff,HB 642,2026RS,Acts Chapter 34,,application/pdf,corrected,253293,253293,253295,Current/Final,,application/pdf
+252150,ocd-bill/af583ab8-cefe-4e91-8857-4834009ba1ba,HB 249,2026RS,Current/Final,,application/pdf,new,,,252149,Introduced,,application/pdf
+252217,ocd-bill/d394c62c-2d45-401e-bd99-008fcb0623d4,SB 7,2026RS,Current/Final,,application/pdf,new,,,252216,Introduced,,application/pdf
+253278,ocd-bill/83911e94-57ad-47d7-b0a7-c75cb4fb2fb3,SR 57,2026RS,Current/Final,,application/pdf,new,,,253277,Introduced,,application/pdf
+252479,ocd-bill/2cb7203b-ab09-49ac-b274-ba4b8b8a8b21,SR 1,2026RS,Current/Final,,application/pdf,new,,,252478,Introduced,,application/pdf
+251592,ocd-bill/d8c28576-0373-4e07-8c61-167e244137f6,HB 387,2026RS,Current/Final,,application/pdf,new,,,251588,Introduced,,application/pdf
+251590,ocd-bill/d8c28576-0373-4e07-8c61-167e244137f6,HB 387,2026RS,Acts Chapter 170,,application/pdf,corrected,251588,251588,251592,Current/Final,,application/pdf
+251749,ocd-bill/2bacb63a-fcba-4af5-bb1f-0733663e85c7,HB 195,2026RS,Current/Final,,application/pdf,new,,,251748,Introduced,,application/pdf
+250342,ocd-bill/4efb3f21-d2f3-4552-b892-d40c99e8a0fa,SR 98,2026RS,Current/Final,,application/pdf,new,,,250340,Introduced,,application/pdf
+250119,ocd-bill/d13222b6-19d2-4c01-a720-fcffa69e2039,HR 21,2026RS,Current/Final,,application/pdf,new,,,250117,Introduced,,application/pdf
+252915,ocd-bill/2dde1239-d7b2-408d-8fd4-fa3889e8af82,HB 297,2026RS,Current/Final,,application/pdf,new,,,252914,Introduced,,application/pdf
+251920,ocd-bill/5b014663-73f3-4b11-b82a-f205beaa290e,SR 223,2026RS,Current/Final,,application/pdf,new,,,251919,Introduced,,application/pdf
+251700,ocd-bill/aab3690b-fe9b-45f1-99c9-abe7a0d1705f,HR 19,2026RS,Current/Final,,application/pdf,new,,,251698,Introduced,,application/pdf
+251740,ocd-bill/4ad86c96-8740-46a4-8e96-54e6549e69db,HR 54,2026RS,Current/Final,,application/pdf,new,,,251739,Introduced,,application/pdf
+252493,ocd-bill/3f65b75d-36d0-4910-bd0a-ed8b1997aea3,HB 276,2026RS,Current/Final,,application/pdf,new,,,252492,Introduced,,application/pdf
+252300,ocd-bill/b50c56cd-810e-4c71-8625-17564e911666,HB 178,2026RS,Current/Final,,application/pdf,new,,,252298,Introduced,,application/pdf
+252299,ocd-bill/b50c56cd-810e-4c71-8625-17564e911666,HB 178,2026RS,Acts Chapter 103,,application/pdf,unchanged,252298,252298;252300,252300,Current/Final,,application/pdf
+250960,ocd-bill/7782bd95-8d85-494f-9673-ea52572fed48,HB 419,2026RS,Current/Final,,application/pdf,new,,,250956,Introduced,,application/pdf
+250958,ocd-bill/7782bd95-8d85-494f-9673-ea52572fed48,HB 419,2026RS,Acts Chapter 111,,application/pdf,corrected,250956,250956,250960,Current/Final,,application/pdf
+251944,ocd-bill/658d0fce-b8b5-4c96-ba36-5561edd0ddf8,HR 85,2026RS,Current/Final,,application/pdf,new,,,251943,Introduced,,application/pdf
+250290,ocd-bill/4aabec05-2066-42b6-8e10-ea29c9493048,HB 10,2026RS,Current/Final,,application/pdf,new,,,250287,Introduced,,application/pdf
+250288,ocd-bill/4aabec05-2066-42b6-8e10-ea29c9493048,HB 10,2026RS,Acts Chapter 178,,application/pdf,corrected,250287,250287,250290,Current/Final,,application/pdf
+253010,ocd-bill/9c5b7fec-f7a0-4219-8146-374b7cf4fc6c,HB 425,2026RS,Current/Final,,application/pdf,new,,,253009,Introduced,,application/pdf
+252978,ocd-bill/5360fcd6-66f5-4189-b290-97ee734a6834,SB 198,2026RS,Current/Final,,application/pdf,new,,,252977,Introduced,,application/pdf
+250135,ocd-bill/b8910e07-0b92-4ac9-b8c6-6e1c69f6b918,SB 127,2026RS,Current/Final,,application/pdf,new,,,250133,Introduced,,application/pdf
+251378,ocd-bill/f67283ae-7a08-4e86-9ac4-664915c9d68c,SR 106,2026RS,Current/Final,,application/pdf,new,,,251376,Introduced,,application/pdf
+253229,ocd-bill/12d4a340-5b8d-4d01-bb3c-b8dea4a178e1,SR 20,2026RS,Current/Final,,application/pdf,new,,,253228,Introduced,,application/pdf
+251019,ocd-bill/2e5e24c5-9226-4a98-992a-33d593f823e4,HR 49,2026RS,Current/Final,,application/pdf,new,,,251017,Introduced,,application/pdf
+249891,ocd-bill/af38b4f3-1d74-40c9-809b-c612923d70c8,HB 311,2026RS,Current/Final,,application/pdf,new,,,249887,Introduced,,application/pdf
+249889,ocd-bill/af38b4f3-1d74-40c9-809b-c612923d70c8,HB 311,2026RS,Acts Chapter 195,,application/pdf,corrected,249887,249887,249891,Current/Final,,application/pdf
+250203,ocd-bill/bcef45fd-3c7c-4980-9fea-83999d4ea096,HB 422,2026RS,Current/Final,,application/pdf,new,,,250199,Introduced,,application/pdf
+250201,ocd-bill/bcef45fd-3c7c-4980-9fea-83999d4ea096,HB 422,2026RS,Acts Chapter 14,,application/pdf,corrected,250199,250199,250203,Current/Final,,application/pdf
+252540,ocd-bill/fd81584d-5548-4b82-8557-9f9958040305,HR 136,2026RS,Current/Final,,application/pdf,new,,,252539,Introduced,,application/pdf
+251795,ocd-bill/0c86657f-b0fd-43ee-8c67-f56c1fcca864,SR 175,2026RS,Current/Final,,application/pdf,new,,,251794,Introduced,,application/pdf
+251696,ocd-bill/022b2293-9a52-4afd-b4b2-904276c6ce11,SR 136,2026RS,Current/Final,,application/pdf,new,,,251694,Introduced,,application/pdf
+253186,ocd-bill/8ac4c1c3-94be-460e-b250-34c663e55a0e,SR 167,2026RS,Current/Final,,application/pdf,new,,,253185,Introduced,,application/pdf
+250502,ocd-bill/2aca7e46-dd11-4fc0-afd3-67722ab5f5e7,SB 49,2026RS,Current/Final,,application/pdf,new,,,250498,Introduced,,application/pdf
+250500,ocd-bill/2aca7e46-dd11-4fc0-afd3-67722ab5f5e7,SB 49,2026RS,Acts Chapter 87,,application/pdf,corrected,250498,250498,250502,Current/Final,,application/pdf
+251554,ocd-bill/18c1b8fc-76cb-43ea-83e6-01ab907d00b7,SR 59,2026RS,Current/Final,,application/pdf,new,,,251552,Introduced,,application/pdf
+249785,ocd-bill/0c551126-09b7-4a4e-a0e4-f788cffeb384,HB 142,2026RS,Current/Final,,application/pdf,new,,,249781,Introduced,,application/pdf
+249783,ocd-bill/0c551126-09b7-4a4e-a0e4-f788cffeb384,HB 142,2026RS,Acts Chapter 174,,application/pdf,corrected,249781,249781,249785,Current/Final,,application/pdf
+250700,ocd-bill/2d052274-b65f-4c06-912d-82e8e9604e29,SR 189,2026RS,Current/Final,,application/pdf,new,,,250697,Introduced,,application/pdf
+252011,ocd-bill/c2e3fc15-ac56-4f32-80a6-d82fa435a757,SR 22,2026RS,Current/Final,,application/pdf,new,,,252010,Introduced,,application/pdf
+253055,ocd-bill/2a68f918-9f18-4d94-889c-b5b21f0ab39c,SR 111,2026RS,Current/Final,,application/pdf,new,,,253054,Introduced,,application/pdf
+250524,ocd-bill/9a42dabf-9f82-4d54-991d-c41367e4445c,HB 36,2026RS,Current/Final,,application/pdf,new,,,250520,Introduced,,application/pdf
+250522,ocd-bill/9a42dabf-9f82-4d54-991d-c41367e4445c,HB 36,2026RS,Acts Chapter 33,,application/pdf,corrected,250520,250520,250524,Current/Final,,application/pdf
+250476,ocd-bill/0683bccf-bc36-4cbd-9d7d-0a68b319c7d1,SR 289,2026RS,Current/Final,,application/pdf,new,,,250474,Introduced,,application/pdf
+250954,ocd-bill/2acf7097-9339-4166-b2cf-69bc46fa2a67,SR 201,2026RS,Current/Final,,application/pdf,new,,,250952,Introduced,,application/pdf
+250271,ocd-bill/c73c2e62-548b-47c7-8f74-1e8a25873648,SR 274,2026RS,Current/Final,,application/pdf,new,,,250270,Introduced,,application/pdf
+251420,ocd-bill/39478622-e2c9-4060-b5c0-74d9f402ab58,SR 190,2026RS,Current/Final,,application/pdf,new,,,251418,Introduced,,application/pdf
+253146,ocd-bill/0ed94ee6-45ab-4ff5-a92b-ed5c73f5cce1,HB 467,2026RS,Current/Final,,application/pdf,new,,,253145,Introduced,,application/pdf
+251328,ocd-bill/d6e68cc7-a73a-49e4-9d57-73d0655912ab,SR 55,2026RS,Current/Final,,application/pdf,new,,,251326,Introduced,,application/pdf
+250360,ocd-bill/82d1ab4a-7210-4c32-a661-2b94af185f99,SCR 66,2026RS,Current/Final,,application/pdf,new,,,250356,Introduced,,application/pdf
+253268,ocd-bill/55d02222-10ce-4dab-99b8-a2a117d1c0e7,SB 324,2026RS,Current/Final,,application/pdf,new,,,253266,Introduced,,application/pdf
+253267,ocd-bill/55d02222-10ce-4dab-99b8-a2a117d1c0e7,SB 324,2026RS,Acts Chapter 194,,application/pdf,corrected,253266,253266,253268,Current/Final,,application/pdf
+252450,ocd-bill/24ce170f-ac61-4330-b5cf-a7bf674baf54,SR 277,2026RS,Current/Final,,application/pdf,new,,,252449,Introduced,,application/pdf
+250175,ocd-bill/715bf05a-7a5e-4e9d-85e0-4fc6cdfe6ded,SB 224,2026RS,Current/Final,,application/pdf,new,,,250173,Introduced,,application/pdf
+250912,ocd-bill/4f7156c7-f75a-4895-af47-81d147d70164,SB 34,2026RS,Current/Final,,application/pdf,new,,,250910,Introduced,,application/pdf
+252422,ocd-bill/6899a29f-b5f3-4bbe-a9b8-a98e96056217,SR 2,2026RS,Current/Final,,application/pdf,new,,,252421,Introduced,,application/pdf
+252439,ocd-bill/2b2f9c81-aa63-4efe-a459-96b9f6a30d5f,HB 904,2026RS,Current/Final,,application/pdf,new,,,252437,Introduced,,application/pdf
+252438,ocd-bill/2b2f9c81-aa63-4efe-a459-96b9f6a30d5f,HB 904,2026RS,Acts Chapter 184,,application/pdf,corrected,252437,252437,252439,Current/Final,,application/pdf
+250812,ocd-bill/0eb71048-58a4-478b-a909-7d4f550f35a1,SR 248,2026RS,Current/Final,,application/pdf,new,,,250809,Introduced,,application/pdf
+250907,ocd-bill/1538defc-242c-41dd-8333-0e6b939b4e52,SCR 9,2026RS,Current/Final,,application/pdf,new,,,250903,Introduced,,application/pdf
+250905,ocd-bill/1538defc-242c-41dd-8333-0e6b939b4e52,SCR 9,2026RS,Acts Chapter 139,,application/pdf,corrected,250903,250903,250907,Current/Final,,application/pdf
+250001,ocd-bill/384efe3c-fe76-479c-907b-3fe0f5cf28f7,SR 236,2026RS,Current/Final,,application/pdf,new,,,249999,Introduced,,application/pdf
+250676,ocd-bill/35a49147-2f33-4cde-804a-805645ea2084,SB 177,2026RS,Current/Final,,application/pdf,new,,,250674,Introduced,,application/pdf
+253143,ocd-bill/bfae7ae5-928f-4916-b337-7acf7fa63428,HB 654,2026RS,Current/Final,,application/pdf,new,,,253142,Introduced,,application/pdf
+250239,ocd-bill/fd26b427-b5b2-424b-8ae8-09e41fc99036,SR 109,2026RS,Current/Final,,application/pdf,new,,,250237,Introduced,,application/pdf
+251806,ocd-bill/702a460a-5e6a-4f7b-b510-bdc60f9a05ee,SR 73,2026RS,Current/Final,,application/pdf,new,,,251805,Introduced,,application/pdf
+252485,ocd-bill/ccb5dbcf-dd44-4e01-b82d-3376f5ad655e,SR 169,2026RS,Current/Final,,application/pdf,new,,,252484,Introduced,,application/pdf
+252859,ocd-bill/3763f211-a8e2-4e31-966c-37cd1f90b785,HB 5,2026RS,Current/Final,,application/pdf,new,,,252857,Introduced,,application/pdf
+252858,ocd-bill/3763f211-a8e2-4e31-966c-37cd1f90b785,HB 5,2026RS,Acts Chapter 64,,application/pdf,corrected,252857,252857,252859,Current/Final,,application/pdf
+252801,ocd-bill/bdbaba17-b982-4397-a848-ebe4594bd6c3,HB 503,2026RS,Current/Final,,application/pdf,new,,,252799,Introduced,,application/pdf
+252800,ocd-bill/bdbaba17-b982-4397-a848-ebe4594bd6c3,HB 503,2026RS,Acts Chapter 166,,application/pdf,corrected,252799,252799,252801,Current/Final,,application/pdf
+250835,ocd-bill/9a5cb6c7-7a66-4d47-8978-fc461104df4c,HB 432,2026RS,Current/Final,,application/pdf,new,,,250833,Introduced,,application/pdf
+252381,ocd-bill/91ecc25e-ddac-4eb9-95db-342b27a792ef,SB 10,2026RS,Current/Final,,application/pdf,new,,,252379,Introduced,,application/pdf
+252339,ocd-bill/4e9f6b87-52a9-47ba-9313-19bce142c397,SR 185,2026RS,Current/Final,,application/pdf,new,,,252338,Introduced,,application/pdf
+251851,ocd-bill/5763dbd4-5ba5-4d04-a96b-cc210862b286,HR 139,2026RS,Current/Final,,application/pdf,new,,,251850,Introduced,,application/pdf
+250224,ocd-bill/3dda3fe2-7c1c-4153-ad51-f24f79527a36,SR 243,2026RS,Current/Final,,application/pdf,new,,,250222,Introduced,,application/pdf
+252158,ocd-bill/f9516758-679a-4cd1-a02b-4cf16adf31db,SR 147,2026RS,Current/Final,,application/pdf,new,,,252157,Introduced,,application/pdf
+252319,ocd-bill/e482174c-ffaa-4ea7-9745-b9dc8a49f8c4,HB 526,2026RS,Current/Final,,application/pdf,new,,,252318,Introduced,,application/pdf
+250236,ocd-bill/5095d074-337d-404a-826e-e2ada142ba1b,SR 10,2026RS,Current/Final,,application/pdf,new,,,250234,Introduced,,application/pdf
+251931,ocd-bill/0d2d9284-cffb-40ce-9b01-e22e681f7898,SR 65,2026RS,Current/Final,,application/pdf,new,,,251930,Introduced,,application/pdf
+252273,ocd-bill/b2760bf5-4664-4a20-83a8-0562ad8ebc47,SR 94,2026RS,Current/Final,,application/pdf,new,,,252272,Introduced,,application/pdf
+252974,ocd-bill/65b759a7-7233-4053-a83b-7d2f26cf0350,SR 50,2026RS,Current/Final,,application/pdf,new,,,252973,Introduced,,application/pdf
+250992,ocd-bill/8c0bedbe-bd05-4d91-b6ed-ee3eb32955b0,SR 64,2026RS,Current/Final,,application/pdf,new,,,250990,Introduced,,application/pdf
+250057,ocd-bill/19f3ee0c-dc63-43c6-a1fc-1759b551cb56,HB 369,2026RS,Current/Final,,application/pdf,new,,,250053,Introduced,,application/pdf
+250055,ocd-bill/19f3ee0c-dc63-43c6-a1fc-1759b551cb56,HB 369,2026RS,Acts Chapter 110,,application/pdf,unchanged,250053,250053;250057,250057,Current/Final,,application/pdf
+253276,ocd-bill/39829b20-b9e7-47ac-abea-68bce7bc43fa,SR 214,2026RS,Current/Final,,application/pdf,new,,,253275,Introduced,,application/pdf
+253179,ocd-bill/b199e5ac-bb79-4140-80fe-736e946186e6,SR 229,2026RS,Current/Final,,application/pdf,new,,,253178,Introduced,,application/pdf
+250045,ocd-bill/919f1004-b910-4d9e-912f-c4aa51b18865,SB 219,2026RS,Current/Final,,application/pdf,new,,,250041,Introduced,,application/pdf
+250043,ocd-bill/919f1004-b910-4d9e-912f-c4aa51b18865,SB 219,2026RS,Acts Chapter 98,,application/pdf,corrected,250041,250041,250045,Current/Final,,application/pdf
+251030,ocd-bill/8ce99f44-b713-4442-9a8a-be6006d8d1ae,HB 757,2026RS,Current/Final,,application/pdf,new,,,251026,Introduced,,application/pdf
+251028,ocd-bill/8ce99f44-b713-4442-9a8a-be6006d8d1ae,HB 757,2026RS,Acts Chapter 161,,application/pdf,corrected,251026,251026,251030,Current/Final,,application/pdf
+251612,ocd-bill/c6d04a40-6da8-4103-9d42-e00cfecedc0e,HB 254,2026RS,Current/Final,,application/pdf,new,,,251610,Introduced,,application/pdf
+252643,ocd-bill/3de63e0c-f822-4ece-8473-63b038d94fed,SR 4,2026RS,Current/Final,,application/pdf,new,,,252642,Introduced,,application/pdf
+252760,ocd-bill/e13642fd-385d-4e72-a973-a1db0b177684,SR 273,2026RS,Current/Final,,application/pdf,new,,,252759,Introduced,,application/pdf
+251158,ocd-bill/918fee0d-c928-42b9-bd54-965b2fa112bb,SR 58,2026RS,Current/Final,,application/pdf,new,,,251156,Introduced,,application/pdf
+251941,ocd-bill/b7ddc66b-80f3-4f73-bed7-0c11d9db6dfd,HB 3,2026RS,Current/Final,,application/pdf,new,,,251939,Introduced,,application/pdf
+251940,ocd-bill/b7ddc66b-80f3-4f73-bed7-0c11d9db6dfd,HB 3,2026RS,Acts Chapter 99,,application/pdf,corrected,251939,251939,251941,Current/Final,,application/pdf
+250980,ocd-bill/24313afb-2e79-44e3-92d8-2ac6ceb1700b,HB 516,2026RS,Current/Final,,application/pdf,new,,,250978,Introduced,,application/pdf
+252580,ocd-bill/bd0663be-3737-481a-968d-d3f0a041466f,SR 143,2026RS,Current/Final,,application/pdf,new,,,252579,Introduced,,application/pdf
+251129,ocd-bill/9e13e666-134f-4918-aae5-b6bee5801f69,SR 294,2026RS,Current/Final,,application/pdf,new,,,251127,Introduced,,application/pdf
+252981,ocd-bill/3949835a-6bef-4ea8-bbf5-f2bebcf0fb37,SR 35,2026RS,Current/Final,,application/pdf,new,,,252980,Introduced,,application/pdf
+253306,ocd-bill/1804417c-fad3-4e68-bf3d-82e553491110,HR 126,2026RS,Current/Final,,application/pdf,new,,,253305,Introduced,,application/pdf
+251390,ocd-bill/932c2804-e733-4b49-8746-cbcfa2172b7b,SB 50,2026RS,Current/Final,,application/pdf,new,,,251386,Introduced,,application/pdf
+251388,ocd-bill/932c2804-e733-4b49-8746-cbcfa2172b7b,SB 50,2026RS,Acts Chapter 134,,application/pdf,corrected,251386,251386,251390,Current/Final,,application/pdf
+251602,ocd-bill/f25c648b-a8f0-4bde-8002-5cb8df46a434,SR 132,2026RS,Current/Final,,application/pdf,new,,,251599,Introduced,,application/pdf
+252414,ocd-bill/c2b6b421-b341-44c6-9c35-56641f72148c,SR 221,2026RS,Current/Final,,application/pdf,new,,,252413,Introduced,,application/pdf
+251845,ocd-bill/8022dadf-421d-405e-91c3-846cbf5c071c,HB 643,2026RS,Current/Final,,application/pdf,new,,,251844,Introduced,,application/pdf
+252004,ocd-bill/b0574ddf-a493-4124-b3b8-dc435c10d902,HB 2,2026RS,Current/Final,,application/pdf,new,,,252002,Introduced,,application/pdf
+252003,ocd-bill/b0574ddf-a493-4124-b3b8-dc435c10d902,HB 2,2026RS,Acts Chapter 179,,application/pdf,corrected,252002,252002,252004,Current/Final,,application/pdf
+251873,ocd-bill/5b8cfc16-d955-4f90-9aa6-ae090ff55f76,SB 5,2026RS,Current/Final,,application/pdf,new,,,251871,Introduced,,application/pdf
+252174,ocd-bill/9de03ad5-73dc-4fa7-80f0-407c2da81d11,HB 682,2026RS,Current/Final,,application/pdf,new,,,252173,Introduced,,application/pdf
+252068,ocd-bill/74a610f9-83d5-4dfa-886a-b6d58e064bff,SB 56,2026RS,Current/Final,,application/pdf,new,,,252067,Introduced,,application/pdf
+250930,ocd-bill/949bd5a0-4d66-484d-9d3e-1575b73df2cd,HR 1,2026RS,Current/Final,,application/pdf,new,,,250928,Introduced,,application/pdf
+252941,ocd-bill/c09829b1-5c5c-4aa5-8ad2-1ca57c3831ef,SR 128,2026RS,Current/Final,,application/pdf,new,,,252940,Introduced,,application/pdf
+252638,ocd-bill/0b9dada7-c4be-4b57-adaf-91953ea3da67,SR 255,2026RS,Current/Final,,application/pdf,new,,,252637,Introduced,,application/pdf
+249979,ocd-bill/3af214fd-507b-42a0-8e7f-206951909e70,SR 173,2026RS,Current/Final,,application/pdf,new,,,249977,Introduced,,application/pdf
+253111,ocd-bill/c966b47b-a3da-4a45-b2a6-3a10c1fb1645,HB 380,2026RS,Current/Final,,application/pdf,new,,,253110,Introduced,,application/pdf
+252397,ocd-bill/bdb82322-00ea-440d-a303-0162a326fcc5,SR 216,2026RS,Current/Final,,application/pdf,new,,,252396,Introduced,,application/pdf
+249779,ocd-bill/ceeeae2b-c5e6-4fc5-ae52-a93ab457bc04,SR 83,2026RS,Current/Final,,application/pdf,new,,,249777,Introduced,,application/pdf
+251015,ocd-bill/99843ba1-5359-4667-9d62-8aea9c235e48,SB 154,2026RS,Current/Final,,application/pdf,new,,,251013,Introduced,,application/pdf
+252908,ocd-bill/c9103552-6098-426c-a1c8-0c48a94233c3,SR 192,2026RS,Current/Final,,application/pdf,new,,,252907,Introduced,,application/pdf
+253105,ocd-bill/d22915a5-f3e7-48c9-b0b1-b074aba28d1c,SB 226,2026RS,Current/Final,,application/pdf,new,,,253103,Introduced,,application/pdf
+253104,ocd-bill/d22915a5-f3e7-48c9-b0b1-b074aba28d1c,SB 226,2026RS,Acts Chapter 88,,application/pdf,unchanged,253103,253103;253105,253105,Current/Final,,application/pdf
+252705,ocd-bill/21143a63-f21c-4995-a89c-e235766d4a2f,SB 45,2026RS,Current/Final,,application/pdf,new,,,252704,Introduced,,application/pdf
+249971,ocd-bill/3f74367a-5b7d-4bbc-a16c-e4a0562e114b,HB 44,2026RS,Current/Final,,application/pdf,new,,,249969,Introduced,,application/pdf
+251304,ocd-bill/7b124721-6ef9-42c5-bee1-a15a17834141,SB 69,2026RS,Current/Final,,application/pdf,new,,,251300,Introduced,,application/pdf
+251302,ocd-bill/7b124721-6ef9-42c5-bee1-a15a17834141,SB 69,2026RS,Acts Chapter 19,,application/pdf,corrected,251300,251300,251304,Current/Final,,application/pdf
+253223,ocd-bill/9227dcd7-12ae-479e-88db-e91b79cce702,SR 89,2026RS,Current/Final,,application/pdf,new,,,253222,Introduced,,application/pdf
+252014,ocd-bill/1951aa0e-70bd-4d12-a85c-ed35e4da34bb,SR 38,2026RS,Current/Final,,application/pdf,new,,,252013,Introduced,,application/pdf
+251907,ocd-bill/c2fceaef-1307-416e-b674-573af6cba1c9,HB 185,2026RS,Current/Final,,application/pdf,new,,,251905,Introduced,,application/pdf
+251906,ocd-bill/c2fceaef-1307-416e-b674-573af6cba1c9,HB 185,2026RS,Acts Chapter 72,,application/pdf,corrected,251905,251905,251907,Current/Final,,application/pdf
+250734,ocd-bill/8eca7ac7-65d1-4448-9314-3306bf77aa91,HB 398,2026RS,Current/Final,,application/pdf,new,,,250730,Introduced,,application/pdf
+250732,ocd-bill/8eca7ac7-65d1-4448-9314-3306bf77aa91,HB 398,2026RS,Acts Chapter 95,,application/pdf,corrected,250730,250730,250734,Current/Final,,application/pdf
+251847,ocd-bill/5f8dc089-c12d-4333-936f-eb0b9d6054b5,SR 202,2026RS,Current/Final,,application/pdf,new,,,251846,Introduced,,application/pdf
+250115,ocd-bill/0bb1c3c6-1cdf-4c14-ac8b-26ec314e949b,SR 212,2026RS,Current/Final,,application/pdf,new,,,250113,Introduced,,application/pdf
+249967,ocd-bill/3523b40a-0866-4e8d-9e29-354d9ea8409a,SB 291,2026RS,Current/Final,,application/pdf,new,,,249963,Introduced,,application/pdf
+249965,ocd-bill/3523b40a-0866-4e8d-9e29-354d9ea8409a,SB 291,2026RS,Acts Chapter 182,,application/pdf,corrected,249963,249963,249967,Current/Final,,application/pdf
+252947,ocd-bill/c7041399-6e4a-4810-818a-ed291cb6247a,SR 256,2026RS,Current/Final,,application/pdf,new,,,252946,Introduced,,application/pdf
+252307,ocd-bill/8f2c380e-029d-4d4f-ab6f-bc116d6c661d,HB 264,2026RS,Current/Final,,application/pdf,new,,,252305,Introduced,,application/pdf
+252306,ocd-bill/8f2c380e-029d-4d4f-ab6f-bc116d6c661d,HB 264,2026RS,Acts Chapter 106,,application/pdf,corrected,252305,252305,252307,Current/Final,,application/pdf
+252367,ocd-bill/8fe591f3-c687-49b6-a5e7-f1ffde14f7eb,SR 276,2026RS,Current/Final,,application/pdf,new,,,252366,Introduced,,application/pdf
+251976,ocd-bill/f55f06a2-2525-4a2a-961c-26edb3a286ea,SR 168,2026RS,Current/Final,,application/pdf,new,,,251975,Introduced,,application/pdf
+252269,ocd-bill/5fdbf155-139e-413a-9aa4-71974223be5f,SB 13,2026RS,Current/Final,,application/pdf,new,,,252268,Introduced,,application/pdf
+253100,ocd-bill/0520abd1-7dbe-455f-b86f-5d3b2b4b1dba,SB 2,2026RS,Current/Final,,application/pdf,new,,,253098,Introduced,,application/pdf
+253099,ocd-bill/0520abd1-7dbe-455f-b86f-5d3b2b4b1dba,SB 2,2026RS,Acts Chapter 9,,application/pdf,corrected,253098,253098,253100,Current/Final,,application/pdf
+252085,ocd-bill/9ad6034b-5ff0-4cb8-9daf-b0a61180e219,SB 8,2026RS,Current/Final,,application/pdf,new,,,252083,Introduced,,application/pdf
+252084,ocd-bill/9ad6034b-5ff0-4cb8-9daf-b0a61180e219,SB 8,2026RS,Acts Chapter 185,,application/pdf,corrected,252083,252083,252085,Current/Final,,application/pdf
+251512,ocd-bill/1ff4e8ab-0ec1-423d-a6f1-03aff9a29b81,SR 118,2026RS,Current/Final,,application/pdf,new,,,251510,Introduced,,application/pdf
+252839,ocd-bill/aa58edfb-f0f2-44ad-9bed-292ac247f7f8,SB 289,2026RS,Current/Final,,application/pdf,new,,,252838,Introduced,,application/pdf
+252963,ocd-bill/4be13c6e-be1c-40e3-a015-fda21f99fe8b,SR 80,2026RS,Current/Final,,application/pdf,new,,,252962,Introduced,,application/pdf
+252220,ocd-bill/a10fd85d-75d4-429f-911e-6222f65cda44,SR 148,2026RS,Current/Final,,application/pdf,new,,,252219,Introduced,,application/pdf
+252678,ocd-bill/158b433e-47ff-465e-80c4-5cf63fbbff08,HR 124,2026RS,Current/Final,,application/pdf,new,,,252677,Introduced,,application/pdf
+252818,ocd-bill/afab5863-fa59-49a4-acbf-73fe2ee6158c,SR 71,2026RS,Current/Final,,application/pdf,new,,,252817,Introduced,,application/pdf
+250644,ocd-bill/e0859efa-dd9a-4796-bb87-6b6bedd4464b,HB 571,2026RS,Current/Final,,application/pdf,new,,,250639,Introduced,,application/pdf
+252993,ocd-bill/5228aaa1-7d12-41f1-8b7f-f0fd1e071cb6,SR 303,2026RS,Current/Final,,application/pdf,new,,,252992,Introduced,,application/pdf
+253262,ocd-bill/b849ca02-11db-4751-b342-9fc4665f488b,SR 206,2026RS,Current/Final,,application/pdf,new,,,253261,Introduced,,application/pdf
+253246,ocd-bill/a05a9a41-5a8e-4ed8-853f-be5499d14505,HB 424,2026RS,Current/Final,,application/pdf,new,,,253244,Introduced,,application/pdf
+253245,ocd-bill/a05a9a41-5a8e-4ed8-853f-be5499d14505,HB 424,2026RS,Acts Chapter 77,,application/pdf,corrected,253244,253244,253246,Current/Final,,application/pdf
+253167,ocd-bill/3082b0dd-be3f-4b51-a9b5-8a3f43b99ebf,HB 713,2026RS,Current/Final,,application/pdf,new,,,253166,Introduced,,application/pdf
+252826,ocd-bill/2b003947-42e6-4546-b496-ad323fef2dcd,SB 73,2026RS,Current/Final,,application/pdf,new,,,252824,Introduced,,application/pdf
+252825,ocd-bill/2b003947-42e6-4546-b496-ad323fef2dcd,SB 73,2026RS,Acts Chapter 52,,application/pdf,corrected,252824,252824,252826,Current/Final,,application/pdf
+253131,ocd-bill/563d2a74-ae2f-4c99-8c50-8e48a2c1b97a,SR 81,2026RS,Current/Final,,application/pdf,new,,,253130,Introduced,,application/pdf
+250870,ocd-bill/302d6a4d-b711-40df-be7b-378c251b2b73,HB 776,2026RS,Current/Final,,application/pdf,new,,,250866,Introduced,,application/pdf
+250868,ocd-bill/302d6a4d-b711-40df-be7b-378c251b2b73,HB 776,2026RS,Acts Chapter 131,,application/pdf,corrected,250866,250866,250870,Current/Final,,application/pdf
+251983,ocd-bill/6b06ac9a-27d4-4449-9e24-f5174502c457,HB 469,2026RS,Current/Final,,application/pdf,new,,,251982,Introduced,,application/pdf
+250794,ocd-bill/4431e124-7d99-465c-87ed-9d3eb47118d8,SR 195,2026RS,Current/Final,,application/pdf,new,,,250791,Introduced,,application/pdf
+249911,ocd-bill/e2842019-6ea1-4762-9977-98cfada8f5a0,SR 179,2026RS,Current/Final,,application/pdf,new,,,249909,Introduced,,application/pdf
+253013,ocd-bill/d3e9f8ca-8224-44de-b5d4-2f5a06ce8bf1,HB 851,2026RS,Current/Final,,application/pdf,new,,,253012,Introduced,,application/pdf
+251202,ocd-bill/57b0d272-9c60-4ff9-b986-8950054e906c,HJR 81,2026RS,Current/Final,,application/pdf,new,,,251198,Introduced,,application/pdf
+251200,ocd-bill/57b0d272-9c60-4ff9-b986-8950054e906c,HJR 81,2026RS,Acts Chapter 190,,application/pdf,corrected,251198,251198,251202,Current/Final,,application/pdf
+252058,ocd-bill/057ae454-1416-4d55-b8d4-f03419b370af,HB 436,2026RS,Current/Final,,application/pdf,new,,,252056,Introduced,,application/pdf
+253073,ocd-bill/1830e89b-ae38-4ed3-acd1-203868cfa42f,SR 47,2026RS,Current/Final,,application/pdf,new,,,253072,Introduced,,application/pdf
+253150,ocd-bill/6f87bc8f-fa6d-4f53-872b-791f127a56f6,HB 313,2026RS,Current/Final,,application/pdf,new,,,253148,Introduced,,application/pdf
+252278,ocd-bill/a1929a7f-af0a-48ae-9a76-73fa05c4d756,HB 565,2026RS,Current/Final,,application/pdf,new,,,252276,Introduced,,application/pdf
+252489,ocd-bill/19201bec-12bd-4062-a3dc-98f5a36d928e,SB 80,2026RS,Current/Final,,application/pdf,new,,,252488,Introduced,,application/pdf
+250614,ocd-bill/bc1216f2-cf4e-42d6-bbd3-289180485368,HJR 25,2026RS,Current/Final,,application/pdf,new,,,250612,Introduced,,application/pdf
+251987,ocd-bill/3b6053f4-ab1b-49aa-b064-6fc11d823bb1,SR 152,2026RS,Current/Final,,application/pdf,new,,,251986,Introduced,,application/pdf
+250806,ocd-bill/e70f2231-be8c-4744-b622-3af3a62d2a33,SB 158,2026RS,Current/Final,,application/pdf,new,,,250802,Introduced,,application/pdf
+250804,ocd-bill/e70f2231-be8c-4744-b622-3af3a62d2a33,SB 158,2026RS,Acts Chapter 16,,application/pdf,corrected,250802,250802,250806,Current/Final,,application/pdf
+253251,ocd-bill/b8bc14c5-3d4c-4766-adcb-75bf6372e41f,SB 27,2026RS,Current/Final,,application/pdf,new,,,253249,Introduced,,application/pdf
+251737,ocd-bill/eefedc1e-7284-415e-95b5-45b2e1980e07,HR 140,2026RS,Current/Final,,application/pdf,new,,,251736,Introduced,,application/pdf
+250846,ocd-bill/9b8c92c3-cbf9-46af-9b3e-56c6901270c5,HB 577,2026RS,Current/Final,,application/pdf,new,,,250841,Introduced,,application/pdf
+250843,ocd-bill/9b8c92c3-cbf9-46af-9b3e-56c6901270c5,HB 577,2026RS,Acts Chapter 114,,application/pdf,corrected,250841,250841,250846,Current/Final,,application/pdf
+252295,ocd-bill/edc39bd5-cdf9-49aa-ba73-8ca51cfd686a,SR 137,2026RS,Current/Final,,application/pdf,new,,,252294,Introduced,,application/pdf
+249775,ocd-bill/3f480ee8-bb89-49f3-8413-8f709198d5b5,HB 56,2026RS,Current/Final,,application/pdf,new,,,249762,Introduced,,application/pdf
+249774,ocd-bill/3f480ee8-bb89-49f3-8413-8f709198d5b5,HB 56,2026RS,Acts Chapter 23,,application/pdf,corrected,249762,249762,249775,Current/Final,,application/pdf
+251628,ocd-bill/148a08e3-84ec-4e7e-b12a-39d72bca2efd,HB 45,2026RS,Current/Final,,application/pdf,new,,,251624,Introduced,,application/pdf
+251626,ocd-bill/148a08e3-84ec-4e7e-b12a-39d72bca2efd,HB 45,2026RS,Acts Chapter 21,,application/pdf,unchanged,251624,251624;251628,251628,Current/Final,,application/pdf
+249791,ocd-bill/8e660676-58ec-47fd-a9c4-eaf460a1103d,HB 92,2026RS,Current/Final,,application/pdf,new,,,249789,Introduced,,application/pdf
+250766,ocd-bill/06fed00e-be6f-49fe-83af-4b3666f3e958,HJR 77,2026RS,Current/Final,,application/pdf,new,,,250764,Introduced,,application/pdf
+252689,ocd-bill/961cdcab-e95c-4b1d-8aee-9c294dee53d9,SR 217,2026RS,Current/Final,,application/pdf,new,,,252688,Introduced,,application/pdf
+253175,ocd-bill/b7c39386-ea84-4fad-86d5-5ddf70e13d0b,HB 534,2026RS,Current/Final,,application/pdf,new,,,253174,Introduced,,application/pdf
+252212,ocd-bill/6fe819f2-5f38-4a80-a66b-30a54e994bf1,HB 265,2026RS,Current/Final,,application/pdf,new,,,252210,Introduced,,application/pdf
+252211,ocd-bill/6fe819f2-5f38-4a80-a66b-30a54e994bf1,HB 265,2026RS,Acts Chapter 84,,application/pdf,corrected,252210,252210,252212,Current/Final,,application/pdf
+251979,ocd-bill/3c68c5e1-ab95-4636-b214-f7552e758d13,HB 667,2026RS,Current/Final,,application/pdf,new,,,251978,Introduced,,application/pdf
+251164,ocd-bill/5c691694-3154-4ca5-8440-be52375d3424,HB 169,2026RS,Current/Final,,application/pdf,new,,,251160,Introduced,,application/pdf
+251162,ocd-bill/5c691694-3154-4ca5-8440-be52375d3424,HB 169,2026RS,Acts Chapter 101,,application/pdf,corrected,251160,251160,251164,Current/Final,,application/pdf
+251360,ocd-bill/6a733bae-62fb-48d8-951c-f92cbf72617e,HB 470,2026RS,Current/Final,,application/pdf,new,,,251356,Introduced,,application/pdf
+251358,ocd-bill/6a733bae-62fb-48d8-951c-f92cbf72617e,HB 470,2026RS,Acts Chapter 80,,application/pdf,corrected,251356,251356,251360,Current/Final,,application/pdf
+252033,ocd-bill/e7361ca9-a6da-4237-babc-abb7dd9b5e32,HB 569,2026RS,Current/Final,,application/pdf,new,,,252032,Introduced,,application/pdf
+252152,ocd-bill/036bc1d0-7b9a-48e4-8b1f-73f2cf62e1af,HR 119,2026RS,Current/Final,,application/pdf,new,,,252151,Introduced,,application/pdf
+253005,ocd-bill/8b6e43b9-01ac-4322-9b78-cc8d20cd25d7,SB 18,2026RS,Current/Final,,application/pdf,new,,,253003,Introduced,,application/pdf
+253004,ocd-bill/8b6e43b9-01ac-4322-9b78-cc8d20cd25d7,SB 18,2026RS,Acts Chapter 85,,application/pdf,corrected,253003,253003,253005,Current/Final,,application/pdf
+252657,ocd-bill/82c63ee2-1473-4334-8859-e3035a1b4e6c,HB 188,2026RS,Current/Final,,application/pdf,new,,,252655,Introduced,,application/pdf
+252656,ocd-bill/82c63ee2-1473-4334-8859-e3035a1b4e6c,HB 188,2026RS,Acts Chapter 28,,application/pdf,corrected,252655,252655,252657,Current/Final,,application/pdf
+249989,ocd-bill/d1835a01-1daf-4089-86f2-b6db63a11912,SR 154,2026RS,Current/Final,,application/pdf,new,,,249987,Introduced,,application/pdf
+250141,ocd-bill/317cd6fc-8b31-4d7c-94e4-d3146cf03ae0,HB 586,2026RS,Current/Final,,application/pdf,new,,,250139,Introduced,,application/pdf
+251762,ocd-bill/c7eec305-706a-4860-98aa-4e2cd9983298,SB 263,2026RS,Current/Final,,application/pdf,new,,,251760,Introduced,,application/pdf
+251761,ocd-bill/c7eec305-706a-4860-98aa-4e2cd9983298,SB 263,2026RS,Acts Chapter 180,,application/pdf,corrected,251760,251760,251762,Current/Final,,application/pdf
+252523,ocd-bill/852f155e-ba37-4289-a319-943f5113a85f,SR 155,2026RS,Current/Final,,application/pdf,new,,,252522,Introduced,,application/pdf
+252836,ocd-bill/d40a2446-736a-4277-8188-0f8637a9754e,SR 271,2026RS,Current/Final,,application/pdf,new,,,252835,Introduced,,application/pdf
+252582,ocd-bill/c7921ffb-42a1-45f5-986b-3be4709a9c1e,SR 209,2026RS,Current/Final,,application/pdf,new,,,252581,Introduced,,application/pdf
+250514,ocd-bill/6bcd527d-8c8d-4d71-a56b-b20867809d95,SR 200,2026RS,Current/Final,,application/pdf,new,,,250512,Introduced,,application/pdf
+251214,ocd-bill/8fd2d041-452d-4072-8e16-a47d7ddc0d16,SR 28,2026RS,Current/Final,,application/pdf,new,,,251212,Introduced,,application/pdf
+253002,ocd-bill/54b359a5-0113-4bb5-91d9-21ae27dc5887,HB 683,2026RS,Current/Final,,application/pdf,new,,,253001,Introduced,,application/pdf
+252432,ocd-bill/ea0dc24e-da5e-4ec7-8981-af0c8a4fda9a,HJR 50,2026RS,Current/Final,,application/pdf,new,,,252430,Introduced,,application/pdf
+252431,ocd-bill/ea0dc24e-da5e-4ec7-8981-af0c8a4fda9a,HJR 50,2026RS,Acts Chapter 160,,application/pdf,unchanged,252430,252430;252432,252432,Current/Final,,application/pdf
+250825,ocd-bill/1bfdecd1-52ac-4eaa-9e7f-9ea3ac1bc42b,SB 33,2026RS,Current/Final,,application/pdf,new,,,250824,Introduced,,application/pdf
+251858,ocd-bill/5731b5bf-02bd-4e7b-81e6-fc93582f0f9b,HR 55,2026RS,Current/Final,,application/pdf,new,,,251857,Introduced,,application/pdf
+251574,ocd-bill/cdaa42f1-b495-4308-b345-5e74a087f04d,HB 314,2026RS,Current/Final,,application/pdf,new,,,251570,Introduced,,application/pdf
+251572,ocd-bill/cdaa42f1-b495-4308-b345-5e74a087f04d,HB 314,2026RS,Acts Chapter 2,,application/pdf,corrected,251570,251570,251574,Current/Final,,application/pdf
+251766,ocd-bill/ddeba8c0-3c86-457e-89b9-74a1e003ca8c,SB 17,2026RS,Current/Final,,application/pdf,new,,,251764,Introduced,,application/pdf
+251765,ocd-bill/ddeba8c0-3c86-457e-89b9-74a1e003ca8c,SB 17,2026RS,Acts Chapter 53,,application/pdf,corrected,251764,251764,251766,Current/Final,,application/pdf
+252236,ocd-bill/ffbca67a-31fa-4d8e-9526-f5dde90bef92,SB 189,2026RS,Current/Final,,application/pdf,new,,,252234,Introduced,,application/pdf
+252235,ocd-bill/ffbca67a-31fa-4d8e-9526-f5dde90bef92,SB 189,2026RS,Acts Chapter 126,,application/pdf,corrected,252234,252234,252236,Current/Final,,application/pdf
+252683,ocd-bill/60ae090f-f444-4fc4-8765-74e9e26e8ace,HB 566,2026RS,Current/Final,,application/pdf,new,,,252681,Introduced,,application/pdf
+252682,ocd-bill/60ae090f-f444-4fc4-8765-74e9e26e8ace,HB 566,2026RS,Acts Chapter 113,,application/pdf,corrected,252681,252681,252683,Current/Final,,application/pdf
+252078,ocd-bill/17532cdd-2129-4f4d-8a70-7e825981d420,HB 248,2026RS,Current/Final,,application/pdf,new,,,252077,Introduced,,application/pdf
+252965,ocd-bill/cbba2742-b71f-4628-ba42-8cd65630e493,SR 258,2026RS,Current/Final,,application/pdf,new,,,252964,Introduced,,application/pdf
+252749,ocd-bill/98a23807-20c0-4287-9f91-f868177e9265,SR 24,2026RS,Current/Final,,application/pdf,new,,,252748,Introduced,,application/pdf
+250818,ocd-bill/9283490f-9a9d-4cf3-8cc9-cf73ae7bb833,HR 131,2026RS,Current/Final,,application/pdf,new,,,250816,Introduced,,application/pdf
+252772,ocd-bill/1ba76062-d144-42bd-aee6-86592efce961,SR 141,2026RS,Current/Final,,application/pdf,new,,,252771,Introduced,,application/pdf
+253205,ocd-bill/1efc7275-35d2-4f61-92b0-872190e023fa,SR 249,2026RS,Current/Final,,application/pdf,new,,,253204,Introduced,,application/pdf
+251966,ocd-bill/e15abfe5-0453-43c4-a726-8908f8ec092e,SB 94,2026RS,Current/Final,,application/pdf,new,,,251965,Introduced,,application/pdf
+251949,ocd-bill/2d445a20-bf90-4354-a70b-71b4dabc1a9b,SB 19,2026RS,Current/Final,,application/pdf,new,,,251947,Introduced,,application/pdf
+252512,ocd-bill/fdbea2cf-4805-49bd-aed7-a3f987e4983d,SR 207,2026RS,Current/Final,,application/pdf,new,,,252511,Introduced,,application/pdf
+249813,ocd-bill/672656ce-8611-4f63-ace9-2283901e898b,SR 86,2026RS,Current/Final,,application/pdf,new,,,249811,Introduced,,application/pdf
+251886,ocd-bill/c379e1fa-6fda-4075-bff7-34685cdc4867,SR 6,2026RS,Current/Final,,application/pdf,new,,,251885,Introduced,,application/pdf
+252224,ocd-bill/c8bb36cb-83b8-4689-95c2-80f366598e41,HB 677,2026RS,Current/Final,,application/pdf,new,,,252222,Introduced,,application/pdf
+252223,ocd-bill/c8bb36cb-83b8-4689-95c2-80f366598e41,HB 677,2026RS,Acts Chapter 152,,application/pdf,corrected,252222,252222,252224,Current/Final,,application/pdf
+251469,ocd-bill/f1d27c7b-2468-44f9-86ac-708c63b8ba27,HB 567,2026RS,Current/Final,,application/pdf,new,,,251468,Introduced,,application/pdf
+251285,ocd-bill/05f09d7c-d1b9-4f0c-9b64-8a90ca2cb903,HB 393,2026RS,Current/Final,,application/pdf,new,,,251282,Introduced,,application/pdf
+251283,ocd-bill/05f09d7c-d1b9-4f0c-9b64-8a90ca2cb903,HB 393,2026RS,Acts Chapter 40,,application/pdf,unchanged,251282,251282;251285,251285,Current/Final,,application/pdf
+252168,ocd-bill/d952ad50-57a1-4680-8380-80272de566bb,HB 34,2026RS,Current/Final,,application/pdf,new,,,252167,Introduced,,application/pdf
+252906,ocd-bill/94ab8a77-203c-4053-a5a3-f31efc078c24,HB 364,2026RS,Current/Final,,application/pdf,new,,,252905,Introduced,,application/pdf
+251674,ocd-bill/fe79a43c-19a1-48d4-8681-c96a4cc29c72,HB 306,2026RS,Current/Final,,application/pdf,new,,,251671,Introduced,,application/pdf
+251322,ocd-bill/f74703b6-4817-4007-8e7c-b33197dbe081,SR 245,2026RS,Current/Final,,application/pdf,new,,,251319,Introduced,,application/pdf
+252103,ocd-bill/bfe99190-8620-44f2-a7d5-f53d0cdae1a9,HB 593,2026RS,Current/Final,,application/pdf,new,,,252102,Introduced,,application/pdf
+250552,ocd-bill/b3195452-9219-404a-9709-3a2d768166f7,HB 389,2026RS,Current/Final,,application/pdf,new,,,250550,Introduced,,application/pdf
+250021,ocd-bill/bea8b989-3058-45f5-bb1b-33cc5456596d,HB 652,2026RS,Current/Final,,application/pdf,new,,,250017,Introduced,,application/pdf
+250019,ocd-bill/bea8b989-3058-45f5-bb1b-33cc5456596d,HB 652,2026RS,Acts Chapter 163,,application/pdf,corrected,250017,250017,250021,Current/Final,,application/pdf
+252240,ocd-bill/6dfe85ae-2a6f-4433-b78e-9e169f3967b1,HB 542,2026RS,Current/Final,,application/pdf,new,,,252238,Introduced,,application/pdf
+252239,ocd-bill/6dfe85ae-2a6f-4433-b78e-9e169f3967b1,HB 542,2026RS,Acts Chapter 112,,application/pdf,corrected,252238,252238,252240,Current/Final,,application/pdf
+253159,ocd-bill/186aa921-b5d0-4be8-9c16-ac03857424ef,SR 186,2026RS,Current/Final,,application/pdf,new,,,253158,Introduced,,application/pdf
+251817,ocd-bill/8d985fd0-a538-41d0-b312-f5a5a701d319,SJR 139,2026RS,Current/Final,,application/pdf,new,,,251815,Introduced,,application/pdf
+251816,ocd-bill/8d985fd0-a538-41d0-b312-f5a5a701d319,SJR 139,2026RS,Acts Chapter 140,,application/pdf,corrected,251815,251815,251817,Current/Final,,application/pdf
+252006,ocd-bill/ed8cdbdc-26a6-4a4f-94d9-e130d9e291db,SR 267,2026RS,Current/Final,,application/pdf,new,,,252005,Introduced,,application/pdf
+250009,ocd-bill/49c66e76-062b-49f2-9b64-8f9e78360889,HB 781,2026RS,Current/Final,,application/pdf,new,,,250005,Introduced,,application/pdf
+250007,ocd-bill/49c66e76-062b-49f2-9b64-8f9e78360889,HB 781,2026RS,Acts Chapter 58,,application/pdf,corrected,250005,250005,250009,Current/Final,,application/pdf
+250035,ocd-bill/8c65e66c-7957-4bb2-92cc-b37140b5b1cc,SR 182,2026RS,Current/Final,,application/pdf,new,,,250033,Introduced,,application/pdf
+250602,ocd-bill/4af0534a-624b-437b-b728-9a2f28f1135b,HB 607,2026RS,Current/Final,,application/pdf,new,,,250598,Introduced,,application/pdf
+250600,ocd-bill/4af0534a-624b-437b-b728-9a2f28f1135b,HB 607,2026RS,Acts Chapter 165,,application/pdf,corrected,250598,250598,250602,Current/Final,,application/pdf
+251870,ocd-bill/db4e154f-699a-4df5-9b7d-b6ea3da82cd8,SR 181,2026RS,Current/Final,,application/pdf,new,,,251869,Introduced,,application/pdf
+251598,ocd-bill/6c1f7b8c-3a9a-487c-bcb5-f0d8a65303bc,HB 388,2026RS,Current/Final,,application/pdf,new,,,251594,Introduced,,application/pdf
+251596,ocd-bill/6c1f7b8c-3a9a-487c-bcb5-f0d8a65303bc,HB 388,2026RS,Acts Chapter 38,,application/pdf,corrected,251594,251594,251598,Current/Final,,application/pdf
+252191,ocd-bill/0222295a-00d0-4e75-85ff-e00ca70415c4,SR 178,2026RS,Current/Final,,application/pdf,new,,,252190,Introduced,,application/pdf
+252900,ocd-bill/af4e1465-a36d-446e-a7b3-95baa7de4788,HB 600,2026RS,Current/Final,,application/pdf,new,,,252898,Introduced,,application/pdf
+252899,ocd-bill/af4e1465-a36d-446e-a7b3-95baa7de4788,HB 600,2026RS,Acts Chapter 48,,application/pdf,unchanged,252898,252898;252900,252900,Current/Final,,application/pdf
+252934,ocd-bill/15f87092-2ca6-4506-a106-d5961e2d5aec,SB 57,2026RS,Current/Final,,application/pdf,new,,,252932,Introduced,,application/pdf
+252933,ocd-bill/15f87092-2ca6-4506-a106-d5961e2d5aec,SB 57,2026RS,Acts Chapter 56,,application/pdf,corrected,252932,252932,252934,Current/Final,,application/pdf
+252811,ocd-bill/1ea94eb7-80e8-430c-9751-1ed029cfe9dd,SB 137,2026RS,Current/Final,,application/pdf,new,,,252809,Introduced,,application/pdf
+252810,ocd-bill/1ea94eb7-80e8-430c-9751-1ed029cfe9dd,SB 137,2026RS,Acts Chapter 89,,application/pdf,corrected,252809,252809,252811,Current/Final,,application/pdf
+253041,ocd-bill/3955640c-d59c-4dba-9030-35b1b4ff1c9a,SB 68,2026RS,Current/Final,,application/pdf,new,,,253039,Introduced,,application/pdf
+253040,ocd-bill/3955640c-d59c-4dba-9030-35b1b4ff1c9a,SB 68,2026RS,Acts Chapter 121,,application/pdf,corrected,253039,253039,253041,Current/Final,,application/pdf
+252387,ocd-bill/744b5d7c-1c25-499e-bdbd-cd2e210fc023,HB 555,2026RS,Current/Final,,application/pdf,new,,,252385,Introduced,,application/pdf
+252386,ocd-bill/744b5d7c-1c25-499e-bdbd-cd2e210fc023,HB 555,2026RS,Acts Chapter 81,,application/pdf,corrected,252385,252385,252387,Current/Final,,application/pdf
+250548,ocd-bill/ba24698b-db42-4554-8121-1da97d074efe,SR 5,2026RS,Current/Final,,application/pdf,new,,,250546,Introduced,,application/pdf
+252262,ocd-bill/9ab5c482-c7ac-490a-9230-00d7e2d842b1,HB 647,2026RS,Current/Final,,application/pdf,new,,,252260,Introduced,,application/pdf
+252261,ocd-bill/9ab5c482-c7ac-490a-9230-00d7e2d842b1,HB 647,2026RS,Acts Chapter 115,,application/pdf,corrected,252260,252260,252262,Current/Final,,application/pdf
+251912,ocd-bill/5f592c59-9686-41f9-af88-0b4c317626c5,HB 889,2026RS,Current/Final,,application/pdf,new,,,251911,Introduced,,application/pdf
+252248,ocd-bill/f4796de3-8537-4627-b1e6-619a1e83b8c3,SR 239,2026RS,Current/Final,,application/pdf,new,,,252247,Introduced,,application/pdf
+251566,ocd-bill/2289f4f6-3a21-46d8-abdd-167c64a55a01,SR 263,2026RS,Current/Final,,application/pdf,new,,,251564,Introduced,,application/pdf
+250762,ocd-bill/8d6bd903-db3a-4a62-8963-5fc0bd0c89ec,HB 662,2026RS,Current/Final,,application/pdf,new,,,250760,Introduced,,application/pdf
+251024,ocd-bill/7a4e785d-bbed-4994-b9e4-13b677ed4f4a,HB 541,2026RS,Current/Final,,application/pdf,new,,,251021,Introduced,,application/pdf
+252127,ocd-bill/1b317e78-34b8-4572-b1e9-7230b49c98ff,SR 114,2026RS,Current/Final,,application/pdf,new,,,252126,Introduced,,application/pdf
+252877,ocd-bill/63416694-dcae-4bfb-beaf-ddab6fb78900,SB 147,2026RS,Current/Final,,application/pdf,new,,,252876,Introduced,,application/pdf
+251743,ocd-bill/291bc632-589c-4c41-ba0b-04fa45274a5f,SR 18,2026RS,Current/Final,,application/pdf,new,,,251742,Introduced,,application/pdf
+250285,ocd-bill/0530ea15-82ca-412c-bf48-271bd2925c93,HR 31,2026RS,Current/Final,,application/pdf,new,,,250284,Introduced,,application/pdf
+250898,ocd-bill/e921b7ee-9d9c-4127-935c-10da5c5af2ee,SR 36,2026RS,Current/Final,,application/pdf,new,,,250896,Introduced,,application/pdf
+252776,ocd-bill/35701f6e-7fbd-4ace-b2db-f236d42bb41c,SR 166,2026RS,Current/Final,,application/pdf,new,,,252775,Introduced,,application/pdf
+251909,ocd-bill/679c0eb5-e635-44d8-aa65-63dd7354ca64,SR 225,2026RS,Current/Final,,application/pdf,new,,,251908,Introduced,,application/pdf
+252199,ocd-bill/e1a6f08f-8bf8-41e4-ad22-5970bddb866d,HJR 75,2026RS,Current/Final,,application/pdf,new,,,252197,Introduced,,application/pdf
+252198,ocd-bill/e1a6f08f-8bf8-41e4-ad22-5970bddb866d,HJR 75,2026RS,Acts Chapter 144,,application/pdf,corrected,252197,252197,252199,Current/Final,,application/pdf
+250584,ocd-bill/1ddc9a17-bdd9-483a-9195-f835b3fac315,SR 188,2026RS,Current/Final,,application/pdf,new,,,250582,Introduced,,application/pdf
+251141,ocd-bill/6cb34b32-7f13-466b-af65-2d3b2356aeb9,SR 254,2026RS,Current/Final,,application/pdf,new,,,251140,Introduced,,application/pdf
+252110,ocd-bill/e0ea69fd-050f-4480-8b0a-e42bc1911850,HB 236,2026RS,Current/Final,,application/pdf,new,,,252108,Introduced,,application/pdf
+252109,ocd-bill/e0ea69fd-050f-4480-8b0a-e42bc1911850,HB 236,2026RS,Acts Chapter 105,,application/pdf,corrected,252108,252108,252110,Current/Final,,application/pdf
+251050,ocd-bill/09617d72-752a-41d6-905c-073269a2adf0,HB 676,2026RS,Current/Final,,application/pdf,new,,,251046,Introduced,,application/pdf
+251334,ocd-bill/5a015e2e-4727-41ab-8529-277fcb3e0edd,SB 185,2026RS,Current/Final,,application/pdf,new,,,251330,Introduced,,application/pdf
+251332,ocd-bill/5a015e2e-4727-41ab-8529-277fcb3e0edd,SB 185,2026RS,Acts Chapter 120,,application/pdf,corrected,251330,251330,251334,Current/Final,,application/pdf
+250311,ocd-bill/ba01ab29-f160-4dba-861e-d336d02a0476,HR 43,2026RS,Current/Final,,application/pdf,new,,,250310,Introduced,,application/pdf
+253077,ocd-bill/ebc7c710-2210-4fc4-bc51-a52bb23a5a3c,SR 174,2026RS,Current/Final,,application/pdf,new,,,253076,Introduced,,application/pdf
+252361,ocd-bill/7c601dc9-1c50-44fe-862d-6df0b46aa361,SB 6,2026RS,Current/Final,,application/pdf,new,,,252360,Introduced,,application/pdf
+252518,ocd-bill/e8b8dde4-b1b8-47e2-b57f-0b8f9e99c26c,HCR 67,2026RS,Current/Final,,application/pdf,new,,,252517,Introduced,,application/pdf
+252556,ocd-bill/bda84ff3-76c9-423c-9d86-6eb256295249,HB 282,2026RS,Current/Final,,application/pdf,new,,,252555,Introduced,,application/pdf
+250399,ocd-bill/ecae275d-246e-4a9e-aa24-c2bc7b2b10f5,HB 58,2026RS,Current/Final,,application/pdf,new,,,250396,Introduced,,application/pdf
+250398,ocd-bill/ecae275d-246e-4a9e-aa24-c2bc7b2b10f5,HB 58,2026RS,Acts Chapter 71,,application/pdf,corrected,250396,250396,250399,Current/Final,,application/pdf
+252384,ocd-bill/9e72791d-825d-4706-a52d-e5bcfd7c16a6,SB 101,2026RS,Current/Final,,application/pdf,new,,,252382,Introduced,,application/pdf
+252383,ocd-bill/9e72791d-825d-4706-a52d-e5bcfd7c16a6,SB 101,2026RS,Acts Chapter 50,,application/pdf,corrected,252382,252382,252384,Current/Final,,application/pdf
+252702,ocd-bill/941db5f2-4b73-4873-8c8a-67a07a1ea60c,SB 133,2026RS,Current/Final,,application/pdf,new,,,252700,Introduced,,application/pdf
+252701,ocd-bill/941db5f2-4b73-4873-8c8a-67a07a1ea60c,SB 133,2026RS,Acts Chapter 199,,application/pdf,corrected,252700,252700,252702,Current/Final,,application/pdf
+250890,ocd-bill/3ae65233-60f6-4461-a29f-8cbd7f6c13cb,HB 78,2026RS,Current/Final,,application/pdf,new,,,250886,Introduced,,application/pdf
+250888,ocd-bill/3ae65233-60f6-4461-a29f-8cbd7f6c13cb,HB 78,2026RS,Acts Chapter 177,,application/pdf,corrected,250886,250886,250890,Current/Final,,application/pdf
+253120,ocd-bill/e9542b5c-401e-48c5-be39-e82eb7c60b10,SR 295,2026RS,Current/Final,,application/pdf,new,,,253119,Introduced,,application/pdf
+251040,ocd-bill/322df433-aba1-4b07-93ba-98e804a31883,SR 275,2026RS,Current/Final,,application/pdf,new,,,251038,Introduced,,application/pdf
+252976,ocd-bill/9634dbc4-7bd7-4a82-a675-1c63663caf10,SR 305,2026RS,Current/Final,,application/pdf,new,,,252975,Introduced,,application/pdf
+250293,ocd-bill/e347c138-dbbd-4b18-98aa-dff4b2ce9a9a,SR 285,2026RS,Current/Final,,application/pdf,new,,,250292,Introduced,,application/pdf
+252919,ocd-bill/0f554b3f-ec64-486a-9524-acdac58e7114,SR 78,2026RS,Current/Final,,application/pdf,new,,,252918,Introduced,,application/pdf
+253140,ocd-bill/4d88f02d-3fb9-4e9a-bcde-90b65e3561bb,SB 4,2026RS,Current/Final,,application/pdf,new,,,253138,Introduced,,application/pdf
+253139,ocd-bill/4d88f02d-3fb9-4e9a-bcde-90b65e3561bb,SB 4,2026RS,Acts Chapter 154,,application/pdf,corrected,253138,253138,253140,Current/Final,,application/pdf
+251622,ocd-bill/5831a3b8-d582-409d-bc3a-8d4f2bc245ad,SB 71,2026RS,Current/Final,,application/pdf,new,,,251619,Introduced,,application/pdf
+252649,ocd-bill/fbfef089-ac33-4f23-90f6-e8c204002826,SR 302,2026RS,Current/Final,,application/pdf,new,,,252648,Introduced,,application/pdf
+252096,ocd-bill/910989c6-4aee-4468-9ec3-c34c098c10b7,SB 160,2026RS,Current/Final,,application/pdf,new,,,252095,Introduced,,application/pdf
+250850,ocd-bill/67df1587-adfd-4cf4-ba89-6df09354f5e2,SR 288,2026RS,Current/Final,,application/pdf,new,,,250848,Introduced,,application/pdf
+251915,ocd-bill/178a00a8-12cd-4303-8f24-479e4e6921c0,SB 59,2026RS,Current/Final,,application/pdf,new,,,251913,Introduced,,application/pdf
+251914,ocd-bill/178a00a8-12cd-4303-8f24-479e4e6921c0,SB 59,2026RS,Acts Chapter 155,,application/pdf,corrected,251913,251913,251915,Current/Final,,application/pdf
+251530,ocd-bill/0cb79e22-035b-4503-a21c-160569b32c33,SR 42,2026RS,Current/Final,,application/pdf,new,,,251528,Introduced,,application/pdf
+252227,ocd-bill/0f36e584-e704-46af-8347-6cf0ff42c49e,SB 90,2026RS,Current/Final,,application/pdf,new,,,252225,Introduced,,application/pdf
+252226,ocd-bill/0f36e584-e704-46af-8347-6cf0ff42c49e,SB 90,2026RS,Acts Chapter 122,,application/pdf,corrected,252225,252225,252227,Current/Final,,application/pdf
+252155,ocd-bill/34e17396-6b5a-4058-b2f5-3e7c1a9d88e5,HB 521,2026RS,Current/Final,,application/pdf,new,,,252153,Introduced,,application/pdf
+252154,ocd-bill/34e17396-6b5a-4058-b2f5-3e7c1a9d88e5,HB 521,2026RS,Acts Chapter 67,,application/pdf,corrected,252153,252153,252155,Current/Final,,application/pdf
+250089,ocd-bill/5a5d359a-b404-47e7-8db8-feea7b7c90e5,SR 247,2026RS,Current/Final,,application/pdf,new,,,250087,Introduced,,application/pdf
+252483,ocd-bill/7063c8cf-6d29-4687-97eb-de3d68f91d36,SR 60,2026RS,Current/Final,,application/pdf,new,,,252482,Introduced,,application/pdf
+250726,ocd-bill/802ccfc5-cf4e-4d1c-b7f2-ff8360eefb7b,SR 218,2026RS,Current/Final,,application/pdf,new,,,250724,Introduced,,application/pdf
+251730,ocd-bill/ff2f3fc7-a561-4d49-b8f7-c0fdd799d565,SB 30,2026RS,Current/Final,,application/pdf,new,,,251726,Introduced,,application/pdf
+251728,ocd-bill/ff2f3fc7-a561-4d49-b8f7-c0fdd799d565,SB 30,2026RS,Acts Chapter 133,,application/pdf,corrected,251726,251726,251730,Current/Final,,application/pdf
+250249,ocd-bill/991a60be-137e-47aa-8dc3-985d10a06cf0,HB 506,2026RS,Current/Final,,application/pdf,new,,,250245,Introduced,,application/pdf
+250247,ocd-bill/991a60be-137e-47aa-8dc3-985d10a06cf0,HB 506,2026RS,Acts Chapter 148,,application/pdf,corrected,250245,250245,250249,Current/Final,,application/pdf
+253217,ocd-bill/1c28da51-7611-403f-a807-e2bb58f4cd53,HR 69,2026RS,Current/Final,,application/pdf,new,,,253216,Introduced,,application/pdf
+251012,ocd-bill/eab9ffff-302f-4eac-834b-38225bb12898,SB 1,2026RS,Current/Final,,application/pdf,new,,,251008,Introduced,,application/pdf
+251010,ocd-bill/eab9ffff-302f-4eac-834b-38225bb12898,SB 1,2026RS,Acts Chapter 153,,application/pdf,corrected,251008,251008,251012,Current/Final,,application/pdf
+251778,ocd-bill/3cd90224-10bb-4bde-a967-a06652e7c1d6,SB 225,2026RS,Current/Final,,application/pdf,new,,,251777,Introduced,,application/pdf
+251176,ocd-bill/9392fd5e-2b55-4e54-87e9-238795ab2f54,SR 33,2026RS,Current/Final,,application/pdf,new,,,251174,Introduced,,application/pdf
+251659,ocd-bill/6ea4f567-2100-450d-bd86-966359653472,SR 232,2026RS,Current/Final,,application/pdf,new,,,251658,Introduced,,application/pdf
+253136,ocd-bill/466b561a-859e-4870-8153-9f4a79afed68,SR 102,2026RS,Current/Final,,application/pdf,new,,,253135,Introduced,,application/pdf
+253290,ocd-bill/8a0cb34f-74e9-4e22-bd88-165392d5af2b,HB 504,2026RS,Current/Final,,application/pdf,new,,,253288,Introduced,,application/pdf
+253289,ocd-bill/8a0cb34f-74e9-4e22-bd88-165392d5af2b,HB 504,2026RS,Acts Chapter 183,,application/pdf,corrected,253288,253288,253290,Current/Final,,application/pdf
+251822,ocd-bill/224f486e-8a46-4e97-8f50-79fb7b39902a,SR 281,2026RS,Current/Final,,application/pdf,new,,,251821,Introduced,,application/pdf
+252019,ocd-bill/bebb1b04-5f24-454c-9971-6bf66b3c1d0b,HB 379,2026RS,Current/Final,,application/pdf,new,,,252017,Introduced,,application/pdf
+252018,ocd-bill/bebb1b04-5f24-454c-9971-6bf66b3c1d0b,HB 379,2026RS,Acts Chapter 171,,application/pdf,corrected,252017,252017,252019,Current/Final,,application/pdf
+251346,ocd-bill/9bc6ffce-7783-4456-b04e-e30ce7270de1,SR 103,2026RS,Current/Final,,application/pdf,new,,,251344,Introduced,,application/pdf
+250025,ocd-bill/5e3e3a03-bf20-4b7d-aff6-7067d1220f97,SR 176,2026RS,Current/Final,,application/pdf,new,,,250023,Introduced,,application/pdf
+250572,ocd-bill/8697f82e-56e0-4585-88b2-ff5242e300ab,SR 233,2026RS,Current/Final,,application/pdf,new,,,250570,Introduced,,application/pdf
+252823,ocd-bill/a2c8f57b-7965-40bf-b72b-28b0767618c3,HB 589,2026RS,Current/Final,,application/pdf,new,,,252822,Introduced,,application/pdf
+252117,ocd-bill/0747d675-fbdc-4f7d-948b-3eb70c15c8db,SB 97,2026RS,Current/Final,,application/pdf,new,,,252115,Introduced,,application/pdf
+252116,ocd-bill/0747d675-fbdc-4f7d-948b-3eb70c15c8db,SB 97,2026RS,Acts Chapter 51,,application/pdf,corrected,252115,252115,252117,Current/Final,,application/pdf
+250111,ocd-bill/030b6c3f-bb05-448b-ab8c-3ca7a1dbe340,SR 100,2026RS,Current/Final,,application/pdf,new,,,250109,Introduced,,application/pdf
+252048,ocd-bill/aec5c2c7-4144-4f66-94c0-6660548befca,HB 227,2026RS,Current/Final,,application/pdf,new,,,252047,Introduced,,application/pdf
+252674,ocd-bill/61d17225-e1cb-4669-842e-65af092c2cad,HR 27,2026RS,Current/Final,,application/pdf,new,,,252673,Introduced,,application/pdf
+250485,ocd-bill/4544a40d-88f9-46d6-b2ce-42b891609266,HB 266,2026RS,Current/Final,,application/pdf,new,,,250482,Introduced,,application/pdf
+250484,ocd-bill/4544a40d-88f9-46d6-b2ce-42b891609266,HB 266,2026RS,Acts Chapter 29,,application/pdf,unchanged,250482,250482;250485,250485,Current/Final,,application/pdf
+250185,ocd-bill/cc8b128f-8456-46fc-a4f0-1e175d8864a5,HJR 110,2026RS,Current/Final,,application/pdf,new,,,250183,Introduced,,application/pdf
+250984,ocd-bill/ca752f3b-d5bb-40fe-a362-d0e1766b4b95,SB 312,2026RS,Current/Final,,application/pdf,new,,,250982,Introduced,,application/pdf
+252953,ocd-bill/0244ac5e-4ff1-45b4-82ca-680998833054,SR 112,2026RS,Current/Final,,application/pdf,new,,,252952,Introduced,,application/pdf
+252923,ocd-bill/643a69f5-3848-4761-8fc4-5145b543b90d,SR 177,2026RS,Current/Final,,application/pdf,new,,,252922,Introduced,,application/pdf
+252420,ocd-bill/83bdccee-0d75-4661-90bd-a55b73bf0fef,HR 87,2026RS,Current/Final,,application/pdf,new,,,252419,Introduced,,application/pdf
+252738,ocd-bill/3e974307-96b5-410c-893c-08c01ff0bccb,HB 508,2026RS,Current/Final,,application/pdf,new,,,252737,Introduced,,application/pdf
+252641,ocd-bill/0055ddad-07aa-4a60-ac61-31aae3585fbd,SJR 54,2026RS,Current/Final,,application/pdf,new,,,252640,Introduced,,application/pdf
+251856,ocd-bill/b1e2022e-1297-4899-bf5a-63334d5be48f,SR 16,2026RS,Current/Final,,application/pdf,new,,,251855,Introduced,,application/pdf
+250101,ocd-bill/8cb06cf0-b30d-4db6-83d3-c1cca851aada,SCR 180,2026RS,Current/Final,,application/pdf,new,,,250099,Introduced,,application/pdf
+250840,ocd-bill/c645468c-150a-46f0-ac08-3bc27e966d45,HB 9,2026RS,Current/Final,,application/pdf,new,,,250838,Introduced,,application/pdf
+249881,ocd-bill/1d6d67e1-3c4d-4b6d-a854-9515aea371ed,SJR 74,2026RS,Current/Final,,application/pdf,new,,,249879,Introduced,,application/pdf
+252553,ocd-bill/d83236d1-479e-4591-acad-96f02237e229,HR 135,2026RS,Current/Final,,application/pdf,new,,,252552,Introduced,,application/pdf
+252146,ocd-bill/00661ac9-c22a-4863-9319-6e7453a21b98,HB 418,2026RS,Current/Final,,application/pdf,new,,,252145,Introduced,,application/pdf
