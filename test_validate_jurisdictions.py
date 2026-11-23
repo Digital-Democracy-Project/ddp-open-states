@@ -695,6 +695,8 @@ def test_open555_fields_are_required_on_every_entry(dotted):
     ("votes.house_speaker_by_session", {"2026": {"May 7": "Chris Blazejewski"}}),
     ("votes.house_speaker_by_session", {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": " "}}),
     ("votes.senate_president_by_session", {"2026": {"2026-05-07": None}}),
+    # a dated session is only for la and ri (this entry is "xx"), whose scrapers read utils/presiding_officers.py
+    ("votes.house_speaker_by_session", {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}),
 ])
 def test_open555_fields_reject_a_wrong_value(dotted, value):
     entry = _valid_entry()
@@ -709,9 +711,13 @@ def test_open555_fields_reject_a_wrong_value(dotted, value):
 @pytest.mark.parametrize("field", ["house_speaker_by_session", "senate_president_by_session"])
 def test_open785_a_session_whose_officer_changed_maps_first_days_to_names(field):
     entry = _valid_entry()
+    entry["ocd_id"], entry["scraper_module"] = "ocd-jurisdiction/country:us/state:ri/government", "ri"
     entry["votes"][field] = {"2025": "Joe Shekarchi",
                              "2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}
-    assert validate({"xx": entry}) == []
+    assert validate({"ri": entry}) == []
+    for day in ("2026-13-40", "2026-02-30", "2026-05-07\n", " 2026-05-07"):
+        entry["votes"][field]["2026"] = {"2026-01-06": "Joe Shekarchi", day: "Chris Blazejewski"}
+        assert [e for e in validate({"ri": entry}) if e.startswith(f"ri.votes.{field}")], day
 
 
 @pytest.mark.parametrize("value", ["ocd-jurisdiction/country:us/government",

@@ -1426,7 +1426,10 @@ ri:
     # biographies on rilegislature.gov agree (Shekarchi "stepped down from the role in May 2026"; Blazejewski "first
     # elected ... House Speaker in May 2026"). Senate: Journals of Jan 6 and Jun 11 2026 ("called to order by The
     # Honorable Valarie J. Lawson, President of the Senate"); her biography ("elected President of the Senate in
-    # April 2025"). The Senate's presiding officer is its President, a voting senator, not the Lieutenant Governor:
+    # April 2025"). Journals: rilegislature.gov/journals/housejournals/2026 House Journals/01-06-2026.pdf and
+    # 05-07-2026.pdf; rilegislature.gov/journals/senatejournals/2026 Senate Journals/SJ 01-06-2026.pdf and
+    # SJ 06-11-2026.pdf. Biographies: rilegislature.gov/representatives/{shekarchi,blazejewski}/Pages/Biography.aspx,
+    # rilegislature.gov/senators/Lawson/Pages/Biography.aspx. The Senate's presiding officer is its President, a voting senator, not the Lieutenant Governor:
     # "Madam President" votes on every 2026 Senate roll call and Lawson is never listed by name. Names as the people
     # repo has them (Joe Shekarchi, Chris Blazejewski, Val Lawson). A session whose officer changed lists each name
     # under the first day it was held (the scraper picks the one in office on the roll call's day).

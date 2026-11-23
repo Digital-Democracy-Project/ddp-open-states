@@ -1945,8 +1945,8 @@ scope line was deliberate, not an oversight.
   `votes.senate_president_by_session` (la, ri; OPEN-764: who "Mr. President" is on a Senate roll call, same shape) and
   `votes.bare_key_session` (nc). OPEN-785: a session whose presiding officer changed maps each quoted first day held
   to a name (ri 2026 House: `'2026-01-06': Joe Shekarchi`, `'2026-05-07': Chris Blazejewski`); only the shared
-  scrapers reader `scrapers/utils/presiding_officers.py` (la, ri) understands that form, so do not date a session for
-  id/ms/mo/ma, whose own Speaker readers take a plain name. Readers: here, `validate_jurisdictions.scraper_module_for()` /
+  scrapers reader `scrapers/utils/presiding_officers.py` (la, ri) understands that form, so the validator allows it
+  only for the states in its `DATED_OFFICER_STATES` (id/ms/mo/ma's own Speaker readers take a plain name). Readers: here, `validate_jurisdictions.scraper_module_for()` /
   `code_for_scraper_module()` (cloud_collector.py, verify-jurisdiction, probe-on-fargate),
   `qa_primitives.ocd_jurisdiction_id()` (quality_check.py, verify-jurisdiction, new-jurisdiction) and os-status's
   `juris_ocd_id` (through jurisdiction-field.sh); in openstates-core, `openstates/utils/ddp_manifest.manifest_value()`

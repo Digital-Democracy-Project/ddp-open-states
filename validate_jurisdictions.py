@@ -21,6 +21,7 @@ classifier) and says not to build it. If it shows up in a manifest entry anyway,
 as an unknown field (see UNKNOWN field handling below) rather than silently accepted.
 """
 
+import datetime
 import re
 import sys
 
@@ -187,7 +188,20 @@ VOTES_FIELDS = {
 }
 
 SCRAPER_MODULE_RE = re.compile(r"^[a-z]+(_[a-z]+)*$")
-ISO_DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# OPEN-785: the scrapers that read the presiding officers through openstates-scrapers' utils/presiding_officers.py,
+# the only reader that understands a dated session (id, ms, mo and ma take a plain name)
+DATED_OFFICER_STATES = {"la", "ri"}
+
+
+def _is_day(value):
+    """A quoted 'YYYY-MM-DD' that is a real date."""
+    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return False
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 OCD_ID_RE = re.compile(r"^ocd-jurisdiction/country:us(/(state|district|territory):[a-z]{2})?/government$")
 
 ONBOARDING_FIELDS = {
@@ -377,13 +391,12 @@ def validate(data):
                 if isinstance(officers, dict):
                     for session, name in officers.items():
                         # OPEN-785: a session whose officer changed maps each first day held ('YYYY-MM-DD') to a name
-                        dated = isinstance(name, dict) and name and all(
-                            isinstance(d, str) and ISO_DAY_RE.match(d) and isinstance(n, str) and n.strip()
-                            for d, n in name.items())
+                        dated = code in DATED_OFFICER_STATES and isinstance(name, dict) and name and all(
+                            _is_day(d) and isinstance(n, str) and n.strip() for d, n in name.items())
                         if not isinstance(session, str) or not (dated or isinstance(name, str) and name.strip()):
                             errors.append(f"{code}.votes.{field}: each entry must be a session name and the "
-                                          f"{officer}'s name, or a map of quoted first days held ('YYYY-MM-DD') "
-                                          f"to names, got {session!r}: {name!r}")
+                                          f"{officer}'s name, or (la, ri) a map of quoted first days held "
+                                          f"('YYYY-MM-DD') to names, got {session!r}: {name!r}")
             bare = entry["votes"].get("bare_key_session")
             if isinstance(bare, str) and not bare.strip():
                 errors.append(f"{code}.votes.bare_key_session: must be a session name or null, got an empty string")
