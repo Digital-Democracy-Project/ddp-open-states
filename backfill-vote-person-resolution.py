@@ -65,7 +65,7 @@ US_JURISDICTION_ID = "ocd-jurisdiction/country:us/government"
 IDENTIFIER_SCHEMES = ("bioguide", "lis")
 
 FETCH_NULL_VOTES_SQL = """
-    SELECT pv.id, pv.note
+    SELECT pv.id, pv.note, pv.vote_event_id
     FROM opencivicdata_personvote pv
     JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
     JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
@@ -82,6 +82,16 @@ FETCH_IDENTIFIERS_SQL = """
 """
 
 UPDATE_SQL = "UPDATE opencivicdata_personvote SET voter_id = %s WHERE id = %s"
+
+# OPEN-777: a filled voter changes neither the bill's nor the vote event's timestamp, so the broker's after-scrape fetch
+# (api-v3 `updated_since` / `vote_updated_since`) would never read it once the nightly chain stops (2027-01-01). The
+# bills of the filled roll calls are moved, in the same transaction, as fix-open433 does for its deletes. With
+# clock_timestamp(), not now(): now() is the transaction's start, before the planning, and a broker fetch that began
+# meanwhile would miss it.
+BUMP_BILLS_SQL = """
+    UPDATE opencivicdata_bill SET updated_at = clock_timestamp()
+    WHERE id IN (SELECT bill_id FROM opencivicdata_voteevent WHERE id = ANY(%(events)s))
+"""
 
 
 def build_identifier_map(cur):
@@ -132,10 +142,12 @@ def main():
 
         resolved = ambiguous_or_missing = 0
         updates = []
+        events = set()
         for row in rows:
             person_id = resolve(row["note"], id_map)
             if person_id:
                 updates.append((person_id, row["id"]))
+                events.add(row["vote_event_id"])
                 resolved += 1
             else:
                 ambiguous_or_missing += 1
@@ -146,9 +158,11 @@ def main():
         else:
             update_cur = conn.cursor()
             psycopg2.extras.execute_batch(update_cur, UPDATE_SQL, updates, page_size=1000)
+            update_cur.execute(BUMP_BILLS_SQL, dict(events=sorted(events)))
+            bumped = update_cur.rowcount
             conn.commit()
             print(f"Done. Resolved {resolved:,} records "
-                  f"({ambiguous_or_missing:,} still unresolvable).")
+                  f"({ambiguous_or_missing:,} still unresolvable); {bumped:,} bills marked updated.")
 
     conn.close()
 
