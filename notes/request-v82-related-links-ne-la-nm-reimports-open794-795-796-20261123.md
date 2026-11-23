@@ -1,5 +1,10 @@
 # REQUEST (not a GO): the next scrapers image (v82) at scrapers main `4e22ce72` or later carries the Nebraska, Louisiana and New Mexico related-bill links (OPEN-794/795/796). Then the re-imports that load them: **NE 109 and LA 2026 by running `df508b7`'s part B on that image** (not a second re-import), and NM 2026. 2026-11-23 (Mac side, State Specific Handling)
 
+> **UPDATE 2026-11-23 (later):** Ramon decided a one-sided Nebraska "amended into" line is shown on both bills (OPEN-794 comment 22813). The follow-up is **openstates-scrapers #246** (not merged yet).
+> * **v82 must be built at or after #246's merge** (not just `4e22ce72`). The Mac side checks the tree for it.
+> * **Nebraska's expected count:** "amended into" **292**, not 291, and "provisions amended in" 292. LB 1033 now lists LB 958.
+> * Everything else below stands. The table and pass list below are corrected in place.
+
 **Not a GO.** Ramon builds the image (`deploy-scrapers-image.sh`). Every re-import is the prod agent's, after a GO note from Ramon. Ramon decided the links on 2026-11-23 ("Store all three", OPEN-653 comment 22780). Each one is `related` (or `replaces`/`replaced-by`) with the legislature's own label, **never `companion`**, so no scorecard changes.
 
 ## What is merged (scrapers main, reviewed and merged by the PM session)
@@ -7,13 +12,13 @@
 |---|---|---|---|
 | #243 `05ee6bc9` | OPEN-796 New Mexico | the bill a "Succeeding entries" action (code 7798) names: `related`, label "Succeeding entries" | 2026: 1 link (HB 3 → HB 2); 2025 has 2 more (HB 3 → HB 2, SB 22 → SB 21), but 2025 isn't loaded (below). Measured on the legislature's own `LegInfo25`/`LegInfo26` databases |
 | #244 `860751a6` | OPEN-795 Louisiana | each committee substitution: the original `replaced-by` the substitute (label "Becomes"), the substitute `replaces` the original (label "substitute for") | 2026: 88 links on 88 bills, 44 of each type |
-| #245 `4e22ce72` | OPEN-794 Nebraska | each "Provisions/portions of LB … amended into LB …" pair on a bill's own history: `related`, label "amended into" (carried bill) or "provisions amended in" (carrying bill) | 109: 583 links on 376 bills (291 "amended into", 292 "provisions amended in") |
+| #245 `4e22ce72` | OPEN-794 Nebraska | each "Provisions/portions of LB … amended into LB …" pair on a bill's own history: `related`, label "amended into" (carried bill) or "provisions amended in" (carrying bill) | 109: 584 links on 377 bills (292 "amended into", 292 "provisions amended in"), with #246 |
 
 * **No core, people or migration change.** The labels need a loader at core `7f531958` or later, which the current loader already is (`939e4a2c`, prod status `0e5f573`). The same gate held for the UT and AZ re-imports.
 * **The Nebraska one-way question** (LB 958 lists LB 1033, LB 1033's own page doesn't list LB 958) is with Ramon. If he wants it two-way, that's a later change and a later re-import. It doesn't hold this one.
 
 ## Part 1: the image (Ramon)
-* **Build v82 at scrapers main `4e22ce72` or later.** It's the same next image the Idaho request needs (`9b4d8b9`: `02ba6f4e` or later; `4e22ce72` contains it), so one build covers both.
+* **Build v82 at scrapers main `4e22ce72` or later, and at or after #246's merge** (see the update above). It's the same next image the Idaho request needs (`9b4d8b9`: `02ba6f4e` or later; `4e22ce72` contains it), so one build covers both.
 * **Mac side** checks the image's scrapers tree contains `4e22ce72`.
 * **Prod side:** please report the tag and task-definition revision, called **rev R** below.
 * **"Rev R or later" below means an image whose scrapers tree contains all three merges** (`05ee6bc9`, `860751a6`, `4e22ce72`). The Mac side confirms that for rev R. A higher number alone isn't enough.
@@ -59,12 +64,13 @@ GROUP BY 1, 2, 3, 4 ORDER BY 1, 2, 3, 4;
 |---|---|---|
 | New Mexico | 2026 | `related`, "Succeeding entries" → 1 |
 | Louisiana | 2026 | `replaced-by`, "Becomes" → 44; `replaces`, "substitute for" → 44 |
-| Nebraska | 109 | `related`, "amended into" → 291; `related`, "provisions amended in" → 292 |
+| Nebraska | 109 | `related`, "amended into" → 292; `related`, "provisions amended in" → 292 |
 
 * **No `companion` row**, and no other label for any of the three. Before these changes none of them stored a related link: 0 rows on the Mac replica, 2026-11-23. So any other row is a fail too, reported with its rows.
 
 **Through api-v3** (one of each):
 * `/bills?jurisdiction=ne&session=109&identifier=LB 958&include=related_bills` lists LB 1033, LB 701, LB 773 and LB 777, each with `"label": "provisions amended in"`;
+* `/bills?jurisdiction=ne&session=109&identifier=LB 1033&include=related_bills` lists LB 958 with `"label": "amended into"` (#246);
 * `/bills?jurisdiction=la&session=2026&identifier=HB 1257&include=related_bills` lists HB 123 with `"relation_type": "replaces"` and `"label": "substitute for"`;
 * `/bills?jurisdiction=nm&session=2026&identifier=HB 3&include=related_bills` lists HB 2 with `"label": "Succeeding entries"`.
 
