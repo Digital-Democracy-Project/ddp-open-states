@@ -187,6 +187,7 @@ VOTES_FIELDS = {
 }
 
 SCRAPER_MODULE_RE = re.compile(r"^[a-z]+(_[a-z]+)*$")
+ISO_DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 OCD_ID_RE = re.compile(r"^ocd-jurisdiction/country:us(/(state|district|territory):[a-z]{2})?/government$")
 
 ONBOARDING_FIELDS = {
@@ -375,9 +376,14 @@ def validate(data):
                 officers = entry["votes"].get(field)
                 if isinstance(officers, dict):
                     for session, name in officers.items():
-                        if not isinstance(session, str) or not isinstance(name, str) or not name.strip():
-                            errors.append(f"{code}.votes.{field}: each entry must be a session name "
-                                          f"and the {officer}'s name, got {session!r}: {name!r}")
+                        # OPEN-785: a session whose officer changed maps each first day held ('YYYY-MM-DD') to a name
+                        dated = isinstance(name, dict) and name and all(
+                            isinstance(d, str) and ISO_DAY_RE.match(d) and isinstance(n, str) and n.strip()
+                            for d, n in name.items())
+                        if not isinstance(session, str) or not (dated or isinstance(name, str) and name.strip()):
+                            errors.append(f"{code}.votes.{field}: each entry must be a session name and the "
+                                          f"{officer}'s name, or a map of quoted first days held ('YYYY-MM-DD') "
+                                          f"to names, got {session!r}: {name!r}")
             bare = entry["votes"].get("bare_key_session")
             if isinstance(bare, str) and not bare.strip():
                 errors.append(f"{code}.votes.bare_key_session: must be a session name or null, got an empty string")
