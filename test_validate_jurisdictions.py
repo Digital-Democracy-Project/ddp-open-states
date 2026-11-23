@@ -777,7 +777,9 @@ def test_open555_the_real_manifest_carries_todays_constants():
                **{s: "Jonathan Patterson" for s in ("2025", "2025S1", "2025S2", "2026")}},
         "la": {s: "Phillip DeVillier" for s in LA_2024_TERM},  # OPEN-764: scrapers/la/voter_names.py
         # OPEN-785: Speaker Shekarchi until the House elected Blazejewski on 2026-05-07 (House Journal of that day)
-        "ri": {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}}
+        "ri": {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}},
+        # OPEN-790: Speaker Hilbert for the whole 60th Legislature (House Journals, Jan 7 2025 and Feb 2 2026)
+        "ok": {"2025": "Kyle Hilbert", "2026": "Kyle Hilbert"}}
     presidents = {c: e["votes"]["senate_president_by_session"] for c, e in data.items()}
     assert {c: v for c, v in presidents.items() if v is not None} == {
         "la": {s: "Cameron Henry" for s in LA_2024_TERM},  # OPEN-764
