@@ -769,7 +769,7 @@ al:
 # written by new-jurisdiction from notes/probe-pa-20261031/result.json on 2026-11-02 (OPEN-461)
 pa:
   name: Pennsylvania
-  status: scraping
+  status: live
   scraper_module: pa   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:pa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -793,11 +793,11 @@ pa:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no pa-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
+    embedding: true    # OPEN-447: on at go-live (Ramon 2026-11-20; "Yes, prepare go-live" 2026-11-22)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
+    qa_sweep: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-478, Ramon 2026-11-07)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-478, Ramon 2026-11-07)
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
