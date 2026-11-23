@@ -28,7 +28,7 @@ Saving the five answers somewhere the Mac side can read is welcome but not neede
 
 ## What happens next (Mac side)
 * **No companion or related list on any page:** OPEN-655's step 1 is complete; the plan records "no companion listed by the legislature" for Georgia, and the ticket closes.
-* **A list is there:** it becomes a Georgia scraper ticket like the other states' (OPEN-649, OPEN-783). If it isn't a companion, the legislature's other links are stored as related too (Ramon's 2026-11-23 decision for Nebraska, Louisiana and New Mexico).
+* **A list is there:** it becomes a Georgia scraper ticket like the other states' (OPEN-649, OPEN-783), under the plan's step 2: `companion` only where the legislature calls it one, anything else `related`.
 * **The site refuses the cloud host too:** say so (status, or the error). Ramon then decides whether a person looks with a browser.
 
 ## Not asked
