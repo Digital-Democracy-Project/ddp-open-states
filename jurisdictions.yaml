@@ -1418,8 +1418,27 @@ ri:
     upper: Senate
     lower: House of Representatives
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
-    house_speaker_by_session: null
-    senate_president_by_session: null
+    # OPEN-785: who the vote reports' "Mr. Speaker" (House) and "Madam President" (Senate) are. Sources, the
+    # legislature's own, read 2026-11-23. House: Journal of Jan 6 2026 ("called to order ... by the Honorable
+    # K. Joseph Shekarchi, Speaker"); Journal of May 7 2026, "ELECTION OF SPEAKER FOR REMAINDER OF 2026 SESSION" ("The
+    # Chair declares Christopher R. Blazejewski is elected Speaker of the House for the remainder of the 2026
+    # session"; at 4:45 P.M. the rostrum passes to "Speaker Blazejewski"); no House roll call that day. Their
+    # biographies on rilegislature.gov agree (Shekarchi "stepped down from the role in May 2026"; Blazejewski "first
+    # elected ... House Speaker in May 2026"). Senate: Journals of Jan 6 and Jun 11 2026 ("called to order by The
+    # Honorable Valarie J. Lawson, President of the Senate"); her biography ("elected President of the Senate in
+    # April 2025"). Journals: rilegislature.gov/journals/housejournals/2026 House Journals/01-06-2026.pdf and
+    # 05-07-2026.pdf; rilegislature.gov/journals/senatejournals/2026 Senate Journals/SJ 01-06-2026.pdf and
+    # SJ 06-11-2026.pdf. Biographies: rilegislature.gov/representatives/{shekarchi,blazejewski}/Pages/Biography.aspx,
+    # rilegislature.gov/senators/Lawson/Pages/Biography.aspx. The Senate's presiding officer is its President, a voting senator, not the Lieutenant Governor:
+    # "Madam President" votes on every 2026 Senate roll call and Lawson is never listed by name. Names as the people
+    # repo has them (Joe Shekarchi, Chris Blazejewski, Val Lawson). A session whose officer changed lists each name
+    # under the first day it was held (the scraper picks the one in office on the roll call's day).
+    house_speaker_by_session:
+      '2026':
+        '2026-01-06': Joe Shekarchi
+        '2026-05-07': Chris Blazejewski
+    senate_president_by_session:
+      '2026': Val Lawson
     bare_key_session: null
   api_keys: []
   onboarding:

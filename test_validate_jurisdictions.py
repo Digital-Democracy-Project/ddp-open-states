@@ -5,6 +5,7 @@ dicts plus the actual checked-in manifest.
 """
 
 import copy
+import datetime
 import os
 import subprocess
 import sys
@@ -688,6 +689,14 @@ def test_open555_fields_are_required_on_every_entry(dotted):
     ("votes.senate_president_by_session", []), ("votes.senate_president_by_session", "Cameron Henry"),
     ("votes.senate_president_by_session", {"2026": " "}), ("votes.senate_president_by_session", {"2026": None}),
     ("votes.senate_president_by_session", {2026: "Cameron Henry"}),
+    # OPEN-785: a dated session needs quoted 'YYYY-MM-DD' days, each with a name
+    ("votes.house_speaker_by_session", {"2026": {}}),
+    ("votes.house_speaker_by_session", {"2026": {datetime.date(2026, 5, 7): "Chris Blazejewski"}}),
+    ("votes.house_speaker_by_session", {"2026": {"May 7": "Chris Blazejewski"}}),
+    ("votes.house_speaker_by_session", {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": " "}}),
+    ("votes.senate_president_by_session", {"2026": {"2026-05-07": None}}),
+    # a dated session is only for la and ri (this entry is "xx"), whose scrapers read utils/presiding_officers.py
+    ("votes.house_speaker_by_session", {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}),
 ])
 def test_open555_fields_reject_a_wrong_value(dotted, value):
     entry = _valid_entry()
@@ -697,6 +706,18 @@ def test_open555_fields_reject_a_wrong_value(dotted, value):
         node = node[block]
     node[leaf] = value
     assert any(e.startswith(f"xx.{dotted}") for e in validate({"xx": entry})), validate({"xx": entry})
+
+
+@pytest.mark.parametrize("field", ["house_speaker_by_session", "senate_president_by_session"])
+def test_open785_a_session_whose_officer_changed_maps_first_days_to_names(field):
+    entry = _valid_entry()
+    entry["ocd_id"], entry["scraper_module"] = "ocd-jurisdiction/country:us/state:ri/government", "ri"
+    entry["votes"][field] = {"2025": "Joe Shekarchi",
+                             "2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}
+    assert validate({"ri": entry}) == []
+    for day in ("2026-13-40", "2026-02-30", "2026-05-07\n", " 2026-05-07"):
+        entry["votes"][field]["2026"] = {"2026-01-06": "Joe Shekarchi", day: "Chris Blazejewski"}
+        assert [e for e in validate({"ri": entry}) if e.startswith(f"ri.votes.{field}")], day
 
 
 @pytest.mark.parametrize("value", ["ocd-jurisdiction/country:us/government",
@@ -754,10 +775,13 @@ def test_open555_the_real_manifest_carries_todays_constants():
         "ms": {s: "Jason White" for s in ("2024", "20241E", "20242E", "2025", "20251E", "2026", "20261E")},  # OPEN-731
         "mo": {"2023": "Dean Plocher", "2024": "Dean Plocher",  # OPEN-738: scrapers/mo/voter_names.py
                **{s: "Jonathan Patterson" for s in ("2025", "2025S1", "2025S2", "2026")}},
-        "la": {s: "Phillip DeVillier" for s in LA_2024_TERM}}  # OPEN-764: scrapers/la/voter_names.py
+        "la": {s: "Phillip DeVillier" for s in LA_2024_TERM},  # OPEN-764: scrapers/la/voter_names.py
+        # OPEN-785: Speaker Shekarchi until the House elected Blazejewski on 2026-05-07 (House Journal of that day)
+        "ri": {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}}}
     presidents = {c: e["votes"]["senate_president_by_session"] for c, e in data.items()}
     assert {c: v for c, v in presidents.items() if v is not None} == {
-        "la": {s: "Cameron Henry" for s in LA_2024_TERM}}  # OPEN-764
+        "la": {s: "Cameron Henry" for s in LA_2024_TERM},  # OPEN-764
+        "ri": {"2026": "Val Lawson"}}  # OPEN-785
     bare = {c: e["votes"]["bare_key_session"] for c, e in data.items()}
     assert {c: v for c, v in bare.items() if v is not None} == {"nc": "2025"}
     assert {c: e["scraper_module"] for c, e in data.items() if e["scraper_module"] != c} == {"us": "usa"}
