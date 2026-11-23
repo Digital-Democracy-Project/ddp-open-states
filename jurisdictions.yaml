@@ -1822,7 +1822,7 @@ mo:
 # written by new-jurisdiction from notes/probe-all-20261031/me/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
 me:
   name: Maine
-  status: probing
+  status: scraping
   scraper_module: me      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:me/government"
   scrape:
@@ -1840,13 +1840,13 @@ me:
     session_list_attempts: null    # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:
-    enabled: false
+    enabled: true
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no me-specific entry in ddp-sync yet
   enrollment:
-    people_refresh: false
+    people_refresh: true
     search_refresh: false
     embedding: false
-    cloud_path: false
+    cloud_path: true
     api_smoke_test: false
     qa_sweep: false
     replica_routing: false
