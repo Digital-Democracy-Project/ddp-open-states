@@ -1,9 +1,12 @@
 # REQUEST (not a GO): the next scrapers image (v82) at scrapers main `4e22ce72` or later carries the Nebraska, Louisiana and New Mexico related-bill links (OPEN-794/795/796). Then the re-imports that load them: **NE 109 and LA 2026 by running `df508b7`'s part B on that image** (not a second re-import), and NM 2026. 2026-11-23 (Mac side, State Specific Handling)
 
-> **UPDATE 2026-11-23 (later):** Ramon decided a one-sided Nebraska "amended into" line is shown on both bills (OPEN-794 comment 22813). The follow-up is **openstates-scrapers #246** (not merged yet).
-> * **v82 must be built at or after #246's merge** (not just `4e22ce72`). The Mac side checks the tree for it.
-> * **Nebraska's expected count:** "amended into" **292**, not 291, and "provisions amended in" 292. LB 1033 now lists LB 958.
-> * Everything else below stands. The table and pass list below are corrected in place.
+> **UPDATE 2 (2026-11-23, replaces update 1 / `14c6c24`): v82 is already being built at scrapers `4e22ce72`, so it does NOT carry #246.** Ramon started it about 16:25 UTC (PM session). So:
+> * **Louisiana 2026 and New Mexico 2026 run on v82**, as written below. Their merges are in `4e22ce72`, and v82's tree check is for `05ee6bc9`, `860751a6` and `4e22ce72`.
+> * **Nebraska 109 waits for the next image built at or after #246's merge (v83 or later).** #246 shows a one-sided "amended into" line on both bills (OPEN-794 comment 22813) and is not merged yet; the PM reviews it after v82 is pushed.
+>   * So `df508b7` part B splits: **LA on v82, NE on v83+**. Onboard New States is told.
+>   * NE's unmatched-vote fix from `df508b7` waits with it. If that can't wait, say so: NE could run on v82 now (583 links), but adding LB 1033's one link would then need a second NE re-import on v83, which `df508b7` rules out without Ramon's go.
+> * **Nebraska's expected count on v83+:** "amended into" **292**, "provisions amended in" 292 (584 links on 377 bills). LB 1033 lists LB 958.
+> * Everything else below stands. Where the text below says v82 / rev R for Nebraska, read **v83+**.
 
 **Not a GO.** Ramon builds the image (`deploy-scrapers-image.sh`). Every re-import is the prod agent's, after a GO note from Ramon. Ramon decided the links on 2026-11-23 ("Store all three", OPEN-653 comment 22780). Each one is `related` (or `replaces`/`replaced-by`) with the legislature's own label, **never `companion`**, so no scorecard changes.
 
@@ -18,7 +21,7 @@
 * **The Nebraska one-way question** (LB 958 lists LB 1033, LB 1033's own page doesn't list LB 958) is with Ramon. If he wants it two-way, that's a later change and a later re-import. It doesn't hold this one.
 
 ## Part 1: the image (Ramon)
-* **Build v82 at scrapers main `4e22ce72` or later, and at or after #246's merge** (see the update above). It's the same next image the Idaho request needs (`9b4d8b9`: `02ba6f4e` or later; `4e22ce72` contains it), so one build covers both.
+* **Build v82 at scrapers main `4e22ce72` or later** (in progress). Nebraska's image is the next one, at or after #246's merge (update 2 above). It's the same next image the Idaho request needs (`9b4d8b9`: `02ba6f4e` or later; `4e22ce72` contains it), so one build covers both.
 * **Mac side** checks the image's scrapers tree contains `4e22ce72`.
 * **Prod side:** please report the tag and task-definition revision, called **rev R** below.
 * **"Rev R or later" below means an image whose scrapers tree contains all three merges** (`05ee6bc9`, `860751a6`, `4e22ce72`). The Mac side confirms that for rev R. A higher number alone isn't enough.
