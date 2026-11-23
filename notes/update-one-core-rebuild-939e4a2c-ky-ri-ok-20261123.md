@@ -25,7 +25,7 @@
 ## After the rebuild (each its own GO, requests separate)
 * **Kentucky:** `recompute-diff-order ky` dry run, then commit (`22d7100` step 4). Same expected numbers; #140 and #141 don't touch Kentucky's names.
 * **Oklahoma:** `recompute-diff-order ok`, dry run first.
-    * Measured on the Mac replica with `939e4a2c` (read-only session): `6005 bills checked | unchanged=7682 corrected=7261 nulled=2631`; `is_bill_version: set=0 changed=3272 not_a_version=3272`; `diff_baseline_id: set=3882 changed=3379 cleared=2631`.
+    * Measured by the builder on the Mac replica (read-only session) at #141’s first head `41043375`; its later prefix change left the whole-replica comparison byte-identical: `6005 bills checked | unchanged=7682 corrected=7261 nulled=2631`; `is_bill_version: set=0 changed=3272 not_a_version=3272`; `diff_baseline_id: set=3882 changed=3379 cleared=2631`.
     * I'll post its own request, with the commit gated on Ramon's go. Ramon still has an optional call on "Amended And Engrossed".
 * **Rhode Island:** `98e5dcb` steps 2–5 unchanged; its step 1 is this rebuild.
 
