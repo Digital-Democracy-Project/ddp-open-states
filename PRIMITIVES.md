@@ -540,6 +540,19 @@ The conventions every one of them follows, and a new one must:
   no-op without needing to remember it already ran.
 - **Abort without committing if the rows actually updated ≠ the rows expected.** `autocommit =
   False`, one transaction, `conn.rollback()` and `SystemExit` on mismatch.
+- **Mark the bills you change as updated, in the same transaction (OPEN-777).** A filled voter
+  moves neither the bill's nor the vote event's timestamp, so the broker's after-scrape fetch
+  (api-v3 `updated_since` / `vote_updated_since`) never reads the change. From 2027-01-01, when the
+  broker's nightly re-sync of every tracked bill stops, nothing else would. On commit only, set
+  `opencivicdata_bill.updated_at = clock_timestamp()` for the bills of the roll calls you changed.
+  Use `clock_timestamp()`, not `now()`: `now()` is the transaction's start, so a run that plans
+  inside its transaction could stamp a time before a broker fetch that began meanwhile. The scripts
+  that do it:
+  * `BUMP_BILLS_SQL` in `relink-blank-voters.py` and `backfill-vote-person-resolution.py` (by vote
+    event id);
+  * `fix-open433-az-stale-empty-vote-events.py` (by bill id, for its deletes).
+
+  A dry run marks nothing.
 - **Write a dated completion record at the repo root** when it runs for real — what changed, the
   before/after verification numbers, and the revert statement. Capture the affected row ids to a
   file *before* writing, so the revert is a paste rather than a reconstruction.

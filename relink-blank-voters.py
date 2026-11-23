@@ -110,6 +110,16 @@ UPDATE_SQL = """
     WHERE id = %s AND voter_id IS NULL
 """
 
+# OPEN-777: a filled voter changes neither the bill's nor the vote event's timestamp, so the broker's after-scrape fetch
+# (api-v3 `updated_since` / `vote_updated_since`) would never read it once the nightly chain stops (2027-01-01). The
+# bills of the filled roll calls are moved, in the same transaction, as fix-open433 does for its deletes. With
+# clock_timestamp(), not now(): now() is the transaction's start, before the planning, and a broker fetch that began
+# meanwhile would miss it.
+BUMP_BILLS_SQL = """
+    UPDATE opencivicdata_bill SET updated_at = clock_timestamp()
+    WHERE id IN (SELECT bill_id FROM opencivicdata_voteevent WHERE id = ANY(%(events)s))
+"""
+
 LIST_COLUMNS = [
     "state", "session", "vote_event", "bill", "date", "motion", "option", "voter_name", "person_id", "person_name"
 ]
@@ -190,6 +200,8 @@ def main(argv=None):
                         f"aborted, nothing written: expected to fill {len(all_fill)} rows, {updated} matched at write "
                         "time (a row changed underneath); investigate before running again"
                     )
+                cur.execute(BUMP_BILLS_SQL, dict(events=sorted({row["vote_event"] for row in all_fill})))
+                print(f"  bills marked updated: {cur.rowcount}")
                 # As core's relabel: the list is written aside and takes its name only after the database commit,
                 # so a failed or rolled-back run leaves no list that reads as done.
                 _write_list(f"{args.list_path}.partial", all_fill)
