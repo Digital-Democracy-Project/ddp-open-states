@@ -1,5 +1,9 @@
 # REQUEST (not a GO): the next scrapers image (v82) at scrapers main `4e22ce72` or later carries the Nebraska, Louisiana and New Mexico related-bill links (OPEN-794/795/796). Then the re-imports that load them: **NE 109 and LA 2026 by running `df508b7`'s part B on that image** (not a second re-import), and NM 2026. 2026-11-23 (Mac side, State Specific Handling)
 
+> **UPDATE 4 (2026-11-23): v83 is built, for Nebraska.** Tag **v83**, task-definition revisions **ddp-scrapers:85** (db 12), core `939e4a2c`, built from scrapers main **`dd96de0f`** (includes #246, merged as `dd96de0f`). This is per the PM session's report; the Mac side has not opened the image itself. Ramon decided: build v83 and run Nebraska's single re-import on it.
+> * **Nebraska 109 (through `df508b7` part B): rev 85 or later.** Expected "amended into" 292, "provisions amended in" 292 (584 links), and LB 1033 lists LB 958.
+> * **Louisiana 2026 and New Mexico 2026 stay on v82 (rev 84)**, as in update 3.
+>
 > **UPDATE 3 (2026-11-23): v82 is built.** Tag **v82**, task-definition revisions **ddp-scrapers:84** (db 11), core `939e4a2c`, built from scrapers main **`4e22ce72`**. It has #243, #244 and #245; it does not have #246. This is per the PM session's report; the Mac side has not opened the image itself.
 > * **So rev R = 84** for **Louisiana 2026** (through `df508b7` part B) and **New Mexico 2026** (part 3).
 > * **Nebraska 109** waits for the image after #246, as in update 2.
