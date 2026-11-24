@@ -782,6 +782,14 @@ step matters — a newer pip breaks one of the pinned deps' build.
     after a state's first scrape or a new labelling rule.
   * **Do not** copy the list into the broker or the website: they pass the option (BROKER-460).
   * **Release:** no schema change, so no `ensure` or refresh; it needs a new api image on each host.
+  * **An introduced bill draft's own record is left out too (OPEN-861, 2026-11-24; api-v3 PR #78 and openstates-core PR #170,
+    not merged).** Montana's pre-filing scrape stores each draft ("LC nnnn") as a bill; once introduced, the numbered bill
+    links to its draft number (`replaces`), and the importer never deletes the draft's record. A state's core rules name
+    that relation (`INTRODUCED_DRAFT_RELATION` in `ddp_states/<state>.py`, Montana only); with `bill_types_only`, a record
+    that a bill of its jurisdiction links to that way is not listed, searched or counted. Read live, nothing written; the
+    record stays stored and opens by id. Louisiana and Massachusetts use `replaces` between real bills and name no value.
+    **Do not** add a hidden flag, a relabel or a list of drafts. Like the labels, LegBot (ddp-sync) and the sitemap do not
+    pass the option (Ramon to decide).
 
 - **One person's votes live in api-v3's `GET /people/{person_id}/votes`, once (OPEN-481, 2026-11-02; api-v3 PR #44, merged `b3148ac`;
   live on the EC2 api-v3 per the prod agent's note of 2026-11-02 20:40 UTC).** `person_id` is the full `ocd-person/<uuid>`; the route is `api-v3/api/person_votes.py`. It lists the votes that person
