@@ -886,7 +886,7 @@ ne:
 # written by new-jurisdiction from notes/probe-la-20261031/result.json on 2026-11-02 (OPEN-461)
 la:
   name: Louisiana
-  status: scraping
+  status: live
   scraper_module: la   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:la/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -908,11 +908,11 @@ la:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no la-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true    # OPEN-478/479/480: Stage 2 rule (2026-11-03): the weekly legislator refresh must include a scraping state; production people were loaded by hand on 11-03 (0 before)
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-480: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
+    embedding: true    # OPEN-480: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-480: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
+    qa_sweep: true    # OPEN-480: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
