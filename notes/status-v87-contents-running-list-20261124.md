@@ -1,11 +1,11 @@
-# STATUS (not a request, not a GO): **v87 contents**, a running list. I update this file as fixes merge. The release itself will be its own request note, on Ramon's go. Last updated 2026-11-24 ~05:00 UTC (Mac side, Onboard New States)
+# STATUS (not a request, not a GO): **v87 contents**, a running list. I update this file as fixes merge. The release itself will be its own request note, on Ramon's go. Last updated 2026-11-24 ~05:45 UTC (Mac side, Onboard New States)
 
 **Nothing for you to do from this file.** It exists so the next release note is short and you can see what is coming.
 
 ## Baseline
 * v86 = `ddp-scrapers:88` / `db:15`: scrapers `cc028db6`, core `59dbdaa2`.
-* The core rollout at `59dbdaa2` is planned for ~07:15 UTC (`deb1bc6`).
-* The PM merges no core change until that rollout is reported done.
+* The core rollout at `59dbdaa2` is **done** (04:54–04:59 UTC; your `19cebdc`; the Mac api-v3 at 04:59:50).
+* The core hold is lifted: core merges now go to v87 and the next core rollout.
 
 ## Merged, waiting for v87 (scrapers) or a people load
 | Kind | Merge | Ticket | What | Production steps it will need |
@@ -14,7 +14,12 @@
 | people | #50 → `fd7a7b55` | OPEN-838 | Nebraska: Fred Meyer's start set to 2026-01-15, so Glen Meyer's 7 votes of 01-14 match one person | people pull, NE load, then an NE 109 re-import (or relink) |
 | people | #51 → `5a0e0af1` | OPEN-843 | Kentucky: "Lewis C" (441 House votes in 2026RS) added to Chris Lewis's other names | people pull, KY load, then a KY 2026RS re-import (or relink) |
 
-## Held by the PM (core; after the `59dbdaa2` rollout is done, then a core rollout plus v87)
+## Merged in core (next core rollout plus v87)
+| Merge | Ticket | What | Production steps it will need |
+|---|---|---|---|
+| core #162 → `d5e548e8` | OPEN-836 | North Dakota: the struck-out law printed beside new text is dropped from the extracted bill text. **Must land before ND's public launch** (Ramon) | core rollout and v87, then `os-text-extract refresh-extraction nd` (dry run first: expect 1,431 changed, 1,259 unchanged, 0 errors), then `recompute-diff-order nd` (dry run first) |
+
+## Still in review (core; PM merge order #149, #150 → #160, #151, #157, #161, #163, #153, #158, #159 → #165; HI/MO/ND label follow-ups OPEN-856/857/858 stack on #151/#157/#161)
 | PR | Ticket | What |
 |---|---|---|
 | core #149 | OPEN-822 | Rhode Island: "held for further study" is no longer labelled committee failure (2,222 actions; 602 of those bills later passed a chamber) |
@@ -23,8 +28,9 @@
 
 * Action labels are computed at import, so each needs that state's re-import, or the stored-action relabel the state-rules work uses, after the core rollout. That will be in the release note.
 
-## In review (next round)
-* scrapers #265–#268: added to this list when merged.
+## In review (scrapers / people / broker)
+* scrapers #266, #268 (HI), #270 (MS), #273 (MO), #274 (KY): added here when merged.
+* broker #820 (BROKER-588, Idaho scorecard rules; list approved by Ramon).
 
 Tickets: OPEN-146.
 
