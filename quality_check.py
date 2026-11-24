@@ -502,6 +502,29 @@ GOVBOT_DATA_DIR = os.environ.get("GOVBOT_DATA_DIR", os.path.expanduser("~/.govbo
 # an identically-named govbot repo, so this map only needs the one exception.
 GOVBOT_REPO_SLUG = {"us": "usa"}
 
+# OPEN-847: where govbot keeps one session folder for what we split into several
+# sessions, list ours here (govbot folder -> our sessions). Maine: govbot's `132` is
+# our 132R1+132S1+132R2 (2,450 bills both sides; specials are separate here, OPEN-747).
+# Maryland: govbot files the 2026 special-session bills under `2026`, we under 2026s1.
+# Absent here == govbot's folder and our session have the same name (every other state).
+GOVBOT_SESSION_GROUPS = {
+    ("me", "132"): ("132R1", "132S1", "132R2"),
+    ("md", "2026"): ("2026", "2026s1"),
+}
+
+
+def _govbot_session_group(jurisdiction_code, session):
+    """(govbot session folder, [our sessions]) for a --coverage session argument.
+    Accepts either side's name, so `--coverage me 132` and `--coverage me 132R2` both
+    compare govbot's whole `132` against all three of ours."""
+    key = (jurisdiction_code, session)
+    if key in GOVBOT_SESSION_GROUPS:
+        return session, list(GOVBOT_SESSION_GROUPS[key])
+    for (code, govbot_session), ours in GOVBOT_SESSION_GROUPS.items():
+        if code == jurisdiction_code and session in ours:
+            return govbot_session, list(ours)
+    return session, [session]
+
 
 def _govbot_slug(jurisdiction_code):
     return GOVBOT_REPO_SLUG.get(jurisdiction_code, jurisdiction_code)
@@ -712,7 +735,7 @@ def build_govbot_bill_index(jurisdiction_code, session, repo_path):
 
 
 def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index, tier2_limit=None,
-                               tier2_random=False, blast_radius_cache=None):
+                               tier2_random=False, blast_radius_cache=None, local_sessions=None):
     """govbot-backed equivalent of run_coverage_check() below -- same Tier 1 (full
     identifier-set diff) + Tier 2 (compare_bills() over every shared identifier)
     shape and the same return-dict keys, but sourcing "live" data from a local
@@ -726,15 +749,33 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     first anyway, to tell a real (if small) session apart from an empty/unreadable
     one before deciding whether govbot is even usable. Building it twice would
     silently double the disk I/O for no benefit.
+
+    local_sessions (OPEN-847): our sessions that together make up govbot's `session`
+    (see GOVBOT_SESSION_GROUPS); default is just `session`. Tier 1 diffs against their
+    union; Tier 2 reads each bill from the one of ours that holds it.
     """
     if blast_radius_cache is None:
         blast_radius_cache = {}
+    local_sessions = local_sessions or [session]
+    if local_sessions != [session]:
+        session_label = f"{session} (ours: {'+'.join(local_sessions)})"
+    else:
+        session_label = session
     print(f"\n{'═'*60}")
-    print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session}  (source: govbot)")
+    print(f"  COVERAGE CHECK: {jurisdiction.upper()} {session_label}  (source: govbot)")
     print(f"{'═'*60}")
 
     public_ids = set(govbot_index)
-    local_ids = fetch_all_local_identifiers(conn, jurisdiction, session)
+    own_session = {}  # identifier -> the one of our sessions that holds it
+    in_two = set()
+    for ours in local_sessions:
+        for identifier in fetch_all_local_identifiers(conn, jurisdiction, ours):
+            if identifier in own_session:
+                in_two.add(identifier)
+            else:
+                own_session[identifier] = ours
+    local_ids = set(own_session)
+    session = session_label  # the Tier 1 report lines below name the whole group
 
     missing = public_ids - local_ids
     extra = local_ids - public_ids
@@ -765,6 +806,10 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     if extra:
         report.record(WARN, f"{jurisdiction.upper()} {session}: {len(extra)} bills local-only "
                              f"(not automatically a failure -- see plan §4)")
+    if in_two:
+        report.record(WARN, f"{jurisdiction.upper()} {session}: {len(in_two)} identifiers in more "
+                             f"than one of our sessions; Tier 2 compares the first "
+                             f"({', '.join(sorted(in_two)[:5])})")
 
     tier2_ids = sorted(both)
     if tier2_limit:
@@ -775,11 +820,12 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     print(f"  Running Tier 2 sub-record checks on {len(tier2_ids)} of {len(both)} "
           f"bills present in both...")
     for i, identifier in enumerate(tier2_ids):
-        label = f"{jurisdiction.upper()} {identifier} ({session})"
-        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, session, identifier)
+        bill_session = own_session[identifier]
+        label = f"{jurisdiction.upper()} {identifier} ({bill_session})"
+        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, bill_session, identifier)
         live = govbot_index.get(identifier)
         compare_bills(report, local, live, label,
-                      conn=conn, jurisdiction_code=jurisdiction, session=session,
+                      conn=conn, jurisdiction_code=jurisdiction, session=bill_session,
                       blast_radius_cache=blast_radius_cache)
         if i % 250 == 0:
             print(f"    ...{i}/{len(tier2_ids)}")
@@ -818,17 +864,18 @@ def run_coverage_check_with_fallback(report, conn, jurisdiction, session, api_ke
     """
     ok, repo_path, detail = _ensure_govbot_repo(jurisdiction)
     if ok:
-        govbot_index = build_govbot_bill_index(jurisdiction, session, repo_path)
+        govbot_session, local_sessions = _govbot_session_group(jurisdiction, session)
+        govbot_index = build_govbot_bill_index(jurisdiction, govbot_session, repo_path)
         if govbot_index:
             print(f"  Source: govbot (govbot-data/{_govbot_slug(jurisdiction)}-legislation, {detail})")
             result = run_govbot_coverage_check(
-                report, conn, jurisdiction, session, govbot_index,
+                report, conn, jurisdiction, govbot_session, govbot_index,
                 tier2_limit=tier2_limit, tier2_random=tier2_random,
-                blast_radius_cache=blast_radius_cache,
+                blast_radius_cache=blast_radius_cache, local_sessions=local_sessions,
             )
             result["source"] = "govbot"
             return result
-        detail = f"repo synced but has no readable bill data for {session!r} yet"
+        detail = f"repo synced but has no readable bill data for {govbot_session!r} yet"
 
     print(f"  Source: live API (fallback — {detail})")
     result = run_coverage_check(report, conn, jurisdiction, session, api_key,

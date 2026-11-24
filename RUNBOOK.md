@@ -1983,7 +1983,11 @@ live-API methodology only when a jurisdiction's govbot repo can't be cloned/upda
 have the requested session yet, never as a standing second check run alongside govbot. **MI's
 govbot identifiers are zero-padded** (e.g. `"SB 0001"` vs the live API's `"SB 1"`) — coverage
 normalizes both sides before comparing (`_normalize_bill_identifier`), so don't be alarmed by
-raw identifier strings looking different in govbot's own `metadata.json`.
+raw identifier strings looking different in govbot's own `metadata.json`. **Where govbot keeps
+one session folder for several of ours** (OPEN-847: Maine's `132` is our 132R1+132S1+132R2;
+Maryland's `2026` also holds our 2026s1), `GOVBOT_SESSION_GROUPS` in `quality_check.py` lists
+them: `--coverage me 132` (or `me 132R2`) compares govbot's whole `132` against all three of ours.
+A new legislature or special session that govbot folds the same way needs a row there.
 
 ```bash
 OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage <jurisdiction> <session>
