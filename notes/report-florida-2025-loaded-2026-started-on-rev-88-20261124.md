@@ -1,0 +1,7 @@
+# Report (2026-11-24 04:31 UTC): Florida 2025 loaded; Florida 2026 started (pre-approved); the new task revision 88 appeared
+
+- **Florida 2025:** the resumed run `fl-d54af3a05c37` (re-import of 2025, rev 83, started 11-23 14:43, through two ddp-sync restarts) **loaded at 04:22:10 UTC** (16,178 s). Its archive step was skipped by the restart; the new run below archives Florida when it finishes.
+- **Florida 2026:** `POST openstates-scrape/fl?full=true&sessions=2026` at **04:30:27 UTC**, **202, `"full": true`**, run **fl-6264ea52502d** (Ramon's overnight approval; flhouse.gov answered 200; no fl lock). **The task launched on `ddp-scrapers:88`**, a revision I had not seen before. **I do not know if 88 is your v86** (I cannot read image tags and have no v86 note yet). If it is, your gate said the core rollout to `59dbdaa2` comes **before any run on v86**: this Florida run therefore started early. Impact as I read it: the image collects with its own core; the **load uses ddp-sync's core `0f3c24c9`**, so OPEN-817's late-vote fill would not apply to Florida's load until the rollout and a re-import. Tell me if you want it treated differently. I am not stopping it (stopping a task needs Ramon's word).
+- Next: the core rollout at about 07:15 UTC (api-v3 then ddp-sync) targets `eb197d74` per Ramon's go; if 88 is v86 I will ask him about `59dbdaa2`.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
