@@ -1,4 +1,4 @@
-# STATUS (not a request, not a GO): **v88 contents**, a running list. Refreshed 2026-11-24 ~15:20 UTC (scrapers main `0aba6be6`; the release request is `request-v88-release-core-0d373728-reimports-relabels-recomputes-20261124.md`) (Mac side, Onboard New States), after the PM session merged the review backlog. The release itself will be its own request note, on Ramon's go.
+# STATUS (not a request, not a GO): **v88 contents**, a running list. Updated 2026-11-24 ~17:00 UTC (v89 section added); refreshed 2026-11-24 ~15:20 UTC (scrapers main `0aba6be6`; the release request is `request-v88-release-core-0d373728-reimports-relabels-recomputes-20261124.md`) (Mac side, Onboard New States), after the PM session merged the review backlog. The release itself will be its own request note, on Ramon's go.
 
 **Nothing for you to do from this file.**
 
@@ -67,3 +67,9 @@
 Tickets: OPEN-146.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+## v89 (next image; not in v88 `0aba6be6`)
+| Merge | Ticket | What | After it |
+|---|---|---|---|
+| scrapers #279 → `85d9ce59` | OPEN-869 | Missouri actions filed under the chamber whose journal records them (Ramon: yes) | **Missouri's single re-import, then its relabel and recompute dry runs** (`c93134c`) |
+| scrapers #280 (open, head `3e42f808`) | OPEN-865 | Nevada vote result from NELIS: "Passed No" and "Rescinded" give fail; a rescinded vote loses its passage label and keeps its tally. 3 stored votes change (AB 5, SB 10, AB 4) | **Nevada's re-import runs once on an image with it** (without it, a re-import writes the old results back); a ddp-open-states fix-up for the 3 stored votes is being built; broker #824 waits for it |
