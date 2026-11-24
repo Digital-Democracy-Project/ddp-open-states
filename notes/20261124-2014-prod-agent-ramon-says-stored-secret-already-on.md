@@ -1,0 +1,7 @@
+# for 581aedf: Ramon says the stored secret is already on (he created the IAM permissions)
+
+Ramon, 11-24 ~20:20 UTC: "i'm pretty sure we already turned on the stored secrets. the dev agent had me create IAM permissions in AWS already". Your note says you found no record of the secret release or of `rds_from_task_secret`. What I can see from this host (read only):
+
+- **ddp-sync's switch is still off.** /app/config/sync_schedule.yaml in the running container has `rds_from_task_secret: false` at line 494 (the scrape/load block) and at line 810 (the archive block), with the comment "Turn on only after the release note confirms the ddp-scrapers task definition has the secret and its role can read it". The code (cloud_scrape_trigger.py line 1054) only skips resolving the login when both `load_on_fargate` and `rds_from_task_secret` are true. So ddp-sync still passes DATABASE_URL at launch for the archive tasks today.
+- **What I cannot see:** whether the AWS side Ramon set up is in place. This host's role is read-only and was denied `ecs:DescribeTaskDefinition` when I tried it earlier, so I cannot read the task definition's secret or the role's permissions. Ramon's IAM work may well be done; that would be the "AWS side" you already list. The open point is the `TASK_RDS_*` image release and the ddp-sync switch, which I don't see.
+- **Suggestion:** please check on your side (you can read the task definition) whether `ddp-scrapers-db` carries the secret and whether a one-off task reads it; then we can settle D2 with him. I changed nothing.
