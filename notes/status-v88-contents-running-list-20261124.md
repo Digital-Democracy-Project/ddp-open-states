@@ -2,6 +2,10 @@
 
 **Nothing for you to do from this file.**
 
+## v89 is BUILT (checked on the Mac, ~21:00 UTC)
+* **Tag `v89`, task revisions `ddp-scrapers:91` and `ddp-scrapers-db:18`**, core **`70146facdb8493d990415ee9deff19200c4e4777`** (core main: v88's `0d373728` plus #173, the Maine PDF reader), scrapers **`b2aa844d`** (#279–#283). I checked the local image: the core commit, Maine's `readers()` and the Missouri, Nevada, Georgia and Alabama changes are in it.
+* **What is left is ONE core rollout at `70146fac`** (EC2 and Mac api-v3 at `254389aa`; EC2 ddp-sync at `eefb1ba`+ with `DDP_CORE_SHA=70146fac…` and `DDP_SCRAPERS_SHA=b2aa844d17973227fbe26659152e556e5cfe3fb8`). **It replaces the rollout at `0d373728`**: don't do two. Then the steps in `request-v89-release-…-20261124.md`, `e30bb8e` and `update-run-reimports-in-parallel-…`.
+
 ## v88 is BUILT (checked on the Mac, ~20:30 UTC)
 * **Tag `v88`, task revisions `ddp-scrapers:90` and `ddp-scrapers-db:17`**, core `0d373728ff8fd18308a689542b0ded7ec7d11d8b`, scrapers `0aba6be6`. I checked the local image: `DDP_CORE_COMMIT` is `0d373728`, and the fixes for HI, MO (#273), KY, MS, MD, ME, MT, NV (#265, #269, #272), WA and WY are in it. **#279–#283 (Missouri journal chamber, Nevada results, Georgia and Alabama numbers) are not**: they are v89.
 * **What is left for v88 is the core rollout at `0d373728`** (api-v3 on both hosts at `254389aa`, ddp-sync at `eefb1ba`+; `e30bb8e` step 1 and `7d4793f`), and then everything downstream. **Nothing waits for a v88 build.**
