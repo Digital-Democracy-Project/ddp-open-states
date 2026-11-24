@@ -142,3 +142,9 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 ## Ramon's answers relayed 11-25 ~01:30 UTC (PM session pop-ups; the prod agent confirms with him in its own session)
 * **Second Hawaii run: YES** ("Yes, run Hawaii again"): after the core rollout at `a7035d68` and the hi people load, one more full Hawaii re-import on v92 rev 94 or later. He gives the go in the prod session.
 * **Scheduler work, "File all three, archive record first":** SYNC-192 (archive task in the in-flight record), OPEN-881 (unmatched-voter check as a launched task), OPEN-882 (weekly people-refresh runner, D3), all related to OPEN-633, built one at a time in that order (SYNC-192 blocks OPEN-881). The PM merges ddp-sync PRs only after the core rollout; no core/scrapers merges before v93. Nothing deploys without his go.
+
+## v93 built (11-25 ~03:10 UTC) — ddp-scrapers:95 / ddp-scrapers-db:22, core `a7035d68`, **stored RDS login on db:22**
+* **Read on the Mac:** core `a7035d68`; `apply_rds_task_secret` in the image. Ramon's output: RDS entries set on `ddp-scrapers-db`, none on `ddp-scrapers`.
+* **Container with both present:** a launcher-passed `DATABASE_URL` always wins; the secret is not used. The real test is ECS reading the secret before start (the first launch from `db:22`).
+* **Left:** names-only read-back of `db:22` (and none on `ddp-scrapers:95`); the first launch from `db:22` RUNNING and exit 0 (rollback: deregister `db:22`); ddp-sync restart with the core rollout (staged); HI people load and second re-import; the Arizona canary (#488) after a clean first launch; Ramon deletes `/tmp/taskdef-*.json` and rotates the two keys (OPEN-880, #490).
+* **Open PRs:** ddp-sync #312 (SYNC-192, archive in-flight record; merge after the core rollout); #488 (canary manifest); #490 (OPEN-880). Builder running on OPEN-881 (unmatched-voter task), then OPEN-882 (people refresh runner).
