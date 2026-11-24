@@ -338,3 +338,112 @@ def test_dry_runs_and_reviewed_lists_still_reach_the_database(monkeypatch, argv)
     monkeypatch.setattr(bmc.psycopg2, "connect", connect)
     with pytest.raises(Reached):
         bmc.main(argv)
+
+
+# OPEN-865: Nevada's stored votes against NELIS's own outcome. test_fixtures/nv_open865/ holds NELIS's real "Final
+# Passage" vote lists (GetBillVotes?billKey=K&voteTypeId=3, fetched 2026-11-24) of AB 4 (12994), AB 5 (12997) and SB 10
+# (13008) of 2025Special36; the rows are the Mac replica's, stored as the old scraper wrote them (yeas > nays).
+NV = "ocd-jurisdiction/country:us/state:nv/government"
+NV_PAGES = os.path.join(HERE, "test_fixtures", "nv_open865")
+NV_SOURCE = "https://www.leg.state.nv.us/App/NELIS/REL/36th2025Special/Bill/FillSelectedBillTab?selectedTab=Votes&billKey={}&_=1"
+
+
+def nv_row(vote_id, bill, key, text, date, yes, no, extras=None):
+    return dict(
+        id=vote_id, motion_text=text, motion_classification=["passage"], bill_action=None, nelis_outcome=extras,
+        jurisdiction_id=NV, bill=bill, start_date=f"{date}T08:00:00+00:00", chamber="upper", result="pass",
+        source=NV_SOURCE.format(key), voters=21, yes=yes, no=no,
+    )
+
+
+NV_ROWS = [
+    nv_row("ocd-vote/ab4-asm", "AB 4", 12994, "Assembly (1st Reprint)", "2025-11-16", 31, 11),
+    nv_row("ocd-vote/ab4-3rd", "AB 4", 12994, "Senate (3rd Reprint)", "2025-11-18", 16, 2),
+    nv_row("ocd-vote/ab4-4th", "AB 4", 12994, "Senate (4th Reprint)", "2025-11-19", 16, 2),
+    nv_row("ocd-vote/ab5-asm", "AB 5", 12997, "Assembly (1st Reprint)", "2025-11-16", 22, 20),
+    nv_row("ocd-vote/ab5-sen", "AB 5", 12997, "Senate (2nd Reprint)", "2025-11-19", 10, 8),
+    nv_row("ocd-vote/sb10-sen", "SB 10", 13008, "Senate (1st Reprint)", "2025-11-19", 18, 0),
+    nv_row("ocd-vote/sb10-asm", "SB 10", 13008, "Assembly (1st Reprint)", "2025-11-19", 27, 10),
+]
+
+
+@pytest.fixture(scope="module")
+def nelis():
+    return bmc.nv_nelis_votes(NV_PAGES)
+
+
+def test_nevada_failed_votes_change_the_result_only_and_a_rescinded_vote_ends_as_the_scraper_stores_it(nelis):
+    changes, unclassified = bmc.plan_nv_results(NV_ROWS, nelis)
+    assert unclassified == 0
+    assert [(c["id"], c["field"], c["old"], c["new"]) for c in changes] == [
+        ("ocd-vote/ab4-3rd", "result", "pass", "fail"),
+        ("ocd-vote/ab4-3rd", "motion_classification", "passage", ""),
+        ("ocd-vote/ab4-3rd", "nelis_outcome", "", "Rescinded"),
+        ("ocd-vote/ab5-sen", "result", "pass", "fail"),  # 10-8 of 21: 11 are needed
+        ("ocd-vote/sb10-asm", "result", "pass", "fail"),  # 27-10 of 42: two thirds is 28
+    ]
+    assert len({c["id"] for c in changes}) == 3
+
+
+def test_nevada_votes_nelis_passed_and_votes_without_a_nelis_page_are_left_alone(nelis):
+    other = nv_row("ocd-vote/x", "AB 9", 99999, "Senate (1st Reprint)", "2025-11-19", 1, 0)
+    az = dict(NV_ROWS[0], id="ocd-vote/az", jurisdiction_id=AZ)
+    changes, unclassified = bmc.plan_nv_results([NV_ROWS[0], NV_ROWS[2], NV_ROWS[3], NV_ROWS[5], other, az], nelis)
+    assert (changes, unclassified) == ([], 2)
+
+
+def test_a_planned_nevada_vote_is_not_planned_again(nelis):
+    fixed = dict(NV_ROWS[1], result="fail", motion_classification=[], nelis_outcome="Rescinded")
+    assert bmc.plan_nv_results([fixed], nelis) == ([], 0)
+
+
+class _ExtrasCursor(_Cursor):
+    def execute(self, sql, params):
+        new, vote_id, old = params
+        self.conn.sql.append(" ".join(sql.split()))
+        key = (vote_id, "classification" if "motion_classification" in sql else "outcome" if "nelis_outcome" in sql else "result")
+        self.rowcount = 1 if self.conn.stored.get(key) == old else 0
+        if self.rowcount:
+            self.conn.pending[key] = new
+
+
+class _ExtrasConn(_Conn):
+    def cursor(self):
+        return _ExtrasCursor(self)
+
+
+def test_the_nevada_list_writes_each_column_and_undoes(tmp_path, nelis):
+    changes, _ = bmc.plan_nv_results(NV_ROWS, nelis)
+    conn = _ExtrasConn({
+        ("ocd-vote/ab4-3rd", "result"): "pass", ("ocd-vote/ab4-3rd", "classification"): ["passage"],
+        ("ocd-vote/ab4-3rd", "outcome"): "", ("ocd-vote/ab5-sen", "result"): "pass",
+        ("ocd-vote/sb10-asm", "result"): "pass",
+    })
+    before = dict(conn.stored)
+    bmc.write(conn, changes, str(tmp_path / "committed.csv"))
+    assert conn.stored[("ocd-vote/ab4-3rd", "outcome")] == "Rescinded"
+    assert conn.stored[("ocd-vote/ab4-3rd", "classification")] == []
+    assert [conn.stored[(v, "result")] for v in ("ocd-vote/ab4-3rd", "ocd-vote/ab5-sen", "ocd-vote/sb10-asm")] == ["fail"] * 3
+    assert sum("SET extras" in sql and "WHERE id = %s AND coalesce(extras->>'nelis_outcome', '') = %s" in sql
+               for sql in conn.sql) == 1
+    bmc.write(conn, bmc.read_list(str(tmp_path / "committed.csv"), undo=True), None)
+    assert conn.stored == before
+
+
+def test_a_stale_nevada_row_aborts_the_whole_write(tmp_path, nelis):
+    changes, _ = bmc.plan_nv_results(NV_ROWS, nelis)
+    conn = _ExtrasConn({
+        ("ocd-vote/ab4-3rd", "result"): "pass", ("ocd-vote/ab4-3rd", "classification"): ["passage"],
+        ("ocd-vote/ab4-3rd", "outcome"): "", ("ocd-vote/ab5-sen", "result"): "fail",  # already fixed underneath
+        ("ocd-vote/sb10-asm", "result"): "pass",
+    })
+    with pytest.raises(SystemExit, match="nothing written"):
+        bmc.write(conn, changes, str(tmp_path / "committed.csv"))
+    assert conn.stored[("ocd-vote/ab4-3rd", "result")] == "pass"
+
+
+def test_nv_result_needs_the_pages_and_plans_nevada_only():
+    for argv in (["--nv-result", "--dry-run"], ["--nv-result", "--nv-cache", "x", "--jurisdiction", "az", "--dry-run"],
+                 ["--nv-cache", "x", "--dry-run"], ["--nv-result", "--nv-cache", "x", "--result", "--dry-run"]):
+        with pytest.raises(SystemExit):
+            bmc.main(argv)

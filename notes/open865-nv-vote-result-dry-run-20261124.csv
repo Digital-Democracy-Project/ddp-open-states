@@ -1,0 +1,6 @@
+id,jurisdiction,bill,date,chamber,motion_text,floor_step,voters,yes,no,field,old,new
+ocd-vote/3c0dd588-d0e8-4615-87e4-b4ad90b1dabd,nv,AB 4,2025-11-18T08:00:00+00:00,upper,Senate (3rd Reprint),,21,16,2,result,pass,fail
+ocd-vote/3c0dd588-d0e8-4615-87e4-b4ad90b1dabd,nv,AB 4,2025-11-18T08:00:00+00:00,upper,Senate (3rd Reprint),,21,16,2,motion_classification,passage,
+ocd-vote/3c0dd588-d0e8-4615-87e4-b4ad90b1dabd,nv,AB 4,2025-11-18T08:00:00+00:00,upper,Senate (3rd Reprint),,21,16,2,nelis_outcome,,Rescinded
+ocd-vote/61f2952e-7d98-4c03-8716-ff3ad87bae8d,nv,SB 10,2025-11-19T08:00:00+00:00,lower,Assembly (1st Reprint),,42,27,10,result,pass,fail
+ocd-vote/a0b9d64f-ebee-4900-80cc-acf11faf3bec,nv,AB 5,2025-11-19T08:00:00+00:00,upper,Senate (2nd Reprint),,21,10,8,result,pass,fail
