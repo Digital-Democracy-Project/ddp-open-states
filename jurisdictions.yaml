@@ -518,7 +518,7 @@ az:
     retry: false                     # SYNC-157: bounded whole-run retry (was scrape_retry.jurisdictions); refused with a WAF (OPEN-53)
     cadence_escalation: true          # SYNC-157: dynamic cadence may raise it to nightly (was dynamic_cadence.jurisdictions_excluded, empty)
     fargate_max_wait_s: null             # SYNC-157: this state's own Fargate ceiling, null = ddp-sync's shared max_wait_seconds
-    load_on_fargate: false              # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before)
+    load_on_fargate: true               # OPEN-633: ddp-sync runs this state's load as a Fargate task (false = the local load, as before). az is the canary, OPEN-633 2026-11-24
     session_list_attempts: null      # OPEN-555: only ut retries its session list
     session_list_backoff_s: null
   archive:

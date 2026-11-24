@@ -1935,7 +1935,7 @@ scope line was deliberate, not an oversight.
   true` for a state whose `waf.profile` is not `none`**, which replaces ddp-sync's `jurisdictions_excluded: [mi]`, OPEN-53),
   `scrape.cadence_escalation` (true everywhere), `scrape.fargate_max_wait_s` (ma 86400, else null = ddp-sync's shared 12 h),
   `waf.scrapebot_fallback` (mi; ddp-sync's scrape and archive both read it) and `enrollment.broker_bill_event_signal` (none).
-  **OPEN-633 adds an eighth, `scrape.load_on_fargate`** (false everywhere at first): true makes ddp-sync run that
+  **OPEN-633 adds an eighth, `scrape.load_on_fargate`** (false everywhere at first; **`az` is the canary, true from 2026-11-24**, OPEN-633): true makes ddp-sync run that
   state's load as a Fargate task of the scrapers image instead of locally; flipped one state at a time, and removed with
   the local path once every state is on Fargate (ddp-infra `PLAN-cloud-load-on-fargate.md`).
   ddp-sync also reads `scrape.timeout_s` / `archive.timeout_s` here now (it deleted `SCRAPE_TIMEOUT_S` / `ARCHIVE_TIMEOUT_S`),
