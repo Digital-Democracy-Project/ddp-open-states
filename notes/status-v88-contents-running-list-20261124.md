@@ -138,3 +138,7 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Mac api-v3** on `a7035d68` (Ramon ran the refresh). **EC2 api-v3 and ddp-sync: core rollout still owed** (no longer waits for the secret).
 * **Order:** core rollout → hi people load → second Hawaii re-import (Ramon's go) → v93 with `TASK_RDS_*` → canary (#488) → OPEN-880 (#490). No core merges before v93.
 * **Verified on the replica since v91:** NE v90 re-import (412, 0 unmatched of 86,723), IA 2026 (1,912 bills, 0 unmatched of 51,044; the `2026s1` question is open), ND/ME relabels, OK 2025 timeout noted (retry once after 2026).
+
+## Ramon's answers relayed 11-25 ~01:30 UTC (PM session pop-ups; the prod agent confirms with him in its own session)
+* **Second Hawaii run: YES** ("Yes, run Hawaii again"): after the core rollout at `a7035d68` and the hi people load, one more full Hawaii re-import on v92 rev 94 or later. He gives the go in the prod session.
+* **Scheduler work, "File all three, archive record first":** SYNC-192 (archive task in the in-flight record), OPEN-881 (unmatched-voter check as a launched task), OPEN-882 (weekly people-refresh runner, D3), all related to OPEN-633, built one at a time in that order (SYNC-192 blocks OPEN-881). The PM merges ddp-sync PRs only after the core rollout; no core/scrapers merges before v93. Nothing deploys without his go.
