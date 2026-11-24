@@ -818,6 +818,20 @@ step matters — a newer pip breaks one of the pinned deps' build.
   outside the discipline checklist's resumability/logging/Slack-alert items: it is an operator-run,
   foreground, run-once script whose output *is* the log, and a failure is seen by the person running it.
 
+## `unmatched-voters.py` — one state's unmatched roll-call voter names, as JSON (repo root, OPEN-855)
+
+`DATABASE_URL=... python3 unmatched-voters.py <state>` prints `{"state", "sessions": {session: {total, unresolved}},
+"names": [{session, name, count}, ...]}` and only reads (read-only session; exit 2 with no connection string on any
+failure). The counting is **`qa_primitives.unresolved_voter_names()`**: Stage 3's Gate 1 vote rule
+(`attribution_resolution_rates`, a person-vote with `voter_id` NULL is unresolved) broken down by session and printed
+name; both read the same `_JURISDICTION_PERSON_VOTES` / `_UNRESOLVED_VOTE` in `qa_primitives.py`. **ddp-sync runs it
+after each state's load** (`maybe_alert_unmatched_voters` in its `pipelines/unmatched_voter_alert.py`, with the openstates venv's
+Python, because ddp-sync's own Python has no psycopg2) and owns the alert and the last-run memory. Names known and
+accepted for now go in the state's optional `quality.accepted_unmatched_voters` in `jurisdictions.yaml` (the one list;
+ddp-sync keeps none): the script marks them `"accepted": true` and the alert leaves them out. **Do not add a second unmatched-voter query or a second alert for it here**; Stage 3 keeps its own gate output.
+Measured on the Mac replica 2026-11-24: Maine 13,001 of 148,002 in 17 names (OPEN-812's numbers), well under a second per
+state.
+
 ## `quality_check.py` — live-vs-replica data quality diff (repo root)
 
 Samples bills/people from the local DB, fetches the same records from both `localhost:8002`
