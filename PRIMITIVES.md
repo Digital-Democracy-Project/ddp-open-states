@@ -1122,7 +1122,7 @@ functions, layered on top of the ordering work above rather than changing it.
   * **Scope:** 984 of 2,923 documents (514 bills). SB 292 now reads "Class D felony".
   * **Released:** core PR #94 (`a89dd31c`); `pymupdf` is declared in core's pyproject. It needs an image and `os-text-extract refresh-extraction al` (dry run first).
   * **Do not** add a text-level "struck words" cleaner for Alabama: the strike is only in the drawing.
-- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader (since joined by North Carolina, Georgia and Nevada).**
+- **OPEN-560: Louisiana, Nebraska and Washington PDFs are read without their struck-out words, by the same reader (since joined by North Carolina, Georgia, Nevada and North Dakota).**
   * **Where:** `read_without_struck_text(extract)` in openstates-core `fulltext/al.py` wraps each state's own PDF extractor (`extract_sometimes_numbered_pdf` for la and ne, `extract_line_numbered_pdf` for wa) in `CONVERSION_FUNCTIONS`, so the extractor reads the copy with struck characters removed by OPEN-530's `without_struck_text`. Washington's HTML reader and the empty "(( ))" marks: see OPEN-580 below.
   * **Only left-to-right text is measured.** The whole-archive comparison found Louisiana's redistricting maps (pages turned 90 degrees) losing parish labels to the parish borders; text in any other direction is read as before.
   * **Whole-archive comparison (2026-11-15, the Mac's archive copy):** LA 10,468 PDFs, 3,391 change; NE 3,383, 1,691; WA 5,818, 3,677. No document gains a character apart from 18 WA documents where the old reader had dropped a printed line. `scripts/open560_compare_struck_text.py` in core repeats it (read-only).
