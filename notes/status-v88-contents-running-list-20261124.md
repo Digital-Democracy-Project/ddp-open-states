@@ -1,4 +1,4 @@
-# STATUS (not a request, not a GO): **v88 contents**, a running list. Refreshed 2026-11-24 ~15:00 UTC (Mac side, Onboard New States), after the PM session merged the review backlog. The release itself will be its own request note, on Ramon's go.
+# STATUS (not a request, not a GO): **v88 contents**, a running list. Refreshed 2026-11-24 ~15:20 UTC (scrapers main `0aba6be6`; the release request is `request-v88-release-core-0d373728-reimports-relabels-recomputes-20261124.md`) (Mac side, Onboard New States), after the PM session merged the review backlog. The release itself will be its own request note, on Ramon's go.
 
 **Nothing for you to do from this file.**
 
@@ -7,7 +7,7 @@
 * **v87** (built, not yet rolled out) = `ddp-scrapers:89` / `db:16`: core `d5e548e8`, scrapers `b2d0d4db`.
 * **v88 = a new build at current mains:**
     * **core `0d373728ff8fd18308a689542b0ded7ec7d11d8b`** (core main, after #156);
-    * **scrapers `10e919d459a8c21276942d7c847c836c219d6999`** (scrapers main, after #278);
+    * **scrapers `0aba6be6631b4bb97ab2a83719661bcd449be707`** (scrapers main, after #268);
     * **ddp-open-states main** for the manifest, and **people main `37bcb364`**.
 * **v88 supersedes v87:** `0940569`'s v87 rollout at `d5e548e8` is then unnecessary. One core rollout at `0d373728` covers it, and v88 carries everything v87 does. **Ask Ramon whether to skip v87's rollout and go straight to v88.**
 
@@ -28,10 +28,10 @@
 | MT | OPEN-826, OPEN-827, OPEN-861 (hidden drafts, with api-v3 #78), OPEN-862 |
 | ME | OPEN-866 |
 
-## In scrapers `10e919d4` (after v87's `b2d0d4db`)
+## In scrapers `0aba6be6` (after v87's `b2d0d4db`)
 | State | Tickets |
 |---|---|
-| HI | OPEN-823 (#266), OPEN-856 (#277), OPEN-868 (#278) |
+| HI | OPEN-823 (#266), OPEN-825 (#268), OPEN-856 (#277), OPEN-868 (#278) |
 | MO | OPEN-848 (#273) |
 | KY | OPEN-852 (#274) |
 | MS | OPEN-828 (#270) |
@@ -42,7 +42,7 @@
 | WA | OPEN-853 (#276, 2027-28 scraped now) |
 | (v87) WY | OPEN-820 (#264) |
 
-* **Not in it:** scrapers **#268** (OPEN-825, Hawaii tallies), being re-based onto #277 now. **#279** (OPEN-869, Missouri journal chamber), which waits on Ramon's call about the "Message" lines.
+* **Not in it:** scrapers **#279** (OPEN-869, Missouri journal chamber), which waits on Ramon's call about the "Message" lines.
 
 ## Other repos (merged; their own steps)
 * **ddp-open-states:**
