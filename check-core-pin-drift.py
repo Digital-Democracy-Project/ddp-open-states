@@ -31,6 +31,12 @@ Compares these commits, each a full 40-character SHA, and fails on any differenc
              record as the image, read here with `docker exec ... cat`. A ddp-sync built before SYNC-180 has no record:
              an ERROR, never a pass.
 
+Also reported, not compared: the openstates-scrapers commit in each ddp-sync container (SYNC-188). Its build fetches
+scrapers at DDP_SCRAPERS_SHA and writes /opt/openstates-scrapers/DDP_SCRAPERS_COMMIT; the build itself fails when that
+commit needs a newer core than DDP_CORE_SHA (check-scraper-imports.sh). The scrapers image keeps no such record, so there
+is nothing here to compare it with; the release names the same commit as the image's (RUNBOOK). A ddp-sync built before
+SYNC-188 has no record: an ERROR, never a pass.
+
 Usage (each host checks its own api-v3 container):
     python3 check-core-pin-drift.py --image 350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:v61   # the Mac
     python3 check-core-pin-drift.py --image-core <40-hex sha> --sync-container ddp-sync-ddp-sync-1                 # EC2
@@ -47,6 +53,7 @@ import sys
 
 DEFAULT_CONTAINER = "ddp-openstates-api-1"
 IMAGE_RECORD = "/opt/openstates-core/DDP_CORE_COMMIT"  # written by the Dockerfile (OPEN-579)
+SCRAPERS_RECORD = "/opt/openstates-scrapers/DDP_SCRAPERS_COMMIT"  # written by ddp-sync's Dockerfile (SYNC-188)
 FORK_ARCHIVE = re.compile(r"https://github\.com/Digital-Democracy-Project/openstates-core/archive/([0-9a-f]{40})\.tar\.gz")
 FULL_SHA = re.compile(r"[0-9a-f]{40}")
 
@@ -113,6 +120,18 @@ def loader_commit(container):
     return out
 
 
+def loader_scrapers_commit(container):
+    """The openstates-scrapers commit recorded in a ddp-sync container by its build (SYNC-188)."""
+    try:
+        out = _run(["docker", "exec", container, "cat", SCRAPERS_RECORD]).strip()
+    except SourceError as exc:
+        raise SourceError(f"loader: {container} has no readable {SCRAPERS_RECORD} (a ddp-sync built before SYNC-188 "
+                          f"has none: rebuild it with DDP_SCRAPERS_SHA, the image's scrapers commit): {exc}")
+    if not FULL_SHA.fullmatch(out):
+        raise SourceError(f"loader: {container}'s {SCRAPERS_RECORD} is not a full commit: {out!r}")
+    return out
+
+
 def image_source(image, image_core):
     """(label, sha) of the live scrapers image's core, from exactly one of --image / --image-core."""
     if image and image_core:
@@ -128,6 +147,7 @@ def image_source(image, image_core):
 
 def run(image, image_core, containers, out, sync_containers=()):
     found = []    # (label, sha); the image first, so every drift line compares a container with the image
+    reported = []  # (label, sha) of ddp-sync's scrapers: printed, not compared (SYNC-188)
     errors = []
     drift = []
 
@@ -156,9 +176,15 @@ def run(image, image_core, containers, out, sync_containers=()):
             found.append(("ddp-sync loader in " + container, loader_commit(container)))
         except SourceError as exc:
             errors.append(str(exc))
+        try:
+            reported.append(("ddp-sync scrapers in " + container, loader_scrapers_commit(container)))
+        except SourceError as exc:
+            errors.append(str(exc))
 
     for label, sha in found:
         out.write(f"  {sha}  {label}\n")
+    for label, sha in reported:
+        out.write(f"  {sha}  {label} (openstates-scrapers, reported only)\n")
     if found:
         ref_label, ref_sha = found[0]
         for label, sha in found[1:]:
@@ -174,7 +200,8 @@ def run(image, image_core, containers, out, sync_containers=()):
     if drift:
         out.write("\napi-v3, ddp-sync and the scrapers image must run one openstates-core commit. Bring them to it: "
                   "rebuild both api-v3 copies at the live image's core (refresh-api-v3.sh does; on EC2 set DDP_CORE_SHA), "
-                  "and rebuild ddp-sync on EC2 with DDP_CORE_SHA set to the same commit. "
+                  "and rebuild ddp-sync on EC2 with DDP_CORE_SHA set to the same commit (and DDP_SCRAPERS_SHA to the "
+                  "image's scrapers commit, SYNC-188). "
                   "If the image named here is not the live one, name the live one. Release order: the image, then any "
                   "stored recompute, then api-v3 and ddp-sync.\n")
         return 1

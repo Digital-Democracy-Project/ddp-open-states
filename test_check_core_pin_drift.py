@@ -25,6 +25,7 @@ _spec.loader.exec_module(drift)
 
 A = "96445eb26d7d4c59c592dadc0261c47d985e6d46"
 B = "eec94082" + "0" * 32
+S = "a121b5dd62ded5975ca16f4b588691327d0dc074"  # an openstates-scrapers commit (SYNC-188)
 URL = "https://github.com/Digital-Democracy-Project/openstates-core/archive/{}.tar.gz"
 def _direct_url(sha):
     return json.dumps({"archive_info": {}, "url": URL.format(sha)})
@@ -34,7 +35,7 @@ def _direct_url(sha):
 def docker(monkeypatch):
     """Stub for drift._run: `docker run ... cat <record>` and `docker exec <container> python -c ...`."""
     state = {"image": {"img:v61": A}, "installed": {"ddp-openstates-api-1": _direct_url(A)},
-             "loader": {"ddp-sync": A}, "calls": []}
+             "loader": {"ddp-sync": A}, "loader_scrapers": {"ddp-sync": S}, "calls": []}
 
     def fake_run(cmd):
         state["calls"].append(cmd)
@@ -46,10 +47,11 @@ def docker(monkeypatch):
             return state["image"][image] + "\n"
         if cmd[1] == "exec" and cmd[3] == "cat":
             container = cmd[2]
-            assert cmd[4] == drift.IMAGE_RECORD, cmd
-            if container not in state["loader"]:
-                raise drift.SourceError(f"`{' '.join(cmd)}` exited 1: cat: {drift.IMAGE_RECORD}: No such file")
-            return state["loader"][container] + "\n"
+            assert cmd[4] in (drift.IMAGE_RECORD, drift.SCRAPERS_RECORD), cmd
+            records = state["loader"] if cmd[4] == drift.IMAGE_RECORD else state["loader_scrapers"]
+            if container not in records:
+                raise drift.SourceError(f"`{' '.join(cmd)}` exited 1: cat: {cmd[4]}: No such file")
+            return records[container] + "\n"
         if cmd[1] == "exec":
             container = cmd[2]
             if container not in state["installed"]:
@@ -221,6 +223,31 @@ def test_a_ddp_sync_record_that_is_not_a_full_commit_is_an_error(docker, record)
     docker["loader"]["ddp-sync"] = record
     rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
     assert rc == 2 and "is not a full commit" in out, out
+
+
+# --- ddp-sync's scrapers commit (SYNC-188): reported, not compared ----------------------------------------
+# ddp-sync's build fetches scrapers at DDP_SCRAPERS_SHA and records it; the scrapers image keeps no such record, so the
+# check prints it for the release to read and errors when it is missing, but never compares it with a core commit.
+
+def test_the_ddp_sync_scrapers_commit_is_reported(docker):
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 0, out
+    assert f"{S}  ddp-sync scrapers in ddp-sync (openstates-scrapers, reported only)" in out, out
+    assert "DRIFT" not in out, out
+
+
+def test_a_ddp_sync_built_before_the_scrapers_record_is_an_error_not_a_pass(docker):
+    del docker["loader_scrapers"]["ddp-sync"]
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 2 and "built before SYNC-188" in out and "OK:" not in out, out
+    assert f"{A}  ddp-sync loader in ddp-sync" in out, out  # the core is still read and shown
+
+
+@pytest.mark.parametrize("record", ["", "a121b5dd", "main", S.upper()])
+def test_a_ddp_sync_scrapers_record_that_is_not_a_full_commit_is_an_error(docker, record):
+    docker["loader_scrapers"]["ddp-sync"] = record
+    rc, out = _check(image=None, image_core=A, sync_containers=("ddp-sync",))
+    assert rc == 2 and drift.SCRAPERS_RECORD in out and "is not a full commit" in out, out
 
 
 def test_no_ddp_sync_container_is_read_unless_one_is_named(docker):
