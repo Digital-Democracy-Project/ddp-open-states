@@ -87,8 +87,9 @@
 #     Null for a state with no WAF profile; the validator requires the first two for a state with one.
 #   - scrape.session_list_attempts / session_list_backoff_s (ut only, scrapers/ut/__init__.py).
 #   - votes.house_speaker_by_session (ma, id, ms, mo, la: scrapers/<state>/voter_names.py; ok: scrapers/ok/bills.py,
-#     OPEN-790; add a session here when a new Speaker is elected), votes.senate_president_by_session (la, OPEN-764:
-#     the same for "Mr. President" on a Senate roll call)
+#     OPEN-790; ri: scrapers/ri/bills.py, OPEN-785; md: scrapers/md/votes.py, OPEN-815; add a session here when a new
+#     Speaker is elected), votes.senate_president_by_session (la, OPEN-764: the same for "Mr. President" on a Senate
+#     roll call; ri, OPEN-785; md, OPEN-815)
 #     and votes.bare_key_session (nc, scrapers/nc/bills.py).
 # Every reader still keeps its old constant as the fallback (a host or image whose manifest lacks the field, or a state
 # with no entry). The constants are deleted only after both hosts and the scrapers image run this manifest (the plan's
@@ -1982,8 +1983,23 @@ md:
     upper: Senate
     lower: House of Delegates
   votes:                       # OPEN-555: per-state vote-reading values (none for a new state)
-    house_speaker_by_session: null
-    senate_president_by_session: null
+    # OPEN-815: read by scrapers/md/votes.py. Maryland roll calls print the presiding officers by title, "Speaker" on a
+    # House roll call and "Mr. President" on a Senate one (a delegate in the chair who is printed nowhere else on the
+    # roll call cast the title's vote, and the scraper gives it to them: 2026RS house 1483, "Presiding: Clippinger").
+    # Sources, mgaleg.maryland.gov/mgawebsite/Members/Details/<id>, read 2026-11-23: pena ("Current Assignments 2025
+    # Speaker of the House"), jones ("Past House Service: Speaker of the House, 2019-2025"), ferguson ("Elected
+    # President of the Maryland Senate, January 8, 2020"; "Current Assignments 2020 Senate President"). So the same two
+    # officers held the chairs on every 2026 and 2026s1 roll call (January to August 2026): no per-day form needed.
+    # 2026s1 also carries the 2026 veto overrides, which the 2026 run records under '2026' (OPEN-718). Names as the
+    # people repo has them (ocd-person/366c0122-..., ocd-person/86f0d40f-...). 2027 is not listed: the House and Senate
+    # elect their officers when it convenes on 2027-01-13; add it then (until then a 2027 title warns and stays as
+    # printed).
+    house_speaker_by_session:
+      '2026': Joseline Peña-Melnyk
+      '2026s1': Joseline Peña-Melnyk
+    senate_president_by_session:
+      '2026': Bill Ferguson
+      '2026s1': Bill Ferguson
     bare_key_session: null
   api_keys: []
   onboarding:

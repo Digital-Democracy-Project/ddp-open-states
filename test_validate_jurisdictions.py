@@ -779,11 +779,14 @@ def test_open555_the_real_manifest_carries_todays_constants():
         # OPEN-785: Speaker Shekarchi until the House elected Blazejewski on 2026-05-07 (House Journal of that day)
         "ri": {"2026": {"2026-01-06": "Joe Shekarchi", "2026-05-07": "Chris Blazejewski"}},
         # OPEN-790: Speaker Hilbert for the whole 60th Legislature (House Journals, Jan 7 2025 and Feb 2 2026)
-        "ok": {"2025": "Kyle Hilbert", "2026": "Kyle Hilbert"}}
+        "ok": {"2025": "Kyle Hilbert", "2026": "Kyle Hilbert"},
+        # OPEN-815: Speaker Peña-Melnyk since 2025 (mgaleg.maryland.gov member pages pena and jones)
+        "md": {"2026": "Joseline Peña-Melnyk", "2026s1": "Joseline Peña-Melnyk"}}
     presidents = {c: e["votes"]["senate_president_by_session"] for c, e in data.items()}
     assert {c: v for c, v in presidents.items() if v is not None} == {
         "la": {s: "Cameron Henry" for s in LA_2024_TERM},  # OPEN-764
-        "ri": {"2026": "Val Lawson"}}  # OPEN-785
+        "ri": {"2026": "Val Lawson"},  # OPEN-785
+        "md": {"2026": "Bill Ferguson", "2026s1": "Bill Ferguson"}}  # OPEN-815: President since 2020-01-08
     bare = {c: e["votes"]["bare_key_session"] for c, e in data.items()}
     assert {c: v for c, v in bare.items() if v is not None} == {"nc": "2025"}
     assert {c: e["scraper_module"] for c, e in data.items() if e["scraper_module"] != c} == {"us": "usa"}
