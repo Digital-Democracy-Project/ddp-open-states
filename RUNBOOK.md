@@ -109,9 +109,27 @@ which image is live.
   commit (the check fails and names both commits until they are). **Rebuild ddp-sync on EC2 at the same commit too
   (SYNC-180):** cloud loads import into RDS inside ddp-sync's container, with ddp-sync's own copy of core, not the
   image's (on 2026-11-18 it was v62's `44c3b8dc` while v65 was live, so newer state rules did not apply on load). On
-  EC2, with no cloud load running: tag the running image for rollback (`docker tag ddp-sync:prod ddp-sync:pre-<sha>`), then `DDP_CORE_SHA=<full sha> docker-compose -f infrastructure/docker-compose.prod.yml
-  build ddp-sync` in `/opt/ddp-sync` (a build without it fails), recreate `ddp-sync` only, then add
-  `--sync-container ddp-sync-ddp-sync-1` (its name in the prod notes; `docker ps` to confirm) to the check above. Which tag is live:
+  EC2, with no cloud load running: tag the running image for rollback (`docker tag ddp-sync:prod ddp-sync:pre-<sha>`), then `DDP_CORE_SHA=<full sha> DDP_SCRAPERS_SHA=<full sha> docker-compose -f infrastructure/docker-compose.prod.yml
+  build ddp-sync` in `/opt/ddp-sync` (a build without either fails), recreate `ddp-sync` only, then add
+  `--sync-container ddp-sync-ddp-sync-1` (its name in the prod notes; `docker ps` to confirm) to the check above; it
+  also prints the scrapers commit ddp-sync was built with. **`DDP_SCRAPERS_SHA` is the same openstates-scrapers commit
+  as the live image's (SYNC-188):** ddp-sync's build used to take scrapers main at build time, and on 2026-11-23 that
+  paired scrapers needing core `58205e01`+ (`openstates.utils.tls`) with the pinned `9157b6b5`, so every cloud load
+  failed. The scrapers image records no scrapers commit (it clones fork main at build time), so on the Mac, where every
+  tag is built: take fork main's last commit before the image was built, then **prove it** by comparing the image's
+  files with that commit (nothing printed after the commit line = the same code; the image leaves some files out, which
+  `--diff-filter=d` ignores; a commit with an identical tree, such as a merge's, matches too and is equally right):
+  ```
+  IMG=350941939790.dkr.ecr.us-east-1.amazonaws.com/ddp-scrapers:<tag>; cd openstates-scrapers && git fetch -q origin
+  SHA=$(git log -1 --format=%H --before="$(docker inspect -f '{{.Created}}' "$IMG")" origin/main)
+  D=$(mktemp -d); C=$(docker create "$IMG"); docker cp -q "$C":/opt/openstates-scrapers "$D/s"; docker rm "$C"
+  echo "$SHA"; git --work-tree="$D/s" diff --stat --diff-filter=d "$SHA"
+  ```
+  Any output means that commit is not the image's: do not guess another, ask. ddp-sync's build then runs
+  `check-scraper-imports.sh` on the pair and stops if that commit needs a newer core than `DDP_CORE_SHA`, so a wrong
+  pair fails the build, not the loads. **Order:** rebuild ddp-sync with both commits before running the check with
+  `--sync-container` after this change; a ddp-sync built before SYNC-188 has no scrapers record, and the check stops
+  with exit 2 naming it (the same as SYNC-180's core record). Which tag is live:
   `aws ecs describe-task-definition --task-definition ddp-scrapers --query 'taskDefinition.containerDefinitions[0].image'`
   on the Mac (read-only).
 * **Not scheduled yet:** run by hand at each release; a scheduled run is a follow-up (OPEN-579).

@@ -690,6 +690,11 @@ step matters — a newer pip breaks one of the pinned deps' build.
     on EC2) and writes the same `/opt/openstates-core/DDP_CORE_COMMIT` record, read with `docker exec ... cat`. A
     ddp-sync built before SYNC-180 has no record: exit 2. The Mac runs ddp-sync natively and loads nothing, so
     `refresh-api-v3.sh` names no ddp-sync container. Lasting fix: the load moves into the Fargate task (OPEN-633).
+  * **ddp-sync's scrapers commit (SYNC-188), reported, not compared:** ddp-sync's build also fetches openstates-scrapers
+    at `DDP_SCRAPERS_SHA` (no default) and writes `/opt/openstates-scrapers/DDP_SCRAPERS_COMMIT`; `--sync-container`
+    prints it. There is nothing to compare it with (the scrapers image keeps no scrapers record; RUNBOOK says how the
+    release finds the image's commit), and a ddp-sync built before SYNC-188 has no record: exit 2. The guard against a
+    scrapers commit that needs a newer core is in ddp-sync's build, which runs `check-scraper-imports.sh` on the pair.
   * **Where it runs:** last step of `refresh-api-v3.sh` (`SCRAPERS_IMAGE` or `SCRAPERS_IMAGE_CORE`; neither is exit 2),
     by the prod agent after each EC2 api-v3 or ddp-sync rebuild (with `--sync-container`), and after each scrapers image
     release. **Do not** compare version
