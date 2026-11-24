@@ -127,3 +127,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Rhode Island's re-import can run on v91** (once): HB 7127 Senate roll calls 0→14, the 3 header-shape roll calls labelled passage, passage events about 1,323 (prediction). Update note posted at the same time as this line.
 * **Arizona canary blocked** until a v92 build with `TASK_RDS_*` set (main's script has no register-only mode); OPEN-880 (#490, secrets cleanup) rides after that.
 * **Done since the v90 section:** WY, MO, ME archive, ND text/recompute/relabel, ME relabel, OK roll-call backfill (8,767) all verified on the replica; HI found with 4,795 unmatched votes (OPEN-879, builder running).
+
+## OPEN-879 merged, v92 planned (11-25 ~00:40 UTC) — request in `request-v92-release-…-20261125.md`
+* **Merged:** core #174 (a7035d68), scrapers #290 (79c25838), people #54 (c59386b9). Core main is now `a7035d68d1344f99783042e2492ba120d110e603`; v90/v91 carry `70146fac`.
+* **v92 = scrapers `79c25838…` + core `a7035d68…` + the `TASK_RDS_*` secret release.** Then ONE core rollout (EC2 api-v3 + ddp-sync, Mac api-v3 Ramon's), the hi people load (0 created, 1 updated), the second Hawaii re-import (Ramon's new go; 178 unmatched expected before the re-scrape, only "Garcia; and" after), then the Arizona canary.
+* **Any time:** RI re-import (v91+), OK 2025+2026 after its archive.
