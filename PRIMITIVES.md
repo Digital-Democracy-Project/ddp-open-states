@@ -833,6 +833,12 @@ had to do by hand — **don't write a new one-off diffing/corpus-scan script for
   Pass a shared `blast_radius_cache={}` dict across a whole run so a repeating signature (266
   bills in OPEN-26's case) only queries once.
 
+`GOVBOT_SESSION_GROUPS` (OPEN-847) is the one table for "govbot keeps as one session folder what
+we split into several" (`("me", "132")` -> 132R1+132S1+132R2; `("md", "2026")` -> 2026+2026s1).
+`--coverage` takes either side's name and compares govbot's folder against the union of ours;
+Tier 2 reads each bill from the one of our sessions that holds it. Add a row here for the next
+legislature or state; don't add a second session-name mapping elsewhere.
+
 ## `check-va-roll-members.py` — do stored Virginia roll calls list the same members as LIS? (repo root, OPEN-429)
 
 Read-only audit: for every stored Virginia vote it fetches LIS's current roll by VoteID and sorts each

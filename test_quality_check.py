@@ -1308,3 +1308,93 @@ def test_print_structural_gate_recommendation_silent_when_nothing_failed(capsys)
     print_structural_gate_recommendation(report, "nc")
     out = capsys.readouterr().out
     assert out == ""
+
+
+# ── OPEN-847: one govbot session folder vs several of our sessions ──────────────
+
+from quality_check import _govbot_session_group, run_govbot_coverage_check, PASS, WARN
+
+
+def test_govbot_session_group_maps_govbot_folder_to_our_sessions():
+    assert _govbot_session_group("me", "132") == ("132", ["132R1", "132S1", "132R2"])
+    assert _govbot_session_group("md", "2026") == ("2026", ["2026", "2026s1"])
+
+
+def test_govbot_session_group_accepts_one_of_our_sessions():
+    """`--coverage me 132R2` (the run OPEN-672 tried) reads govbot's whole `132`."""
+    assert _govbot_session_group("me", "132R2") == ("132", ["132R1", "132S1", "132R2"])
+    assert _govbot_session_group("md", "2026s1") == ("2026", ["2026", "2026s1"])
+
+
+def test_govbot_session_group_unmapped_is_unchanged():
+    assert _govbot_session_group("al", "2026") == ("2026", ["2026"])
+    assert _govbot_session_group("pa", "2025-2026") == ("2025-2026", ["2025-2026"])
+    # the same session name in another state is not mapped
+    assert _govbot_session_group("ut", "2026") == ("2026", ["2026"])
+
+
+def _run_grouped(govbot_ids, ours_by_session, session, local_sessions=None):
+    report = MagicMock()
+    with patch("quality_check.fetch_all_local_identifiers",
+               side_effect=lambda conn, j, s: set(ours_by_session.get(s, ()))) as fetch_ids, \
+         patch("quality_check.fetch_bill", return_value={}) as fetch_bill, \
+         patch("quality_check.compare_bills") as compare:
+        result = run_govbot_coverage_check(
+            report, MagicMock(), "me", session, {i: {} for i in govbot_ids},
+            local_sessions=local_sessions)
+    return report, result, fetch_ids, fetch_bill, compare
+
+
+def test_grouped_tier1_counts_bills_in_any_of_our_sessions():
+    ours = {"132R1": ["LD 1"], "132S1": ["LD 2"], "132R2": ["LD 3"]}
+    report, result, fetch_ids, _, _ = _run_grouped(
+        ["LD 1", "LD 2", "LD 3"], ours, "132", ["132R1", "132S1", "132R2"])
+    assert result["missing"] == [] and result["extra"] == []
+    assert result["local"] == 3 and result["tier2_checked"] == 3
+    assert [c.args[2] for c in fetch_ids.call_args_list] == ["132R1", "132S1", "132R2"]
+    passes = [c.args[1] for c in report.record.call_args_list if c.args[0] == PASS]
+    assert any("Tier 1 coverage (govbot)" in p and "132R1+132S1+132R2" in p for p in passes)
+
+
+def test_grouped_tier2_reads_each_bill_from_its_own_session():
+    ours = {"2026": ["HB 1"], "2026s1": ["HB 2100"]}
+    _, _, _, fetch_bill, compare = _run_grouped(
+        ["HB 1", "HB 2100"], ours, "2026", ["2026", "2026s1"])
+    called = {c.args[4]: c.args[3] for c in fetch_bill.call_args_list}
+    assert called == {"HB 1": "2026", "HB 2100": "2026s1"}
+    assert {c.kwargs["session"] for c in compare.call_args_list} == {"2026", "2026s1"}
+
+
+def test_ungrouped_run_reads_only_the_named_session():
+    """MD's 6 special-session bills are 'missing' when only 2026 is read -- the
+    pre-OPEN-847 behaviour, still what an unmapped session gets."""
+    ours = {"2026": ["HB 1"], "2026s1": ["HB 2100"]}
+    report, result, fetch_ids, fetch_bill, _ = _run_grouped(["HB 1", "HB 2100"], ours, "2026")
+    assert result["missing"] == ["HB 2100"]
+    assert [c.args[2] for c in fetch_ids.call_args_list] == ["2026"]
+    assert [c.args[3] for c in fetch_bill.call_args_list] == ["2026"]
+
+
+def test_grouped_identifier_in_two_of_our_sessions_is_warned():
+    ours = {"2026": ["HB 1"], "2026s1": ["HB 1"]}
+    report, result, _, fetch_bill, _ = _run_grouped(["HB 1"], ours, "2026", ["2026", "2026s1"])
+    warns = [c.args[1] for c in report.record.call_args_list if c.args[0] == WARN]
+    assert any("more than one of our sessions" in w and "HB 1" in w for w in warns)
+    assert [c.args[3] for c in fetch_bill.call_args_list] == ["2026"]
+
+
+def test_coverage_with_fallback_uses_govbot_group_for_one_of_our_sessions(tmp_path):
+    session_dir = tmp_path / "country:us" / "state:me" / "sessions" / "132"
+    _write_json(str(session_dir / "bills" / "LD1" / "metadata.json"), {
+        "identifier": "LD 1", "title": "x", "actions": [], "sponsorships": [],
+    })
+    with patch("quality_check._ensure_govbot_repo",
+               return_value=(True, str(tmp_path), "synced main @ abc1234")), \
+         patch("quality_check.run_govbot_coverage_check", return_value={}) as gov, \
+         patch("quality_check.run_coverage_check") as live:
+        result = run_coverage_check_with_fallback(MagicMock(), MagicMock(), "me", "132R2",
+                                                  api_key="unused")
+    live.assert_not_called()
+    assert result["source"] == "govbot"
+    assert gov.call_args.args[3] == "132"
+    assert gov.call_args.kwargs["local_sessions"] == ["132R1", "132S1", "132R2"]
