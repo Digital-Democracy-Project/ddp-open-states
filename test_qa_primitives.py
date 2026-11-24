@@ -9,6 +9,7 @@ from qa_primitives import (
     count_people_loaded,
     find_db_vote_key_collisions,
     attribution_resolution_rates,
+    unresolved_voter_names,
 )
 
 
@@ -210,3 +211,40 @@ def test_attribution_resolution_rates_sponsorships_query_filters_entity_type_per
     assert "opencivicdata_billsponsorship" in sponsorships_sql
     assert "entity_type = 'person'" in sponsorships_sql
     assert "person_id IS NULL" in sponsorships_sql
+
+
+# ── unresolved_voter_names() (OPEN-855) ─────────────────────────────────────────
+
+def test_unresolved_voter_names_reads_sessions_and_names():
+    conn = FakeConn(fetchall_results=[
+        [("132R1", 61000, 812), ("132R2", 40000, 0)],
+        [("132R1", "PUGH of Portland", 800), ("132R1", "", 12)],
+    ])
+    result = unresolved_voter_names(conn, "me")
+    assert result["sessions"] == {
+        "132R1": {"total": 61000, "unresolved": 812},
+        "132R2": {"total": 40000, "unresolved": 0},
+    }
+    assert result["names"] == [
+        {"session": "132R1", "name": "PUGH of Portland", "count": 800},
+        {"session": "132R1", "name": "", "count": 12},
+    ]
+
+
+def test_unresolved_voter_names_uses_gate_1s_population_and_rule():
+    # The alert must count the rows Stage 3's Gate 1 counts: same jurisdiction scope, same voter_id NULL rule.
+    conn = FakeConn(fetchone_results=[(1, 0), (1, 0)], fetchall_results=[[], []])
+    attribution_resolution_rates(conn, "me")
+    unresolved_voter_names(conn, "me")
+    gate_sql = conn._cursor.executed[0][0]
+    totals_sql, totals_params = conn._cursor.executed[2]
+    names_sql, names_params = conn._cursor.executed[3]
+    me = ("ocd-jurisdiction/country:us/state:me/government",)
+    assert totals_params == names_params == me
+    for sql in (gate_sql, totals_sql, names_sql):
+        assert "opencivicdata_personvote" in sql
+        assert "ls.jurisdiction_id = %s" in sql
+        assert "pv.voter_id IS NULL" in sql
+    assert "GROUP BY ls.identifier" in totals_sql
+    assert "AND pv.voter_id IS NULL" in names_sql  # names: only the unresolved rows
+

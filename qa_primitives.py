@@ -14,6 +14,9 @@ find_db_vote_key_collisions() and attribution_resolution_rates() are new in OPEN
 bounded dry-scrape instead, since nothing is imported yet at that point). They live here because
 this is already "the module for shared QA primitives scoped by jurisdiction," not because anything
 else reuses them yet.
+
+unresolved_voter_names() (OPEN-855) is Gate 1's vote rule broken down by session and printed name, for ddp-sync's
+after-load alert (through unmatched-voters.py); both read the same _JURISDICTION_PERSON_VOTES / _UNRESOLVED_VOTE.
 """
 import functools
 import os
@@ -115,6 +118,17 @@ def find_db_vote_key_collisions(conn, st):
     return collisions, len(sessions_with_votes)
 
 
+# Gate 1's population and rule, shared with unresolved_voter_names() (OPEN-855) so the after-load alert and Stage 3
+# count exactly the same rows: every person-vote of the jurisdiction's sessions, unresolved when voter_id is NULL.
+_JURISDICTION_PERSON_VOTES = """
+        FROM opencivicdata_personvote pv
+        JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
+        JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
+        WHERE ls.jurisdiction_id = %s
+"""
+_UNRESOLVED_VOTE = "pv.voter_id IS NULL"
+
+
 def attribution_resolution_rates(conn, st):
     """OPEN-445 Gate 1 (attribution resolution): what share of this jurisdiction's imported vote
     rows and person-sponsorships actually resolved to a person, not just a name.
@@ -137,13 +151,7 @@ def attribution_resolution_rates(conn, st):
     """
     cur = conn.cursor()
     cur.execute(
-        """
-        SELECT count(*), count(*) FILTER (WHERE pv.voter_id IS NULL)
-        FROM opencivicdata_personvote pv
-        JOIN opencivicdata_voteevent ve ON ve.id = pv.vote_event_id
-        JOIN opencivicdata_legislativesession ls ON ls.id = ve.legislative_session_id
-        WHERE ls.jurisdiction_id = %s
-        """,
+        f"SELECT count(*), count(*) FILTER (WHERE {_UNRESOLVED_VOTE}) {_JURISDICTION_PERSON_VOTES}",
         (ocd_jurisdiction_id(st),),
     )
     votes_total, votes_unresolved = cur.fetchone()
@@ -164,3 +172,32 @@ def attribution_resolution_rates(conn, st):
         "votes": {"total": votes_total, "unresolved": votes_unresolved},
         "sponsorships": {"total": sponsorships_total, "unresolved": sponsorships_unresolved},
     }
+
+
+def unresolved_voter_names(conn, st):
+    """OPEN-855: Gate 1's vote rule (above), per session and per printed name, for the after-load alert in ddp-sync
+    (it runs `unmatched-voters.py`, which prints this as JSON).
+
+    Returns {'sessions': {session_identifier: {'total': int, 'unresolved': int}}, 'names': [{'session': str,
+    'name': str, 'count': int}, ...]}: every session with at least one vote row, and every voter_name left unresolved
+    in a session with its number of vote rows, most first. A blank or missing name is reported as ''."""
+    cur = conn.cursor()
+    cur.execute(
+        f"""
+        SELECT ls.identifier, count(*), count(*) FILTER (WHERE {_UNRESOLVED_VOTE}) {_JURISDICTION_PERSON_VOTES}
+        GROUP BY ls.identifier
+        """,
+        (ocd_jurisdiction_id(st),),
+    )
+    sessions = {sid: {"total": total, "unresolved": unresolved} for sid, total, unresolved in cur.fetchall()}
+    cur.execute(
+        f"""
+        SELECT ls.identifier, coalesce(pv.voter_name, ''), count(*) {_JURISDICTION_PERSON_VOTES}
+        AND {_UNRESOLVED_VOTE}
+        GROUP BY 1, 2
+        ORDER BY 3 DESC, 1, 2
+        """,
+        (ocd_jurisdiction_id(st),),
+    )
+    names = [{"session": sid, "name": name, "count": count} for sid, name, count in cur.fetchall()]
+    return {"sessions": sessions, "names": names}
