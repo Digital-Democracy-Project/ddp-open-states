@@ -132,3 +132,9 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Merged:** core #174 (a7035d68), scrapers #290 (79c25838), people #54 (c59386b9). Core main is now `a7035d68d1344f99783042e2492ba120d110e603`; v90/v91 carry `70146fac`.
 * **v92 = scrapers `79c25838…` + core `a7035d68…` + the `TASK_RDS_*` secret release.** Then ONE core rollout (EC2 api-v3 + ddp-sync, Mac api-v3 Ramon's), the hi people load (0 created, 1 updated), the second Hawaii re-import (Ramon's new go; 178 unmatched expected before the re-scrape, only "Garcia; and" after), then the Arizona canary.
 * **Any time:** RI re-import (v91+), OK 2025+2026 after its archive.
+
+## v92 built (11-25 ~01:10 UTC) — ddp-scrapers:94 / ddp-scrapers-db:21, core `a7035d68`
+* **Read on the Mac:** `DDP_CORE_COMMIT` `a7035d68…`; #174, #289, #290 in it. **No stored RDS secret again** (`TASK_RDS_*` not set), so the secret half needs a further build, **v93**, same code.
+* **Mac api-v3** on `a7035d68` (Ramon ran the refresh). **EC2 api-v3 and ddp-sync: core rollout still owed** (no longer waits for the secret).
+* **Order:** core rollout → hi people load → second Hawaii re-import (Ramon's go) → v93 with `TASK_RDS_*` → canary (#488) → OPEN-880 (#490). No core merges before v93.
+* **Verified on the replica since v91:** NE v90 re-import (412, 0 unmatched of 86,723), IA 2026 (1,912 bills, 0 unmatched of 51,044; the `2026s1` question is open), ND/ME relabels, OK 2025 timeout noted (retry once after 2026).
