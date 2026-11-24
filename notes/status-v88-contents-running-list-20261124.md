@@ -121,3 +121,9 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Optional:** OK backfill dry run, expect 8,767, md5 `ce1039b5…`, then `--expect 8767` on a second go.
 * **Open for Ramon (not for me):** RI header-shape question (S 2067 ×2, Senate H 7165).
 * **Live right now (not v90):** core `70146fac` on EC2 api-v3 and ddp-sync since 20:15 UTC; OK 2025 verified (`0beadee`); ND/RI dry runs match (`64557d1`); Maine archive running since 20:31 UTC (ddp-scrapers-db:18).
+
+## v91 (scrapers `261cae78` = v90 + #289 RI header rule; core unchanged `70146fac`) — ddp-scrapers:93 / ddp-scrapers-db:20, built 11-24 evening
+* **Read on the Mac:** `DDP_CORE_COMMIT` `70146fac`; #284–#289 present. **No stored RDS secret** (`TASK_RDS_*` not set for this run); both plain API keys copied forward on `db:20`.
+* **Rhode Island's re-import can run on v91** (once): HB 7127 Senate roll calls 0→14, the 3 header-shape roll calls labelled passage, passage events about 1,323 (prediction). Update note posted at the same time as this line.
+* **Arizona canary blocked** until a v92 build with `TASK_RDS_*` set (main's script has no register-only mode); OPEN-880 (#490, secrets cleanup) rides after that.
+* **Done since the v90 section:** WY, MO, ME archive, ND text/recompute/relabel, ME relabel, OK roll-call backfill (8,767) all verified on the replica; HI found with 4,795 unmatched votes (OPEN-879, builder running).
