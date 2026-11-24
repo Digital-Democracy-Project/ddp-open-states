@@ -2,7 +2,7 @@
 """
 Backfill the roll-call number (`house-rollcall-num` / `senate-rollcall-num`, or `legislature-rollcall-num` for
 Nebraska, in a vote event's extras) on stored Washington, Michigan, Virginia and Arizona votes (OPEN-628), and
-Nebraska, Louisiana and New Mexico votes (OPEN-685), Georgia votes (OPEN-864) and Alabama votes (OPEN-863).
+Nebraska, Louisiana and New Mexico votes (OPEN-685), Georgia votes (OPEN-864), Alabama votes (OPEN-863) and Oklahoma votes (OPEN-872).
 
 The broker reads that key into Motion.rollcall_num, and its scorecard builders order a bill's votes in one chamber by
 date, then roll-call number. These four states store a vote's day without a time, so two votes on one day (a re-vote
@@ -30,6 +30,9 @@ same value the scraper would, from data already stored:
     al  ALISON's roll-call number, kept in the vote's dedupe key "2026RS#House#521#HB460" (session, chamber word, roll
         call, bill). Alabama's scraper writes the same number under the same key. As for Georgia, the chamber word must
         agree with the vote's chamber.
+    ok  the roll call's RCS# on oklegislature.gov, kept as the end of the vote's dedupe key (the bill's vote page, "#",
+        the number: ".../votes/House/HB1003_VOTES.HTM#432"). Oklahoma's scraper writes the same number under the same
+        key. As for Georgia, the chamber word (here the page's House or Senate folder) must agree with the vote's chamber.
     Without its directory, Virginia, Arizona or New Mexico is left as it is.
 
 Every write needs --expect N. Only a vote with no roll-call key at all is written; a stored number is never
@@ -66,7 +69,7 @@ _spec = importlib.util.spec_from_file_location(
 _bmc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_bmc)
 
-STATES = ("wa", "mi", "va", "az", "ne", "la", "nm", "ga", "al")
+STATES = ("wa", "mi", "va", "az", "ne", "la", "nm", "ga", "al", "ok")
 # OPEN-685: the ids come from the manifest itself (qa_primitives), as backfill-motion-classification.py's map does, but
 # without its "has motion rules" filter: New Mexico has no motion rules and still needs its numbers.
 JURISDICTIONS = {ocd_jurisdiction_id(key): key for key in STATES}
@@ -119,6 +122,7 @@ _AZ_CACHE_NAME = re.compile(r"billStatusId=(\d+)&billStatusActionId=(\d+)&includ
 _NE_KEY_ID = re.compile(r"^\d+$")
 _GA_ROLL_CALL = re.compile(r"^(House|Senate) Vote #(\d+)(?: - .*)?$")  # georgia/bills.py: the Votes service's Description
 _AL_DEDUPE = re.compile(r"^[^#]+#(House|Senate)#(\d+)#")  # alabama/bills.py: "<session>#<chamber>#<roll call>#<bill>"
+_OK_DEDUPE = re.compile(r"/votes/(House|Senate)/[^/#]+#(\d+)$")  # ok/bills.py: "<vote page URL>#<RCS#>"
 _NM_RCS = re.compile(r"RCS#\s*(\d+)")  # the scraper's own read (nm/votes.py rollcall_number)
 
 
@@ -185,11 +189,12 @@ def rollcall_num(state, row, az_times, va_times=None, nm_rcs=None):
     elif state == "ne":
         found = _NE_KEY_ID.match(row["dedupe_key"] or "")
         return found.group(0) if found else None
-    elif state in ("ga", "al"):
-        found = (_GA_ROLL_CALL if state == "ga" else _AL_DEDUPE).match(
+    elif state in ("ga", "al", "ok"):
+        pattern = {"ga": _GA_ROLL_CALL, "al": _AL_DEDUPE, "ok": _OK_DEDUPE}[state]
+        found = (pattern.search if state == "ok" else pattern.match)(
             (row["identifier"] if state == "ga" else row["dedupe_key"]) or ""
         )
-        # the identifier (GA) or dedupe key (AL) names the chamber the scraper's key follows; a stored vote that disagrees is left
+        # the identifier (GA) or dedupe key (AL, OK) names the chamber the scraper's key follows; a stored vote that disagrees is left
         if not found or found.group(1) != {"lower": "House", "upper": "Senate"}.get(row["chamber"]):
             return None
         return found.group(2)
