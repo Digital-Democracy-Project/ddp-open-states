@@ -1144,7 +1144,7 @@ or:
 # written by new-jurisdiction from notes/probe-vtnm-20261031/nm/result.json on 2026-11-17 (OPEN-461)
 nm:
   name: New Mexico
-  status: scraping
+  status: live
   scraper_module: nm   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:nm/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -1166,11 +1166,11 @@ nm:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nm-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-618: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way)
+    embedding: true    # OPEN-618: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-618: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way)
+    qa_sweep: true    # OPEN-618: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-618; soak waived by Ramon 2026-11-20)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-618)
     broker_bill_event_signal: false
