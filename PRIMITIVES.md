@@ -817,6 +817,11 @@ step matters — a newer pip breaks one of the pinned deps' build.
   cutover: `ddp-sync` launches the family name, so the next launched task uses it. Deliberately
   outside the discipline checklist's resumability/logging/Slack-alert items: it is an operator-run,
   foreground, run-once script whose output *is* the log, and a failure is seen by the person running it.
+  **Scraper API keys (OPEN-880):** `DB_DROP_PLAIN_ENV` (names removed from `ddp-scrapers-db` only) and
+  `COLLECTION_PLAIN_TO_SECRET` + `TASK_<NAME>_SECRET_ARN` (names turned into `secrets` entries on `ddp-scrapers`, copied
+  forward by `next_revision`) sit in the same embedded Python as the RDS code, and refuse a plain-and-secret overlap on
+  `ddp-scrapers` or a leftover name on the DB family. Names only are ever printed; **don't print or log a definition's
+  `environment` or `secrets` values, and don't add a second script for this**. Tests: `test_deploy_scrapers_image.py`.
 
 ## `unmatched-voters.py` — one state's unmatched roll-call voter names, as JSON (repo root, OPEN-855)
 
