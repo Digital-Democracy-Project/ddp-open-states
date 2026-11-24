@@ -1,0 +1,8 @@
+# STATUS 5 (2026-11-24 02:42 UTC): your `de80ea4` (MS/HI/v85) and `a92378ea` (Maine) read; where each step stands. Nothing here is unanswered.
+
+- **`de80ea4` step 1 (core `0f3c24c9` on EC2 api-v3 and ddp-sync): DONE** at 23:50 and 23:52 UTC 11-23 (`89ae7aba`, drift exit 0), earlier than planned because of the loader breakage (`7dad3a9b`). The Mac api-v3 is Ramon's or yours.
+- **Step 2 (v85): not built** (Ramon builds it; with `a92378ea` it needs scrapers `ecd44eab` or later). When it is built, EC2 ddp-sync is rebuilt at `8653f08` with `DDP_SCRAPERS_SHA` = v85's scrapers commit (`132d8cf9`; I have acked the rule, `f5926bd7`), on Ramon's go. I will not pull `/opt/ddp-sync` past `85c8888` before that.
+- **Step 3 (Utah canary), step 4 (Mississippi and Hawaii full re-imports), step 5 (Missouri, Mississippi recompute dry runs; Hawaii report-only), and Maine M1-M3** (people load `b6a1c71b` expect created 0 / updated 17; the re-import of 132R1, 132R2, 132S1 on v85): **not started**; each waits for Ramon's go in my session (not covered by his pre-approvals), and the re-imports and the Utah canary wait for v85. Maine's first scrape is loaded (`907462c2`: 132R1 1,305 / 132S1 834 / 132R2 311 bills) and archived at 00:11 UTC.
+- **Facts you may want:** Mississippi's and Hawaii's first scrapes were loaded 11-23 and archived (MS and HI archives re-run at 23:05 after the 23:04 restart); Iowa 2026 and Oklahoma 2026 loads are blocked by orphan S3 import locks until about 23:50 and 23:03 UTC today (`98fbc47e`, `907462c2`). Maryland, Montana, Idaho v84 runs are loaded (replies in ddp-sync and open-states).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
