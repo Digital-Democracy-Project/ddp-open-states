@@ -10,6 +10,13 @@
 #     bash deploy-scrapers-image.sh            # OPEN-633/639: also gives the ddp-scrapers-db definition (load and
 #                                              # archive only) the RDS secret, once; later revisions copy it forward
 #
+#   DB_DROP_PLAIN_ENV=VA_API_KEY,CONGRESS_GOV_API_KEY \
+#     bash deploy-scrapers-image.sh            # OPEN-880: removes those plain entries from ddp-scrapers-db only
+#   COLLECTION_PLAIN_TO_SECRET=VA_API_KEY,CONGRESS_GOV_API_KEY TASK_VA_API_KEY_SECRET_ARN=<arn> \
+#     TASK_CONGRESS_GOV_API_KEY_SECRET_ARN=<arn> bash deploy-scrapers-image.sh
+#                                              # OPEN-880: on ddp-scrapers, those names become secrets (one secret ARN, or ARN:json-key::, each)
+#                                              # and the plain entries are dropped; later revisions copy them forward
+#
 # Stops at the first failed check. Nothing goes live until the final register step.
 set -euo pipefail
 
@@ -128,6 +135,20 @@ def carries_login(c):
     return any(n.startswith('RDS_') or n == 'DATABASE_URL' for n in names)
 
 
+def name_list(var):
+    """A comma-separated list of variable names from the environment (names only, never values)."""
+    names = [n.strip() for n in os.environ.get(var, '').split(',') if n.strip()]
+    if not all(re.fullmatch(r'[A-Z][A-Z0-9_]*', n) for n in names):
+        raise SystemExit(var + ' has an entry that is not a variable name like VA_API_KEY (the entry is not printed)')
+    if len(set(names)) != len(names):
+        raise SystemExit(var + ' names the same entry twice')
+    return names
+
+
+def names_in(c, key):
+    return {x['name'] for x in c.get(key, [])}
+
+
 current = json.load(open('/tmp/taskdef-current.json'))
 main, main_c = next_revision(current)
 # OPEN-639: collection and probe tasks fetch and parse outside websites and never touch the database, so the
@@ -167,6 +188,45 @@ if arn:
     db_c['environment'] = [x for x in db_c.get('environment', []) if x['name'] not in addr] + \
                           [{'name': k, 'value': v} for k, v in addr.items()]
     print(DB_FAMILY + ': RDS secret entries set (RDS_USERNAME, RDS_PASSWORD, RDS_HOST, RDS_PORT, RDS_DBNAME)')
+# OPEN-880: scraper API keys (read only by collection scrapers) do not belong in plain settings. On ddp-scrapers each
+# named entry becomes a secrets entry (valueFrom = TASK_<NAME>_SECRET_ARN, one secret per name) and the plain entry is
+# dropped; later revisions copy the secrets entry forward (next_revision copies the whole definition). Names and
+# ARN variable names only are printed, never a value.
+to_secret = name_list('COLLECTION_PLAIN_TO_SECRET')
+report = []  # printed only once every refusal below has passed, so a refused release never reads as a success
+no_arn = ['TASK_' + n + '_SECRET_ARN' for n in to_secret if not os.environ.get('TASK_' + n + '_SECRET_ARN')]
+if no_arn:
+    raise SystemExit('COLLECTION_PLAIN_TO_SECRET names an entry without its secret: set ' + ', '.join(no_arn))
+# The value is ECS's valueFrom: a Secrets Manager ARN (the whole secret), or <arn>:<json-key>:: (one key of a
+# multi-key secret, non-empty key). Only the variable name is reported.
+bad_arn = ['TASK_' + n + '_SECRET_ARN' for n in to_secret if os.environ.get('TASK_' + n + '_SECRET_ARN') and not
+           re.fullmatch(r'arn:aws[a-z-]*:secretsmanager:[a-z0-9-]+:\d{12}:secret:[A-Za-z0-9/_+=.@!-]+'
+                        r'(:[^:\s]+::)?', os.environ['TASK_' + n + '_SECRET_ARN'])]
+if bad_arn:
+    raise SystemExit(', '.join(bad_arn) + ' is not a Secrets Manager ARN, or ARN:json-key:: (the value is not printed)')
+if to_secret:
+    moved = [n for n in to_secret if n in names_in(main_c, 'environment')]
+    main_c['secrets'] = [x for x in main_c.get('secrets', []) if x['name'] not in to_secret] + \
+                        [{'name': n, 'valueFrom': os.environ['TASK_' + n + '_SECRET_ARN']} for n in to_secret]
+    main_c['environment'] = [x for x in main_c.get('environment', []) if x['name'] not in to_secret]
+    report = ['ddp-scrapers: secrets entries set for ' + ', '.join(to_secret) + '; plain entry removed for: ' +
+              (', '.join(moved) or '(none were present)')]
+both = sorted(names_in(main_c, 'environment') & names_in(main_c, 'secrets'))
+if both:
+    raise SystemExit('ddp-scrapers would end with a plain value and a secret for the same name (' + ', '.join(both) +
+                     '); remove the plain entry (OPEN-880)')
+
+# OPEN-880: the load and archive tasks never read the scraper API keys, so named plain entries are removed from the DB
+# family only (default none). A name still on the DB family afterwards (a secrets entry cannot be removed here) refuses.
+drop = name_list('DB_DROP_PLAIN_ENV')
+if drop:
+    gone = [n for n in drop if n in names_in(db_c, 'environment')]
+    db_c['environment'] = [x for x in db_c.get('environment', []) if x['name'] not in drop]
+    left = sorted(n for n in drop if n in names_in(db_c, 'environment') | names_in(db_c, 'secrets'))
+    if left:
+        raise SystemExit(DB_FAMILY + ' still has ' + ', '.join(left) + ' after the removal was requested (OPEN-880)')
+    report.append(DB_FAMILY + ': plain entries removed: ' + (', '.join(gone) or '(none were present)'))
+print(*report, sep='\n') if report else None
 for td, c in ((main, main_c), (db, db_c)):
     have = {x['name'] for x in c.get('secrets', [])}
     print('RDS secret in ' + td['family'] + ':', 'yes' if SECRET_NAMES <= have else 'no')

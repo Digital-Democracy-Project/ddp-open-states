@@ -611,7 +611,16 @@ The script does, in order, and stops at the first failure (nothing is live until
    refuses to release while `ddp-scrapers` carries any `RDS_*` or `DATABASE_URL` entry. It creates
    `ddp-scrapers-db` only when AWS answers that it does not exist; any other read failure stops the release. It
    registers `ddp-scrapers-db` first, so a failure on the second leaves collection on the previous image. It prints
-   which family carries the secret;
+   which family carries the secret.
+   **Scraper API keys (OPEN-880):** `DB_DROP_PLAIN_ENV=NAME,NAME` removes those plain entries from `ddp-scrapers-db`
+   only (default none; it refuses if a name is still on that family afterwards). `COLLECTION_PLAIN_TO_SECRET=NAME,NAME`
+   with one `TASK_<NAME>_SECRET_ARN` each (a Secrets Manager ARN, or `<arn>:<json-key>::` for one key of a
+   multi-key secret) turns those entries on `ddp-scrapers` into `secrets` entries and drops the
+   plain ones (later revisions copy them forward); it refuses a name without its ARN, and refuses any `ddp-scrapers`
+   definition that would end with both a plain value and a secret for one name. The release prints names only, never a
+   value. **Before the first release that uses it** (Ramon's steps): create the secrets, give
+   `ddp-scraper-ecs-execution-role` read on just those, and rotate the keys afterwards: ECS fetches a secret before the
+   task starts, so without the permission every collection task fails to start;
 7. prints the new tag and both revisions, the openstates-core commit the image carries (OPEN-579; step 5 stops if the
    image has no record of it), the core pin drift check to run, and the rollback command.
 
