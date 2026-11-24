@@ -110,7 +110,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 | PR / ticket | State | What | Release |
 |---|---|---|---|
 | scrapers #284 (open, head `007adc99`; State Specific Handling) OPEN-876 | Nebraska | YAML only, in the `ne` block: advancement roll calls count. Nebraska already stores 470 of them (the readings audit's "none stored" was wrong). Counted votes **372 → 412** (40 newly counted) | **Ramon approves the new list**, then a new image and **one Nebraska re-import** (`ne?full=true&sessions=109`); broker #465's rules follow the list |
-| OPEN-874 (State Specific Handling; building) | Wyoming | earlier-reading roll calls (139 bill-chambers) and whole-bill veto overrides only | a new image and **one** Wyoming re-import (held); blocks BROKER-589 |
+| scrapers #285 (open, head `1811898ab`; State Specific Handling) OPEN-874 | Wyoming | earlier-reading roll calls (139 bill-chambers) and whole-bill veto overrides only. Counted bill-chambers **276 → 415**; the 3 failed whole-bill overrides replace those chambers' concurrence votes (**Ramon to confirm**) | a new image carrying #285 with the earlier Wyoming fixes, then **one** Wyoming re-import (held, `e613948`); blocks BROKER-589 |
 | OPEN-875 (State Specific Handling; building) | Utah | second reading | an image and a Utah re-import |
 | OPEN-872 (mine; building) | Oklahoma | store each vote's roll-call number | an image, the backfill if needed, an Oklahoma re-import; blocks BROKER-591 |
 | OPEN-873 (mine; building) | Rhode Island | the missing Senate roll calls (HB 7127) and six title-only roll calls | an image and a Rhode Island re-import; blocks BROKER-590 |
