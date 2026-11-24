@@ -105,3 +105,12 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 | PR | Ticket | What | Release |
 |---|---|---|---|
 | core #173 (open, head `f5178560`; CI `build` SUCCESS, MERGEABLE, CLEAN) | OPEN-871 | Maine had no PDF reader (upstream says `DoNotDownload`), so its archive fetched nothing (0 documents for 5,131 versions). `ddp_states/me.py` `readers()` reads Maine PDFs with `read_without_struck_text(extract_sometimes_numbered_pdf)` (the wrapper GA, LA, NC, NE and NV use). Measured on 21 real Maine PDFs; the reader table differs for exactly one entry among 53 states | after merge: **a new scrapers image with this core (the archive runs in the image)**, a core rollout, then a Maine archive run (expect about 5,131 documents, non-zero `fetched` and `archived`); then a `recompute-diff-order me` dry run (expected to need none) |
+
+### Scorecard-rule scrapers changes (Ramon's rule, 11-24: every full up-or-down roll call counts; the latest replaces earlier ones)
+| PR / ticket | State | What | Release |
+|---|---|---|---|
+| scrapers #284 (open, head `007adc99`; State Specific Handling) OPEN-876 | Nebraska | YAML only, in the `ne` block: advancement roll calls count. Nebraska already stores 470 of them (the readings audit's "none stored" was wrong). Counted votes **372 → 412** (40 newly counted) | **Ramon approves the new list**, then a new image and **one Nebraska re-import** (`ne?full=true&sessions=109`); broker #465's rules follow the list |
+| OPEN-874 (State Specific Handling; building) | Wyoming | earlier-reading roll calls (139 bill-chambers) and whole-bill veto overrides only | a new image and **one** Wyoming re-import (held); blocks BROKER-589 |
+| OPEN-875 (State Specific Handling; building) | Utah | second reading | an image and a Utah re-import |
+| OPEN-872 (mine; building) | Oklahoma | store each vote's roll-call number | an image, the backfill if needed, an Oklahoma re-import; blocks BROKER-591 |
+| OPEN-873 (mine; building) | Rhode Island | the missing Senate roll calls (HB 7127) and six title-only roll calls | an image and a Rhode Island re-import; blocks BROKER-590 |
