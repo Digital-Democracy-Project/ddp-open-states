@@ -30,6 +30,14 @@ re-scrape never reaches them. On the vote-event basis (BROKER-491) each would be
 vote and replace the real roll call (SB 1175, 2026). A vote with a tally but no names (SB 1763's two roll calls) is a
 real vote and is left alone. Only "passage" is removed; nothing is deleted. It needs no cache.
 
+Nevada's result (OPEN-865): --nv-result --nv-cache DIR plans each stored Nevada vote against NELIS's own outcome
+(DIR holds the "Final Passage" vote lists, GetBillVotes?billKey=K&voteTypeId=3 saved as K.html, one per bill). The
+rule is the nv scraper's own: its VoteList parser reads each vote's outcome and vote_result() decides ("Passed No"
+is a fail although the yeas outnumber the nays), so nothing is copied here. A vote NELIS says "Rescinded" ends as
+the scraper stores it: result fail, "passage" removed, extras nelis_outcome = "Rescinded". Stored votes do not keep
+NELIS's outcome, which is why the pages are needed; a stored vote with no matching NELIS vote is left as it is.
+Nothing is deleted. A list row per column changed (a rescinded vote is up to three rows).
+
 A reviewed list is applied where that cache does not exist (production): --list writes the
 changes (dry run or write), --apply-list writes exactly a list's changes, --undo writes a
 list's changes back. Every write is guarded: a row whose stored classification is no longer
@@ -42,6 +50,7 @@ Usage:
     python3 backfill-motion-classification.py --jurisdiction az --az-cache DIR --dry-run --list FILE
     python3 backfill-motion-classification.py --result --dry-run --list FILE
     python3 backfill-motion-classification.py --az-empty-passage --dry-run --list FILE
+    python3 backfill-motion-classification.py --nv-result --nv-cache DIR --dry-run --list FILE
     python3 backfill-motion-classification.py --apply-list FILE --expect N --list COMMITTED
     python3 backfill-motion-classification.py --undo COMMITTED --list UNDONE
 """
@@ -95,6 +104,7 @@ FETCH_SQL = """
         ve.motion_classification,
         ve.result,
         ve.extras->>'bill_action' AS bill_action,
+        ve.extras->>'nelis_outcome' AS nelis_outcome,
         j.id AS jurisdiction_id,
         b.identifier AS bill,
         ve.start_date,
@@ -124,6 +134,13 @@ UPDATE_SQL = {
         UPDATE opencivicdata_voteevent
         SET result = %s
         WHERE id = %s AND result = %s
+    """,
+    # OPEN-865: the scraper's extras["nelis_outcome"]; an empty value takes the key off (the undo)
+    "nelis_outcome": """
+        UPDATE opencivicdata_voteevent
+        SET extras = (extras - 'nelis_outcome')
+            || coalesce(nullif(jsonb_build_object('nelis_outcome', %s::text), '{"nelis_outcome": ""}'::jsonb), '{}'::jsonb)
+        WHERE id = %s AND coalesce(extras->>'nelis_outcome', '') = %s
     """,
 }
 
@@ -230,6 +247,58 @@ def plan_empty_passage(rows):
     return changes, unclassified
 
 
+_NV_SOURCE_KEY = re.compile(r"billKey=(\d+)")
+
+
+def nv_nelis_votes(cache_dir):
+    """{(billKey, motion text, date): the nv scraper's own VoteEvent} from NELIS's saved vote lists (OPEN-865)."""
+    import lxml.html
+    from nv.bills import VoteList  # the scraper's own parser and vote_result()
+    from openstates.scrape import Bill
+    from spatula import URL
+
+    votes = {}
+    for name in sorted(os.listdir(cache_dir)):
+        if not name.endswith(".html"):
+            continue
+        with open(os.path.join(cache_dir, name), "rb") as f:
+            raw = f.read()
+        bill = Bill("X", "x", "x", chamber="lower", classification="bill")
+        page = VoteList({"bill": bill, "url": name}, source=URL("https://example.invalid/GetBillVotes"))
+        page.root = lxml.html.fromstring(raw.decode("utf-8"))
+        for member_page in page.process_page():
+            vote = member_page.input
+            votes[(name[:-5], vote.motion_text, str(vote.start_date)[:10])] = vote
+    return votes
+
+
+def plan_nv_results(rows, nelis):
+    """Nevada's stored votes against what NELIS says (OPEN-865): one change per column that differs."""
+    changes, unclassified = [], 0
+    for row in rows:
+        found = _NV_SOURCE_KEY.search(row["source"] or "")
+        vote = nelis.get((found.group(1) if found else None, row["motion_text"], str(row["start_date"])[:10]))
+        if JURISDICTION_MAP[row["jurisdiction_id"]] != "nv" or vote is None:
+            unclassified += 1
+            continue
+        old_class = list(row["motion_classification"] or [])
+        wanted = [  # (field, stored, NELIS-based)
+            ("result", row["result"], vote.result),
+            ("motion_classification", ",".join(old_class), ",".join(vote.motion_classification)),
+            ("nelis_outcome", row["nelis_outcome"] or "", vote.extras.get("nelis_outcome", "")),
+        ]
+        # only a rescinded vote has its labels and marker set here; a vote NELIS passed keeps what it has
+        rescinded = vote.extras.get("nelis_outcome") == "Rescinded"
+        for field, old, new in wanted:
+            if old != new and (field == "result" or rescinded):
+                changes.append(dict(
+                    id=row["id"], jurisdiction="nv", bill=row["bill"], date=row["start_date"], chamber=row["chamber"],
+                    motion_text=row["motion_text"], floor_step="", voters=row["voters"], yes=row["yes"],
+                    no=row["no"], field=field, old=old, new=new,
+                ))
+    return changes, unclassified
+
+
 def read_list(path, undo):
     with open(path, newline="") as f:
         rows = list(csv.DictReader(f))
@@ -296,6 +365,9 @@ def main(argv=None):
     parser.add_argument("--result", action="store_true", help="Arizona's result instead of classifications (OPEN-627)")
     parser.add_argument("--az-empty-passage", action="store_true",
                         help="Arizona's empty 0-0 votes labelled passage lose it (OPEN-712)")
+    parser.add_argument("--nv-result", action="store_true",
+                        help="Nevada's result, and a rescinded vote's labels, from NELIS's pages (OPEN-865)")
+    parser.add_argument("--nv-cache", help="folder of NELIS vote lists saved as <billKey>.html (with --nv-result)")
     parser.add_argument("--list", dest="list_path", help="write the changes (planned, or written) to this CSV")
     parser.add_argument("--apply-list", help="write exactly this list's changes (no classifying)")
     parser.add_argument("--undo", help="write this list's changes back (new -> old)")
@@ -309,6 +381,11 @@ def main(argv=None):
     if args.az_empty_passage and (args.result or args.apply_list or args.undo or args.az_cache
                                   or args.jurisdiction not in (None, "az")):
         parser.error("--az-empty-passage plans Arizona's empty votes only; a list is applied with --apply-list alone")
+    if args.nv_result and (args.result or args.az_empty_passage or args.apply_list or args.undo or args.az_cache
+                           or args.jurisdiction not in (None, "nv") or not args.nv_cache):
+        parser.error("--nv-result --nv-cache DIR plans Nevada only; a list is applied with --apply-list alone")
+    if args.nv_cache and not args.nv_result:
+        parser.error("--nv-cache goes with --nv-result")
     if args.jurisdiction and args.jurisdiction not in JURISDICTION_MAP.values():
         parser.error(f"unknown jurisdiction {args.jurisdiction!r}: not in the manifest, or no motion rules for it")
     if not (args.dry_run or args.apply_list or args.undo):
@@ -327,13 +404,15 @@ def main(argv=None):
             changes = read_list(args.apply_list or args.undo, undo=bool(args.undo))
             print(f"{len(changes):,} changes read from {args.apply_list or args.undo}" + (" (undo)" if args.undo else ""))
         else:
-            jurisdiction = "az" if (args.result or args.az_empty_passage) else args.jurisdiction
+            jurisdiction = "az" if (args.result or args.az_empty_passage) else "nv" if args.nv_result else args.jurisdiction
             ids = [j for j, k in JURISDICTION_MAP.items() if not jurisdiction or k == jurisdiction]
             az_steps = az_floor_steps(args.az_cache) if args.az_cache else None
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(FETCH_SQL, (ids,))
                 rows = cur.fetchall()
-            if args.result:
+            if args.nv_result:
+                changes, unclassified = plan_nv_results(rows, nv_nelis_votes(args.nv_cache))
+            elif args.result:
                 changes, unclassified = plan_results(rows)
             elif args.az_empty_passage:
                 changes, unclassified = plan_empty_passage(rows)
@@ -341,10 +420,11 @@ def main(argv=None):
                 changes, unclassified = plan(rows, az_steps)
             print(f"Processing {len(rows):,} vote events across {len(ids)} jurisdictions...")
             if unclassified:
-                why = ("an empty 0-0 roll call" if args.result
-                       else "not an empty vote labelled passage" if args.az_empty_passage
-                       else "no --az-cache, no voters, or no Bill page")
-                print(f"  left as they are: {unclassified:,} (Arizona: {why})")
+                why = ("no matching NELIS vote" if args.nv_result
+                       else "Arizona: an empty 0-0 roll call" if args.result
+                       else "Arizona: not an empty vote labelled passage" if args.az_empty_passage
+                       else "Arizona: no --az-cache, no voters, or no Bill page")
+                print(f"  left as they are: {unclassified:,} ({why})")
         groups = {}
         for c in changes:
             key = (c["jurisdiction"], c.get("field") or c["floor_step"], c["motion_text"], c["old"], c["new"])
