@@ -812,7 +812,7 @@ step matters — a newer pip breaks one of the pinned deps' build.
 failure). The counting is **`qa_primitives.unresolved_voter_names()`**: Stage 3's Gate 1 vote rule
 (`attribution_resolution_rates`, a person-vote with `voter_id` NULL is unresolved) broken down by session and printed
 name; both read the same `_JURISDICTION_PERSON_VOTES` / `_UNRESOLVED_VOTE` in `qa_primitives.py`. **ddp-sync runs it
-after each state's load** (`_maybe_alert_unmatched_voters` in its `openstates_scrape.py`, with the openstates venv's
+after each state's load** (`maybe_alert_unmatched_voters` in its `pipelines/unmatched_voter_alert.py`, with the openstates venv's
 Python, because ddp-sync's own Python has no psycopg2) and owns the alert and the last-run memory. Names known and
 accepted for now go in the state's optional `quality.accepted_unmatched_voters` in `jurisdictions.yaml` (the one list;
 ddp-sync keeps none): the script marks them `"accepted": true` and the alert leaves them out. **Do not add a second unmatched-voter query or a second alert for it here**; Stage 3 keeps its own gate output.

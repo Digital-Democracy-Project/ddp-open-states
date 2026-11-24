@@ -3,7 +3,7 @@
 unmatched-voters.py — one jurisdiction's roll-call voter names that matched no one, as JSON (OPEN-855).
 
 ddp-sync runs this after each state's load and alerts in #automation-errors when a state has a new unmatched name or
-its unmatched share rose (`_maybe_alert_unmatched_voters` in ddp-sync's openstates_scrape.py). The counting is
+its unmatched share rose (`maybe_alert_unmatched_voters` in ddp-sync's pipelines/unmatched_voter_alert.py). The counting is
 qa_primitives.unresolved_voter_names(): Stage 3's Gate 1 rule (a person-vote with voter_id NULL is unresolved), per
 session and per printed name. This script only reads: its session is read-only.
 
