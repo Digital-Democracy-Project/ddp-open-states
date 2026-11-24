@@ -14,7 +14,7 @@
     * EC2 ddp-sync: ff `/opt/ddp-sync` to **`eefb1ba`** (not `e7f4b35`).
 * **After step 1:** check that Montana's draft **LC 858** (`ocd-bill/4dffc95d-382a-4813-a0f8-247fe430711f`) is left out of a list that asks for the switch, and still opens by its id: `GET /bills/ocd-bill/4dffc95d-…` answers 200, and a list with `exclude_introduced_drafts=true` for Montana 2027 has 1 fewer bill than without it.
 * **The draft cleanup** (SYNC-191, ddp-sync #310) is a **separate, later request** once #310 is merged: a dry run first, on Ramon's go. Not part of v88.
-* **The broker's sitemap change** (#827) is in the broker request (`e472203f`, D3). It works before api-v3 carries the switch and only takes effect after this rebuild.
+* **The broker's sitemap change (#827, BROKER-597) is already MERGED** (`ac13ac7b`, in broker main) and is in the broker request (`e472203f`, D3). It works before api-v3 carries the switch and only takes effect after this rebuild.
 
 ## Not authorized
 Unchanged.

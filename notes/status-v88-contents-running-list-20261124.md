@@ -84,9 +84,9 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 
 | PR | Ticket | What | Release |
 |---|---|---|---|
-| api-v3 #79 (head `4cb1b08`) | OPEN-870 | new switch `exclude_introduced_drafts` on `/bills`, `/ddp/search`, `/suggest`, `/hydrate`, `/ddp/sitemap/bills`, `/ddp/embedding/ledger`; `bill_types_only` unchanged and implies it | rebuild api-v3 on each host with core `0d373728`+ (no schema change) |
-| broker #827 (head `28107a4`) | BROKER-597 | the sitemap read sends the switch (not `bill_types_only`) | `/broker-deploy`; the sitemap list is cached for an hour |
-| ddp-sync #309 (head `419bdd2`) | SYNC-190 | the two knowledge-base reads send the switch; the artifact scan is untouched | rebuild ddp-sync (needs #79 live) |
+| api-v3 #79 (**merged `26650baa`**, lint fix #80 `254389aa`) | OPEN-870 | new switch `exclude_introduced_drafts` on `/bills`, `/ddp/search`, `/suggest`, `/hydrate`, `/ddp/sitemap/bills`, `/ddp/embedding/ledger`; `bill_types_only` unchanged and implies it | rebuild api-v3 on each host with core `0d373728`+ (no schema change) |
+| broker #827 (**merged `ac13ac7b`**) | BROKER-597 | the sitemap read sends the switch (not `bill_types_only`) | `/broker-deploy` (broker request `e472203f`, D3); the sitemap list is cached for an hour |
+| ddp-sync #309 (**merged**, main `eefb1ba`) | SYNC-190 | the two knowledge-base reads send the switch; the artifact scan is untouched | rebuild ddp-sync (needs #79 live) |
 | ddp-sync #310 (head `6cabf4d`, contains #309) | SYNC-191 | `POST /trigger/knowledge-base-draft-cleanup/{jurisdiction}?dry_run=true`: compares the ledger with and without the switch, deletes drafts' vectors by exact id (the SYNC-95 code) and empties their Redis record on apply; refuses more than 200 documents; never touches bill data or the broker's `BillArtifact` rows | after #309; **the prod agent runs it on Ramon's go: dry run for `mt` first (it should name LC 858 only if it was ever embedded), then `dry_run=false`; Montana must be in `enrollment.embedding`, or it answers 404** |
 
 * **LC 858** = `ocd-bill/4dffc95d-382a-4813-a0f8-247fe430711f` (Montana 2027; SB 33 replaces it). Until #78 and #79 are live, every api-v3 read still returns it.
