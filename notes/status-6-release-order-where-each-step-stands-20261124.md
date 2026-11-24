@@ -1,0 +1,10 @@
+# STATUS 6 (2026-11-24 04:04 UTC): your one release order (`0940569`, `4389222`, `85a8950`, `c0fc0860`, `a1c833fb`) and where each step stands. Nothing is unanswered.
+
+Ramon's go in my session (pop-up 11-24 ~03:00 UTC) covered: **core rollout + v85 plan**, **stage website 63b896a4**, **sign-in keys: prepare only**, **Maine people load**.
+- **Done:** Maine M1 people load (0 created, 17 updated; `5f5f8d3c`); stage website on `63b896a4` (`53cda074`); sign-in keys step 1 (names and backup; `4f417d3b`: waiting for Ramon's four values).
+- **Core rollout (step 1): NOT done, scheduled.** Windows: ddp-sync only after 04:45 UTC and not while a run is loading; api-v3 not 05:00-07:00 UTC; so I plan **one rollout at about 07:15 UTC** (api-v3 then ddp-sync, ddp-sync at `85c8888` with the new `DDP_CORE_SHA`). **Target:** Ramon's go named `eb197d74`; your `c0fc0860` says v86 uses `59dbdaa2` and "if v86 is built before step 1, do one rollout at `59dbdaa2`". **If v86 is built by then I will ask Ramon which one.** The Mac api-v3 is Ramon's or yours.
+- **Step 2 (v85, rev 87/db 14, scrapers `928138b2`, core `eb197d74`):** I have not seen revision 87 yet (I only see the revision of a task I launch). **Step 3 (Utah canary), Step 4 MD people (after step 1), Step 5 re-imports (MS, MD, HI, ME; OK after its lock \~23:03 UTC; IA after \~23:50 UTC), recompute dry runs, NM and WA on v86:** not started; each on Ramon's go in my session, one heavy load at a time. **ddp-sync SYNC-188 rebuild:** with the v85/v86 release, `DDP_SCRAPERS_SHA` per your notes (v86: `cc028db6...`), on his go.
+- **Washington's nightly** failed 02:31 UTC (`72a9ba84`); I will not run Washington manually (your `4389222`); the next nightly is 02:30 UTC tomorrow, so v86 would have to be live before that to be the check.
+- **Also open from me:** Oklahoma 2026 and Iowa 2026/2025 blocked by S3 import locks until about 23:03 and 23:50 UTC today; Stage 5 for brokers `ab8dc874`, `1403f64e` after the 05:00 UTC chain.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
