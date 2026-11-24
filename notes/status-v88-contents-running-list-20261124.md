@@ -96,3 +96,8 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 
 * **LC 858** = `ocd-bill/4dffc95d-382a-4813-a0f8-247fe430711f` (Montana 2027; SB 33 replaces it). Until #78 and #79 are live, every api-v3 read still returns it.
 * pm-review rated #310 high-risk on two concurrency points (the two ledger reads aren't one snapshot; a live writer race). The worst case is a re-embed, never lost bill data. **Ramon may want to judge it.**
+
+### Maine archive reader (OPEN-871; found after Maine's re-import)
+| PR | Ticket | What | Release |
+|---|---|---|---|
+| core #173 (open, head `f5178560`; CI `build` SUCCESS, MERGEABLE, CLEAN) | OPEN-871 | Maine had no PDF reader (upstream says `DoNotDownload`), so its archive fetched nothing (0 documents for 5,131 versions). `ddp_states/me.py` `readers()` reads Maine PDFs with `read_without_struck_text(extract_sometimes_numbered_pdf)` (the wrapper GA, LA, NC, NE and NV use). Measured on 21 real Maine PDFs; the reader table differs for exactly one entry among 53 states | after merge: **a new scrapers image with this core (the archive runs in the image)**, a core rollout, then a Maine archive run (expect about 5,131 documents, non-zero `fetched` and `archived`); then a `recompute-diff-order me` dry run (expected to need none) |
