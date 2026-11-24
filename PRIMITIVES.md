@@ -1555,11 +1555,11 @@ functions, layered on top of the ordering work above rather than changing it.
   **VA** the time of day of LIS's `VoteDate` as HHMMSS (LIS's `VoteID` is *not* in vote order), **AZ** the time of day
   of `ReportDate` as HHMMSS (Arizona prints no roll-call number); OPEN-685 adds **NE** the vote's KeyID (key
   `legislature-rollcall-num`, Nebraska's one chamber), **LA** the "(#N)" that ends the motion text, **NM** the RCS
-  number printed on the roll-call PDF. OPEN-863 adds **AL** (ALISON's roll-call number, read from the stored dedupe key "2026RS#House#521#HB460"); OPEN-864 adds **GA** (the scraper writes GetVote's `Number`; the backfill reads it from the stored identifier, "Senate Vote #28 - 2026 Special Session", and leaves a vote whose identifier names the other chamber). **So for VA and AZ, `Motion.rollcall_num` holds a time
+  number printed on the roll-call PDF. OPEN-863 adds **AL** (ALISON's roll-call number, read from the stored dedupe key "2026RS#House#521#HB460"); OPEN-864 adds **GA** (the scraper writes GetVote's `Number`; the backfill reads it from the stored identifier, "Senate Vote #28 - 2026 Special Session", and leaves a vote whose identifier names the other chamber). OPEN-872 adds **OK** (the RCS# printed on oklegislature.gov's vote page, `scrapers/ok/bills.py`, the end of the stored dedupe key `<vote page URL>#<RCS#>`; the backfill reads it from there and leaves a vote whose page folder, House or Senate, names the other chamber). Oklahoma's number is the page's sequence for the session and runs separately for committee and floor votes, so it orders two votes on the same day and nothing else. **So for VA and AZ, `Motion.rollcall_num` holds a time
   of day, not a roll-call number:** use it only to order votes, never show it as "Roll call #N". The time is kept out of `start_date` on purpose: the
   broker finds a stored vote by its date before its id, so moving a stored vote's date breaks its re-import (a broker
   change would come first). **`backfill-vote-rollcall-num.py`** (repo root) writes the same values on stored votes,
-  from the motion text (MI, WA, LA), the identifier (GA), the dedupe key (NE, AL), saved LIS answers (`--va-votes`), the scrape cache
+  from the motion text (MI, WA, LA), the identifier (GA), the dedupe key (NE, AL, OK), saved LIS answers (`--va-votes`), the scrape cache
   (`--az-cache`) or saved roll-call PDF text (`--nm-votes`); same
   list / `--apply-list` / `--undo` / `--expect` pattern and all-or-nothing guards as the classification backfill above,
   never changes a stored number and never touches `updated_at`. Its state ids come from the manifest

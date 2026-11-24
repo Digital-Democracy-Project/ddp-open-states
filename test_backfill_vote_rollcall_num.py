@@ -370,3 +370,48 @@ def test_an_alabama_number_already_stored_is_never_changed():
     rows = [row("al", chamber="lower", extras={"house-rollcall-num": "999"}, dedupe_key="2026RS#House#521#HB460")]
     changes, counts = brn.plan(rows, None)
     assert changes == [] and counts["already"] == 1
+
+
+OK_PAGE = "https://www.oklegislature.gov/cf/2025-26%20SUPPORT%20DOCUMENTS/votes/{}/{}_VOTES.HTM#{}"
+
+
+def test_oklahoma_same_day_ties_come_out_in_voting_order():
+    # Real stored dedupe keys (Mac replica, 2025): HB 1003's House Third Readings of 2025-03-26 (#432, then #446) and
+    # HB 1543's House veto overrides of 2025-05-29 (#962, then #983). The numbers are the ones the scraper now writes.
+    rows = [
+        row("ok", chamber="lower", vote_id="ocd-vote/h432", dedupe_key=OK_PAGE.format("House", "HB1003", 432)),
+        row("ok", chamber="lower", vote_id="ocd-vote/h446", dedupe_key=OK_PAGE.format("House", "HB1003", 446)),
+        row("ok", chamber="lower", vote_id="ocd-vote/h962", dedupe_key=OK_PAGE.format("House", "HB1543", 962)),
+        row("ok", chamber="lower", vote_id="ocd-vote/h983", dedupe_key=OK_PAGE.format("House", "HB1543", 983)),
+        row("ok", chamber="upper", vote_id="ocd-vote/s627", dedupe_key=OK_PAGE.format("Senate", "SB224", 627)),
+    ]
+    assert planned(rows)[0] == [
+        ("ocd-vote/h432", "house-rollcall-num", "432"),
+        ("ocd-vote/h446", "house-rollcall-num", "446"),
+        ("ocd-vote/h962", "house-rollcall-num", "962"),
+        ("ocd-vote/h983", "house-rollcall-num", "983"),
+        ("ocd-vote/s627", "senate-rollcall-num", "627"),
+    ]
+
+
+@pytest.mark.parametrize("dedupe_key,chamber", [
+    (OK_PAGE.format("Senate", "SB224", 627), "lower"),  # the page's folder names the other chamber
+    (OK_PAGE.format("House", "HB1003", 432), "upper"),
+    ("https://www.oklegislature.gov/cf/votes/House/HB1003_VOTES.HTM", "lower"),  # no number on it
+    ("https://www.oklegislature.gov/cf/votes/House/HB1003_VOTES.HTM#", "lower"),
+    (None, "lower"),
+])
+def test_an_oklahoma_vote_whose_key_does_not_say_its_number_is_left_alone(dedupe_key, chamber):
+    changes, counts = brn.plan([row("ok", chamber=chamber, dedupe_key=dedupe_key)], None)
+    assert changes == [] and counts["unread"] == 1
+
+
+def test_an_oklahoma_number_already_stored_is_never_changed():
+    rows = [row("ok", chamber="lower", extras={"house-rollcall-num": "999"},
+                dedupe_key=OK_PAGE.format("House", "HB1003", 432))]
+    changes, counts = brn.plan(rows, None)
+    assert changes == [] and counts["already"] == 1
+
+
+def test_oklahoma_is_in_the_jurisdiction_map():
+    assert brn.JURISDICTIONS[OCD.format("ok")] == "ok"
