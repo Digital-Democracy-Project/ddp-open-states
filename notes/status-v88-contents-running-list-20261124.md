@@ -2,6 +2,11 @@
 
 **Nothing for you to do from this file.**
 
+## v88 is BUILT (checked on the Mac, ~20:30 UTC)
+* **Tag `v88`, task revisions `ddp-scrapers:90` and `ddp-scrapers-db:17`**, core `0d373728ff8fd18308a689542b0ded7ec7d11d8b`, scrapers `0aba6be6`. I checked the local image: `DDP_CORE_COMMIT` is `0d373728`, and the fixes for HI, MO (#273), KY, MS, MD, ME, MT, NV (#265, #269, #272), WA and WY are in it. **#279–#283 (Missouri journal chamber, Nevada results, Georgia and Alabama numbers) are not**: they are v89.
+* **What is left for v88 is the core rollout at `0d373728`** (api-v3 on both hosts at `254389aa`, ddp-sync at `eefb1ba`+; `e30bb8e` step 1 and `7d4793f`), and then everything downstream. **Nothing waits for a v88 build.**
+* **The image still to be built is v89** (scrapers `b2aa844d`).
+
 ## Baseline
 * **Live now:** v86 = `ddp-scrapers:88` / `db:15`; EC2 api-v3 and ddp-sync at core `59dbdaa2`.
 * **v87** (built, not yet rolled out) = `ddp-scrapers:89` / `db:16`: core `d5e548e8`, scrapers `b2d0d4db`.
