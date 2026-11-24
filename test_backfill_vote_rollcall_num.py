@@ -16,8 +16,9 @@ _spec.loader.exec_module(brn)
 OCD = "ocd-jurisdiction/country:us/state:{}/government"
 
 
-def row(state, text="", dedupe_key=None, chamber="lower", extras=None, vote_id="ocd-vote/1", bill="HB 1"):
-    return dict(id=vote_id, motion_text=text, dedupe_key=dedupe_key, extras=extras or {},
+def row(state, text="", dedupe_key=None, chamber="lower", extras=None, vote_id="ocd-vote/1", bill="HB 1",
+        identifier=""):
+    return dict(id=vote_id, motion_text=text, dedupe_key=dedupe_key, extras=extras or {}, identifier=identifier,
                 jurisdiction_id=OCD.format(state), bill=bill, start_date="2026-02-19", chamber=chamber)
 
 
@@ -292,3 +293,80 @@ def test_a_nebraska_vote_outside_its_one_chamber_is_left_alone():
 
 def test_the_new_states_are_in_the_jurisdiction_map():
     assert {brn.JURISDICTIONS[OCD.format(st)] for st in ("ne", "la", "nm")} == {"ne", "la", "nm"}
+
+
+def test_georgia_2026_ss_ties_come_out_in_voting_order():
+    # Real stored rows (Mac replica, 2026_ss): SB 3's Senate on 2026-06-23 (#27 failed 19-32, #28 passed 36-16) and
+    # HB 80's House the same day (#13 and #15, both "Local Calendar"). The numbers are the ones the scraper now writes.
+    rows = [
+        row("ga", "AGREE TO HOUSE SUBSTITUTE AS AMENDED", chamber="upper", vote_id="ocd-vote/s27",
+            identifier="Senate Vote #27 - 2026 Special Session"),
+        row("ga", "AGREE TO HOUSE SUBSTITUTE", chamber="upper", vote_id="ocd-vote/s28",
+            identifier="Senate Vote #28 - 2026 Special Session"),
+        row("ga", "Local Calendar", chamber="lower", vote_id="ocd-vote/h13",
+            identifier="House Vote #13 - 2026 Special Session"),
+        row("ga", "Local Calendar", chamber="lower", vote_id="ocd-vote/h15",
+            identifier="House Vote #15 - 2026 Special Session"),
+    ]
+    assert planned(rows)[0] == [
+        ("ocd-vote/s27", "senate-rollcall-num", "27"),
+        ("ocd-vote/s28", "senate-rollcall-num", "28"),
+        ("ocd-vote/h13", "house-rollcall-num", "13"),
+        ("ocd-vote/h15", "house-rollcall-num", "15"),
+    ]
+
+
+@pytest.mark.parametrize("identifier,chamber", [
+    ("Senate Vote #28 - 2026 Special Session", "lower"),  # the identifier names the other chamber
+    ("House Vote #5 - 2026 Special Session", "upper"),
+    ("1234", "lower"),  # no roll call in it (the scraper falls back to the VoteId when Description is empty)
+    ("House Vote # - 2026 Special Session", "lower"),
+])
+def test_a_georgia_vote_whose_identifier_does_not_say_its_number_is_left_alone(identifier, chamber):
+    changes, counts = brn.plan([row("ga", chamber=chamber, identifier=identifier)], None)
+    assert changes == [] and counts["unread"] == 1
+
+
+def test_a_georgia_number_already_stored_is_never_changed():
+    rows = [row("ga", chamber="upper", extras={"senate-rollcall-num": "99"},
+                identifier="Senate Vote #28 - 2026 Special Session")]
+    changes, counts = brn.plan(rows, None)
+    assert changes == [] and counts["already"] == 1
+
+
+def test_alabama_same_day_ties_come_out_in_voting_order():
+    # Real stored dedupe keys (Mac replica, 2026 RS): HB 460's House 520/521 (2026-02-24), HB 605's Senate 1316/1317 and
+    # SB 146's Senate 813/814, each a same-day pair of passage votes.
+    rows = [
+        row("al", chamber="lower", vote_id="ocd-vote/h520", dedupe_key="2026RS#House#520#HB460", bill="HB 460"),
+        row("al", chamber="lower", vote_id="ocd-vote/h521", dedupe_key="2026RS#House#521#HB460", bill="HB 460"),
+        row("al", chamber="upper", vote_id="ocd-vote/s1316", dedupe_key="2026RS#Senate#1316#HB605", bill="HB 605"),
+        row("al", chamber="upper", vote_id="ocd-vote/s1317", dedupe_key="2026RS#Senate#1317#HB605", bill="HB 605"),
+        row("al", chamber="upper", vote_id="ocd-vote/s813", dedupe_key="2026RS#Senate#813#SB146", bill="SB 146"),
+        row("al", chamber="upper", vote_id="ocd-vote/s814", dedupe_key="2026RS#Senate#814#SB146", bill="SB 146"),
+    ]
+    assert planned(rows)[0] == [
+        ("ocd-vote/h520", "house-rollcall-num", "520"),
+        ("ocd-vote/h521", "house-rollcall-num", "521"),
+        ("ocd-vote/s1316", "senate-rollcall-num", "1316"),
+        ("ocd-vote/s1317", "senate-rollcall-num", "1317"),
+        ("ocd-vote/s813", "senate-rollcall-num", "813"),
+        ("ocd-vote/s814", "senate-rollcall-num", "814"),
+    ]
+
+
+@pytest.mark.parametrize("dedupe_key,chamber", [
+    ("2026RS#Senate#1317#HB605", "lower"),  # the key names the other chamber
+    ("2026RS#House#520#HB460", "upper"),
+    ("2026RS#House#HB460", "lower"),  # no roll call in it
+    (None, "lower"),
+])
+def test_an_alabama_vote_whose_key_does_not_say_its_number_is_left_alone(dedupe_key, chamber):
+    changes, counts = brn.plan([row("al", chamber=chamber, dedupe_key=dedupe_key)], None)
+    assert changes == [] and counts["unread"] == 1
+
+
+def test_an_alabama_number_already_stored_is_never_changed():
+    rows = [row("al", chamber="lower", extras={"house-rollcall-num": "999"}, dedupe_key="2026RS#House#521#HB460")]
+    changes, counts = brn.plan(rows, None)
+    assert changes == [] and counts["already"] == 1
