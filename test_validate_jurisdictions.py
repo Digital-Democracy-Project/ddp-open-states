@@ -804,3 +804,15 @@ def test_open555_two_entries_may_not_share_a_scraper_module():
                                             "jurisdiction has its own scraper module"]
     b["scraper_module"] = "tt"
     assert validate({"ts": a, "tt": b}) == []
+
+
+def test_quality_accepted_unmatched_voters_is_optional_and_a_list_of_names():
+    # OPEN-855: optional, so the states without one stay valid; when present, a list of printed names.
+    entry = _valid_entry()
+    assert validate({"ts": entry}) == []
+    entry["quality"]["accepted_unmatched_voters"] = ["Mr. Speaker"]
+    assert validate({"ts": entry}) == []
+    entry["quality"]["accepted_unmatched_voters"] = "Mr. Speaker"
+    assert any("ts.quality.accepted_unmatched_voters: expected list" in e for e in validate({"ts": entry}))
+    entry["quality"]["accepted_unmatched_voters"] = ["Mr. Speaker", ""]
+    assert any("every entry must be a printed name" in e for e in validate({"ts": entry}))

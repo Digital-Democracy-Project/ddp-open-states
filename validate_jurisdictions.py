@@ -168,6 +168,12 @@ WAF_PROFILE_NEEDS = ("requests_per_minute", "max_consecutive_blocks")
 QUALITY_FIELDS = {
     "diff_cleaner": str,
 }
+# OPEN-855: optional. Roll-call voter names known to match no one and accepted for now (e.g. a presiding officer's title
+# still waiting on the manifest), so ddp-sync's after-load unmatched-voter alert does not raise them every night.
+# Read by unmatched-voters.py; each entry is the exact printed name.
+QUALITY_OPTIONAL_FIELDS = {
+    "accepted_unmatched_voters": list,
+}
 
 # OPEN-556 (PLAN-state-specific-handling C7): the legislature's own chamber names, for display, instead of "House" and
 # "Senate" everywhere (wrong for an Assembly, Virginia's House of Delegates and Nebraska). `upper` and `lower` are
@@ -239,18 +245,23 @@ def _check_positive_or_null(node, field, path, errors):
         errors.append(f"{path}.{field}: must be null or a positive whole number, got {value!r}")
 
 
-def _check_block(node, fields, path, errors):
-    """Check one nested dict (`scrape`, `archive`, etc.) against its required-field map."""
+def _check_block(node, fields, path, errors, optional=None):
+    """Check one nested dict (`scrape`, `archive`, etc.) against its required-field map, plus fields that may be left
+    out (`optional`, type-checked when present)."""
     if not isinstance(node, dict):
         errors.append(f"{path}: expected a mapping, got {type(node).__name__}")
         return
+    optional = optional or {}
     for field, expected in fields.items():
         if field not in node:
             errors.append(f"{path}.{field}: missing required field")
             continue
         _check_type(node[field], expected, f"{path}.{field}", errors)
+    for field, expected in optional.items():
+        if field in node:
+            _check_type(node[field], expected, f"{path}.{field}", errors)
     for field in node:
-        if field not in fields:
+        if field not in fields and field not in optional:
             errors.append(_unknown(f"{path}.{field}"))
 
 
@@ -367,7 +378,10 @@ def validate(data):
                                       f"(openstates-core's resilience profile reads it), got null")
 
         if isinstance(entry.get("quality"), dict):
-            _check_block(entry["quality"], QUALITY_FIELDS, f"{code}.quality", errors)
+            _check_block(entry["quality"], QUALITY_FIELDS, f"{code}.quality", errors, QUALITY_OPTIONAL_FIELDS)
+            accepted = entry["quality"].get("accepted_unmatched_voters")
+            if isinstance(accepted, list) and not all(isinstance(name, str) and name for name in accepted):
+                errors.append(f"{code}.quality.accepted_unmatched_voters: every entry must be a printed name (a non-empty string)")
 
         if isinstance(entry.get("chambers"), dict):
             _check_block(entry["chambers"], CHAMBERS_FIELDS, f"{code}.chambers", errors)
