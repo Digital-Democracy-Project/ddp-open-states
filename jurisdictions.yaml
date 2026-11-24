@@ -1010,7 +1010,7 @@ ga:
     cooldown_after_failures: null
     cooldown_s: null
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_ga_text  # OPEN-842: per-page Legislative Counsel number lines dropped (_clean_ga_text, ddp_states/ga.py)
   # actions are stored oldest first: the scraper reverses the status history it reads (scrapers/ga/bills.py), so actions are stored oldest first; 2026-11-16 Mac-half import: 0 of 30 next-action pairs went back in time (OPEN-587); validate_bill_stages re-checks once bills are scraped (BROKER-368)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only)
     unicameral: false
@@ -1735,7 +1735,7 @@ mt:
     cooldown_after_failures: null
     cooldown_s: null
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_montana_text  # OPEN-827: bill-number and sponsor header lines dropped, space runs made one (_clean_montana_text, ddp_states/mt.py)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-670 2b, 2026-11-21: legmt.gov ("Senate"; /house/: "House of Representatives The House is made up of 100 members")
     unicameral: false
     upper: Senate
