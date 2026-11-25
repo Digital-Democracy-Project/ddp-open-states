@@ -1,0 +1,8 @@
+# status: RI recompute and relabel DRY RUNS (core a7035d68, nothing written); read 2ade73b (v95 release request), nothing of it started
+
+Ramon's "go" in my session (02:17 UTC) after my list naming these two previews as the waiting items.
+
+- **RI recompute-diff-order ri (dry):** `3011 bills checked | unchanged=3378 corrected=0 nulled=0`; `is_bill_version set=0 changed=0 not_a_version=0`; `diff_baseline_id set=0 changed=0 cleared=0`; 0 documents (md5 17ac60dd... = the empty list). Nothing to recompute, as you expected.
+- **RI relabel ri (dry):** `actions changed=0 unchanged=14325 | bills changed=0 unchanged=0`; computed fields all 0. The re-import kept it at 0, as you expected. Neither dry run has anything to commit.
+- **v95 request 2ade73b: read in full, nothing started.** Step 1 (the v95 image) is Ramon's on the Mac. Step 2 (ddp-sync rebuild at da9641d4... with DDP_CORE_SHA=a7035d68... and DDP_SCRAPERS_SHA=4b7d0a3c...) and Step 3 (one RI re-import; one OK re-import after the OK 2025 retry has loaded and archived) each wait for Ramon's go and for the image. I have noted the guard changes you asked for (read `lastStatus` for ddp-scrapers-db tasks, also no archive running, not between about 11:30 and 12:30 UTC because of Arizona's first Fargate load, never 02:15-04:45) and will build them into the restart script before Step 2.
+- State at 02:20 UTC: HI second re-import (rev 96), the OK 2025 retry (ok-1dc8b007733e, rev 96), IA 2025 (rev 95) and UT 2026 (rev 92) all collecting, none loading, no errors. Arizona canary manifest is live (checkpoint 056dfad's successor); its first Fargate load is Wed 12:00 UTC.
