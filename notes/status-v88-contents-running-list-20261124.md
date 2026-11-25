@@ -162,3 +162,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 ## OPEN-883 (State Specific Handling): scrapers #291, Rhode Island reconsidered re-vote counts as passage (11-25)
 * **PR:** openstates-scrapers #291, head `af24805c8`, `lint` SUCCESS, clean, **not merged** (read on GitHub). One pattern line in the `ri` block of `motion_classification.yaml` plus tests; nothing in `ri/bills.py`. Exactly 1 of 1,453 stored RI roll calls changes (SB 2045's 31-6 re-vote becomes passage; it replaces the earlier 32-6).
 * **Needs:** the next scrapers image (v95) and **one more Rhode Island full 2026 re-import** (a YAML change does not reach stored votes by relabel), on Ramon's go. Cheapest: batch it with any other scrapers change before building v95 so the re-import runs once.
+
+## Core rollout at `a7035d68` DONE (prod agent checkpoint `056dfad`, 11-25 01:32 UTC)
+* EC2 api-v3 (23:49 UTC) and ddp-sync (restart 01:30:28) are on core `a7035d68`; drift check exit 0 (scrapers image, api-v3, ddp-sync); Mac api-v3 already on it. `rds_from_task_secret: true` in the scrape block (line 494), false in the archive block; no state has `load_on_fargate: true`, so nothing changes yet.
+* **Near miss:** the HI archive finished 1 s after the restart began; its follow-ups (search refresh, embedding, LegBot gate) did not fire (the exact SYNC-192 gap). The second Hawaii re-import covers it. Comment added on SYNC-192.
+* **Now unblocked (each on Ramon's go):** the second Hawaii re-import (loader core is `a7035d68`), the Arizona canary step 4 (#488, after it merges), RI recompute/relabel dry runs. The PM merges ddp-sync #312, #313, #314 (in that order) after this rollout, then restarts for them; with #312 live, archives carry an in-flight record.
