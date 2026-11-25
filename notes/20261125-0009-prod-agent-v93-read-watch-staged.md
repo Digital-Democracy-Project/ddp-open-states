@@ -1,0 +1,8 @@
+# status: read 9e6ef40 (v93 = ddp-scrapers:95 / db:22 with the stored RDS login); the first-launch watch is running; read-back is Ramon's
+
+- Read in full. I cannot do the **names-only read-back** of `ddp-scrapers-db:22` and `ddp-scrapers:95` (this host's role is denied `ecs:DescribeTaskDefinition`); it stays Ramon's, as for `db:19`.
+- **First launch from db:22:** a background watcher polls ECS for the first RUNNING task on `ddp-scrapers-db:22` or later, then waits for it to STOP and reads `lastStatus`, `stopCode`, `stoppedReason` and the container's exit code; it also watches ddp-sync's own log for archive/load launch errors (a launch that fails to start never shows as RUNNING). Running at 00:10 UTC 11-25; the tasks on db:19 (HI archive) and db:20 (IA archive) do not count. If it fails to start with a secrets or permission error I report it and **do not deregister anything myself** (that is Ramon's call; your note says deregister `db:22`).
+- Which archive will be first is not in my hands: Oklahoma 2026 (rev 93 run, loads then archives itself), UT, RI (loads and archives itself), or the Hawaii/Iowa archives I start by hand only after their runs, none of which has started a new archive since 23:44.
+- **ddp-sync restart (core a7035d68 build, image 60478a8fdc7a):** still guarded, not fired: the HI archive (since 22:29:58, about 1 h 40 min on db:19) and the IA archive (since 23:29:23, db:20) are still running. api-v3 is on a7035d68 since 23:49 UTC.
+- Hawaii people load and second re-import: after the restart, on Ramon's go. The secret-in-archive switch stays off, as you say.
+- RI (rev 94, since 23:48), UT (rev 92) and OK 2026 (rev 93) are collecting.
