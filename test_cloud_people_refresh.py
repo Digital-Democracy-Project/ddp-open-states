@@ -175,6 +175,18 @@ def test_os_people_output_never_shows_the_login(env, capsys):
     assert "s3cretpw" not in out.out + out.err and "could not connect to ***" in out.err
 
 
+def test_the_whole_url_is_replaced_when_the_password_also_appears_alone(env, monkeypatch, capsys):
+    url = "postgresql://fakeuser:fakepass123@fake-host.invalid:5432/fakedb"
+    monkeypatch.setenv("DATABASE_URL", url)
+    out_text = f"could not connect to {url}\nbad password fakepass123 for fakeuser\n"
+    _go(["people-refresh-abc", "ky"], run=FakeRun({"ky": (1, out_text)}))
+    err = capsys.readouterr().err
+    assert "could not connect to ***" in err and "bad password *** for fakeuser" in err
+    # nothing of the URL or the password is left, in particular no half-replaced "postgresql://fakeuser:***@fake-host..."
+    for leftover in ("fakepass123", "fake-host", "fakedb", "postgresql://"):
+        assert leftover not in err
+
+
 def test_an_s3_write_failure_is_exit_2_with_the_type_only(env, capsys):
     class Broken(FakeS3Client):
         def upload_file(self, *a):

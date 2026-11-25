@@ -78,7 +78,7 @@ def download_people(repo, ref, dest, opener=urllib.request.urlopen):
 def _scrubber(environ):
     url = environ.get("DATABASE_URL")
     password = urlsplit(url).password if url else None  # the login's own password, however the URL was made
-    secrets = [v for v in (url, environ.get("RDS_PASSWORD"), password, password and unquote(password)) if v]
+    secrets = [v for v in (password, password and unquote(password), environ.get("RDS_PASSWORD"), url) if v]
     secrets.sort(key=len, reverse=True)  # the whole URL first, so a password inside it does not leave the rest behind
 
     def scrub(text):
