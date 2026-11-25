@@ -1163,6 +1163,18 @@ functions, layered on top of the ordering work above rather than changing it.
       **us corrected=999** (set=752 changed=316).
     * Main's core on the same data: mi 0, us 2. So the US's 2 were already pending, and the rest is this change.
   * **Do not** add a second list of these names anywhere; a new name goes in the same block.
+- **OPEN-893: Iowa's "Prefiled", "Reprinted" and "Reprinted Marked Up" versions have a stage** (openstates-core PR #175, not yet
+  live), so Iowa passes the Stage 3 version-stage gate (418 of 6,630 versions had none, 6.3%; the ceiling is 5.5%).
+  * **Stages** (`note_stage()`, exact names, last in the function; legis.iowa.gov's own Bill Book version names):
+    * "Prefiled" (60): the text of a bill drafted before introduction ("SENATE/HOUSE FILE _____ BY (PROPOSED ... BILL)"), so
+      introduced, just below "Introduced" (as Montana's "Bill Draft");
+    * "Reprinted" (265): all headed "(As Amended and Passed by the House|Senate <date>)", so chamber passage;
+    * "Reprinted Marked Up" (93, always beside a "Reprinted"): the same reprint with its changes marked, chamber passage, just after it.
+  * **Measured** (Mac replica, 2026-11-25, 81,604 distinct (jurisdiction, note) pairs, clean main against the branch): only these
+    three names change, all Iowa; Iowa no-stage 418/6,630 to 0/6,630; no previously staged Iowa note moves.
+  * **Not decided here:** whether "Reprinted Marked Up" stays in the diff lineage (it may repeat the reprint), and whether Iowa
+    stores actions in journal order or date order (310 of 4,206 bills are out of date order; asked on OPEN-893).
+  * **Do not** add a second list of these names; a new Iowa name goes in the same block.
 - **OPEN-593: Virginia's substitutes are ordered by LIS file number** (openstates-core #113, not yet live).
   * **Core:** `document_number()` in `utils/version_ordering.py` also reads Virginia's LIS file number
     (`lis.blob.core.windows.net/files/<n>.PDF`, the **largest** of a version's files) as `version_sort_key`'s last
