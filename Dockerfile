@@ -155,7 +155,10 @@ WORKDIR /app
 # ddp-sync no longer needs openstates-core to run the load itself.
 # cloud_unmatched_voters.py (OPEN-881) is the after-load unmatched-voter check as a task: RUNNER_SCRIPT=cloud_unmatched_voters.py
 # with `<state> <run_id>` writes the JSON to S3 for ddp-sync to read (the query is qa_primitives.unmatched_voters_result, above).
-COPY cloud_collector.py cloud_archiver.py cloud_loader.py cloud_unmatched_voters.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
+# cloud_people_refresh.py (OPEN-882) is the weekly people refresh as a task: RUNNER_SCRIPT=cloud_people_refresh.py with
+# `<run_id> <state>[,<state>...]` downloads the (public) people repo at start and runs `os-people to-database` per state, writing
+# a per-state JSON result to S3 for ddp-sync to read.
+COPY cloud_collector.py cloud_archiver.py cloud_loader.py cloud_unmatched_voters.py cloud_people_refresh.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates

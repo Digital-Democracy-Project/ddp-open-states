@@ -846,6 +846,23 @@ ddp-sync keeps none): the script marks them `"accepted": true` and the alert lea
 Measured on the Mac replica 2026-11-24: Maine 13,001 of 148,002 in 17 names (OPEN-812's numbers), well under a second per
 state.
 
+## `cloud_people_refresh.py` — the weekly people refresh as a Fargate task (repo root, OPEN-882)
+
+`RUNNER_SCRIPT=cloud_people_refresh.py`, command `<run_id> <state>[,<state>...]`, in the scrapers image, launched on
+`ddp-scrapers-db` by ddp-sync's weekly `people_refresh` job when `openstates_scrape.people_refresh.on_fargate` is true (default
+false: the local `run-people-refresh.sh` stays one release as the rollback). It downloads the `people` repo as a plain HTTPS
+tarball (`codeload.github.com/Digital-Democracy-Project/people/tar.gz/refs/heads/main`; the repo is **public**, so no credential,
+and the image has no `git`), then runs `os-people to-database <state>` in its own subprocess per state with `OS_PEOPLE_DIRECTORY`
+pointing at the download, so one state's failure is recorded and the next still runs. It builds `DATABASE_URL` only through
+`apply_rds_task_secret()` and passes os-people's output through with the login's values removed.
+**The per-state result** is `<WORKING_TIER_PREFIX, default working-tier>/people-refresh/<run_id>/people-refresh.json` in the memory
+bucket: `{"run_id", "people_commit", "states": {"ky": {"status": "done"|"failed", "duration_s", "exit_code"?}}}`, written after
+every requested state was tried. Exit 0 all done, 1 some state failed (the result is still there), 2 nothing could be tried (no result).
+ddp-sync reads it and sends the broker scorecard signal only for states marked done (the old script said only "something failed").
+`PEOPLE_REPO` / `PEOPLE_REF` override the repository and branch. **Do not add a second `os-people` call path or a second DSN builder;
+if the people repo ever goes private this needs a credential (a token secret on `ddp-scrapers-db`, a production step) or a
+bake-at-build, see RUNBOOK.** The daily `people_pull` (git only, in ddp-sync) is unrelated and stays.
+
 ## `quality_check.py` — live-vs-replica data quality diff (repo root)
 
 Samples bills/people from the local DB, fetches the same records from both `localhost:8002`
