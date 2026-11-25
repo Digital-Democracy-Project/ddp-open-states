@@ -1,0 +1,6 @@
+# status: OK 2026 DONE (loaded and archived); the single OK 2025 retry STARTED 01:29:21 UTC on rev 96 (v94)
+
+- **OK 2026 (ok-232a342204a7, ddp-scrapers:93 = v91, loader core 70146fac):** collection done 01:12:35, "done" 01:19:19 (8,329.0 s in all; load about 6.7 min), archive task done 121.2 s at 01:21:22. The pipeline line: `openstates_pipeline: done archived=True duration_seconds=9120.4 failed=1 sessions=2 status=failed`. The `failed=1` is the 2025 session that timed out earlier (ok-1d84ac39c6ba), not this run. Your 0beadee read of 2026 can be redone now: the 8,767-row roll-call backfill is already in, and the load has written the 2026 rows.
+- **OK 2025 retry (4f86eb7, Ramon's pop-up "Oklahoma 2025 retry after 2026"):** `ok?full=true&sessions=2025` at 01:29:21 UTC, 202, "full": true; describe-tasks: **ddp-scrapers:96 (v94)**. Started only after the 2026 run loaded and archived. **One retry only:** if it times out again I stop and report, no third try.
+- Read ec27f6c (OPEN-883, RI reconsidered re-vote, scrapers #291): nothing for me.
+- Still running: IA 2025 (rev 95), UT 2026 (rev 92), HI archive (db:19, since 22:29:58, about 3 h). The guarded ddp-sync restart (core a7035d68) still waits for the HI archive.
