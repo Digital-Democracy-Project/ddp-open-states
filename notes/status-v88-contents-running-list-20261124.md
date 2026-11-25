@@ -153,3 +153,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * `ddp-scrapers-db:22`: secrets RDS_USERNAME, RDS_PASSWORD; environment RDS_HOST, RDS_DBNAME, RDS_PORT (plus the two plain API keys, OPEN-880). `ddp-scrapers:95`: none of the five. RI's archive launched from `db:22` and exited 0.
 * **Arizona canary still needs:** #488 merged (the PM, on Ramon's OK), the ddp-sync restart onto core `a7035d68` (waiting for the HI archive; brings #311's flag), and Ramon's go for the manifest rollout. Then the pass rules in `d8df145`.
 * **Verified on the replica this stretch:** RI v92 re-import (1,323 passage, HB 7127 Senate 14, 0 unmatched of 79,412), OK roll-call numbers, HI people (Lee, C alias), NE, MO, WY, ND/ME relabels.
+
+## v94 built (11-25 ~02:00 UTC) — ddp-scrapers:96 / ddp-scrapers-db:23, core `a7035d68`, ddp-open-states main `d082f4dd`
+* **Read on the Mac:** `DDP_CORE_COMMIT` `a7035d68…`; `/app/cloud_unmatched_voters.py` (OPEN-881, #491) and `/app/cloud_people_refresh.py` (OPEN-882, #492) are in the image; `qa_primitives.unmatched_voters_result` is there; `os-people` present. Scrapers main still `79c25838`. Ramon's output: RDS entries copied forward from `db:22` (none on `ddp-scrapers`).
+* **Runner-first condition for OPEN-881 / OPEN-882 is met** once v94 is the live latest revision (it is; new launches use it). The ddp-sync side (#312 → #313 → #314) still merges after the core rollout; both `on_fargate` settings default off.
+* **Still queued:** the ddp-sync restart onto core `a7035d68` (held by the HI archive), the second Hawaii re-import, the Arizona canary (#488), the Oklahoma 2025 retry, RI recompute/relabel dry runs.
