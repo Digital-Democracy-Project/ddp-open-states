@@ -23,18 +23,10 @@ import json
 import os
 import sys
 
-from qa_primitives import MANIFEST_PATH, unresolved_voter_names
+from qa_primitives import MANIFEST_PATH, accepted_unmatched_names, unmatched_voters_result
 
 
-def accepted_names(state, manifest_path=MANIFEST_PATH):
-    """The state's `quality.accepted_unmatched_voters` from jurisdictions.yaml (OPEN-855). A manifest that is missing or
-    does not validate accepts nothing: the alert then says more, never less."""
-    from validate_jurisdictions import load_and_validate
-
-    manifest, problems = load_and_validate(manifest_path)
-    if problems or not isinstance(manifest, dict):
-        return set()
-    return set(((manifest.get(state) or {}).get("quality") or {}).get("accepted_unmatched_voters") or [])
+accepted_names = accepted_unmatched_names  # OPEN-881: moved to qa_primitives, shared with cloud_unmatched_voters.py
 
 
 def main(argv=None, connect=None, manifest_path=MANIFEST_PATH):
@@ -47,24 +39,12 @@ def main(argv=None, connect=None, manifest_path=MANIFEST_PATH):
     if not database_url:
         print("unmatched-voters.py: DATABASE_URL is not set", file=sys.stderr)
         return 2
-    if connect is None:
-        import psycopg2
-
-        connect = psycopg2.connect
     try:
-        conn = connect(database_url)
-        try:
-            conn.set_session(readonly=True)
-            result = unresolved_voter_names(conn, state)
-        finally:
-            conn.close()
+        result = unmatched_voters_result(state, database_url, connect, manifest_path)
     except Exception as e:  # noqa: BLE001 -- any database failure is one exit code for the caller
         print(f"unmatched-voters.py: could not read {state}: {type(e).__name__}", file=sys.stderr)
         return 2
-    accepted = accepted_names(state, manifest_path)
-    for entry in result["names"]:
-        entry["accepted"] = entry["name"] in accepted
-    print(json.dumps({"state": state, **result}))
+    print(json.dumps(result))
     return 0
 
 
