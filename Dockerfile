@@ -153,7 +153,9 @@ WORKDIR /app
 # cloud_loader.py (OPEN-633) is the load half of a cloud run: RUNNER_SCRIPT=cloud_loader.py with
 # `<state> <run_id> [session=...]` imports one collected run into RDS as its own Fargate task, so
 # ddp-sync no longer needs openstates-core to run the load itself.
-COPY cloud_collector.py cloud_archiver.py cloud_loader.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
+# cloud_unmatched_voters.py (OPEN-881) is the after-load unmatched-voter check as a task: RUNNER_SCRIPT=cloud_unmatched_voters.py
+# with `<state> <run_id>` writes the JSON to S3 for ddp-sync to read (the query is qa_primitives.unmatched_voters_result, above).
+COPY cloud_collector.py cloud_archiver.py cloud_loader.py cloud_unmatched_voters.py cloud_text_extract.py backfill-vote-person-resolution.py open304-add-lis-identifiers.py verify-jurisdiction jurisdictions.yaml validate_jurisdictions.py qa_primitives.py import-summary.sh docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Found live 2026-09-09: cloud_archiver.py's archive_bill_versions() (openstates-core) creates
