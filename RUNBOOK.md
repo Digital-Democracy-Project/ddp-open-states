@@ -623,6 +623,11 @@ the operator runs it; the operator (or the script's output) hands the new tag an
 
 The script does, in order, and stops at the first failure (nothing is live until its last step):
 
+0. **picks the Docker (OPEN-860):** the Mac's **test** Docker VM (Colima profile `test`, on `/Volumes/DDP-HOT`), through
+   ddp-agents' `deployment/scripts/colima-test.sh`, never the main VM that runs CAMS's Postgres and Redis (a `--no-cache`
+   build of both forks filled its disk to 99% twice, 2026-11-24). If DDP-HOT is not mounted or the test VM is not running
+   it stops with the reason and builds nothing (start it with `colima-test.sh colima start`). It empties the test VM's
+   build cache when it exits. Run `check-core-pin-drift.py --image` with the `DOCKER_HOST` it prints;
 1. loads the dev `.env`, sets the region (`us-east-1`), and checks the AWS credentials work;
 2. fresh-clones `main` to `/tmp/ddp-open-states-deploy` (the `.env` copy there is deleted on exit);
 3. picks the **next unused tag** from ECR (highest `vN` + 1; ECR is immutable);
@@ -729,6 +734,9 @@ inside a quiet window (no scheduled launch, nothing running), and then prove one
 git clone --branch main --depth 1 \
     https://github.com/Digital-Democracy-Project/ddp-open-states.git /tmp/ddp-open-states-deploy
 cd /tmp/ddp-open-states-deploy
+# Docker: the TEST VM, never the main one (OPEN-860). Stop here unless all three lines succeed: an unset DOCKER_HOST means the main VM.
+CT=~/Developer/repos/ddp-agents/deployment/scripts/colima-test.sh
+bash "$CT" check && export DOCKER_HOST="$(bash "$CT" docker-host)" && [ -n "$DOCKER_HOST" ] && docker info >/dev/null && echo "building on: $DOCKER_HOST"
 cp ~/Developer/repos/ddp-open-states-dev/.env .env   # GITHUB_PERSONAL_ACCESS_TOKEN lives here
 set -a && source .env && set +a
 
