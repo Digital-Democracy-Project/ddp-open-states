@@ -564,6 +564,25 @@ if/when MI scraping breaks.
 
 ---
 
+## The weekly people refresh as a Fargate task (OPEN-882)
+
+`cloud_people_refresh.py` is in the scrapers image next to the other runners (`RUNNER_SCRIPT=cloud_people_refresh.py`, command
+`<run_id> <state>[,<state>...]`; it needs the database login, so ddp-sync launches it on `ddp-scrapers-db`). It reads the `people`
+repo at the moment it starts, so **a people change needs no image rebuild**: that is why it downloads instead of baking a commit
+in (the weekly refresh exists to pick people changes up; a baked commit would be a week stale until the next release).
+`Digital-Democracy-Project/people` is public (`gh repo view ... --json visibility` said PUBLIC on 2026-11-24), the task downloads
+it anonymously over HTTPS (about 5 s, 102 MB unpacked, measured from the Mac), and `os-people` is already in the image
+(`/opt/venv/bin/os-people`, checked on `ddp-scrapers:v93`). **Production steps, none done by this change:** none are needed while
+the repo stays public and the task has outbound internet (it does: the collection tasks reach legislature sites). If the repo is
+made private: add a read-only GitHub token as a secret on `ddp-scrapers-db` and change the download to send it (a new ticket,
+Ramon's step: secret, execution-role permission, task definition).
+To rehearse by hand, launch it like the loader with a made-up run id and one state against a throwaway copy of the database, then
+read `working-tier/people-refresh/<run_id>/people-refresh.json`. Release order: this image first, then ddp-sync, then (on Ramon's
+go) `openstates_scrape.people_refresh.on_fargate: true`, off again to undo (the local script runs again).
+How long: the host's last readable run (prod note `reply-nc-first-scheduled-jobs-20261026`) was 146.8 s for ten states, so about
+15 s a state; thirty states are roughly 8 minutes, against the Sunday 10:00 UTC start and ddp-sync's own 3,600 s limit. A Fargate
+task adds a start-up of tens of seconds and the download. Not measured on Fargate.
+
 ## Deploying a Fargate image change (OPEN-180/200/263/268)
 
 **Build on the Mac. Never on the EC2 host, and never by asking the prod agent to build.**
