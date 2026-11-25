@@ -1,4 +1,4 @@
-# REQUEST (not a GO): **ONE bundle for the states still waiting on production steps: the dry runs, the Georgia and Alabama backfills, and the Alabama and Nevada re-imports.** Ramon can give it as **three goes** (Part 1, Part 3, Part 4), with Part 2's commits each on a second go after he has seen the numbers. 2026-11-25 ~22:00 UTC (Mac side, Onboard New States)
+# REQUEST (not a GO): **ONE bundle for the states still waiting on production steps: the dry runs, the Georgia and Alabama backfills, and the Alabama and Nevada re-imports.** Ramon can give it as **four goes** (Part 1, Part 3, Part 4, Part 4b), with Part 2's commits each on a second go after he has seen the numbers. 2026-11-25 ~22:00 UTC (Mac side, Onboard New States)
 
 **Not a GO.** Please confirm each go with Ramon in your session. Everything here was already requested in earlier notes (`e30bb8e`, `a0e5d64`, `request-oregon-…`) and **has not run** (I found no prod-agent note with these results); this note only puts them in one place, on today's code: scrapers image v95 (core `a7035d68`), ddp-sync running core `a7035d68`. **Ramon's decisions (11-25, via the PM; the goes themselves he gives in your session): Part 1 YES, Part 3 YES, Part 4 YES, and Part 4 starts NOW, in parallel with the Arizona full load (scrapers run in parallel on Fargate): nothing here waits for Arizona.** None of the steps below touches ddp-sync or needs a restart.
 
@@ -32,11 +32,19 @@ Only for the states whose numbers match. Same rule as every earlier commit: stop
 | **NV** | `nv?full=true&sessions=2025Special36,84` | sponsors 0 unmatched of 27; versions 237; versions named `^Amendment` 0; documents named `^Amendment` 26; `2025Special36` 431 actions; AB 4, AB 5, SB 10 read as fail (the same result the backfill set); `passed_both_without_passed_one` 0 (OPEN-849, 865) |
 After Nevada's re-import: its recompute dry run (**corrected 32, nulled 26, flags 26, baselines 22/10/26**), then its commit on a second go.
 
+## Part 4b: the Maine, Maryland and Mississippi second passes, ONE go (Ramon: YES to all three, 11-25), started together with Part 4, each its own run (own pass/fail; image v95 or later; the sessions are the ones their first runs used)
+| State | Request | Pass (I read it on the replica) |
+|---|---|---|
+| **ME** | `me?full=true&sessions=132R1,132R2,132S1` (the first run took over 6 hours of collection; one run only) | **actions in the legislature's own order**: bills with a backward date step **1,473 → 0** (today's count; OPEN-839, scrapers #267); 2,450 bills; unmatched **0 of 148,002**; then its archive (a fresh launch archives itself) |
+| **MD** | `md?full=true&sessions=2026,2026s1` (about 2 hours) | **HB 1372 and HB 139 final-passage votes labelled `passage`** (OPEN-832, #271); 2,677 bills; unmatched **0 of 267,947**; its recompute dry run stays 0 |
+| **MS** | `ms?full=true&sessions=2026,20261E` (about 1.7 hours) | **SN 10, SN 50 and SN 101 sponsored by the organization "Office of the Governor"**; SN 1 (Lt. Governor) and SN 110 (Attorney General) unchanged; 4,124 bills; unmatched about **4 of 149,303** (4 today) (OPEN-828, #270) |
+* A failure stops that state only; two states with the same error stop further starts. A state has one run at a time (so none of these starts while that state's own scheduled run is going).
+
 ## Also, one read-only question
 **Iowa's `2026s1`:** what did the 11-24 run report for session `2026s1` (bills loaded, or "no such session")? The replica has no `2026s1` rows. And the Iowa 2025 archive's end line (started 17:33 UTC).
 
 ## Not authorized
-Any commit before its second go; the draft cleanup's apply; a ddp-sync restart; any state beyond those named; HI, MD, MS and ME second passes (they need Ramon's separate decision, not a go here); Oklahoma (OPEN-887 and OPEN-892 carry it).
+Any commit before its second go; the draft cleanup's apply; a ddp-sync restart; any state beyond those named; Oklahoma (OPEN-887 and OPEN-892 carry it).
 
 Tickets: OPEN-146; OPEN-841, 846, 834, 842, 835, 826, 827, 862, 861, 863, 864, 865, 849.
 
