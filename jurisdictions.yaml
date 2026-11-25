@@ -1752,7 +1752,7 @@ mt:
 # written by new-jurisdiction from notes/probe-all-20261031/mo/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
 mo:
   name: Missouri
-  status: scraping
+  status: live
   scraper_module: mo      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:mo/government"
   scrape:
@@ -1774,11 +1774,11 @@ mo:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no mo-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
+    embedding: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
+    qa_sweep: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
