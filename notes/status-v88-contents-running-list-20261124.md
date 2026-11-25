@@ -194,3 +194,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **ddp-sync v95 restart done 07:52 UTC** (`da9641d4`, core `a7035d68`); **#312 live** (archives recorded), `state_loads_on_fargate` true for az only. IA 2025 and PA nightly loaded; their archives started by hand 17:33:16.
 * **OK 2026 collection failed** (ConnectTimeout to webapps.oklegislature.gov, same as 11-24 2025): one retry on Ramon's go; OPEN-887. OK 2025 half of the v95 re-import verified.
 * **Iowa 2025:** 277 unmatched "Open" = a House vacancy placeholder (low-priority scraper fix, not filed).
+
+## 11-25 22:20 UTC: Part 2 commits verified; go-live PR merged
+* **Part 2 commits done and verified on the replica (V):** OR relabel 337 + recompute 433/432/201; ID 56/50/56; GA 3; WY 845/88/841; MT relabel 62 + recompute 60; MO 746/461/598 — every dry run now reads 0 pending (prod agent `508bef1`; my reply after it).
+* **Part 4 running** (AL 2026rs, NV 2025Special36 done + 84 collecting, AZ full load); **Part 4b** (ME, MD, MS second passes) waits for Ramon's go; **Part 3** (GA 280 + AL 2,550 backfills) not reported yet.
+* **Go-live HI, RI, ND, KY:** ddp-open-states #494 merged (`7ca0b1ce`, the PM via /review-ticket); rollout request `ecaa7ea` waits for Ramon's go in the prod session. Missouri goes live later (its cleanup is now committed, so its go-live PR can follow).
