@@ -18,6 +18,11 @@
 #                                              # and the plain entries are dropped; later revisions copy them forward
 #
 # Stops at the first failed check. Nothing goes live until the final register step.
+#
+# The image is built and checked on the Mac's TEST Docker VM (Colima profile `test`, on /Volumes/DDP-HOT), never on the
+# main VM that runs CAMS's Postgres and Redis (OPEN-860, AGENTS-250): a --no-cache build of both forks filled the main
+# VM's disk to 99% twice. If the test VM is not available the script stops before doing anything; it never falls back.
+# DDP_COLIMA_TEST_SH overrides the path of ddp-agents' colima-test.sh (the script's own tests use it).
 set -euo pipefail
 
 REGION=us-east-1
@@ -28,9 +33,30 @@ DEV_ENV="$HOME/Developer/repos/ddp-open-states-dev/.env"
 say() { printf '\n==> %s\n' "$*"; }
 die() { printf '\nSTOP: %s\n' "$*" >&2; exit 1; }
 
+say "0a. Which Docker: the test VM on DDP-HOT, never the main VM (OPEN-860)"
+COLIMA_TEST_SH="${DDP_COLIMA_TEST_SH:-$HOME/Developer/repos/ddp-agents/deployment/scripts/colima-test.sh}"
+[ -r "$COLIMA_TEST_SH" ] || die "$COLIMA_TEST_SH not found, so the test Docker VM cannot be used. Nothing was built (this script never builds on the main VM)."
+WHY=$(bash "$COLIMA_TEST_SH" check 2>&1) || die "the test Docker VM is not available. Nothing was built: $WHY"
+TEST_DOCKER_HOST=$(bash "$COLIMA_TEST_SH" docker-host) || die "colima-test.sh could not name the test Docker VM's socket. Nothing was built."
+# An empty DOCKER_HOST means Docker's DEFAULT daemon, the main VM: so anything but a real socket address stops here.
+case "$TEST_DOCKER_HOST" in unix:///?*) ;; *) die "colima-test.sh gave '$TEST_DOCKER_HOST' as the test Docker VM's socket, not a unix:// address. Nothing was built." ;; esac
+DOCKER_HOST=$TEST_DOCKER_HOST
+export DOCKER_HOST
+docker info >/dev/null 2>&1 || die "the test Docker VM is set up but not running ($TEST_DOCKER_HOST). Nothing was built. Start it with: $COLIMA_TEST_SH colima start"
+echo "Docker: the test VM ($TEST_DOCKER_HOST)"
+# On exit, success or failure: delete the build token copy, and empty the test VM's build cache (a --no-cache build of both
+# forks leaves several GB of it; the main VM is never touched).
+cleanup() {
+    rm -f "$WORK/.env"
+    if DOCKER_HOST=$TEST_DOCKER_HOST docker builder prune -af >/dev/null 2>&1; then echo "build cache on the test VM emptied"
+    else echo "(could not empty the build cache on the test VM; run: DOCKER_HOST=$TEST_DOCKER_HOST docker builder prune -af)"; fi
+}
+trap cleanup EXIT
+
 say "0. AWS access (IAM credentials come from the dev .env, as in every earlier deploy)"
 [ -f "$DEV_ENV" ] || die "$DEV_ENV not found"
 set -a; source "$DEV_ENV"; set +a
+DOCKER_HOST=$TEST_DOCKER_HOST; export DOCKER_HOST   # a DOCKER_HOST in the dev .env must never move the build to another VM
 export AWS_DEFAULT_REGION=$REGION AWS_REGION=$REGION
 aws sts get-caller-identity >/dev/null 2>&1 || die "the AWS credentials in $DEV_ENV were rejected (run: aws sts get-caller-identity)"
 aws sts get-caller-identity --query Arn --output text
@@ -41,7 +67,6 @@ rm -rf "$WORK"
 git clone -q --branch main --depth 1 https://github.com/Digital-Democracy-Project/ddp-open-states.git "$WORK"
 cd "$WORK"
 git log --oneline -1
-trap 'rm -f "$WORK/.env"' EXIT
 cp "$DEV_ENV" .env
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "${REPO%%/*}" >/dev/null
 
@@ -243,7 +268,8 @@ REV=$(aws ecs register-task-definition --region "$REGION" --cli-input-json file:
 
 say "DONE: $TAG pushed, task-definition revisions ddp-scrapers:$REV and ddp-scrapers-db:$DB_REV registered"
 echo "Tell Claude:   tag $TAG, revision $REV (db $DB_REV), core $CORE"
-echo "Core check:    cd ~/Developer/repos/ddp-open-states && python3 check-core-pin-drift.py --image $IMG"
+echo "Core check:    cd ~/Developer/repos/ddp-open-states && DOCKER_HOST=$TEST_DOCKER_HOST python3 check-core-pin-drift.py --image $IMG"
+echo "               (DOCKER_HOST: the image is on the test VM, not the main one; without it the check would pull it into the main VM)"
 echo "               (fails until both api-v3 copies are rebuilt on core $CORE; RUNBOOK -> api-v3 release)"
 echo "ddp-sync:      EC2's ddp-sync loads cloud scrapes with its own core: rebuild it with DDP_CORE_SHA=$CORE (SYNC-180)"
 echo "               and DDP_SCRAPERS_SHA=<this image's scrapers commit> (SYNC-188; RUNBOOK -> Scrapers image release)"

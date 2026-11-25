@@ -817,6 +817,13 @@ step matters — a newer pip breaks one of the pinned deps' build.
   cutover: `ddp-sync` launches the family name, so the next launched task uses it. Deliberately
   outside the discipline checklist's resumability/logging/Slack-alert items: it is an operator-run,
   foreground, run-once script whose output *is* the log, and a failure is seen by the person running it.
+  **It builds on the Mac's TEST Docker VM, never the main one (OPEN-860, AGENTS-250):** step 0a takes `DOCKER_HOST` from
+  ddp-agents' `deployment/scripts/colima-test.sh` (the one place that knows where the VM is), stops with a clear message if
+  DDP-HOT is not mounted or the VM is not running (nothing is built, pushed or cloned; it never falls back to the main VM that
+  holds CAMS's Postgres and Redis), and empties the test VM's build cache on exit, success or failure. The image lives on the
+  test VM, so run `check-core-pin-drift.py --image` with the `DOCKER_HOST` the script prints. `DDP_COLIMA_TEST_SH` overrides
+  the helper's path (the tests use it); an empty value does not turn the check off. **Do not add a second build path or
+  call `docker` before step 0a.**
   **Scraper API keys (OPEN-880):** `DB_DROP_PLAIN_ENV` (names removed from `ddp-scrapers-db` only) and
   `COLLECTION_PLAIN_TO_SECRET` + `TASK_<NAME>_SECRET_ARN` (names turned into `secrets` entries on `ddp-scrapers`, copied
   forward by `next_revision`) sit in the same embedded Python as the RDS code, and refuse a plain-and-secret overlap on
