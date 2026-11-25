@@ -148,3 +148,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Container with both present:** a launcher-passed `DATABASE_URL` always wins; the secret is not used. The real test is ECS reading the secret before start (the first launch from `db:22`).
 * **Left:** names-only read-back of `db:22` (and none on `ddp-scrapers:95`); the first launch from `db:22` RUNNING and exit 0 (rollback: deregister `db:22`); ddp-sync restart with the core rollout (staged); HI people load and second re-import; the Arizona canary (#488) after a clean first launch; Ramon deletes `/tmp/taskdef-*.json` and rotates the two keys (OPEN-880, #490).
 * **Open PRs:** ddp-sync #312 (SYNC-192, archive in-flight record; merge after the core rollout); #488 (canary manifest); #490 (OPEN-880). Builder running on OPEN-881 (unmatched-voter task), then OPEN-882 (people refresh runner).
+
+## v93 step 1 COMPLETE (11-25 ~01:05 UTC; prod agent notes `bd25b25`, `1432dc5`, names only)
+* `ddp-scrapers-db:22`: secrets RDS_USERNAME, RDS_PASSWORD; environment RDS_HOST, RDS_DBNAME, RDS_PORT (plus the two plain API keys, OPEN-880). `ddp-scrapers:95`: none of the five. RI's archive launched from `db:22` and exited 0.
+* **Arizona canary still needs:** #488 merged (the PM, on Ramon's OK), the ddp-sync restart onto core `a7035d68` (waiting for the HI archive; brings #311's flag), and Ramon's go for the manifest rollout. Then the pass rules in `d8df145`.
+* **Verified on the replica this stretch:** RI v92 re-import (1,323 passage, HB 7127 Senate 14, 0 unmatched of 79,412), OK roll-call numbers, HI people (Lee, C alias), NE, MO, WY, ND/ME relabels.
