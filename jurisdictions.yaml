@@ -1517,7 +1517,7 @@ ok:
 # written by new-jurisdiction from notes/probe-all-20261031/ky/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
 ky:
   name: Kentucky
-  status: scraping
+  status: live
   scraper_module: ky      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ky/government"
   scrape:
@@ -1539,11 +1539,11 @@ ky:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ky-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
+    embedding: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
+    qa_sweep: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
