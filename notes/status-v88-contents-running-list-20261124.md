@@ -199,3 +199,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **Part 2 commits done and verified on the replica (V):** OR relabel 337 + recompute 433/432/201; ID 56/50/56; GA 3; WY 845/88/841; MT relabel 62 + recompute 60; MO 746/461/598 — every dry run now reads 0 pending (prod agent `508bef1`; my reply after it).
 * **Part 4 running** (AL 2026rs, NV 2025Special36 done + 84 collecting, AZ full load); **Part 4b** (ME, MD, MS second passes) waits for Ramon's go; **Part 3** (GA 280 + AL 2,550 backfills) not reported yet.
 * **Go-live HI, RI, ND, KY:** ddp-open-states #494 merged (`7ca0b1ce`, the PM via /review-ticket); rollout request `ecaa7ea` waits for Ramon's go in the prod session. Missouri goes live later (its cleanup is now committed, so its go-live PR can follow).
+
+## 11-25 22:30 UTC: FIVE STATES LIVE (prod agent checkpoint `a76b9b5`)
+* **HI, RI, ND, KY (#494 `7ca0b1ce`) and MO (#495) rolled out on EC2 at 22:27:44 UTC** with Ramon's "Yes, all five"; manifest `020b5606e`; `status live` plus embedding, search refresh, smoke test and QA sweep on; `replica_routing` and `legbot_replica` still false; manifest copies equal, drift 0, `/schedule` 35 jobs, no other state changed. Live-in-manifest states are now: PA, NE, LA, NM, MA, NC, UT, AZ, HI, RI, ND, KY, MO (plus US, FL, WA, VA, MI). Jira comments added on OPEN-668/665/663/667/671.
+* **Part 4:** NV done and verified (my note `36bcd77`; recompute numbers 32/26/26, baselines 22/10/26 ready for the second go); AL and the Arizona full load still collecting. **Part 4b** (ME, MD, MS second passes) started 22:22:09 UTC on rev 97 (v95).
+* **Still not live:** AL, GA, NV, OR, ID, WY, MT, ME, MD, MS, IA, OK.
