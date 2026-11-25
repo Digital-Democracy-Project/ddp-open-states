@@ -183,3 +183,8 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **RI full 2026 re-import started 02:42:27 UTC on rev 97** (Ramon's go). Verify when it lands: exactly one roll call changes (SB 2045's 31-6 re-vote becomes passage), counted bill-chambers unchanged, 1,323 passage events, 0 unmatched.
 * **ddp-sync image built** at `da9641d4` (core `a7035d68`, scrapers `4b7d0a3c`; image `130f416cb89c`; rollback tag `ddp-sync:pre-v95-da9641d`); **restart staged for 04:45–11:30 UTC** with the `lastStatus` guard; both new `on_fargate` switches stay off.
 * **Still queued:** OK re-import (after the 2025 retry loads and archives), HI second re-import and the OK 2025 retry (running), IA 2025, UT 2026; Arizona's first Fargate load Wed 12:00 UTC.
+
+## OPEN-884 (State Specific Handling): scrapers #293, Oklahoma SB 920's stray Senate block (11-25)
+* **PR:** openstates-scrapers #293, head `3a28bfb6b`, `lint` SUCCESS, clean, **not merged**. The Oklahoma scraper skips a block whose header names the other chamber than the page's (SB 920's House page carries another bill's Senate vote, RCS 639, 21-22 fail, correctly stored on HB 2157). Core deletes a vote event a re-import no longer emits (`importers/vote_events.py`).
+* **Not in the OK re-import running now** (v95, rev 97, started 04:29 UTC; carries #291 and #292). **Needs a further full OK re-import of both sessions on a v96 image**, on Ramon's go; no scoring effect, so it is worth batching rather than a run of its own.
+* **Expected after it:** numbered votes **8,766** (4,612 + 4,154), unmatched person votes 2025 **0** / 2026 **0**, person votes **331,187**, counted bill-chambers 2,778 unchanged, no other change; OPEN-884 resolved.
