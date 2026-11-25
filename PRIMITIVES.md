@@ -831,7 +831,16 @@ failure). The counting is **`qa_primitives.unresolved_voter_names()`**: Stage 3'
 (`attribution_resolution_rates`, a person-vote with `voter_id` NULL is unresolved) broken down by session and printed
 name; both read the same `_JURISDICTION_PERSON_VOTES` / `_UNRESOLVED_VOTE` in `qa_primitives.py`. **ddp-sync runs it
 after each state's load** (`maybe_alert_unmatched_voters` in its `pipelines/unmatched_voter_alert.py`, with the openstates venv's
-Python, because ddp-sync's own Python has no psycopg2) and owns the alert and the last-run memory. Names known and
+Python, because ddp-sync's own Python has no psycopg2) and owns the alert and the last-run memory.
+**OPEN-881: the result is made by `qa_primitives.unmatched_voters_result(state, database_url)`** (the query, the
+read-only session and the `accepted` marks; `accepted_unmatched_names` reads the manifest), called by both the script and
+by **`cloud_unmatched_voters.py`**, the same check as a Fargate task of the scrapers image (`RUNNER_SCRIPT=cloud_unmatched_voters.py`,
+command `<state> <run_id>`, launched on `ddp-scrapers-db` by ddp-sync when its `unmatched_voter_alert.on_fargate` is true). The
+runner builds `DATABASE_URL` only through `apply_rds_task_secret()`, writes the same JSON to
+`<WORKING_TIER_PREFIX, default working-tier>/<state>/<run_id>/unmatched-voters.json` in the memory bucket (after the query succeeded,
+so no object means it did not finish), prints only a completion record, and exits 0 or 2 (never with a connection string
+in a message). ddp-sync reads that object, then compares, remembers and alerts as before. Do not add a second query or a
+second JSON builder: change `unmatched_voters_result`. Names known and
 accepted for now go in the state's optional `quality.accepted_unmatched_voters` in `jurisdictions.yaml` (the one list;
 ddp-sync keeps none): the script marks them `"accepted": true` and the alert leaves them out. **Do not add a second unmatched-voter query or a second alert for it here**; Stage 3 keeps its own gate output.
 Measured on the Mac replica 2026-11-24: Maine 13,001 of 148,002 in 17 names (OPEN-812's numbers), well under a second per

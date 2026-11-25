@@ -201,3 +201,35 @@ def unresolved_voter_names(conn, st):
     )
     names = [{"session": sid, "name": name, "count": count} for sid, name, count in cur.fetchall()]
     return {"sessions": sessions, "names": names}
+
+
+def accepted_unmatched_names(state, manifest_path=MANIFEST_PATH):
+    """The state's `quality.accepted_unmatched_voters` from jurisdictions.yaml (OPEN-855). A manifest that is missing or
+    does not validate accepts nothing: the alert then says more, never less."""
+    from validate_jurisdictions import load_and_validate
+
+    manifest, problems = load_and_validate(manifest_path)
+    if problems or not isinstance(manifest, dict):
+        return set()
+    return set(((manifest.get(state) or {}).get("quality") or {}).get("accepted_unmatched_voters") or [])
+
+
+def unmatched_voters_result(state, database_url, connect=None, manifest_path=MANIFEST_PATH):
+    """OPEN-881: the one place the after-load unmatched-voter JSON is made. `unmatched-voters.py` (a command line, printed
+    to stdout) and `cloud_unmatched_voters.py` (the Fargate task ddp-sync launches, written to S3) both call this, so
+    the query (`unresolved_voter_names`) and the `accepted` marks cannot drift apart. Read-only session. Raises on any
+    database failure; the callers print only the exception's type, never `database_url`."""
+    if connect is None:
+        import psycopg2
+
+        connect = psycopg2.connect
+    conn = connect(database_url)
+    try:
+        conn.set_session(readonly=True)
+        result = unresolved_voter_names(conn, state)
+    finally:
+        conn.close()
+    accepted = accepted_unmatched_names(state, manifest_path)
+    for entry in result["names"]:
+        entry["accepted"] = entry["name"] in accepted
+    return {"state": state, **result}

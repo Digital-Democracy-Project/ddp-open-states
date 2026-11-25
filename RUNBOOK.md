@@ -538,6 +538,15 @@ diff /tmp/614-old.csv /tmp/614-new.csv && diff /tmp/614-old-validate.txt /tmp/61
 > exact conflict the venv exists to prevent. api-v3 (the only FastAPI service here) runs in Docker and
 > does not use this venv.
 
+**The after-load unmatched-voter check as a Fargate task (OPEN-881).** `cloud_unmatched_voters.py` is in the scrapers image next to
+the other runners. ddp-sync launches it on `ddp-scrapers-db` (it needs the database login, as the load and archive do) with
+`RUNNER_SCRIPT=cloud_unmatched_voters.py` and the command `<state> <run_id>`, waits, and reads
+`working-tier/<state>/<run_id>/unmatched-voters.json` from the memory bucket. To run one by hand for a rehearsal, launch it like
+the loader with a made-up run id and read that object; a failed task is exit 2 with the reason (never a connection string)
+in its CloudWatch log. Release order: this image first (ddp-sync cannot launch a runner that is not in it), then ddp-sync with
+`openstates_scrape.unmatched_voter_alert.on_fargate: true`; flipping it back to false is the rollback (the check runs
+locally again).
+
 **This same recipe is now containerized in two places, not just this local venv (2026-09-02).**
 The root `Dockerfile` (OPEN-200) builds it into the Fargate scraper image's own builder stage;
 `ddp-sync`'s `infrastructure/Dockerfile` (OPEN-248) does the same for `cloud_loader.py`'s
