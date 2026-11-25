@@ -188,3 +188,9 @@ All merged and checked on GitHub 11-24: scrapers #284 NE (3f77e9d3), #285 WY (89
 * **PR:** openstates-scrapers #293, head `3a28bfb6b`, `lint` SUCCESS, clean, **not merged**. The Oklahoma scraper skips a block whose header names the other chamber than the page's (SB 920's House page carries another bill's Senate vote, RCS 639, 21-22 fail, correctly stored on HB 2157). Core deletes a vote event a re-import no longer emits (`importers/vote_events.py`).
 * **Not in the OK re-import running now** (v95, rev 97, started 04:29 UTC; carries #291 and #292). **Needs a further full OK re-import of both sessions on a v96 image**, on Ramon's go; no scoring effect, so it is worth batching rather than a run of its own.
 * **Expected after it:** numbered votes **8,766** (4,612 + 4,154), unmatched person votes 2025 **0** / 2026 **0**, person votes **331,187**, counted bill-chambers 2,778 unchanged, no other change; OPEN-884 resolved.
+
+## Catch-up 11-25 17:50 UTC (prod agent `15ead55`; my reply after it)
+* **Arizona canary run 1 (az-82fbcd808746, 13:23 UTC):** passes; load task started, loader `status ok`, lock expired, 0 connection strings in logs, replica counts equal before. **Open proof:** the load task's ECS overrides (no `DATABASE_URL`) were not read before the record aged out; read the next run's task within the hour (12-02 12:00 UTC, or a manual full run). Clean-week: run 1 of 2 + one full load.
+* **ddp-sync v95 restart done 07:52 UTC** (`da9641d4`, core `a7035d68`); **#312 live** (archives recorded), `state_loads_on_fargate` true for az only. IA 2025 and PA nightly loaded; their archives started by hand 17:33:16.
+* **OK 2026 collection failed** (ConnectTimeout to webapps.oklegislature.gov, same as 11-24 2025): one retry on Ramon's go; OPEN-887. OK 2025 half of the v95 re-import verified.
+* **Iowa 2025:** 277 unmatched "Open" = a House vacancy placeholder (low-priority scraper fix, not filed).
