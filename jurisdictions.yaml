@@ -1086,7 +1086,7 @@ nv:
 # written by new-jurisdiction from notes/probe-all-20261031/or/result.json on 2026-11-16 (OPEN-461)
 or:
   name: Oregon
-  status: scraping
+  status: live
   scraper_module: or   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:or/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -1108,11 +1108,11 @@ or:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no or-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    embedding: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    qa_sweep: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
@@ -1201,7 +1201,7 @@ nm:
 # written by new-jurisdiction from notes/probe-all-20261031/wy/result.json (ops-handoff branch) on 2026-11-20 (OPEN-461, OPEN-662)
 wy:
   name: Wyoming
-  status: scraping
+  status: live
   scraper_module: wy      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:wy/government"
   scrape:
@@ -1223,11 +1223,11 @@ wy:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no wy-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    embedding: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    qa_sweep: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
@@ -1315,7 +1315,7 @@ nd:
 # written by new-jurisdiction from notes/probe-all-20261031/id/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
 id:
   name: Idaho
-  status: scraping
+  status: live
   scraper_module: id      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:id/government"
   scrape:
@@ -1337,11 +1337,11 @@ id:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no id-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    embedding: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
+    qa_sweep: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
