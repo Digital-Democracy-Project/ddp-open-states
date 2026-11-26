@@ -1113,8 +1113,8 @@ or:
     cloud_path: true
     api_smoke_test: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     qa_sweep: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-897, Ramon 2026-11-25: LegBot and replica routing go on in waves, wave 1 = Oregon and Wyoming; OPEN-589)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-897, Ramon 2026-11-25: wave 1 = Oregon and Wyoming; OPEN-589)
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills)
@@ -1228,8 +1228,8 @@ wy:
     cloud_path: true
     api_smoke_test: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     qa_sweep: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-897, Ramon 2026-11-25: LegBot and replica routing go on in waves, wave 1 = Oregon and Wyoming; OPEN-662)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-897, Ramon 2026-11-25: wave 1 = Oregon and Wyoming; OPEN-662)
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean (10 bills in 11.3 s)
