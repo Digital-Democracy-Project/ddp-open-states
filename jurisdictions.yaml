@@ -1653,11 +1653,11 @@ ms:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no ms-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Mississippi via PM 2026-11-26)
-    embedding: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Mississippi via PM 2026-11-26)
+    search_refresh: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    embedding: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
     cloud_path: true
-    api_smoke_test: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Mississippi via PM 2026-11-26)
-    qa_sweep: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Mississippi via PM 2026-11-26)
+    api_smoke_test: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    qa_sweep: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
@@ -1845,11 +1845,11 @@ me:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no me-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Maine via PM 2026-11-26)
-    embedding: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Maine via PM 2026-11-26)
+    search_refresh: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    embedding: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
     cloud_path: true
-    api_smoke_test: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Maine via PM 2026-11-26)
-    qa_sweep: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's go-live decision for Maine via PM 2026-11-26)
+    api_smoke_test: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    qa_sweep: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
