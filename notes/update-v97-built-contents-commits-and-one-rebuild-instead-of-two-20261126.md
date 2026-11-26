@@ -2,7 +2,7 @@
 
 Follows `request-v97-scrapers-image-idaho-struck-text-…` (b8210af). Still **not a GO** for Idaho's steps; Ramon gives each go in your session.
 
-## What I read (local `ddp-scrapers:v97` image on the Mac, built 00:59 EST = 05:59... (see image time below), read-only, nothing printed from the environment)
+## What I read (local `ddp-scrapers:v97` image on the Mac, built 00:59 EST (05:59 UTC), read-only, nothing printed from the environment)
 * **Core commit recorded: exactly `647bb3994ed819ba4194820b379147f525219479`**: the openstates-core #176 merge (OPEN-895, Idaho struck text). It includes #175 (OPEN-893) and #173 (OPEN-871). Idaho's reader in the image wraps the strike-line reader (checked in the image's `ddp_states/id.py`).
 * **Scrapers commit: the image records none**, but `scrapers/ok/bills.py`, `ia/bills.py`, `hi/bills.py` and `ms/bills.py` are **byte-identical (same md5) to scrapers `main` `d0bd1826f8990f738ee626a7fe7ec01823a37264`**, which is what the build's clone reported. That main contains everything v96 had (#293, #294, #295, #296) plus OPEN-900 (Hawaii label fix, #297).
 * **Not in this image:** scrapers **#298** (OPEN-899, Mississippi's wrapped-initial parser fix, not merged yet) and people #56 (a people-repo change, loaded separately). The Mississippi parser fix therefore needs a later image (v98).
