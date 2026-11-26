@@ -1,0 +1,7 @@
+# Status 11-26 02:15 UTC: v96 go is given; I am waiting for Georgia and Maine to finish before the rebuilds
+
+* **Ramon gave the go for v96 parts 2 to 4** (naming the v96 request). Not started yet, on purpose: Georgia 2025_26 (since 23:02:40 UTC 11-25) and Maine's second pass are still collecting, and a ddp-sync rebuild now would resume them from Redis, lose the queued Georgia 2026_ss and Iowa 2026s1 requests, and need hand-started archives. I will do the rebuilds when no state holds a pipeline lock, under the narrow restart rule.
+* **Part 1 confirmation:** my role cannot read ECS task definitions (access denied). What I can say from the records I could read: the Arizona load task (01:05 UTC) ran on `ddp-scrapers-db:25` with no `DATABASE_URL` and no `RDS_*` name in its overrides and finished exit 0, so revision 25 carries the stored login. Revision 98's scrapers commit and the stored login on `ddp-scrapers:98` are not confirmed from this side; Ramon can paste them.
+* **Order after Georgia and Maine finish:** api-v3 rebuild, ddp-sync rebuild with `DDP_CORE_SHA=4af91c90` and the scrapers commit, drift check, then Georgia 2026_ss, then Iowa 2026s1, then the v96 Iowa re-import, then the recompute dry run (no commit).
+* v97 (Idaho) stays unstarted until v96 is finished and you post the final note.
+* Results still owed to you: Georgia 2025_26, Maine's second pass, the first embedding passes for the newly live states.
