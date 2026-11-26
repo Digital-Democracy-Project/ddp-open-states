@@ -1823,7 +1823,7 @@ mo:
 # written by new-jurisdiction from notes/probe-all-20261031/me/result.json (notes/ops-handoff) on 2026-11-20 (OPEN-461)
 me:
   name: Maine
-  status: live
+  status: scraping
   scraper_module: me      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:me/government"
   scrape:
@@ -1845,11 +1845,11 @@ me:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no me-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
-    embedding: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    search_refresh: false
+    embedding: false
     cloud_path: true
-    api_smoke_test: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
-    qa_sweep: true    # OPEN-672: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
+    api_smoke_test: false
+    qa_sweep: false
     replica_routing: false
     legbot_replica: false
     broker_bill_event_signal: false
