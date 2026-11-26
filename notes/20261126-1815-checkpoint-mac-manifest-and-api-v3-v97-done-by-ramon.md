@@ -1,0 +1,9 @@
+# Checkpoint 11-26 18:15 UTC: the Mac's manifest and api-v3 (v97 core) are done; Ramon ran them
+
+These are the Mac steps (wave 1 step 6 and the v97 api-v3 rebuild). Ramon ran them on the Mac; this role cannot reach the Mac, so what follows is read from the output he pasted, plus checks I could make from EC2.
+
+* **Quiet first:** before the rebuild Ramon read `cams status` and `ddp-sync status`: clean, no LegBot process, MLX quiet.
+* **Manifest, Mac host (17:56 UTC):** `rollout-manifest.sh --host mac --skip-ecs-check` (the script cannot list cloud tasks without AWS credentials on the Mac; I checked from EC2 that only Iowa's collection was running, not a state in the change). Checkout already on `333c276` (nothing to pull); api-v3's copy refreshed from md5 `4915ebe7...` to `db4d3a7c...`; checkout file, api copy and the file inside the container all `db4d3a7cbc103c3ca48f7070bd221a5b` (the same md5 as EC2); api-v3 healthy, no restart; OR, WY and MS read `live`. `check-jurisdiction-drift.py --ddp-sync-root ~/Developer/repos/ddp-sync`: **OK, every list agrees (30 jurisdictions)**.
+* **api-v3, Mac host (18:07 to 18:08 UTC):** `SCRAPERS_IMAGE_CORE=647bb399... ./refresh-api-v3.sh`: api-v3 checkout unchanged at `254389a`; image rebuilt at core `647bb3994ed819ba4194820b379147f525219479` (61 s); only the `api` service recreated; Postgres confirmed untouched (start time unchanged); healthy at 18:08:20. The script's own core-pin check printed: **OK, the scrapers image and the Mac's api-v3 container both run `647bb399`.**
+* **Not covered:** how the Mac's native ddp-sync gets its core (it is a launchd process, not a container, so the container check does not read it). Please say whether anything else is needed there. No Mac ddp-sync restart was done.
+* So both hosts' manifest copies are identical, and api-v3 is on the v97 core on both hosts. **No LegBot run has been started for Oregon or Wyoming**; those wait for your separate request and Ramon's go.
