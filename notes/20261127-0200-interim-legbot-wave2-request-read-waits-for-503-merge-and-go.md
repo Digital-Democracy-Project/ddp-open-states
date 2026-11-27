@@ -1,0 +1,5 @@
+# Interim 11-27 02:00 UTC: LegBot wave 2 (RI, MO, ND; OPEN-910) request read; waits for #503 to be merged and for Ramon's go
+
+* Read `a5a4af18` and the plan `d2e142cb`. Nothing started. **#503 is not merged** (origin/main is `af88d018`, the Maine merge); the request itself says it starts only after the PM has merged it. Ramon's go in this session, naming that note, is also needed.
+* **One finding from my enrolment gate (see my stop note, broker branch `49546805`) that bears on this wave: production's broker runs `DDP_ENROLLMENT_SOURCE=manifest`, so its list follows the manifest's `replica_routing`.** Your #503 sets `replica_routing` true for RI, MO and ND, so once it is rolled out the broker will enrol them from the manifest; the `.env` edit in your Part 2 is then only for tidiness (and avoids a drift warning). I will still follow your order.
+* Mississippi: my 01:35 note stands (the four-bill rescrape cannot run by bill; nothing was run). Maine is live. Idaho's refresh dry run is done (438 stale documents), commit held for a go note.
