@@ -724,7 +724,7 @@ nc:
 
 al:
   name: Alabama
-  status: scraping                    # OPEN-523 (2026-11-10, Ramon ran /onboard-state Alabama): bill scraping resumes after the
+  status: live                    # OPEN-523 (2026-11-10, Ramon ran /onboard-state Alabama): bill scraping resumes after the
                                        # 2026-06 pause (people-only since then); ddp-sync's default timing (weekly).
   scraper_module: al   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:al/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
@@ -747,11 +747,11 @@ al:
     timeout_s: 14400                     # ARCHIVE_TIMEOUT_S default, 4h (no AL entry)
   enrollment:
     people_refresh: true
-    search_refresh: false    # OPEN-523: switched on at Stage 5 with routing
-    embedding: false    # OPEN-523: switched on at Stage 5 with routing
+    search_refresh: true    # OPEN-523: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; Ramon 2026-11-24: Alabama's soak skipped)
+    embedding: true    # OPEN-523: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; Ramon 2026-11-24: Alabama's soak skipped)
     cloud_path: true    # OPEN-523: scrapes run on Fargate (every scraped state does)
-    api_smoke_test: false    # OPEN-331: its endpoint answers 200; enroll at Stage 5 with routing
-    qa_sweep: true
+    api_smoke_test: true    # OPEN-523: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; Ramon 2026-11-24: Alabama's soak skipped)
+    qa_sweep: true    # OPEN-523: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; Ramon 2026-11-24: Alabama's soak skipped)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-523); legbot_replica stays false, LegBot has its own go
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; Stage 5
     legbot_send_abstract: false
