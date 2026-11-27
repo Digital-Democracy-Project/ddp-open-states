@@ -798,3 +798,29 @@ def test_a_state_cleaner_calling_two_cleaners_is_an_error(world, ddp_states_core
     code, out = _run(world, with_sync=False, core=ddp_states_core)
     assert code == 2, out
     assert "2 distinct cleaner" in out
+
+
+# OPEN-929: the matrix shows legbot_send_abstract, the one optional enrollment flag (absent = false); a missing
+# REQUIRED flag is still an error, not a quiet "-".
+def _matrix_rows(manifest):
+    out = io.StringIO()
+    drift.matrix(manifest, out)
+    lines = out.getvalue().strip().splitlines()
+    header = lines[0].split()
+    return {row.split()[0]: dict(zip(header[1:], row.split()[1:])) for row in lines[1:] if row.split()[0] in manifest}
+
+
+def test_the_matrix_shows_legbot_send_abstract_and_reads_absent_as_false():
+    manifest = _manifest()
+    manifest["fl"]["enrollment"]["legbot_send_abstract"] = True
+    manifest["us"]["enrollment"]["legbot_send_abstract"] = False
+    manifest["nc"]["enrollment"].pop("legbot_send_abstract", None)
+    rows = _matrix_rows(manifest)
+    assert [rows[c]["legbot_send_abstract"] for c in ("fl", "us", "nc")] == ["yes", "-", "-"]
+
+
+def test_the_matrix_does_not_hide_a_missing_required_flag():
+    manifest = _manifest()
+    del manifest["fl"]["enrollment"]["legbot_replica"]
+    with pytest.raises(KeyError):
+        _matrix_rows(manifest)

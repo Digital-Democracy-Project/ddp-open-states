@@ -644,7 +644,9 @@ def matrix(manifest, out):
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
-        return "yes" if entry["enrollment"].get(column, False) else "-"  # legbot_send_abstract is optional (OPEN-929)
+        if column == "legbot_send_abstract":  # OPEN-929: the one optional flag, absent = false
+            return "yes" if entry["enrollment"].get(column, False) else "-"
+        return "yes" if entry["enrollment"][column] else "-"
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}
     out.write("code  " + "  ".join(c.ljust(widths[c]) for c in MATRIX_COLUMNS) + "\n")
