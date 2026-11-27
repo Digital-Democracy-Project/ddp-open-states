@@ -75,6 +75,7 @@ DEFAULT_ARCHIVE_TIMEOUT_S = 14400
 ENROLLMENT_FIELD_ORDER = [
     "people_refresh", "search_refresh", "embedding", "cloud_path",
     "api_smoke_test", "qa_sweep", "replica_routing", "legbot_replica", "broker_bill_event_signal",
+    "legbot_send_abstract",  # OPEN-929: optional in the validator (absent = false); written false so the choice is visible
 ]
 
 _GATE_B_VOTES_RE = re.compile(r"^votes scraper registered: (True|False)$")

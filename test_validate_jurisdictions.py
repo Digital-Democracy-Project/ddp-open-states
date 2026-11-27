@@ -816,3 +816,33 @@ def test_quality_accepted_unmatched_voters_is_optional_and_a_list_of_names():
     assert any("ts.quality.accepted_unmatched_voters: expected list" in e for e in validate({"ts": entry}))
     entry["quality"]["accepted_unmatched_voters"] = ["Mr. Speaker", ""]
     assert any("every entry must be a printed name" in e for e in validate({"ts": entry}))
+
+
+# ---------------------------------------------------------------------------------------------------
+# OPEN-929: enrollment.legbot_send_abstract, the per-state yes/no for sending the stored legislature summary to
+# LegBot. Optional bool, absent = false (fail closed); Oregon is the only true.
+# ---------------------------------------------------------------------------------------------------
+
+
+def test_legbot_send_abstract_is_optional():
+    entry = _valid_entry()
+    entry["enrollment"].pop("legbot_send_abstract", None)
+    assert validate({"ts": entry}) == []
+
+
+def test_legbot_send_abstract_must_be_a_boolean():
+    for bad in ("yes", 1, None):
+        entry = _valid_entry()
+        entry["enrollment"]["legbot_send_abstract"] = bad
+        assert any("ts.enrollment.legbot_send_abstract: expected bool" in e for e in validate({"ts": entry})), bad
+    entry = _valid_entry()
+    entry["enrollment"]["legbot_send_abstract"] = True
+    assert validate({"ts": entry}) == []
+
+
+def test_the_real_manifest_sends_the_summary_for_oregon_only():
+    with open(DEFAULT_MANIFEST_PATH) as fh:
+        data = yaml.safe_load(fh)
+    # every state block carries the key explicitly, as a real boolean (not a missing key read as false)
+    assert all(isinstance(e["enrollment"].get("legbot_send_abstract"), bool) for e in data.values())
+    assert [c for c, e in data.items() if e["enrollment"]["legbot_send_abstract"]] == ["or"]

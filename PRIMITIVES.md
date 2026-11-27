@@ -2003,6 +2003,15 @@ scope line was deliberate, not an oversight.
   with ddp-sync's old lists while ddp-sync main still has them and skips each once deleted. **Release order: this file
   first (on both hosts' checkouts), then ddp-sync**: a ddp-sync whose manifest lacks the fields treats every state as not
   enrolled (MI loses its ScrapeBot fallback, MA its retry and 24 h wait) and its daily drift check alerts "unverifiable".
+- **`enrollment.legbot_send_abstract` (OPEN-929, Ramon 2026-11-27 via PM).** The per-state yes/no for sending the stored
+  legislature summary of a bill to LegBot. An optional bool: **absent means false** (fail closed), `new-jurisdiction` writes it
+  false, `advance-jurisdiction` never touches it (a human decision, like `legbot_replica`). `or` is the only true. **Who reads
+  it:** ddp-sync, through its shared manifest reader (`jurisdiction_enrollment.manifest_value`, looked up by the artifact's
+  jurisdiction; ddp-sync holds no state name for it, SYNC-200 is its reader change); api-v3's `GET /ddp/enrollment` serves the
+  whole `enrollment` block as it is, so it carries the key with no change. **A state joins only after a sample of its
+  summaries is read and Ramon says yes**, by a manifest PR. Do not add a code list of states for this anywhere. The drift
+  check has no ddp-sync list to compare it with (the matrix shows it); proving ddp-sync's reader sees the same value needs
+  SYNC-200's reader to expose the key. Release: manifest rollout on both hosts (read by mtime, no restart).
 - **No `actions` block (OPEN-544; was `actions.newest_first`, BROKER-368); no `voatz` block (BROKER-482, BROKER-494).**
   `actions.newest_first` said a state's stored bill actions were newest first. Every state now stores them oldest
   first, fixed in its scraper (la and ne OPEN-534/535, nc OPEN-543, us OPEN-542), so the label was false everywhere
