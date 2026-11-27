@@ -1,6 +1,6 @@
 # REQUEST (read-only; not a production change): **an export of about 15 Oregon and 15 Wyoming LegBot artifacts so I can read them for quality.** 2026-11-27 ~01:45 UTC (Mac side, Onboard New States)
 
-**Why:** Ramon's wave rule is that the gate is data quality: someone reads the LegBot summaries and judges whether they are good or garbage. Your 11-26 results (Oregon 919 artifacts, 844 complete; Wyoming 834, 758 complete; `97bb399`/`c64bb44`) say nobody has read the production ones. I read about 20 dev ones on 11-25/26; these are the real production run, and I cannot read the broker's production artifact table from the Mac.
+**Why:** Ramon's wave rule is that the gate is data quality: someone reads the LegBot summaries and judges whether they are good or garbage. Your 11-26 results (Oregon 919 artifacts, 844 complete; Wyoming 834, 758 complete; `47c5cbb`/`c64bb44`) say nobody has read the production ones. I read about 20 dev ones on 11-25/26; these are the real production run, and I cannot read the broker's production artifact table from the Mac.
 
 ## What I need from you
 1. **Choose the bills:** from the two sample lists you saved (the 100-bill sample per state), take **15 Oregon and 15 Wyoming bills** spread across: enacted, failed or died in committee, one-version and multi-version bills, a long bill (over 50,000 characters), and at least 2 bills that had a failed artifact. Use a stable rule (for example every 7th bill of each sorted list, then swap in the long and failed ones) and **say which rule** so the sample is not cherry-picked.
