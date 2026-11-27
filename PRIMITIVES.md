@@ -1346,7 +1346,7 @@ functions, layered on top of the ordering work above rather than changing it.
       2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
       too would duplicate them.
     * **Status:** openstates-scrapers #107, merged 2026-11-16; needs an image and a Massachusetts run.
-  * **OPEN-921 to 924: which Massachusetts votes count as passage (BROKER-617's measurement; PRs open, not merged).** All in
+  * **OPEN-921 to 924: which Massachusetts votes count as passage (BROKER-617's measurement; openstates-scrapers #305 to #308, merged 2026-11-27 03:16 UTC, in the v99 image; Massachusetts' re-import has not run).** All in
     openstates-scrapers; none adds a rule list (`config/motion_classification.yaml`, `classify_motion`, is the one).
     * **921** (amendment votes): `ma/bills.py` reads a wrapped action ("Consolidated amendment C (...)\r\nadopted -") from its
       one-line text, so a budget amendment is no longer the motion "adopted"; `ma/votes.py` (`HouseVoteRecordParser`) labels a
@@ -1359,8 +1359,8 @@ functions, layered on top of the ordering work above rather than changing it.
       conference report and the same day's enactment.
     * **Stored rows:** the 20 key-less rows the `votes` scraper wrote (the one that is off) are not touched by a Massachusetts
       re-import (the import deletes only the stored votes of a bill that brings a vote); they are relabelled by
-      `backfill-motion-classification.py ma` (dry run list first). Do **not** run that backfill on Massachusetts before 921 is
-      merged: the main rules alone would unlabel H 4994's real sheet passage vote.
+      `backfill-motion-classification.py ma` (dry run list first). Do **not** run that backfill on Massachusetts from an image
+      that lacks 921 (it is in v99): the main rules alone would unlabel H 4994's real sheet passage vote.
     * **Do not** add a second ordering rule, a Massachusetts-only label list, or a Massachusetts case to the broker.
   * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
     Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
