@@ -739,7 +739,7 @@ al:
     cloud_path: true    # OPEN-523: scrapes run on Fargate (every scraped state does)
     api_smoke_test: false    # OPEN-331: its endpoint answers 200; enroll at Stage 5 with routing
     qa_sweep: true
-    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) and reads it from DDP's replica (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-523); legbot_replica stays false, LegBot has its own go
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-523); legbot_replica stays false, LegBot has its own go
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; Stage 5
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
@@ -1055,7 +1055,7 @@ nv:
     cloud_path: true
     api_smoke_test: false
     qa_sweep: false
-    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) and reads it from DDP's replica (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-588); legbot_replica stays false, LegBot has its own go
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-588); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
     broker_bill_event_signal: false
   waf:
@@ -1342,7 +1342,7 @@ id:
     cloud_path: true
     api_smoke_test: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     qa_sweep: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
-    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) and reads it from DDP's replica (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-664); legbot_replica stays false, LegBot has its own go
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-664); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
     broker_bill_event_signal: false
   waf:
@@ -1544,7 +1544,7 @@ ky:
     cloud_path: true
     api_smoke_test: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
     qa_sweep: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
-    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) and reads it from DDP's replica (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-667); legbot_replica stays false, LegBot has its own go
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-667); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
     broker_bill_event_signal: false
   waf:
