@@ -1285,8 +1285,8 @@ nd:
     cloud_path: true
     api_smoke_test: true    # OPEN-663: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     qa_sweep: true    # OPEN-663: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-663)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-663)
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1400,8 +1400,8 @@ ri:
     cloud_path: true
     api_smoke_test: true    # OPEN-665: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     qa_sweep: true    # OPEN-665: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-665)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-665)
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1779,8 +1779,8 @@ mo:
     cloud_path: true
     api_smoke_test: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
     qa_sweep: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-671)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-671)
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
