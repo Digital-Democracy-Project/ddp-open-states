@@ -635,7 +635,7 @@ def run(manifest, root, sync_root, require_sync, out, live=(), openstates_core_r
 
 
 MATRIX_COLUMNS = ["status", "archive", "people_refresh", "search_refresh", "embedding", "cloud_path", "api_smoke_test",
-                  "qa_sweep", "replica_routing", "legbot_replica"]
+                  "qa_sweep", "replica_routing", "legbot_replica", "legbot_send_abstract"]
 
 
 def matrix(manifest, out):
@@ -644,7 +644,7 @@ def matrix(manifest, out):
             return entry[column]
         if column == "archive":
             return "yes" if entry["archive"]["enabled"] else "-"
-        return "yes" if entry["enrollment"][column] else "-"
+        return "yes" if entry["enrollment"].get(column, False) else "-"  # legbot_send_abstract is optional (OPEN-929)
 
     widths = {c: max(len(c), *(len(cell(e, c)) for e in manifest.values())) for c in MATRIX_COLUMNS}
     out.write("code  " + "  ".join(c.ljust(widths[c]) for c in MATRIX_COLUMNS) + "\n")

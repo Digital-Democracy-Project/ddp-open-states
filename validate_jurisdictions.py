@@ -141,6 +141,13 @@ ENROLLMENT_FIELDS = {
     "broker_bill_event_signal": bool,  # SYNC-157: ddp-sync asks the broker to check bill events after a scrape (SYNC-128)
 }
 
+# OPEN-929: optional, absent means false (fail closed). "Send this state's stored legislature summary to LegBot": data
+# here, read by ddp-sync through jurisdiction_enrollment.manifest_value, with no state name in ddp-sync. Optional so a
+# manifest copy older than the key, or a state entry that omits it, never sends a summary by accident.
+ENROLLMENT_OPTIONAL_FIELDS = {
+    "legbot_send_abstract": bool,
+}
+
 WAF_FIELDS = {
     "profile": str,
     # OPEN-464: a separate question from profile -- whether this jurisdiction's WAF cookie can be
@@ -343,7 +350,7 @@ def validate(data):
                 errors.append(f"{code}.archive.timeout_s: must be positive, got {timeout}")
 
         if isinstance(entry.get("enrollment"), dict):
-            _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors)
+            _check_block(entry["enrollment"], ENROLLMENT_FIELDS, f"{code}.enrollment", errors, ENROLLMENT_OPTIONAL_FIELDS)
 
         status = entry.get("status")
         if isinstance(status, str) and status in STATUSES_THAT_NEED_PEOPLE_AND_ARCHIVE:

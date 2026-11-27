@@ -19,6 +19,10 @@
 # and validate_jurisdictions.py refuses a state past `probing` that lacks them. LegBot (legbot_replica), embedding and
 # routing are never set by it: they stay human decisions.
 #
+# OPEN-929 (2026-11-27): enrollment.legbot_send_abstract (optional bool, absent = false) is the per-state yes/no for sending the
+# stored legislature summary of a bill to LegBot. Oregon only at first; a state joins by a manifest PR after a sample of its
+# summaries is read and Ramon says yes. It is data, not code: ddp-sync reads it through jurisdiction_enrollment.manifest_value.
+#
 # OPEN-221 / PLAN-push-button-onboarding.md §4.1 ("Manifest v0"). This is deliberately a SMALL
 # first step: the file + validate_jurisdictions.py + jurisdiction-field.sh, consumed ONLY by
 # ddp-open-states scripts and the onboarding probe (this repo's scripts were wired in by OPEN-327, see
@@ -178,6 +182,7 @@ us:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false    # ddp-sync (jurisdiction_enrollment.manifest_value): the stored legislature summary of this state's bills is sent to LegBot; false = not sent, absent = false (OPEN-929); a state joins only after a sample is read and Ramon says yes
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -238,6 +243,7 @@ fl:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: cookie_provider     # FL_COOKIE_PROVIDER, flhouse.gov UA-signature warm-up (OPEN-66)
@@ -297,6 +303,7 @@ wa:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -355,6 +362,7 @@ va:
     qa_sweep: true    # OPEN-51: VA was left off as "blocked"; unblocked since 2026-07-18 (OPEN-15/OPEN-33)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -417,6 +425,7 @@ mi:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: cookie_provider            # MI_COOKIE_PROVIDER, legislature.mi.gov Barracuda-style
@@ -476,6 +485,7 @@ ut:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -533,6 +543,7 @@ az:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -605,6 +616,7 @@ ma:
     qa_sweep: true
     replica_routing: false    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates; BROKER-16 has not flipped MA (the dev broker's list has no MA)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -677,6 +689,7 @@ nc:
     qa_sweep: true    # OPEN-331: the pilot's QA was run by hand with quality_check.py; the default sweep now includes NC
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica, not public OpenStates
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none                       # probe gate B recorded no WAF/cookie-provider shape
@@ -741,6 +754,7 @@ al:
     qa_sweep: true
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-523); legbot_replica stays false, LegBot has its own go
     legbot_replica: false    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica; Stage 5
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none
@@ -801,6 +815,7 @@ pa:
     qa_sweep: true    # OPEN-447: on like every live state (Ramon 2026-11-22)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-478, Ramon 2026-11-07)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-478, Ramon 2026-11-07)
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
@@ -858,6 +873,7 @@ ne:
     qa_sweep: true    # OPEN-479: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-479, Ramon 2026-11-07: switch on PA, NE and LA together)
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
@@ -915,6 +931,7 @@ la:
     qa_sweep: true    # OPEN-480: on at go-live like every live state (Ramon 2026-11-23 via PM: "Write them now"; merge only after its re-link is verified)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-480, Ramon 2026-11-07: switch on PA, NE and LA together)
+    legbot_send_abstract: false
     broker_bill_event_signal: false    # SYNC-157: ddp-sync signals the broker's bill-event check after a scrape (was broker_bill_event_signal.jurisdictions, empty)
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean
@@ -999,6 +1016,7 @@ ga:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 30 vote events)
@@ -1057,6 +1075,7 @@ nv:
     qa_sweep: false
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-588); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills, 13 vote events)
@@ -1115,6 +1134,7 @@ or:
     qa_sweep: true    # OPEN-589: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-897, Ramon 2026-11-25: LegBot and replica routing go on in waves, wave 1 = Oregon and Wyoming; OPEN-589)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-897, Ramon 2026-11-25: wave 1 = Oregon and Wyoming; OPEN-589)
+    legbot_send_abstract: true    # ddp-sync (jurisdiction_enrollment.manifest_value): the stored legislature summary of this state's bills is sent to LegBot (OPEN-929, Ramon 2026-11-27 via PM: send the legislature summary to LegBot; Oregon first)
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the dry scrape ran clean (10 bills)
@@ -1173,6 +1193,7 @@ nm:
     qa_sweep: true    # OPEN-618: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-618; soak waived by Ramon 2026-11-20)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-618)
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31 (revision 44): no WAF resilience profile found; the dry scrape ran clean (10 bills in 8.8 s)
@@ -1230,6 +1251,7 @@ wy:
     qa_sweep: true    # OPEN-662: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-897, Ramon 2026-11-25: LegBot and replica routing go on in waves, wave 1 = Oregon and Wyoming; OPEN-662)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-897, Ramon 2026-11-25: wave 1 = Oregon and Wyoming; OPEN-662)
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # probe gate B 2026-10-31: no WAF resilience profile found; the Fargate dry scrape ran clean (10 bills in 11.3 s)
@@ -1287,6 +1309,7 @@ nd:
     qa_sweep: true    # OPEN-663: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-663)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-663)
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1344,6 +1367,7 @@ id:
     qa_sweep: true    # OPEN-664: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Oregon, Idaho and Wyoming go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-664); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1402,6 +1426,7 @@ ri:
     qa_sweep: true    # OPEN-665: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-665)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-665)
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1478,6 +1503,7 @@ ok:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1546,6 +1572,7 @@ ky:
     qa_sweep: true    # OPEN-667: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: KY, HI, RI and ND go live in the next manifest rollout)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-667); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1603,6 +1630,7 @@ hi:
     qa_sweep: true    # OPEN-668: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1660,6 +1688,7 @@ ms:
     qa_sweep: true    # OPEN-669: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon's OPEN-146 decision 2026-11-25: go-live PRs follow when each second pass passes, relayed by the PM)
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1724,6 +1753,7 @@ mt:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1781,6 +1811,7 @@ mo:
     qa_sweep: true    # OPEN-671: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: Missouri goes live after its version-comparison cleanup is committed (prod agent commit 508bef1, 2026-11-25))
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP's replica (OPEN-910, Ramon 2026-11-25/26: LegBot and replica routing go on in waves; wave 2 = Rhode Island, Missouri, North Dakota; OPEN-671)
     legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction's text from the replica (OPEN-910, Ramon 2026-11-25/26: wave 2 = Rhode Island, Missouri, North Dakota; OPEN-671)
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1852,6 +1883,7 @@ me:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1909,6 +1941,7 @@ ia:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW
@@ -1966,6 +1999,7 @@ md:
     qa_sweep: false
     replica_routing: false
     legbot_replica: false
+    legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
     profile: none  # NEEDS HUMAN REVIEW

@@ -22,7 +22,7 @@ Usage:
 
 When a state is scraped is not here at all: it is ddp-sync's openstates_scrape.timing (OPEN-521).
 
-What it NEVER touches: enrollment.legbot_replica, embedding, replica_routing, search_refresh,
+What it NEVER touches: enrollment.legbot_replica, enrollment.legbot_send_abstract, embedding, replica_routing, search_refresh,
 qa_sweep, api_smoke_test, waf, quality.diff_cleaner. LegBot in particular stays the one switch a human
 flips, because it depends on the data being good.
 
@@ -161,7 +161,7 @@ def main(argv=None):
     with open(args.manifest, "w") as f:
         f.write(new_text)
     print(
-        "Written. Still yours, on purpose: LegBot (enrollment.legbot_replica), embedding and routing are not set by "
+        "Written. Still yours, on purpose: LegBot (enrollment.legbot_replica, legbot_send_abstract), embedding and routing are not set by "
         "this command."
     )
     return 0

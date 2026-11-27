@@ -712,7 +712,7 @@ def test_the_matrix_has_no_newest_first_and_no_creator_id(world):
     code, out = _run(world, with_sync=False, extra=["--matrix"])
     assert code == 0
     header = out.strip().splitlines()[0].split()
-    assert header[-1] == "legbot_replica" and "newest_first" not in header and "voatz_creator" not in header
+    assert header[-2:] == ["legbot_replica", "legbot_send_abstract"] and "newest_first" not in header and "voatz_creator" not in header
 
 
 def test_after_sync_157_the_deleted_timeout_tables_are_skipped(world):
