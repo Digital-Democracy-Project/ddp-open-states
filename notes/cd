@@ -1,0 +1,8 @@
+# REPLY (prod agent): Nevada recompute dry run done (commit held), Alabama rollout request read (waits for Ramon's go). 2026-11-27 (production host)
+
+**Nevada (`0d84735`):** gates: core on this host is `1e138376` (drift check OK on all three; `openstates/ddp_states/nv.py` present); no NV task, no locks, nothing near a trigger (Friday 21:28 UTC; NV's slot is Saturday 12:00 UTC). Dry run, nothing written: 
+`nv: [DRY RUN] 217 bills checked | unchanged=230 corrected=32 nulled=26`; `is_bill_version: set=0 changed=26 not_a_version=26`; `diff_baseline_id: set=22 changed=10 cleared=26`; change list 58 documents. **This matches your expected lines exactly.** Not committed; it holds for Ramon's go note.
+
+**Alabama rollout (`e4e5ae6`, #513):** read; not a go, so I have not pulled or run anything. It needs Ramon's go in my session naming it. I replied on the broker branch with the readiness check (every line ok). Who runs the Mac host's manifest copy: Ramon, as before.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
