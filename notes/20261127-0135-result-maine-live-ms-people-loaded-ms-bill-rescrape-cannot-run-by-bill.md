@@ -1,0 +1,16 @@
+# Result 11-27 01:35 UTC: Maine is LIVE; Mississippi's people are loaded; **the Mississippi four-bill rescrape cannot run as asked (my earlier "yes" was wrong)**
+
+Ramon approved all of these in this session (a pop-up naming each).
+
+## Maine go-live (#501) - DONE 01:27 UTC
+* Gate: the incoming `main` (`af88d018`, the #501 merge) changed **only Maine**, checked key by key against the deployed copy: `status` scraping to live, and `search_refresh`, `embedding`, `api_smoke_test`, `qa_sweep` false to true; nothing else. Dry run exit 0 (skip of the cloud-task check as before: the file is read by modification time).
+* Real run: checkout, api-v3 copy and the file inside the container all `53b20a45...`; api-v3 healthy, no restart; core-pin drift exit 0; jurisdiction drift exit 0; `/schedule` 35 jobs (unchanged); ddp-sync's own read: `me status live`, the four switches true, `replica_routing` and `legbot_replica` false. No ddp-sync restart. Owed: the first embedding and search-refresh pass for Maine (2,450 bills, hours) and the smoke test and QA sweep result.
+
+## Mississippi, Part 1: the people load - DONE 01:28 UTC
+* Gates: no Mississippi task or lock; people checkout fast-forwarded to `1eea3bce` (#56); the only file that changed was Beth Waldo's. **Preview (`--safe`): 388 files, 0 created, 1 updated. Real load: the same, exit 0.** Mississippi people **379 before and 379 after**. A second `--safe` run plans **0 updated**.
+* Unmatched Mississippi person votes **still 4** ("T. (12th)" 3, "Luther-Waldo" 1): expected, they re-link only when those bills are scraped again.
+
+## Mississippi, Part 2: the four-bill rescrape CANNOT run by bill; I stopped and ran nothing
+* **Correction to my 01:20 reply:** the ddp-sync trigger does pass `bill_no=...` to the collector, but **Mississippi's scraper does not take it**: `scrapers/ms/bills.py` has `def scrape(self, chamber=None, session=None)` only (the scrapers that do take `bill_no` are AZ, FL, MA, MI, NY and UT). An entry `2026 bill_no=SB2838` would reach it as an unexpected keyword. The smallest scope Mississippi's collector offers is a chamber (`2026 chamber=upper`), not a bill. **I did not run anything.** A rescrape of Mississippi 2026 is a whole-chamber or whole-session run (about 4,116 bills across both chambers, hours); you asked me to stop and tell you before running that, and I am. Ramon's go named four bills, so it does not cover this.
+* Stored state of the four bills before any rescrape (production, read-only): **vote events HB 1330 5, HB 1924 5, HB 515 2, SB 2838 2 (14 in all)**; unmatched person votes: HB 1330 04-01 (Senate), HB 1924 04-15 (the veto override), HB 515 02-18 (Senate), SB 2838 02-04 (Senate), one each. The three Senate roll calls' yes counts read SB 2838 02-04 46, HB 515 02-18 48, HB 1330 04-01 48 (each said to be one too many).
+* **Options for you and Ramon:** (a) have the Mississippi scraper take `bill_no` (a small scraper change, then a new image); (b) a `chamber=upper` run for the three Senate roll calls and a `chamber=lower` run for HB 1924's override (two partial re-imports, each replacing the stored votes of every bill the scrape writes in that chamber and deleting others the scrape does not write); (c) leave the four unmatched votes. I will wait for the choice.
