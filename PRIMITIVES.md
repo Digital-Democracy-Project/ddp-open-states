@@ -1346,6 +1346,22 @@ functions, layered on top of the ordering work above rather than changing it.
       2026-08-23 `votes.py` copies of roll calls already on the real bill. `votes.py` is not changed: mapping it
       too would duplicate them.
     * **Status:** openstates-scrapers #107, merged 2026-11-16; needs an image and a Massachusetts run.
+  * **OPEN-921 to 924: which Massachusetts votes count as passage (BROKER-617's measurement; PRs open, not merged).** All in
+    openstates-scrapers; none adds a rule list (`config/motion_classification.yaml`, `classify_motion`, is the one).
+    * **921** (amendment votes): `ma/bills.py` reads a wrapped action ("Consolidated amendment C (...)\r\nadopted -") from its
+      one-line text, so a budget amendment is no longer the motion "adopted"; `ma/votes.py` (`HouseVoteRecordParser`) labels a
+      House roll-call sheet vote with `classify_motion` instead of "passage" every time (one yaml rule keeps the sheet's own
+      "On passing to be engrossed" / "On Engrossment"). **922** (no-tally journal votes): `SenateJournal` leaves "passing the bill
+      to be engrossed / enacted" and "approving the plan" unlabelled: the journal parse never sets a tally or voters, and each
+      such vote is also stored with its tally on the reprint bill (S 2551's No. 60 is on S 2559). **923**: `^resolutions? adopted`
+      is passage (the House's adoption of a resolution; the Senate writes "Adopted"). **924**: `ma/bills.py` writes
+      `house-rollcall-num` ("YEA and NAY No. N") and `senate-rollcall-num` ("Roll Call #N"), OPEN-685's key, to order a
+      conference report and the same day's enactment.
+    * **Stored rows:** the 20 key-less rows the `votes` scraper wrote (the one that is off) are not touched by a Massachusetts
+      re-import (the import deletes only the stored votes of a bill that brings a vote); they are relabelled by
+      `backfill-motion-classification.py ma` (dry run list first). Do **not** run that backfill on Massachusetts before 921 is
+      merged: the main rules alone would unlabel H 4994's real sheet passage vote.
+    * **Do not** add a second ordering rule, a Massachusetts-only label list, or a Massachusetts case to the broker.
   * **Status (OPEN-509/512):** merged 2026-11-16 (openstates-scrapers #99, openstates-core #103, api-v3 #61).
     Release: a scrapers image with both, api-v3 on both instances, then Massachusetts' next run (the import
     relabels and links; no separate step). Which image first carries them is not recorded here.
@@ -1614,7 +1630,7 @@ functions, layered on top of the ordering work above rather than changing it.
   **VA** the time of day of LIS's `VoteDate` as HHMMSS (LIS's `VoteID` is *not* in vote order), **AZ** the time of day
   of `ReportDate` as HHMMSS (Arizona prints no roll-call number); OPEN-685 adds **NE** the vote's KeyID (key
   `legislature-rollcall-num`, Nebraska's one chamber), **LA** the "(#N)" that ends the motion text, **NM** the RCS
-  number printed on the roll-call PDF. OPEN-863 adds **AL** (ALISON's roll-call number, read from the stored dedupe key "2026RS#House#521#HB460"); OPEN-864 adds **GA** (the scraper writes GetVote's `Number`; the backfill reads it from the stored identifier, "Senate Vote #28 - 2026 Special Session", and leaves a vote whose identifier names the other chamber). OPEN-872 adds **OK** (the RCS# printed on oklegislature.gov's vote page, `scrapers/ok/bills.py`, the end of the stored dedupe key `<vote page URL>#<RCS#>`; the backfill reads it from there and leaves a vote whose page folder, House or Senate, names the other chamber). Oklahoma's number is the page's sequence for the session and runs separately for committee and floor votes, so it orders two votes on the same day and nothing else. **So for VA and AZ, `Motion.rollcall_num` holds a time
+  number printed on the roll-call PDF. OPEN-924 adds **MA** (the House action's "YEA and NAY No. N" and the Senate action's "Roll Call #N", `scrapers/ma/bills.py`). OPEN-863 adds **AL** (ALISON's roll-call number, read from the stored dedupe key "2026RS#House#521#HB460"); OPEN-864 adds **GA** (the scraper writes GetVote's `Number`; the backfill reads it from the stored identifier, "Senate Vote #28 - 2026 Special Session", and leaves a vote whose identifier names the other chamber). OPEN-872 adds **OK** (the RCS# printed on oklegislature.gov's vote page, `scrapers/ok/bills.py`, the end of the stored dedupe key `<vote page URL>#<RCS#>`; the backfill reads it from there and leaves a vote whose page folder, House or Senate, names the other chamber). Oklahoma's number is the page's sequence for the session and runs separately for committee and floor votes, so it orders two votes on the same day and nothing else. **So for VA and AZ, `Motion.rollcall_num` holds a time
   of day, not a roll-call number:** use it only to order votes, never show it as "Roll call #N". The time is kept out of `start_date` on purpose: the
   broker finds a stored vote by its date before its id, so moving a stored vote's date breaks its re-import (a broker
   change would come first). **`backfill-vote-rollcall-num.py`** (repo root) writes the same values on stored votes,
