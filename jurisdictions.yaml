@@ -1321,7 +1321,7 @@ nd:
     cooldown_after_failures: null
     cooldown_s: null
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_nd_text  # OPEN-909: running page headers and the certification pages after the bill dropped from the changelog comparison (clean_text, ddp_states/nd.py)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-663 2b, 2026-11-20: Century Code ch. 54-03 (ndlegis.gov/cencode/t54c03.pdf) names "the senate" and "the house of representatives"
     unicameral: false
     upper: Senate
