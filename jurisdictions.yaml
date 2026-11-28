@@ -1954,6 +1954,8 @@ ia:
     cooldown_s: null
   quality:
     diff_cleaner: none  # NEEDS HUMAN REVIEW
+    accepted_unmatched_voters:   # OPEN-912: the House prints "Open" for a vacant seat (not a person); 280 absent rows in 2025
+      - Open
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-673 2b, 2026-11-21: legis.iowa.gov home page ("Senate", "House of Representatives")
     unicameral: false
     upper: Senate

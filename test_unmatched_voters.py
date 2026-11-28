@@ -89,3 +89,8 @@ def test_a_manifest_that_does_not_validate_accepts_nothing(tmp_path):
     manifest = tmp_path / "jurisdictions.yaml"
     manifest.write_text("ky: {quality: {accepted_unmatched_voters: [Mr. Speaker]}}\n")  # far from a valid entry
     assert uv.accepted_names("ky", str(manifest)) == set()
+
+
+def test_iowa_accepts_the_printed_name_open_in_the_real_manifest():
+    # OPEN-912: the Iowa House prints "Open" for a vacant seat; the real jurisdictions.yaml must keep it accepted
+    assert "Open" in uv.accepted_names("ia")
