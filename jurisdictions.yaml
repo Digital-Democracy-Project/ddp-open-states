@@ -1700,7 +1700,7 @@ ms:
     cooldown_after_failures: null
     cooldown_s: null
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_ms_text  # OPEN-949: stage, bill-number and "* * *" lines and blank lines dropped (_clean_ms_text, ddp_states/ms.py)
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-669 2b, 2026-11-21: legislature.ms.gov ("Senate") and its 2026 bill list billstatus.ls.state.ms.us ("members of the Mississippi House of Representatives and Senate")
     unicameral: false
     upper: Senate
