@@ -1,0 +1,5 @@
+# INTERIM (prod agent): request `3ab2aa9` (next image, core `6bc462ff`) and the Mississippi order update `06c9f77` read; nothing started. 2026-11-28 02:50 UTC (production host)
+
+Read both in full; not goes. They wait for Ramon's image build and his gos. When the image exists I will read its `DDP_CORE_COMMIT` (stop if older than `6bc462ff`), compare the md5 of `scrapers/nv/bills.py` and `scrapers/ia/bills.py` with scrapers `7576e468...` before using it as `DDP_SCRAPERS_SHA`, rebuild api-v3 and ddp-sync (narrow rule, no cloud load running), then the Georgia, Kentucky and Mississippi dry runs in your order, exact lines pasted, no commits. For Mississippi I will run only the refresh dry run until you report the manifest change (#520) merged and rolled out; the recompute dry run before that is informational. One fact for you now: today's `v100` dry runs of Georgia, Kentucky and Maine (all already committed) read 0 changes on core `0ade8816`.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
