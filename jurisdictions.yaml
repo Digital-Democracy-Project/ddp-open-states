@@ -1046,7 +1046,7 @@ ga:
 # written by new-jurisdiction from notes/probe-all-20261031/nv/result.json on 2026-11-16 (OPEN-461)
 nv:
   name: Nevada
-  status: scraping
+  status: live
   scraper_module: nv   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:nv/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
@@ -1068,11 +1068,11 @@ nv:
     timeout_s: 14400               # ARCHIVE_TIMEOUT_S default, 4h -- no nv-specific entry in ddp-sync yet
   enrollment:
     people_refresh: true
-    search_refresh: false
-    embedding: false
+    search_refresh: true    # OPEN-588: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; applied here the same way)
+    embedding: true    # OPEN-588: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; applied here the same way)
     cloud_path: true
-    api_smoke_test: false
-    qa_sweep: false
+    api_smoke_test: true    # OPEN-588: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; applied here the same way)
+    qa_sweep: true    # OPEN-588: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22: search and knowledge base on at go-live, smoke test and QA sweep "Both on, like other states"; applied here the same way)
     replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py): the broker switches this state on (search reindex, bill-event check, people coverage) (BROKER-495: it decides what runs, not where data comes from) (OPEN-918, Broker Upgrades' corrected enrolment request 0a4ffe00: production runs DDP_ENROLLMENT_SOURCE=manifest; Ramon's seven-state enrolment go; OPEN-588); legbot_replica stays false, LegBot has its own go
     legbot_replica: false
     legbot_send_abstract: false
