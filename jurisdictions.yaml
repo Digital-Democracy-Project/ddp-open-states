@@ -1584,7 +1584,7 @@ ky:
     cooldown_after_failures: null
     cooldown_s: null
   quality:
-    diff_cleaner: none  # NEEDS HUMAN REVIEW
+    diff_cleaner: clean_ky_text  # OPEN-946: runs of white space made one (_clean_ky_text, ddp_states/ky.py); needs the openstates-core change that adds it
   chambers:                    # OPEN-556: the legislature's own chamber names (display only); OPEN-667 2b, 2026-11-21: legislature.ky.gov ("Kentucky Senate", "Kentucky House of Representatives")
     unicameral: false
     upper: Senate
