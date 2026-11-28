@@ -218,6 +218,15 @@ should reuse rather than reimplement:
   **OPEN-633 (2026-11-19): it is also in the scrapers image** (`RUNNER_SCRIPT=cloud_loader.py`, command
   `<state> <run_id> [session=...]`), so ddp-sync can run the load as a Fargate task per state
   (`scrape.load_on_fargate`, below) instead of with its own copy of openstates-core. The loader itself is unchanged.
+- **`log_connection_probe()` (`cloud_collector.py`, OPEN-887, 2026-11-28)** — every state's collection task prints ONE
+  `PROBE <state>: egress address <ip>; connect: <host>:443 ok 0.21s; ...` line to stderr (so CloudWatch) before the
+  scraper starts: the public address the task leaves from (api.ipify.org) and a plain TCP connect, with timing, to each
+  host in the manifest's optional `scrape.probe_urls` (`https://host` or `http://host`, no path; read from each
+  scraper's own source, not fetched). No request is sent to the state; it never raises, retries or rotates anything, and
+  a failed lookup or connect is just named in the line. **Do not add a second address log**: Oklahoma's OPEN-892/904
+  `log_egress_address()` (`scrapers/ok/bills.py`, an INFO line through the `openstates` logger, which did not show in
+  the v98 task log) is kept as it is; this one is the generic, always-visible one. A new state adds its host(s) to
+  `probe_urls` in the manifest (the validator checks the shape; `test_cloud_collector.py` requires every state to have one).
 - **`apply_rds_task_secret()` (`cloud_collector.py`, OPEN-633, 2026-11-19)** — the one place a Fargate runner builds
   `DATABASE_URL` from the task definition's RDS secret (`RDS_USERNAME`/`RDS_PASSWORD` from `secrets`,
   `RDS_HOST`/`RDS_PORT`/`RDS_DBNAME` from `environment`; URL-encoded exactly as ddp-sync's

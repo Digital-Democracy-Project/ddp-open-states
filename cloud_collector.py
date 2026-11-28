@@ -36,14 +36,18 @@ credentials came from.
 """
 
 import datetime
+import ipaddress
 import json
 import math
 import os
+import socket
 import subprocess
 import sys
 import tempfile
 import time
+import urllib.request
 import uuid
+from urllib.parse import urlsplit
 from pathlib import Path
 
 import boto3
@@ -626,6 +630,55 @@ def scraper_has_votes(source, manifest_path=None):
     return False if scrape is None else scrape["votes_scraper"]
 
 
+# OPEN-887: a plain-text lookup that answers with the caller's own address (the same service OPEN-892 uses for Oklahoma)
+EGRESS_LOOKUP_URL = "https://api.ipify.org"
+PROBE_TIMEOUT_S = 10
+
+
+def _egress_address(timeout=PROBE_TIMEOUT_S):
+    """The public address this task's requests leave from, as a lookup service sees it; "unknown (<ErrorName>)" when
+    it cannot be read."""
+    try:
+        with urllib.request.urlopen(EGRESS_LOOKUP_URL, timeout=timeout) as resp:
+            address = resp.read(64).decode().strip()
+        ipaddress.ip_address(address)
+        return address
+    except Exception as e:  # a lookup is information, never a reason to stop
+        return f"unknown ({type(e).__name__})"
+
+
+def _connect_result(url, timeout=PROBE_TIMEOUT_S):
+    """One connect test: open a TCP connection to the url's host and close it again (no request is sent). Returns
+    "host:port ok 0.21s" or "host:port FAILED TimeoutError after 10.0s"."""
+    parts = urlsplit(url)
+    port = parts.port or (80 if parts.scheme == "http" else 443)
+    started = time.monotonic()
+    try:
+        socket.create_connection((parts.hostname, port), timeout=timeout).close()
+    except Exception as e:
+        return f"{parts.hostname}:{port} FAILED {type(e).__name__} after {time.monotonic() - started:.1f}s"
+    return f"{parts.hostname}:{port} ok {time.monotonic() - started:.2f}s"
+
+
+def log_connection_probe(source, manifest_path=None):
+    """OPEN-887: at the start of a collection task, print ONE line with the public address this task leaves from and a
+    connect test (with timing) to each of the state's `scrape.probe_urls` from the manifest, so a run that then times
+    out says what it could see. Information only: it never raises and never changes the run (each step waits at most
+    PROBE_TIMEOUT_S on the socket; a slow DNS answer can take longer, as it would for the scraper too), so a state without
+    probe_urls prints just the address, and a manifest that cannot be read prints that. No rotation, no retry."""
+    try:
+        scrape = _manifest_scrape_entry(source, manifest_path)
+        urls = (scrape or {}).get("probe_urls") or []
+        tests = "; ".join(_connect_result(u) for u in urls) or "no probe_urls in the manifest"
+        line = f"PROBE {source}: egress address {_egress_address()}; connect: {tests}"
+    except Exception as e:
+        line = f"PROBE {source}: not run ({type(e).__name__}: {e})"
+    try:
+        print(line, file=sys.stderr, flush=True)
+    except Exception:  # even a log line that cannot be written must not stop the collection
+        pass
+
+
 def derive_scrape_key(source, params):
     """Distinguishes different scrape targets that share one jurisdiction so their watermarks
     and OPEN-203 import locks never collide -- found missing during OPEN-191's Fargate
@@ -835,6 +888,9 @@ def _collect(source, scrape_key, session, params, run_id, started, memory, force
         # local file left over from some other run.
         start_arg = (_incremental_start_arg(os.path.join(last_run_dir, f"{scrape_key}.ts"))
                      if mode == "incremental" else None)
+
+        # OPEN-887: before the scraper starts, so a run that dies on its first request still says what it saw
+        log_connection_probe(source)
 
         os.makedirs(cache_dir, exist_ok=True)
         out_dir = os.path.join(staging, "scraped")

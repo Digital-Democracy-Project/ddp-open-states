@@ -23,6 +23,16 @@ from botocore.exceptions import ClientError
 sys.path.insert(0, os.path.dirname(__file__))
 import cloud_collector as cc
 
+_REAL_PROBE = cc.log_connection_probe
+
+
+@pytest.fixture(autouse=True)
+def _no_real_network_probe(monkeypatch):
+    """OPEN-887: every run through main() now starts with the connection probe. A test must never reach the
+    network (or a state's site), so the probe is a no-op here; the tests of the probe itself call _REAL_PROBE with
+    the socket and the address lookup faked."""
+    monkeypatch.setattr(cc, "log_connection_probe", lambda source, manifest_path=None: None)
+
 
 class FakeS3Client:
     """In-memory stand-in for boto3's S3 client. Raises the same ClientError shapes real S3
@@ -1455,3 +1465,140 @@ def test_a_half_configured_secret_refuses_and_never_shows_the_password(missing):
     assert missing in str(exc.value)
     assert _RDS_SECRET["RDS_PASSWORD"] not in str(exc.value)
     assert "DATABASE_URL" not in env
+
+
+# ---- OPEN-887: the start-of-task connection probe ------------------------------------------------------------
+
+def _manifest_with_probe(tmp_path, urls):
+    """The real manifest with Utah's probe_urls replaced (None = the field left out)."""
+    import re
+    text = open(cc.REPO_ROOT / "jurisdictions.yaml").read()
+    start, end = text.index("\nut:\n"), text.index("\naz:\n")
+    block = re.sub(r"\n    probe_urls: .*", "", text[start:end])
+    if urls is not None:
+        block = block.replace("\n  scrape:\n", "\n  scrape:\n    probe_urls: [" + ", ".join(urls) + "]\n", 1)
+    path = tmp_path / "jurisdictions.yaml"
+    path.write_text(text[:start] + block + text[end:])
+    return str(path)
+
+
+def _fake_network(monkeypatch, *, address="203.0.113.7", fail_hosts=(), lookup_error=None):
+    """Fake the address lookup and the socket; returns the list of (host, port) the probe tried to connect to."""
+    calls = []
+
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self, n): return address.encode()
+
+    def urlopen(url, timeout=None):
+        if lookup_error:
+            raise lookup_error
+        return _Resp()
+
+    class _Sock:
+        def close(self): pass
+
+    def create_connection(addr, timeout=None):
+        calls.append(addr)
+        if addr[0] in fail_hosts:
+            raise TimeoutError("timed out")
+        return _Sock()
+
+    monkeypatch.setattr(cc.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(cc.socket, "create_connection", create_connection)
+    return calls
+
+
+def test_probe_prints_one_line_with_address_and_each_connect_result(tmp_path, monkeypatch, capsys):
+    calls = _fake_network(monkeypatch)
+    path = _manifest_with_probe(tmp_path, ["https://a.example.gov", "http://b.example.gov"])
+    _REAL_PROBE("ut", manifest_path=path)
+    err = capsys.readouterr().err.strip().splitlines()
+    assert len(err) == 1, err
+    assert err[0].startswith("PROBE ut: egress address 203.0.113.7; connect: a.example.gov:443 ok ")
+    assert "; b.example.gov:80 ok " in err[0]
+    assert calls == [("a.example.gov", 443), ("b.example.gov", 80)]
+
+
+def test_probe_names_a_failed_connect_and_does_not_raise(tmp_path, monkeypatch, capsys):
+    _fake_network(monkeypatch, fail_hosts=("a.example.gov",))
+    _REAL_PROBE("ut", manifest_path=_manifest_with_probe(tmp_path, ["https://a.example.gov", "https://b.example.gov"]))
+    line = capsys.readouterr().err
+    assert "a.example.gov:443 FAILED TimeoutError after " in line
+    assert "b.example.gov:443 ok " in line  # the second host is still tested after the first failed
+
+
+def test_probe_still_tests_the_connection_when_the_address_lookup_fails(tmp_path, monkeypatch, capsys):
+    import urllib.error
+    calls = _fake_network(monkeypatch, lookup_error=urllib.error.URLError("no route"))
+    _REAL_PROBE("ut", manifest_path=_manifest_with_probe(tmp_path, ["https://a.example.gov"]))
+    line = capsys.readouterr().err
+    assert "egress address unknown (URLError)" in line and "a.example.gov:443 ok" in line
+    assert calls == [("a.example.gov", 443)]
+
+
+def test_probe_with_no_probe_urls_prints_the_address_and_says_so(tmp_path, monkeypatch, capsys):
+    calls = _fake_network(monkeypatch)
+    _REAL_PROBE("ut", manifest_path=_manifest_with_probe(tmp_path, None))
+    assert "egress address 203.0.113.7; connect: no probe_urls in the manifest" in capsys.readouterr().err
+    assert calls == []
+
+
+def test_probe_with_an_unreadable_manifest_says_so_and_does_not_raise(tmp_path, monkeypatch, capsys):
+    _fake_network(monkeypatch)
+    bad = tmp_path / "jurisdictions.yaml"
+    bad.write_text("ut: {not: valid}")
+    _REAL_PROBE("ut", manifest_path=str(bad))
+    assert capsys.readouterr().err.startswith("PROBE ut: not run (RuntimeError")
+
+
+def test_collect_runs_the_probe_before_the_scraper_starts(tmp_path, monkeypatch, capsys):
+    order = []
+    monkeypatch.setattr(cc, "log_connection_probe", lambda source, manifest_path=None: order.append(("probe", source)))
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    real_popen = cc.subprocess.Popen
+
+    def popen(*a, **kw):
+        order.append(("scraper", a[0][0]))
+        return real_popen(*a, **kw)
+
+    monkeypatch.setattr(cc.subprocess, "Popen", popen)
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    cc.main(["ut", "session=2025"], s3_client=FakeS3Client())
+    assert order[0] == ("probe", "ut") and order[1][0] == "scraper", order
+
+
+def test_a_failing_probe_cannot_fail_the_run(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cc, "log_connection_probe", _REAL_PROBE)
+    monkeypatch.setattr(cc, "_manifest_scrape_entry", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(cc, "scraper_takes_start", lambda *a, **k: True)
+    monkeypatch.setattr(cc, "scraper_has_votes", lambda *a, **k: False)
+    _fake_network(monkeypatch)
+    monkeypatch.setenv("MEMORY_BUCKET", "bucket")
+    monkeypatch.setenv("MEMORY_PREFIX", "dev-open201")
+    monkeypatch.setenv("OS_UPDATE", _fake_os_update(tmp_path))
+    rc = cc.main(["ut", "session=2025"], s3_client=FakeS3Client())
+    assert rc == 0
+    assert "PROBE ut: not run (RuntimeError: boom)" in capsys.readouterr().err
+
+
+def test_every_manifest_state_has_probe_urls_and_oklahoma_and_massachusetts_name_their_hosts():
+    from validate_jurisdictions import load_and_validate
+    manifest, problems = load_and_validate(str(cc.REPO_ROOT / "jurisdictions.yaml"))
+    assert problems == []
+    assert [c for c, e in manifest.items() if not e["scrape"].get("probe_urls")] == []
+    assert manifest["ok"]["scrape"]["probe_urls"] == ["https://webapps.oklegislature.gov"]
+    assert manifest["ma"]["scrape"]["probe_urls"] == ["https://malegislature.gov"]
+
+
+def test_a_stderr_that_cannot_be_written_does_not_stop_the_probe(tmp_path, monkeypatch):
+    _fake_network(monkeypatch)
+
+    class _BrokenStderr:
+        def write(self, text): raise OSError("stderr closed")
+        def flush(self): raise OSError("stderr closed")
+
+    monkeypatch.setattr(cc.sys, "stderr", _BrokenStderr())
+    _REAL_PROBE("ut", manifest_path=_manifest_with_probe(tmp_path, ["https://a.example.gov"]))  # must not raise
