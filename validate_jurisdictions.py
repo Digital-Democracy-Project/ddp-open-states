@@ -79,6 +79,8 @@ TOP_LEVEL_FIELDS = {
     "onboarding": dict,
 }
 
+PROBE_URL_RE = re.compile(r"^https?://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$")
+
 SCRAPE_FIELDS = {
     "allow_duplicates": bool,
     "timeout_s": int,
@@ -96,6 +98,12 @@ SCRAPE_FIELDS = {
     # OPEN-555: Utah's session-list retry (scrapers/ut/__init__.py, OPEN-106); null for every other state.
     "session_list_attempts": (int, type(None)),
     "session_list_backoff_s": (int, type(None)),
+}
+
+# OPEN-887: optional, so no state has to carry it. The sites a collection task tests a connection to at its start
+# (cloud_collector.log_connection_probe): each "https://host" (or "http://host"), a plain connect, no request.
+SCRAPE_OPTIONAL_FIELDS = {
+    "probe_urls": list,
 }
 
 ARCHIVE_FIELDS = {
@@ -318,7 +326,11 @@ def validate(data):
                 f"{code}.status: {entry['status']!r} is not one of {sorted(STATUS_VALUES)}"
             )
         if isinstance(entry.get("scrape"), dict):
-            _check_block(entry["scrape"], SCRAPE_FIELDS, f"{code}.scrape", errors)
+            _check_block(entry["scrape"], SCRAPE_FIELDS, f"{code}.scrape", errors, optional=SCRAPE_OPTIONAL_FIELDS)
+            for url in entry["scrape"].get("probe_urls") or []:
+                if not (isinstance(url, str) and PROBE_URL_RE.match(url)):
+                    errors.append(f"{code}.scrape.probe_urls: each entry must look like https://host (or http://host), "
+                                  f"no path, got {url!r}")
             timeout = entry["scrape"].get("timeout_s")
             if isinstance(timeout, int) and not isinstance(timeout, bool) and timeout <= 0:
                 errors.append(f"{code}.scrape.timeout_s: must be positive, got {timeout}")

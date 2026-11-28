@@ -846,3 +846,20 @@ def test_the_real_manifest_sends_the_summary_for_oregon_only():
     # every state block carries the key explicitly, as a real boolean (not a missing key read as false)
     assert all(isinstance(e["enrollment"].get("legbot_send_abstract"), bool) for e in data.values())
     assert [c for c, e in data.items() if e["enrollment"]["legbot_send_abstract"]] == ["or"]
+
+
+# OPEN-887: scrape.probe_urls is optional, a list of "https://host" / "http://host" with no path
+@pytest.mark.parametrize("bad", ["https://a.example.gov/path", "a.example.gov", "ftp://a.example.gov", "", 7, None])
+def test_probe_urls_rejects_an_entry_that_is_not_a_bare_http_origin(bad):
+    entry = _valid_entry()
+    entry["scrape"]["probe_urls"] = [bad]
+    assert any("xx.scrape.probe_urls" in e for e in validate({"xx": entry}))
+
+
+def test_probe_urls_must_be_a_list_and_may_be_left_out():
+    entry = _valid_entry()
+    assert validate({"xx": entry}) == []
+    entry["scrape"]["probe_urls"] = "https://a.example.gov"
+    assert any("xx.scrape.probe_urls" in e for e in validate({"xx": entry}))
+    entry["scrape"]["probe_urls"] = ["https://a.example.gov", "http://b.example.gov"]
+    assert validate({"xx": entry}) == []

@@ -155,6 +155,7 @@ us:
   scraper_module: usa   # OPEN-555: the openstates-scrapers module (US Congress is "usa")
   ocd_id: ocd-jurisdiction/country:us/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.govinfo.gov, https://www.congress.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 14400        # SCRAPE_TIMEOUT_S["usa"], 4h
     session_arg: null        # explicit "119 chamber=lower"/"119 chamber=upper" sessions are
@@ -214,6 +215,7 @@ fl:
   scraper_module: fl   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:fl/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://flsenate.gov, https://flhouse.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: true    # pagination overlap produces duplicate bill JSON (upstream #5697)
     timeout_s: 57600           # SCRAPE_TIMEOUT_S["fl"], 16h -- FL is the longest-running job
     session_arg: null           # no session argument (ddp-sync SYNC-130): the scraper takes
@@ -277,6 +279,7 @@ wa:
   scraper_module: wa   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:wa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://wslwebservices.leg.wa.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 28800            # SCRAPE_TIMEOUT_S["wa"], 8h
     session_arg: null            # no session arg passed -- auto-detected
@@ -335,6 +338,7 @@ va:
   scraper_module: va   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:va/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://lis.virginia.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: true        # pagination overlap (upstream #5697); scraper-side dedup also
                                    # added (65363ef)
     timeout_s: 21600                # SCRAPE_TIMEOUT_S default, 6h (no VA-specific entry)
@@ -396,6 +400,7 @@ mi:
   scraper_module: mi   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:mi/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://legislature.mi.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: true         # pagination overlap (upstream #5697)
     timeout_s: 36000                 # SCRAPE_TIMEOUT_S["mi"], 10h -- MI also gets a periodic
                                       # forced full walk (OPEN-162), a full walk is ~6.5h against
@@ -459,6 +464,7 @@ ut:
   scraper_module: ut   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:ut/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://le.utah.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no UT-specific entry)
     session_arg: null                  # ALWAYS null for secondaries (OPEN-24 resolution)
@@ -517,6 +523,7 @@ az:
   scraper_module: az   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:az/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://apps.azleg.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h (no AZ-specific entry)
     session_arg: null                  # ALWAYS null for secondaries (OPEN-24 resolution)
@@ -580,6 +587,7 @@ ma:
   scraper_module: ma   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:ma/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://malegislature.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: true             # run-scrape.sh ALLOW_DUPLICATES_STATES has had ma since OPEN-55 (a completed
                                         # 9,496-bill MA scrape lost its whole import without it); this manifest said false
     timeout_s: 57600                   # SCRAPE_TIMEOUT_S["ma"], 16h -- same ceiling as FL
@@ -658,6 +666,7 @@ nc:
   scraper_module: nc   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:nc/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.ncleg.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600                  # SCRAPE_TIMEOUT_S default, 6h -- no NC-specific entry
                                        # exists yet (not scheduled), same default az/ma use
@@ -729,6 +738,7 @@ al:
   scraper_module: al   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:al/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://alison.legislature.state.al.us]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600                     # SCRAPE_TIMEOUT_S default, 6h (no AL entry)
     session_arg: null
@@ -788,6 +798,7 @@ pa:
   scraper_module: pa   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:pa/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.palegis.us]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no pa-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -848,6 +859,7 @@ ne:
   scraper_module: ne   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:ne/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://nebraskalegislature.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ne-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -906,6 +918,7 @@ la:
   scraper_module: la   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:la/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.legis.la.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no la-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -991,6 +1004,7 @@ ga:
   scraper_module: ga   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:ga/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.legis.ga.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ga-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1050,6 +1064,7 @@ nv:
   scraper_module: nv   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:nv/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.leg.state.nv.us]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nv-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1109,6 +1124,7 @@ or:
   scraper_module: or   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:or/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://olis.oregonlegislature.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no or-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1168,6 +1184,7 @@ nm:
   scraper_module: nm   # OPEN-555: the openstates-scrapers module
   ocd_id: ocd-jurisdiction/country:us/state:nm/government   # OPEN-555: the OpenStates jurisdiction id stored in the database
   scrape:
+    probe_urls: [https://www.nmlegis.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nm-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1226,6 +1243,7 @@ wy:
   scraper_module: wy      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:wy/government"
   scrape:
+    probe_urls: [https://wyoleg.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no wy-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1284,6 +1302,7 @@ nd:
   scraper_module: nd      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:nd/government"
   scrape:
+    probe_urls: [https://ndlegis.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no nd-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1342,6 +1361,7 @@ id:
   scraper_module: id      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:id/government"
   scrape:
+    probe_urls: [https://legislature.idaho.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no id-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1401,6 +1421,7 @@ ri:
   scraper_module: ri      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ri/government"
   scrape:
+    probe_urls: [https://status.rilegislature.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ri-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1478,6 +1499,7 @@ ok:
   scraper_module: ok      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ok/government"
   scrape:
+    probe_urls: [https://webapps.oklegislature.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ok-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1547,6 +1569,7 @@ ky:
   scraper_module: ky      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ky/government"
   scrape:
+    probe_urls: [https://apps.legislature.ky.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ky-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1605,6 +1628,7 @@ hi:
   scraper_module: hi      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:hi/government"
   scrape:
+    probe_urls: [https://www.capitol.hawaii.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no hi-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1663,6 +1687,7 @@ ms:
   scraper_module: ms      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ms/government"
   scrape:
+    probe_urls: [https://billstatus.ls.state.ms.us]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ms-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1728,6 +1753,7 @@ mt:
   scraper_module: mt      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:mt/government"
   scrape:
+    probe_urls: [https://api.legmt.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no mt-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1786,6 +1812,7 @@ mo:
   scraper_module: mo      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:mo/government"
   scrape:
+    probe_urls: [https://www.senate.mo.gov, https://www.house.mo.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no mo-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1858,6 +1885,7 @@ me:
   scraper_module: me      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:me/government"
   scrape:
+    probe_urls: [https://legislature.maine.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no me-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1916,6 +1944,7 @@ ia:
   scraper_module: ia      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:ia/government"
   scrape:
+    probe_urls: [https://www.legis.iowa.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no ia-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
@@ -1974,6 +2003,7 @@ md:
   scraper_module: md      # OPEN-555: the openstates-scrapers module
   ocd_id: "ocd-jurisdiction/country:us/state:md/government"
   scrape:
+    probe_urls: [http://mgaleg.maryland.gov]   # OPEN-887: the host(s) the scraper reads (from its source); the start-of-task connect test
     allow_duplicates: false
     timeout_s: 21600               # SCRAPE_TIMEOUT_S default, 6h -- no md-specific entry in ddp-sync yet
     session_arg: null                # ALWAYS null (OPEN-24 resolution)
