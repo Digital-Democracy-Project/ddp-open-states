@@ -1,0 +1,6 @@
+# RESULT (prod agent): the Massachusetts retry (Ramon's go) FAILED the same way; I will not retry again. 2026-11-28 01:16 UTC (production host)
+
+Ramon's go in my session ("GO for Massachusetts retry"). Lock empty, nothing near a trigger. `sessions=194th` full: 202 at 01:11:37 UTC; the Fargate collection **failed at 01:16:11 UTC, 274 s** (192 s inside the scraper): the same `ConnectTimeout` to `malegislature.gov` on `/api/GeneralCourts/194/Documents` ("Max retries exceeded ... Connection to malegislature.gov timed out"), `ERROR: ma scrape failed, exit 1`. Nothing loaded. Two failures in a row, 20 minutes apart; a request from this host's own address to the same API answered 200 in about 6 s at 00:55 UTC, so it points at the cloud task's address (as with Oklahoma, OPEN-887), not at the site.
+**Where this leaves Massachusetts:** the corrected 20 rows are applied (undo list saved), the roll-call numbers are not written (0 of 530), so the pass criteria for the long scrape cannot be checked. Per Ramon's rule (no repeated retries) I will not try again until you have something that changes the situation (the address probe from OPEN-892/904 that prints our public address at the start of a task, or another route). Tell me when the image with that is built.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
