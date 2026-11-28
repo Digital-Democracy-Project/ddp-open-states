@@ -1628,8 +1628,8 @@ hi:
     cloud_path: true
     api_smoke_test: true    # OPEN-668: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
     qa_sweep: true    # OPEN-668: on at go-live like every live state (Ramon 2026-11-20 /ask-me: embedding "On, at go-live"; 2026-11-22, for PA/NE/LA: smoke test and QA sweep "Both on, like other states"; applied here the same way, per Ramon 2026-11-25 via PM: HI, RI and ND go live in the next manifest rollout)
-    replica_routing: false
-    legbot_replica: false
+    replica_routing: true    # DDP_OPENSTATES_JURISDICTIONS (ddp-broker-py and ddp-sync): reads served from DDP replica (OPEN-668; LegBot and replica routing go on in waves, wave number not decided)
+    legbot_replica: true    # LEGBOT_RDS_REPLICA_JURISDICTION_ALLOWLIST (ddp-sync): LegBot may read this jurisdiction text from the replica (OPEN-668; wave number not decided; held draft)
     legbot_send_abstract: false
     broker_bill_event_signal: false
   waf:
