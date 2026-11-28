@@ -17,6 +17,12 @@ Usage:
     OPENSTATES_API_KEY=<key> python3 quality_check.py --bills 10 --people 5
     OPENSTATES_API_KEY=<key> python3 quality_check.py --jurisdiction fl
     OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage fl 2026
+    python3 quality_check.py --structural ky --api-url \\
+        --openstates-core-root <core checkout> --core-commit <40-hex: the core api-v3 runs>
+
+--api-url (OPEN-958): the same --structural gates and the govbot --coverage check, with OUR side read
+through api-v3 (HTTP GETs only, no database login) instead of the database. The database modes are
+unchanged. See PRIMITIVES.md for what it needs and what it cannot do.
 
 Environment:
     OPENSTATES_API_KEY   Real API key for v3.openstates.org (required)
@@ -26,6 +32,7 @@ Environment:
                          RDS_DATABASE_URL, which goes stale every time RDS's own automatic
                          7-day credential rotation fires. Requires RDS_CREDENTIALS_SECRET_ARN
                          to also be set.
+    QUALITY_CHECK_API_KEY  --api-url only: the api-v3 key (default: the documented local dev key)
     GOVBOT_DATA_DIR      Where --coverage clones/updates govbot-data repos (OPEN-289).
                          Default: ~/.govbot-data
 """
@@ -735,7 +742,8 @@ def build_govbot_bill_index(jurisdiction_code, session, repo_path):
 
 
 def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index, tier2_limit=None,
-                               tier2_random=False, blast_radius_cache=None, local_sessions=None):
+                               tier2_random=False, blast_radius_cache=None, local_sessions=None,
+                               api_bills=None):
     """govbot-backed equivalent of run_coverage_check() below -- same Tier 1 (full
     identifier-set diff) + Tier 2 (compare_bills() over every shared identifier)
     shape and the same return-dict keys, but sourcing "live" data from a local
@@ -753,6 +761,9 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     local_sessions (OPEN-847): our sessions that together make up govbot's `session`
     (see GOVBOT_SESSION_GROUPS); default is just `session`. Tier 1 diffs against their
     union; Tier 2 reads each bill from the one of ours that holds it.
+
+    api_bills (OPEN-958): an ApiBills crawl. When given, `conn` is unused (pass None): our
+    identifiers, our bills and the same-date blast radius all come from that one crawl.
     """
     if blast_radius_cache is None:
         blast_radius_cache = {}
@@ -769,7 +780,9 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     own_session = {}  # identifier -> the one of our sessions that holds it
     in_two = set()
     for ours in local_sessions:
-        for identifier in fetch_all_local_identifiers(conn, jurisdiction, ours):
+        ours_ids = (api_bills.identifiers(ours) if api_bills is not None
+                    else fetch_all_local_identifiers(conn, jurisdiction, ours))
+        for identifier in ours_ids:
             if identifier in own_session:
                 in_two.add(identifier)
             else:
@@ -822,11 +835,16 @@ def run_govbot_coverage_check(report, conn, jurisdiction, session, govbot_index,
     for i, identifier in enumerate(tier2_ids):
         bill_session = own_session[identifier]
         label = f"{jurisdiction.upper()} {identifier} ({bill_session})"
-        local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, bill_session, identifier)
+        if api_bills is not None:
+            local = api_bills.bill(bill_session, identifier)
+        else:
+            local = fetch_bill(LOCAL_API, LOCAL_KEY, jurisdiction, bill_session, identifier)
         live = govbot_index.get(identifier)
         compare_bills(report, local, live, label,
                       conn=conn, jurisdiction_code=jurisdiction, session=bill_session,
-                      blast_radius_cache=blast_radius_cache)
+                      blast_radius_cache=blast_radius_cache,
+                      shared_count_fn=(api_bills.shared_date_count(bill_session)
+                                       if api_bills is not None else None))
         if i % 250 == 0:
             print(f"    ...{i}/{len(tier2_ids)}")
 
@@ -972,7 +990,7 @@ def count_shared_date_signature(conn, jurisdiction_code, session, date, voter_si
 
 
 def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None, session=None,
-                   blast_radius_cache=None):
+                   blast_radius_cache=None, shared_count_fn=None):
     """Diff local vs live bill on key fields.
 
     conn/jurisdiction_code/session/blast_radius_cache are optional and additive: when all
@@ -981,6 +999,9 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
     count_shared_date_signature() and folded into the existing WARN. Callers that omit
     them (or pass conn=None) get the per-voter diff detail with no blast-radius sizing --
     fully backward compatible with any caller that doesn't pass them.
+
+    shared_count_fn (OPEN-958, api-v3 mode): `fn(date, signature, exclude_identifier) -> int`,
+    used instead of the database query when there is no connection (see ApiBills.shared_date_count).
     """
 
     if local is None and live is None:
@@ -1172,13 +1193,15 @@ def compare_bills(report, local, live, label, conn=None, jurisdiction_code=None,
                 local_only, live_only = diff_voters(lv, rv)
                 detail = f"local={lc} live={rc} | {describe_voter_diff(local_only, live_only)}"
                 signature = local_only | live_only
-                if signature and conn is not None and jurisdiction_code is not None \
+                count_fn = shared_count_fn
+                if count_fn is None and conn is not None and jurisdiction_code is not None \
                         and session is not None:
-                    shared_count = count_shared_date_signature(
-                        conn, jurisdiction_code, session, date, signature,
-                        exclude_identifier=local.get("identifier"),
-                        cache=blast_radius_cache,
-                    )
+                    def count_fn(d, sig, exclude):
+                        return count_shared_date_signature(
+                            conn, jurisdiction_code, session, d, sig,
+                            exclude_identifier=exclude, cache=blast_radius_cache)
+                if signature and count_fn is not None:
+                    shared_count = count_fn(date, signature, local.get("identifier"))
                     detail += (f" | {shared_count} other local bill(s) share this "
                                f"signature on {where}")
                 report.record(WARN, f"{label}: vote tally differs on {where}", detail)
@@ -1463,7 +1486,11 @@ def run_people_loaded_gate(report, conn, jurisdiction_code):
     the "again" re-check within ddp-open-states' own pipeline stage; the literal pre-routing
     checkpoint in the broker is out of reach here and is flagged, not silently dropped (see
     RUNBOOK.md's Stage 3 structural gates section)."""
-    count = count_people_loaded(conn, jurisdiction_code)
+    return _record_people_loaded(report, jurisdiction_code, count_people_loaded(conn, jurisdiction_code))
+
+
+def _record_people_loaded(report, jurisdiction_code, count):
+    """The gate's verdict, shared by the database mode above and the api-v3 mode (OPEN-958)."""
     label = f"{jurisdiction_code.upper()}: people loaded"
     if count == 0:
         report.record(FAIL, label,
@@ -1485,8 +1512,13 @@ def run_vote_key_uniqueness_gate(report, conn, jurisdiction_code):
     Same rule as verify-jurisdiction's gate I / compare_vote_keys() (OPEN-397), run here over the
     full imported dataset instead of a bounded dry-scrape sample -- Stage 0's sample can miss a
     collision Stage 3's full-dataset check will always catch."""
-    label = f"{jurisdiction_code.upper()}: unique vote keys"
     collisions, n_sessions = find_db_vote_key_collisions(conn, jurisdiction_code)
+    return _record_vote_key_uniqueness(report, jurisdiction_code, collisions, n_sessions)
+
+
+def _record_vote_key_uniqueness(report, jurisdiction_code, collisions, n_sessions):
+    """The gate's verdict, shared by the database mode above and the api-v3 mode (OPEN-958)."""
+    label = f"{jurisdiction_code.upper()}: unique vote keys"
     if n_sessions <= 1:
         report.record(SKIP, label,
                       f"only {n_sessions} session(s) with votes -- nothing to collide with")
@@ -1514,7 +1546,6 @@ def run_version_stage_coverage_gate(report, conn, jurisdiction_code):
     0 bill versions is reported not-applicable (SKIP), never a vacuous pass or a ZeroDivisionError."""
     from openstates.utils.version_ordering import note_stage, STAGE_UNKNOWN
 
-    label = f"{jurisdiction_code.upper()}: version stage coverage"
     cur = conn.cursor()
     cur.execute(
         """
@@ -1527,12 +1558,20 @@ def run_version_stage_coverage_gate(report, conn, jurisdiction_code):
         (_ocd_id(jurisdiction_code),),
     )
     notes = [row[0] for row in cur.fetchall()]
+    return _record_version_stage_coverage(report, jurisdiction_code, notes, note_stage, STAGE_UNKNOWN)
+
+
+def _record_version_stage_coverage(report, jurisdiction_code, notes, note_stage, stage_unknown):
+    """The gate's verdict over a list of version notes, shared by the database mode above and the
+    api-v3 mode (OPEN-958). The classifier is passed in so the api-v3 mode can hand it the core it
+    has checked (see load_stage_rules()) instead of whichever core the interpreter finds first."""
+    label = f"{jurisdiction_code.upper()}: version stage coverage"
     total = len(notes)
     if total == 0:
         report.record(SKIP, label, "no bill versions for this jurisdiction")
         return {"total": 0, "no_stage": 0}
 
-    no_stage = sum(1 for note in notes if note_stage(note)[0] == STAGE_UNKNOWN)
+    no_stage = sum(1 for note in notes if note_stage(note)[0] == stage_unknown)
     share = no_stage / total
     detail = f"{no_stage}/{total} versions have no stage ({share:.1%})"
     if share > VERSION_STAGE_UNKNOWN_CEILING:
@@ -1558,7 +1597,12 @@ def run_attribution_resolution_gate(report, conn, jurisdiction_code):
     and remains open with no implementation anywhere in this repo as of this ticket -- this gate
     calls qa_primitives.attribution_resolution_rates(), the one real implementation, so OPEN-261
     can adopt it rather than duplicate it."""
-    rates = attribution_resolution_rates(conn, jurisdiction_code)
+    return _record_attribution_resolution(report, jurisdiction_code,
+                                           attribution_resolution_rates(conn, jurisdiction_code))
+
+
+def _record_attribution_resolution(report, jurisdiction_code, rates):
+    """The gate's verdict, shared by the database mode above and the api-v3 mode (OPEN-958)."""
     results = {}
     for kind in ("votes", "sponsorships"):
         total = rates[kind]["total"]
@@ -1621,6 +1665,250 @@ def print_structural_gate_recommendation(report, jurisdiction_code):
           "1 convention (see RUNBOOK.md §5 Stage 1, same as verify-jurisdiction's own gate "
           "failures) -- this script does not file the ticket or change jurisdictions.yaml itself.")
 
+# ── api-v3 mode (OPEN-958) ────────────────────────────────────────────────────
+#
+# `--api-url` runs the Stage 3 structural gates and the govbot coverage check from api-v3 reads
+# alone: HTTP GETs, no database login (Ramon 2026-11-28: "use the api-v3 instead of trying to
+# manipulate the database directly"). One paged /bills crawl (include=versions,votes,
+# sponsorships,actions; api-v3 caps a page at 20 bills when it carries includes) feeds every gate
+# and the coverage comparison, and the people gate reads /people. The verdict code is the
+# database mode's own (_record_* above), so the ceilings and the output lines are the same.
+#
+# The one thing api-v3 does not hand over is the version-stage CLASSIFICATION: it returns the
+# notes, and this script classifies them. That must be done by the same openstates-core rules
+# api-v3 runs (OPEN-579), or the figure is wrong in the unlucky direction: on 2026-11-28 the dev
+# venv's core (~280 commits behind main, no per-state note rules) read 25.5% (KY), 8.4% (NV) and
+# 40.3% (HI) of versions as having no stage, where core's main reads 0 / 0 / 1 of 2,561 / 262 /
+# 10,703. load_stage_rules() therefore refuses to classify with a core it cannot show is at or
+# past the commit api-v3 runs.
+API_PAGE_SIZE = 20  # api-v3's cap on /bills when it carries includes
+API_BILL_INCLUDES = ["versions", "votes", "sponsorships", "actions"]
+_FULL_SHA = re.compile(r"[0-9a-f]{40}")
+
+
+class ApiError(Exception):
+    """An api-v3 read failed, or returned something this mode cannot use. Never a pass."""
+
+
+class CoreMismatch(Exception):
+    """The openstates-core on hand cannot be shown to be the one api-v3 runs."""
+
+
+def api_key():
+    """The key for api-v3: QUALITY_CHECK_API_KEY if set, else the documented local dev key
+    (RUNBOOK.md). Never printed; errors go through _redact()."""
+    return os.environ.get("QUALITY_CHECK_API_KEY") or LOCAL_KEY
+
+
+def _core_commit_of(core_root):
+    """The commit a core directory is at: its DDP_CORE_COMMIT record (the same file the scrapers
+    image's Dockerfile writes, so an unpacked `git archive` can carry one), else a git checkout's
+    HEAD. None when it can say neither."""
+    record = os.path.join(core_root, "DDP_CORE_COMMIT")
+    if os.path.isfile(record):
+        with open(record) as f:
+            text = f.read().strip()
+        return text if _FULL_SHA.fullmatch(text) else None
+    ok, out = _run_git(["rev-parse", "HEAD"], cwd=core_root, timeout=30)
+    return out if ok and _FULL_SHA.fullmatch(out) else None
+
+
+def load_stage_rules(core_root, core_commit):
+    """Import note_stage()/STAGE_UNKNOWN from the openstates-core at `core_root`, after showing it
+    is the core api-v3 runs (`core_commit`, the live scrapers image's core: `check-core-pin-drift.py
+    --print-image-core`, since api-v3 is built at that commit, OPEN-586) or a descendant of it.
+    Raises CoreMismatch otherwise; never falls back to whatever core the interpreter finds first.
+    """
+    if not core_root or not core_commit:
+        raise CoreMismatch("--api-url needs --openstates-core-root DIR and --core-commit SHA: the "
+                           "version-stage rules must come from the core api-v3 runs, not from "
+                           "whichever openstates this interpreter happens to find")
+    if not _FULL_SHA.fullmatch(core_commit):
+        raise CoreMismatch(f"--core-commit must be a full 40-character commit, got {core_commit!r}")
+    if not os.path.isdir(os.path.join(core_root, "openstates")):
+        raise CoreMismatch(f"{core_root} has no openstates/ package")
+    have = _core_commit_of(core_root)
+    if have is None:
+        raise CoreMismatch(f"cannot tell which commit {core_root} is at (no DDP_CORE_COMMIT file and "
+                           "not a git checkout); write the commit into DDP_CORE_COMMIT there")
+    if have != core_commit:
+        ok, _ = _run_git(["merge-base", "--is-ancestor", core_commit, have], cwd=core_root, timeout=30)
+        if not ok:
+            raise CoreMismatch(f"core at {core_root} is {have[:12]}, which is not at or after the "
+                               f"{core_commit[:12]} api-v3 runs (or cannot be compared: no git "
+                               "history there); use a core checkout at or past that commit")
+    # A git checkout with edits is not the commit it says it is (an unpacked export has no git of its own).
+    ok_top, top = _run_git(["rev-parse", "--show-toplevel"], cwd=core_root, timeout=30)
+    if ok_top and os.path.realpath(top) == os.path.realpath(core_root):
+        ok, dirty = _run_git(["status", "--porcelain", "--", "openstates"], cwd=core_root, timeout=30)
+        if not ok:
+            raise CoreMismatch(f"cannot tell whether {core_root} has uncommitted changes: {dirty}")
+        if dirty:
+            raise CoreMismatch(f"{core_root} has uncommitted changes under openstates/; use a clean checkout")
+    root = os.path.realpath(core_root)
+    sys.path.insert(0, root)
+    import openstates
+    loaded = os.path.realpath(os.path.dirname(os.path.dirname(openstates.__file__)))
+    if loaded != root:
+        raise CoreMismatch(f"openstates was already loaded from {loaded}, not {root}")
+    from openstates.utils.version_ordering import note_stage, STAGE_UNKNOWN
+    return note_stage, STAGE_UNKNOWN
+
+
+class ApiBills:
+    """One jurisdiction's bills as api-v3 serves them, crawled once and shared by every gate and
+    by the coverage comparison. All reads are HTTP GETs."""
+
+    def __init__(self, base_url, key, jurisdiction_code):
+        self.base_url = base_url.rstrip("/")
+        self.key = key
+        self.code = jurisdiction_code
+        self.jurisdiction = _ocd_id(jurisdiction_code)
+        self._bills = None
+        self._by_key = None
+        self._date_index = {}
+
+    def _get(self, path, params):
+        try:
+            r = _get_with_retry(f"{self.base_url}{path}", dict(params, apikey=self.key), timeout=180)
+            return r.json()
+        except Exception as e:
+            raise ApiError(f"GET {path} failed: {_redact(str(e))}")
+
+    def people_count(self):
+        """Current legislators api-v3 serves for the jurisdiction (the database mode counts people
+        with any membership, so this can read lower, never higher, for the same data)."""
+        d = self._get("/people", {"jurisdiction": self.jurisdiction, "per_page": 1})
+        try:
+            return d["pagination"]["total_items"]
+        except (KeyError, TypeError):
+            raise ApiError("GET /people: response has no pagination.total_items")
+
+    def bills(self):
+        if self._bills is None:
+            bills, page = [], 1
+            while True:
+                d = self._get("/bills", {"jurisdiction": self.jurisdiction, "include": API_BILL_INCLUDES,
+                                         "per_page": API_PAGE_SIZE, "page": page})
+                try:
+                    bills.extend(d["results"])
+                    last = page >= d["pagination"]["max_page"]
+                except (KeyError, TypeError):
+                    raise ApiError("GET /bills: response has no results/pagination.max_page")
+                if last:
+                    break
+                page += 1
+            self._bills = bills
+            self._by_key = {(b["session"], b["identifier"]): b for b in bills}
+        return self._bills
+
+    def identifiers(self, session):
+        self.bills()
+        return {b["identifier"] for b in self._bills if b["session"] == session}
+
+    def bill(self, session, identifier):
+        self.bills()
+        return self._by_key.get((session, identifier))
+
+    def shared_date_count(self, session):
+        """Returns fn(date, signature, exclude_identifier) -> how many OTHER bills of this session
+        have a vote on `date` by any of the (voter_name, option) pairs in `signature`: the crawl's
+        version of count_shared_date_signature()."""
+        def count(date, signature, exclude_identifier):
+            if (session, date) not in self._date_index:
+                idx = []
+                for b in self.bills():
+                    if b["session"] != session:
+                        continue
+                    pairs = {(pv.get("voter_name"), pv.get("option"))
+                             for ve in b.get("votes") or [] if (ve.get("start_date") or "")[:10] == date
+                             for pv in ve.get("votes") or []}
+                    idx.append((b["identifier"], pairs))
+                self._date_index[(session, date)] = idx
+            signature = set(signature)
+            return sum(1 for ident, pairs in self._date_index[(session, date)]
+                       if ident != exclude_identifier and pairs & signature)
+        return count
+
+
+def api_vote_key_collisions(bills):
+    """(collisions, n_sessions_with_votes) from the crawl's vote events' `dedupe_key`, the same
+    rule as find_db_vote_key_collisions(). None unless EVERY vote event carries the field (a
+    response with some events missing it would be a check of a subset): the gate then says so and
+    never passes silently."""
+    events = [(b, ve) for b in bills for ve in b.get("votes") or []]
+    if events and not all("dedupe_key" in ve for _, ve in events):
+        return None
+    seen, sessions = {}, set()
+    for b, ve in events:
+        key = ve.get("dedupe_key")
+        if key is None:
+            continue
+        sessions.add(b["session"])
+        seen.setdefault(key, set()).add((b["session"], b["identifier"]))
+    return {k: sorted(w) for k, w in seen.items() if len(w) > 1}, len(sessions)
+
+
+def api_attribution_rates(bills):
+    """Same shape as qa_primitives.attribution_resolution_rates(), counted from the crawl: a vote
+    row is unresolved when `voter` is null, a person-sponsorship when `person` is null. Only votes
+    and sponsorships on bills (the crawl's reach); a vote event with no bill is not seen."""
+    vt = vu = st = su = 0
+    for b in bills:
+        for ve in b.get("votes") or []:
+            for pv in ve.get("votes") or []:
+                vt += 1
+                vu += pv.get("voter") is None
+        for sp in b.get("sponsorships") or []:
+            if sp.get("entity_type") == "person":
+                st += 1
+                su += sp.get("person") is None
+    return {"votes": {"total": vt, "unresolved": vu},
+            "sponsorships": {"total": st, "unresolved": su}}
+
+
+def run_structural_gates_api(report, api, jurisdiction_code, stage_rules):
+    """run_structural_gates() over api-v3 reads. Same four gates, same ceilings, same labels; every
+    gate always runs. `stage_rules` is load_stage_rules()'s (note_stage, STAGE_UNKNOWN)."""
+    print(f"\n{'─'*60}")
+    print(f"  STRUCTURAL GATES (OPEN-445, via api-v3 {api.base_url})")
+    print(f"{'─'*60}")
+    _record_people_loaded(report, jurisdiction_code, api.people_count())
+    bills = api.bills()
+    keys = api_vote_key_collisions(bills)
+    if keys is None:
+        report.record(SKIP, f"{jurisdiction_code.upper()}: unique vote keys",
+                      "not available through api-v3 (it does not return dedupe_key on every vote event; "
+                      "use the database mode for this gate)")
+    else:
+        _record_vote_key_uniqueness(report, jurisdiction_code, *keys)
+    note_stage, stage_unknown = stage_rules
+    notes = [v["note"] for b in bills for v in b.get("versions") or []]
+    _record_version_stage_coverage(report, jurisdiction_code, notes, note_stage, stage_unknown)
+    _record_attribution_resolution(report, jurisdiction_code, api_attribution_rates(bills))
+
+
+def run_coverage_check_api(report, api, jurisdiction, session, tier2_limit=None, tier2_random=False):
+    """--coverage over api-v3: the govbot comparison with our side read from the crawl. There is no
+    live-API fallback in this mode (that path needs the database), so a missing govbot clone is a
+    SKIP that says so."""
+    ok, repo_path, detail = _ensure_govbot_repo(jurisdiction)
+    govbot_session, local_sessions = _govbot_session_group(jurisdiction, session)
+    index = build_govbot_bill_index(jurisdiction, govbot_session, repo_path) if ok else None
+    if not index:
+        report.record(SKIP, f"{jurisdiction.upper()} {session}: coverage check",
+                      f"no govbot data for {govbot_session!r} ({detail}); the live-API fallback needs "
+                      "the database, so --api-url cannot run it")
+        return {"source": "none"}
+    print(f"  Source: govbot (govbot-data/{_govbot_slug(jurisdiction)}-legislation, {detail})")
+    result = run_govbot_coverage_check(report, None, jurisdiction, govbot_session, index,
+                                       tier2_limit=tier2_limit, tier2_random=tier2_random,
+                                       blast_radius_cache={}, local_sessions=local_sessions,
+                                       api_bills=api)
+    result["source"] = "govbot"
+    return result
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1672,12 +1960,71 @@ def main():
                              "sweep every tracked jurisdiction repeatedly when calibrating "
                              "thresholds. Use --coverage instead for the full Tier 1+2+structural "
                              "Stage 3 report.")
+    parser.add_argument("--api-url", nargs="?", const=LOCAL_API, default=None, metavar="URL",
+                        help="OPEN-958: with --structural or --coverage, read OUR side through "
+                             "api-v3 (HTTP GETs only, default http://localhost:8002, key from "
+                             "QUALITY_CHECK_API_KEY or the documented local dev key) instead of "
+                             "the database -- no database login. Needs --openstates-core-root and "
+                             "--core-commit: version stages are classified here, by the core "
+                             "api-v3 runs. The vote-key gate needs api-v3 to return dedupe_key on "
+                             "vote events and otherwise says 'not available through api-v3'. "
+                             "--coverage has no live-API fallback in this mode (govbot only).")
+    parser.add_argument("--openstates-core-root", metavar="DIR", default=None,
+                        help="With --api-url: the openstates-core to classify version notes with "
+                             "(a git checkout, or an unpacked `git archive` with a DDP_CORE_COMMIT "
+                             "file).")
+    parser.add_argument("--core-commit", metavar="SHA", default=None,
+                        help="With --api-url: the 40-character core commit api-v3 runs "
+                             "(`check-core-pin-drift.py --print-image-core`). The core in "
+                             "--openstates-core-root must be at or after it, or the run stops.")
     args = parser.parse_args()
 
-    # --structural never calls the live API, so it's the one mode that doesn't need a key.
-    if not LIVE_KEY and not args.structural:
+    if args.api_url is not None and not (args.structural or args.coverage):
+        parser.error("--api-url applies to --structural and --coverage only")
+    if args.api_url is None and (args.openstates_core_root or args.core_commit):
+        parser.error("--openstates-core-root/--core-commit apply to --api-url only")
+
+    # --structural never calls the live API, so it's the one mode that doesn't need a key;
+    # --api-url neither (govbot is its only comparison source).
+    if not LIVE_KEY and not args.structural and args.api_url is None:
         print("ERROR: set OPENSTATES_API_KEY to your live v3.openstates.org API key")
         sys.exit(1)
+
+    if args.api_url is not None:
+        jurisdiction = args.structural or args.coverage[0]
+        try:
+            stage_rules = load_stage_rules(args.openstates_core_root, args.core_commit)
+        except CoreMismatch as e:
+            print(f"ERROR: {e}")
+            sys.exit(2)
+        api = ApiBills(args.api_url, api_key(), jurisdiction)
+        report = Report()
+        try:
+            if args.coverage:
+                os.makedirs("logs/quality-check", exist_ok=True)
+                log_path = f"logs/quality-check/{jurisdiction}_{args.coverage[1]}_api.log"
+                with open(log_path, "w") as logf:
+                    tee = Tee(sys.stdout, logf)
+                    old_stdout, sys.stdout = sys.stdout, tee
+                    try:
+                        coverage_result = run_coverage_check_api(
+                            report, api, jurisdiction, args.coverage[1],
+                            tier2_limit=args.tier2_limit, tier2_random=args.tier2_random)
+                        run_structural_gates_api(report, api, jurisdiction, stage_rules)
+                        ok = report.summary()
+                        print(f"  source: {coverage_result['source']} (api-v3 {api.base_url})")
+                        print_structural_gate_recommendation(report, jurisdiction)
+                    finally:
+                        sys.stdout = old_stdout
+                print(f"\n  (full output also written to {log_path})")
+            else:
+                run_structural_gates_api(report, api, jurisdiction, stage_rules)
+                ok = report.summary()
+                print_structural_gate_recommendation(report, jurisdiction)
+        except ApiError as e:
+            print(f"ERROR: {e}")
+            sys.exit(2)
+        sys.exit(0 if ok else 1)
 
     if args.structural:
         jurisdiction = args.structural

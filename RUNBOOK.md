@@ -2093,6 +2093,12 @@ OPENSTATES_API_KEY=<key> python3 quality_check.py --coverage nc 2025
 # Structural gates only -- DB-only, no OPENSTATES_API_KEY/live API/govbot needed, cheap to sweep
 # every tracked jurisdiction repeatedly (used to calibrate the two ceilings above)
 python3 quality_check.py --structural nc
+
+# The same, through api-v3 with no database login (OPEN-958). Needs the core api-v3 runs:
+# --core-commit from `check-core-pin-drift.py --print-image-core`, --openstates-core-root a core
+# checkout at or after it. --coverage <state> <session> --api-url works the same way (govbot only).
+python3 quality_check.py --structural nc --api-url \
+    --openstates-core-root <core checkout> --core-commit <40-hex>
 ```
 
 Both numeric ceilings are module-level constants in `quality_check.py`, derived from a real sweep

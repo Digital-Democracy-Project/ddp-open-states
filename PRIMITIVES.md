@@ -913,6 +913,31 @@ we split into several" (`("me", "132")` -> 132R1+132S1+132R2; `("md", "2026")` -
 Tier 2 reads each bill from the one of our sessions that holds it. Add a row here for the next
 legislature or state; don't add a second session-name mapping elsewhere.
 
+**`--api-url` (OPEN-958): the same gates and the govbot coverage check through api-v3, no database login.**
+`python3 quality_check.py --structural <st> --api-url [URL] --openstates-core-root DIR --core-commit SHA` (also
+`--coverage <st> <session> --api-url`). It reads only HTTP GETs on api-v3 (default `http://localhost:8002`; key from
+`QUALITY_CHECK_API_KEY`, else the documented dev key; never printed). One paged `/bills` crawl
+(`include=versions,votes,sponsorships,actions`, 20 a page: KY about 21 s, HI about 94 s) feeds everything: `ApiBills` (the
+crawl, `people_count()` from `/people`, `identifiers(session)`, `bill()`, `shared_date_count()` for the blast radius),
+`api_attribution_rates()`, `api_vote_key_collisions()`, `run_structural_gates_api()`, `run_coverage_check_api()`.
+**The verdicts are the database mode's own** (`_record_people_loaded`, `_record_vote_key_uniqueness`,
+`_record_version_stage_coverage`, `_record_attribution_resolution`, split out of the `run_*_gate` functions with no change
+to them), so the ceilings and output lines are shared; do not add a second copy of a ceiling or a verdict. The database
+modes are unchanged.
+* **The version-stage rules must be the core api-v3 runs (OPEN-579).** api-v3 returns the notes; this script classifies
+  them, and a core without DDP's per-state note rules reads most notes as "no stage" (the dev venv's core, ~280 commits
+  behind main, read KY 25.5%, NV 8.4%, HI 40.3% on 2026-11-28; core's main reads 0, 0, 1 of 2,561, 262, 10,703).
+  `load_stage_rules()` therefore needs `--openstates-core-root` (a git checkout, or an unpacked `git archive` with a
+  `DDP_CORE_COMMIT` file, the same file the scrapers image's Dockerfile writes) and `--core-commit` (the core api-v3 runs:
+  `check-core-pin-drift.py --print-image-core`; api-v3 is built at the live image's core). It stops (exit 2) unless that
+  core is that commit or a descendant of it (git history), and unless `openstates` really loaded from that directory.
+  There is no fallback to the interpreter's own core.
+* **Vote-key gate:** runs only when api-v3 returns `dedupe_key` on vote events (sibling ticket OPEN-957); otherwise it prints
+  "not available through api-v3" as a SKIP (never a pass). Use the database mode for it until then.
+* **Differences from the database mode (not bugs):** people counts current legislators (`/people`); votes and sponsorships
+  count only those on bills (a vote event with no bill is not seen); `--coverage` is govbot-only (the live-API fallback
+  needs the database, so a missing govbot copy is a SKIP that says so).
+
 ## `check-va-roll-members.py` — do stored Virginia roll calls list the same members as LIS? (repo root, OPEN-429)
 
 Read-only audit: for every stored Virginia vote it fetches LIS's current roll by VoteID and sorts each
